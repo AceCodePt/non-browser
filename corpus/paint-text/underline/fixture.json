@@ -1,0 +1,37 @@
+{
+  "name": "underline",
+  "note": "text-decoration: underline at two sizes plus a color override and a text-underline-offset, all with default (auto) underline position.",
+  "harvest": {
+    "viewport": {
+      "width": 460,
+      "height": 160
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"u1\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;text-decoration:underline;color:#1a1a1a\">The quick brown fox jumps over the lazy dog.</div><div id=\"u2\" style=\"font-family:'Noto Sans';font-size:20px;line-height:30px;text-decoration:underline;text-decoration-color:#d33;color:#333\">Underlined at a larger size.</div><div id=\"u3\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;text-decoration:underline;text-underline-offset:4px;color:#111\">Offset underline.</div></body></html>",
+    "measureText": [
+      {
+        "text": "The quick brown fox jumps over the lazy dog.",
+        "font": "14px 'Noto Sans'"
+      },
+      {
+        "text": "Underlined at a larger size.",
+        "font": "20px 'Noto Sans'"
+      }
+    ],
+    "rects": [
+      "u1",
+      "u2",
+      "u3"
+    ],
+    "textElements": [
+      "u1",
+      "u2",
+      "u3"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

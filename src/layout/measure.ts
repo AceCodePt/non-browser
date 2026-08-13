@@ -26,10 +26,12 @@ export function initMeasurement(config: FontConfig): void {
   context.font = `14px '${config.family}'`;
 }
 
-export function measureTextWidth(text: string, fontSize: number, family: string): number {
+export function measureTextWidth(text: string, fontSize: number, family: string, letterSpacing = 0): number {
   const ctx = context ?? createCanvas(1, 1).getContext('2d');
   ctx.font = `${fontSize}px '${family}'`;
-  return ctx.measureText(text).width;
+  // letter-spacing is added after every character (Blink applies it to the
+  // trailing character too, so the used width grows by ls * length).
+  return ctx.measureText(text).width + letterSpacing * text.length;
 }
 
 export interface LineBox {
@@ -58,14 +60,15 @@ export function wrapWords(
   fontSize: number,
   family: string,
   availableWidth: number,
+  letterSpacing = 0,
 ): { count: number; width: number } {
   if (words.length === 0) return { count: 0, width: 0 };
   let cur = words[0];
-  let width = measureTextWidth(cur, fontSize, family);
+  let width = measureTextWidth(cur, fontSize, family, letterSpacing);
   let i = 1;
   for (; i < words.length; i++) {
     const trial = cur + ' ' + words[i];
-    const w = measureTextWidth(trial, fontSize, family);
+    const w = measureTextWidth(trial, fontSize, family, letterSpacing);
     if (w <= availableWidth) {
       cur = trial;
       width = w;
@@ -90,10 +93,12 @@ export function layoutTextLines(opts: {
   lineHeight: number;
   fontSize: number;
   family: string;
+  letterSpacing?: number;
   /** returns the usable width for a line spanning [top, bottom). */
   available: (top: number, bottom: number) => { x: number; width: number };
 }): { lines: LineBox[]; height: number } {
   const { text, y, lineHeight, fontSize, family, available } = opts;
+  const letterSpacing = opts.letterSpacing ?? 0;
   // Collapse whitespace (CSS white-space: normal): collapse runs to a single
   // space, drop leading/trailing, split on spaces.
   const words = text.replace(/[ \t\r\n\f]+/g, ' ').trim().split(' ');
@@ -104,12 +109,12 @@ export function layoutTextLines(opts: {
   while (idx < totalWords) {
     const av = available(lineTop, lineTop + lineHeight);
     const availWidth = Math.max(0, av.width);
-    const res = wrapWords(words.slice(idx), fontSize, family, availWidth);
+    const res = wrapWords(words.slice(idx), fontSize, family, availWidth, letterSpacing);
     const n = res.count;
     if (n === 0) {
       // A single word wider than the line: place it alone (overflow allowed).
       const w = words[idx];
-      lines.push({ x: av.x, y: lineTop, width: measureTextWidth(w, fontSize, family), height: lineHeight, text: w, startWord: idx, endWord: idx + 1 });
+      lines.push({ x: av.x, y: lineTop, width: measureTextWidth(w, fontSize, family, letterSpacing), height: lineHeight, text: w, startWord: idx, endWord: idx + 1 });
       idx += 1;
     } else {
       const text = words.slice(idx, idx + n).join(' ');

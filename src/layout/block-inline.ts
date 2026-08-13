@@ -13,7 +13,7 @@
  * swap in a different FormattingContext and the same block/inline layout runs.
  */
 
-import { parseStyleAttribute, resolveLength, makeStyle, type ComputedStyle, type Color } from './css.js';
+import { parseStyleAttribute, resolveLength, makeStyle, type ComputedStyle, type Color, type DecorationLine } from './css.js';
 import { layoutTextLines, measureTextWidth, type LineBox } from './measure.js';
 import { FloatManager, type FormattingContext } from './floats.js';
 import { layoutGridChildren } from './grid.js';
@@ -28,6 +28,11 @@ export interface StyleDefaults {
   fontSize: number;
   lineHeight: number;
   color: Color;
+  letterSpacing: number;
+  textDecorationLines: DecorationLine[];
+  textDecorationColor: Color | null;
+  textDecorationThickness: 'auto' | 'from-font' | { px: number };
+  textUnderlineOffset: number;
 }
 
 export function resolveStyles(root: P5Element, defaults: StyleDefaults): Map<P5Element, ComputedStyle> {
@@ -43,6 +48,11 @@ export function resolveStyles(root: P5Element, defaults: StyleDefaults): Map<P5E
       fontSize: style.fontSize,
       lineHeight: style.lineHeight,
       color: style.color,
+      letterSpacing: style.letterSpacing,
+      textDecorationLines: style.textDecorationLines,
+      textDecorationColor: style.textDecorationColor,
+      textDecorationThickness: style.textDecorationThickness,
+      textUnderlineOffset: style.textUnderlineOffset,
     };
     for (const child of el.childNodes) {
       if (child.nodeName !== '#text') walk(child as P5Element, childDefaults);
@@ -70,6 +80,14 @@ export interface LayoutNode {
   lines: LineBox[];
 }
 
+export interface TextDecorationPaint {
+  lines: DecorationLine[];
+  color: Color;
+  thickness: 'auto' | 'from-font' | { px: number };
+  /** text-underline-offset in px. */
+  underlineOffset: number;
+}
+
 export interface PaintOp {
   z: 0 | 1 | 2;
   order: number;
@@ -79,10 +97,12 @@ export interface PaintOp {
   borderWidths?: Record<'top' | 'right' | 'bottom' | 'left', number>;
   borderColors?: Record<'top' | 'right' | 'bottom' | 'left', Color>;
   text?: {
-    runs: { text: string; x: number; baseline: number }[];
+    runs: { text: string; x: number; y: number; width: number; height: number; baseline: number }[];
     fontSize: number;
     family: string;
     color: Color;
+    letterSpacing: number;
+    decoration: TextDecorationPaint | null;
   };
 }
 
@@ -290,6 +310,7 @@ export function layoutElementBox(
       lineHeight: style.lineHeight,
       fontSize: style.fontSize,
       family: style.fontFamily,
+      letterSpacing: style.letterSpacing,
       available: (top, bottom) => {
         const i = fm.floatIntrusion(top, bottom);
         return { x: contentX + i.left, width: contentWidth - i.left - i.right };
@@ -351,11 +372,16 @@ export function layoutElementBox(
         runs: lines.map((l) => ({
           text: l.text,
           x: l.x,
+          y: l.y,
+          width: l.width,
+          height: l.height,
           baseline: l.y + (style.lineHeight + style.fontSize * 0.75) / 2,
         })),
         fontSize: style.fontSize,
         family: style.fontFamily,
         color: style.color,
+        letterSpacing: style.letterSpacing,
+        decoration: decorationPaint(style),
       },
     });
   }
@@ -459,8 +485,12 @@ function layoutFloat(
   } else {
     // shrink-to-fit: min(max-content, max(min-content, available))
     const text = collectInlineText(el, styles).trim();
-    const fullWidth = measureTextWidth(text, style.fontSize, style.fontFamily);
-    const widest = Math.max(0, ...text.split(/\s+/).map((w) => measureTextWidth(w, style.fontSize, style.fontFamily)));
+    const ls = style.letterSpacing;
+    const fullWidth = measureTextWidth(text, style.fontSize, style.fontFamily, ls);
+    const widest = Math.max(
+      0,
+      ...text.split(/\s+/).map((w) => measureTextWidth(w, style.fontSize, style.fontFamily, ls)),
+    );
     const available = contentWidth - marginL - marginR;
     borderBoxWidth = Math.min(fullWidth, Math.max(widest, available));
   }
@@ -478,6 +508,7 @@ function layoutFloat(
       lineHeight: style.lineHeight,
       fontSize: style.fontSize,
       family: style.fontFamily,
+      letterSpacing: style.letterSpacing,
       available: (top, bottom) => ({ x: 0, width: floatContentWidth }),
     });
     lines = lineRes.lines;
@@ -547,11 +578,16 @@ function layoutFloat(
         runs: lines.map((l) => ({
           text: l.text,
           x: placed.borderX + l.x,
+          y: placed.borderY + l.y,
+          width: l.width,
+          height: l.height,
           baseline: placed.borderY + l.y + (style.lineHeight + style.fontSize * 0.75) / 2,
         })),
         fontSize: style.fontSize,
         family: style.fontFamily,
         color: style.color,
+        letterSpacing: style.letterSpacing,
+        decoration: decorationPaint(style),
       },
     });
   }
@@ -583,6 +619,17 @@ function layoutBlockChildren(
     prevBottomMargin = node.marginBottom;
   }
   return { nodes, height: y - ctx.y };
+}
+
+/** Build the text-decoration paint descriptor for a style (null when no lines). */
+function decorationPaint(style: ComputedStyle): TextDecorationPaint | null {
+  if (style.textDecorationLines.length === 0) return null;
+  return {
+    lines: style.textDecorationLines,
+    color: style.textDecorationColor ?? style.color,
+    thickness: style.textDecorationThickness,
+    underlineOffset: style.textUnderlineOffset,
+  };
 }
 
 function pushBorders(

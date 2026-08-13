@@ -1,0 +1,37 @@
+{
+  "name": "overline",
+  "note": "text-decoration: overline at two sizes, including a large size where the overline sits above the em box.",
+  "harvest": {
+    "viewport": {
+      "width": 460,
+      "height": 150
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"o1\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;text-decoration:overline;color:#111\">Overlined text here.</div><div id=\"o2\" style=\"font-family:'Noto Sans';font-size:22px;line-height:34px;text-decoration:overline;color:#333\">Bigger overline.</div><div id=\"o3\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;text-decoration:overline;text-decoration-color:#00a;color:#222\">Blue overline.</div></body></html>",
+    "measureText": [
+      {
+        "text": "Overlined text here.",
+        "font": "14px 'Noto Sans'"
+      },
+      {
+        "text": "Bigger overline.",
+        "font": "22px 'Noto Sans'"
+      }
+    ],
+    "rects": [
+      "o1",
+      "o2",
+      "o3"
+    ],
+    "textElements": [
+      "o1",
+      "o2",
+      "o3"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

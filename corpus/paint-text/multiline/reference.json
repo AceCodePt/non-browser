@@ -1,0 +1,14 @@
+{
+  "measureText": {
+    "14px 'Noto Sans' | This is a multi-line underlined paragraph that wraps onto several separate lines each carrying its own underline.": 733.1771240234375
+  },
+  "computedStyle": {},
+  "rect": {
+    "ml": {
+      "x": 0,
+      "y": 0,
+      "width": 240,
+      "height": 88
+    }
+  }
+}

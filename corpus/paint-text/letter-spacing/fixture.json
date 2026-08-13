@@ -1,0 +1,37 @@
+{
+  "name": "letter-spacing",
+  "note": "letter-spacing changes where text wraps and how wide each line is; positive, tight negative, and zero-spacing controls side by side.",
+  "harvest": {
+    "viewport": {
+      "width": 460,
+      "height": 200
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"l1\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;letter-spacing:3px;width:220px;background:#f2f2f2\">Letter spacing spreads this sentence out and makes it wrap at different places than plain text would.</div><div id=\"l2\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;letter-spacing:2px;width:220px;background:#e6e6e6\">A second spaced paragraph.</div><div id=\"l3\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;letter-spacing:-0.5px;color:#333\">Tight negative letter spacing here.</div></body></html>",
+    "measureText": [
+      {
+        "text": "Letter spacing spreads this sentence out and makes it wrap at different places than plain text would.",
+        "font": "14px 'Noto Sans'"
+      },
+      {
+        "text": "Tight negative letter spacing here.",
+        "font": "14px 'Noto Sans'"
+      }
+    ],
+    "rects": [
+      "l1",
+      "l2",
+      "l3"
+    ],
+    "textElements": [
+      "l1",
+      "l2",
+      "l3"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

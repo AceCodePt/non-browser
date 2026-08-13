@@ -1,0 +1,33 @@
+{
+  "measureText": {
+    "16px 'Noto Sans' | Translucent red underlined.": 207.31239318847656,
+    "16px 'Noto Sans' | Black strike on gray.": 150.43231201171875
+  },
+  "computedStyle": {},
+  "rect": {
+    "c1": {
+      "x": 0,
+      "y": 0,
+      "width": 460,
+      "height": 24
+    },
+    "c2": {
+      "x": 0,
+      "y": 24,
+      "width": 460,
+      "height": 24
+    },
+    "c3": {
+      "x": 0,
+      "y": 48,
+      "width": 460,
+      "height": 24
+    },
+    "c4": {
+      "x": 0,
+      "y": 72,
+      "width": 460,
+      "height": 24
+    }
+  }
+}
