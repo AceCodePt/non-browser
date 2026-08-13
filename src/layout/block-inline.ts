@@ -13,7 +13,7 @@
  * swap in a different FormattingContext and the same block/inline layout runs.
  */
 
-import { parseStyleAttribute, pxLength, resolveLength, makeStyle, type ComputedStyle, type Color, type DecorationLine } from './css.js';
+import { parseStyleAttribute, pxLength, resolveLength, makeStyle, type ComputedStyle, type Color, type Declaration, type DecorationLine, type Viewport } from './css.js';
 import { layoutTextLines, measureTextWidth, type LineBox } from './measure.js';
 import { FloatManager, type FormattingContext } from './floats.js';
 import { layoutGridChildren } from './grid.js';
@@ -35,13 +35,21 @@ export interface StyleDefaults {
   textUnderlineOffset: number;
 }
 
-export function resolveStyles(root: P5Element, defaults: StyleDefaults): Map<P5Element, ComputedStyle> {
+export function resolveStyles(
+  root: P5Element,
+  defaults: StyleDefaults,
+  stylesheetDecls?: Map<P5Element, Declaration[]>,
+): Map<P5Element, ComputedStyle> {
   const map = new Map<P5Element, ComputedStyle>();
   const walk = (el: P5Element, d: StyleDefaults): void => {
-    const style = makeStyle(
-      parseStyleAttribute(el.attrs.find((a) => a.name === 'style')?.value),
-      { ...d, display: 'block' },
-    );
+    const inline = parseStyleAttribute(el.attrs.find((a) => a.name === 'style')?.value);
+    const cascade = stylesheetDecls?.get(el);
+    // makeStyle reads the FIRST declaration of each property, so to get CSS
+    // "last wins" semantics across the cascade (stylesheet rules in ascending
+    // specificity/source order, then inline styles) feed the merged list in
+    // reverse — the winner appears first.
+    const decls = cascade && cascade.length > 0 ? [...cascade, ...inline].reverse() : inline;
+    const style = makeStyle(decls, { ...d, display: 'block' });
     applyReplacedSize(el, style);
     map.set(el, style);
     const childDefaults: StyleDefaults = {
@@ -56,7 +64,11 @@ export function resolveStyles(root: P5Element, defaults: StyleDefaults): Map<P5E
       textUnderlineOffset: style.textUnderlineOffset,
     };
     for (const child of el.childNodes) {
-      if (child.nodeName !== '#text') walk(child as P5Element, childDefaults);
+      if (child.nodeName !== '#text') {
+        const name = (child as P5Element).nodeName;
+        if (name === 'style' || name === 'script' || name === 'head' || name === 'title') continue;
+        walk(child as P5Element, childDefaults);
+      }
     }
   };
   walk(root, defaults);
@@ -146,20 +158,21 @@ function collapseMargins(a: number, b: number): number {
 export function layoutRoot(
   body: P5Element,
   styles: Map<P5Element, ComputedStyle>,
-  viewportWidth: number,
+  viewport: Viewport,
 ): RootLayout {
   const style = styles.get(body)!;
-  const marginL = resolveLength(style.margin.left, viewportWidth) ?? 0;
-  const marginR = resolveLength(style.margin.right, viewportWidth) ?? 0;
-  const marginT = resolveLength(style.margin.top, viewportWidth) ?? 0;
-  const padL = resolveLength(style.padding.left, viewportWidth) ?? 0;
-  const padR = resolveLength(style.padding.right, viewportWidth) ?? 0;
-  const padT = resolveLength(style.padding.top, viewportWidth) ?? 0;
+  const viewportWidth = viewport.width;
+  const marginL = resolveLength(style.margin.left, viewportWidth, viewport) ?? 0;
+  const marginR = resolveLength(style.margin.right, viewportWidth, viewport) ?? 0;
+  const marginT = resolveLength(style.margin.top, viewportWidth, viewport) ?? 0;
+  const padL = resolveLength(style.padding.left, viewportWidth, viewport) ?? 0;
+  const padR = resolveLength(style.padding.right, viewportWidth, viewport) ?? 0;
+  const padT = resolveLength(style.padding.top, viewportWidth, viewport) ?? 0;
   const bL = style.borderWidth.left;
   const bR = style.borderWidth.right;
   const bT = style.borderWidth.top;
 
-  const specW = resolveLength(style.width, viewportWidth);
+  const specW = resolveLength(style.width, viewportWidth, viewport);
   const borderBoxWidth =
     specW !== null
       ? style.boxSizing === 'border-box'
@@ -201,6 +214,7 @@ export function layoutRoot(
     styles,
     paints,
     () => order++,
+    viewport,
   );
 
   if (style.backgroundColor.a > 0) {
@@ -269,6 +283,7 @@ export function layoutElementBox(
   styles: Map<P5Element, ComputedStyle>,
   paints: PaintOp[],
   nextOrder: () => number,
+  viewport?: Viewport,
   forcedHeight?: number,
 ): LayoutNode {
   const children: LayoutNode[] = [];
@@ -296,16 +311,16 @@ export function layoutElementBox(
   const bB = style.borderWidth.bottom;
   const bL = style.borderWidth.left;
   const bR = style.borderWidth.right;
-  const padT = resolveLength(style.padding.top, contentWidth) ?? 0;
-  const padB = resolveLength(style.padding.bottom, contentWidth) ?? 0;
-  const padL = resolveLength(style.padding.left, contentWidth) ?? 0;
-  const padR = resolveLength(style.padding.right, contentWidth) ?? 0;
+  const padT = resolveLength(style.padding.top, contentWidth, viewport) ?? 0;
+  const padB = resolveLength(style.padding.bottom, contentWidth, viewport) ?? 0;
+  const padL = resolveLength(style.padding.left, contentWidth, viewport) ?? 0;
+  const padR = resolveLength(style.padding.right, contentWidth, viewport) ?? 0;
   const padBorderV = padT + padB + bT + bB;
   const padBorderH = padL + padR + bL + bR;
 
   const isGrid = style.display === 'grid' || style.display === 'inline-grid';
   if (isGrid) {
-    const specH = resolveLength(style.height, contentWidth);
+    const specH = resolveLength(style.height, contentWidth, viewport);
     const availableHeight =
       specH !== null
         ? Math.max(0, (style.boxSizing === 'border-box' ? specH : specH + padBorderV) - padBorderV)
@@ -346,7 +361,7 @@ export function layoutElementBox(
     if (hasBlocks) {
       const childFm = new FloatManager(contentX, contentWidth);
       const state: LayoutBlockInput = { fm: childFm, contentX, contentWidth, y: contentY, prevBottomMargin: 0 };
-      const { nodes, height } = layoutBlockChildren(el, state, styles, paints, nextOrder);
+      const { nodes, height } = layoutBlockChildren(el, state, styles, paints, nextOrder, viewport);
       children.push(...nodes);
       contentHeight = height;
       // A BFC's height grows to include its floats.
@@ -355,7 +370,7 @@ export function layoutElementBox(
     }
   }
 
-  const specH = resolveLength(style.height, contentWidth);
+  const specH = resolveLength(style.height, contentWidth, viewport);
   const resolvedHeight =
     forcedHeight !== undefined
       ? forcedHeight
@@ -420,19 +435,20 @@ function layoutBlock(
   styles: Map<P5Element, ComputedStyle>,
   paints: PaintOp[],
   nextOrder: () => number,
+  viewport?: Viewport,
 ): LayoutNode {
   const { fm, contentX, contentWidth, y, prevBottomMargin } = ctx;
-  const marginL = resolveLength(style.margin.left, contentWidth) ?? 0;
-  const marginR = resolveLength(style.margin.right, contentWidth) ?? 0;
-  const marginT = resolveLength(style.margin.top, contentWidth) ?? 0;
-  const marginB = resolveLength(style.margin.bottom, contentWidth) ?? 0;
+  const marginL = resolveLength(style.margin.left, contentWidth, viewport) ?? 0;
+  const marginR = resolveLength(style.margin.right, contentWidth, viewport) ?? 0;
+  const marginT = resolveLength(style.margin.top, contentWidth, viewport) ?? 0;
+  const marginB = resolveLength(style.margin.bottom, contentWidth, viewport) ?? 0;
 
-  const padL = resolveLength(style.padding.left, contentWidth) ?? 0;
-  const padR = resolveLength(style.padding.right, contentWidth) ?? 0;
+  const padL = resolveLength(style.padding.left, contentWidth, viewport) ?? 0;
+  const padR = resolveLength(style.padding.right, contentWidth, viewport) ?? 0;
   const bL = style.borderWidth.left;
   const bR = style.borderWidth.right;
 
-  const specW = resolveLength(style.width, contentWidth);
+  const specW = resolveLength(style.width, contentWidth, viewport);
   const padBorderH = padL + padR + bL + bR;
   const autoWidth = Math.max(0, contentWidth - marginL - marginR);
   const borderBoxWidth =
@@ -468,11 +484,12 @@ function layoutBlock(
     borderTop,
     usableWidth,
     borderX + bL + padL,
-    borderTop + style.borderWidth.top + (resolveLength(style.padding.top, contentWidth) ?? 0),
+    borderTop + style.borderWidth.top + (resolveLength(style.padding.top, contentWidth, viewport) ?? 0),
     Math.max(0, usableWidth - bL - bR - padL - padR),
     styles,
     paints,
     nextOrder,
+    viewport,
   );
   node.marginTop = marginT;
   node.marginBottom = marginB;
@@ -487,20 +504,21 @@ function layoutFloat(
   styles: Map<P5Element, ComputedStyle>,
   paints: PaintOp[],
   nextOrder: () => number,
+  viewport?: Viewport,
 ): LayoutNode {
   const { fm, contentX, contentWidth, y } = ctx;
-  const marginL = resolveLength(style.margin.left, contentWidth) ?? 0;
-  const marginR = resolveLength(style.margin.right, contentWidth) ?? 0;
-  const marginT = resolveLength(style.margin.top, contentWidth) ?? 0;
-  const marginB = resolveLength(style.margin.bottom, contentWidth) ?? 0;
-  const padL = resolveLength(style.padding.left, contentWidth) ?? 0;
-  const padR = resolveLength(style.padding.right, contentWidth) ?? 0;
+  const marginL = resolveLength(style.margin.left, contentWidth, viewport) ?? 0;
+  const marginR = resolveLength(style.margin.right, contentWidth, viewport) ?? 0;
+  const marginT = resolveLength(style.margin.top, contentWidth, viewport) ?? 0;
+  const marginB = resolveLength(style.margin.bottom, contentWidth, viewport) ?? 0;
+  const padL = resolveLength(style.padding.left, contentWidth, viewport) ?? 0;
+  const padR = resolveLength(style.padding.right, contentWidth, viewport) ?? 0;
   const bL = style.borderWidth.left;
   const bR = style.borderWidth.right;
   const bT = style.borderWidth.top;
   const bB = style.borderWidth.bottom;
 
-  const specW = resolveLength(style.width, contentWidth);
+  const specW = resolveLength(style.width, contentWidth, viewport);
   const padBorderH = padL + padR + bL + bR;
   let borderBoxWidth: number;
   if (specW !== null) {
@@ -538,10 +556,10 @@ function layoutFloat(
     contentHeight = lineRes.height;
   }
 
-  const padT = resolveLength(style.padding.top, floatContentWidth) ?? 0;
-  const padB = resolveLength(style.padding.bottom, floatContentWidth) ?? 0;
+  const padT = resolveLength(style.padding.top, floatContentWidth, viewport) ?? 0;
+  const padB = resolveLength(style.padding.bottom, floatContentWidth, viewport) ?? 0;
   const padBorderV = padT + padB + bT + bB;
-  const specH = resolveLength(style.height, floatContentWidth);
+  const specH = resolveLength(style.height, floatContentWidth, viewport);
   const borderHeight =
     specH !== null
       ? style.boxSizing === 'border-box'
@@ -623,6 +641,7 @@ function layoutBlockChildren(
   styles: Map<P5Element, ComputedStyle>,
   paints: PaintOp[],
   nextOrder: () => number,
+  viewport?: Viewport,
 ): { nodes: LayoutNode[]; height: number } {
   const nodes: LayoutNode[] = [];
   let y = ctx.y;
@@ -633,10 +652,10 @@ function layoutBlockChildren(
     const style = styles.get(el);
     if (!style || style.display === 'none') continue;
     if (style.float !== 'none') {
-      nodes.push(layoutFloat(el, style, { ...ctx, y }, styles, paints, nextOrder));
+      nodes.push(layoutFloat(el, style, { ...ctx, y }, styles, paints, nextOrder, viewport));
       continue;
     }
-    const node = layoutBlock(el, style, { ...ctx, y, prevBottomMargin }, styles, paints, nextOrder);
+    const node = layoutBlock(el, style, { ...ctx, y, prevBottomMargin }, styles, paints, nextOrder, viewport);
     nodes.push(node);
     y = node.borderY + node.borderHeight + node.marginBottom;
     prevBottomMargin = node.marginBottom;

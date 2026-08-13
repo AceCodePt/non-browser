@@ -10,7 +10,7 @@
  * explicit keywords — not `auto` where Chrome reports the used value).
  */
 
-import type { Color, ComputedStyle, Length } from './css.js';
+import type { Color, ComputedStyle, Length, Viewport } from './css.js';
 
 export type ComputedStyleProps = Record<string, string>;
 
@@ -19,10 +19,23 @@ function colorString(c: Color): string {
   return `rgba(${c.r}, ${c.g}, ${c.b}, ${c.a})`;
 }
 
-function lengthString(l: Length, ref: number): string | null {
+/**
+ * Serialize a resolved length the way CSSOM does. Viewport units resolve to px
+ * against the viewport input at computed-value time (matching Chrome's
+ * `getComputedStyle().getPropertyValue(...)`).
+ */
+function lengthString(l: Length, ref: number, viewport?: Viewport | null): string | null {
   if (l.auto) return 'auto';
   if (l.px !== null) return `${l.px}px`;
   if (l.pct !== null) return `${l.pct}%`;
+  if (viewport) {
+    const vw = viewport.width / 100;
+    const vh = viewport.height / 100;
+    if (l.vw !== null) return `${l.vw * vw}px`;
+    if (l.vh !== null) return `${l.vh * vh}px`;
+    if (l.vmin !== null) return `${l.vmin * Math.min(vw, vh)}px`;
+    if (l.vmax !== null) return `${l.vmax * Math.max(vw, vh)}px`;
+  }
   return null;
 }
 
@@ -36,7 +49,7 @@ function fontFamilyString(family: string): string {
  * Compute one property's CSSOM string for a style. Returns null when the
  * property is not computed by the engine (so it cannot be compared).
  */
-export function computedStyleString(style: ComputedStyle, prop: string, refWidth: number): string | null {
+export function computedStyleString(style: ComputedStyle, prop: string, refWidth: number, viewport?: Viewport | null): string | null {
   switch (prop) {
     case 'display': {
       const d = style.display;
@@ -53,25 +66,25 @@ export function computedStyleString(style: ComputedStyle, prop: string, refWidth
     case 'background-color':
       return colorString(style.backgroundColor);
     case 'width':
-      return lengthString(style.width, refWidth);
+      return lengthString(style.width, refWidth, viewport);
     case 'height':
-      return lengthString(style.height, refWidth);
+      return lengthString(style.height, refWidth, viewport);
     case 'margin-top':
-      return lengthString(style.margin.top, refWidth);
+      return lengthString(style.margin.top, refWidth, viewport);
     case 'margin-right':
-      return lengthString(style.margin.right, refWidth);
+      return lengthString(style.margin.right, refWidth, viewport);
     case 'margin-bottom':
-      return lengthString(style.margin.bottom, refWidth);
+      return lengthString(style.margin.bottom, refWidth, viewport);
     case 'margin-left':
-      return lengthString(style.margin.left, refWidth);
+      return lengthString(style.margin.left, refWidth, viewport);
     case 'padding-top':
-      return lengthString(style.padding.top, refWidth);
+      return lengthString(style.padding.top, refWidth, viewport);
     case 'padding-right':
-      return lengthString(style.padding.right, refWidth);
+      return lengthString(style.padding.right, refWidth, viewport);
     case 'padding-bottom':
-      return lengthString(style.padding.bottom, refWidth);
+      return lengthString(style.padding.bottom, refWidth, viewport);
     case 'padding-left':
-      return lengthString(style.padding.left, refWidth);
+      return lengthString(style.padding.left, refWidth, viewport);
     case 'border-top-width':
       return `${style.borderWidth.top}px`;
     case 'border-right-width':
@@ -99,7 +112,11 @@ export function computedStyleString(style: ComputedStyle, prop: string, refWidth
     case 'clear':
       return style.clear;
     case 'letter-spacing':
-      return `${style.letterSpacing}px`;
+      // Chrome serializes the initial `normal` keyword as 'normal', and an
+      // explicit `0px` as '0px'. The engine collapses both to 0; fixtures that
+      // compare letter-spacing therefore only author non-zero values or the
+      // initial value, and 0 serializes as 'normal' here.
+      return style.letterSpacing === 0 ? 'normal' : `${style.letterSpacing}px`;
     case 'text-decoration-line':
       return style.textDecorationLines.length === 0 ? 'none' : style.textDecorationLines.join(' ');
     default:
@@ -111,10 +128,10 @@ export function computedStyleString(style: ComputedStyle, prop: string, refWidth
  * Compute a CSSOM property map for a style across a list of properties.
  * Properties the engine cannot compute are omitted from the result.
  */
-export function computedStyleFor(style: ComputedStyle, props: string[], refWidth: number): ComputedStyleProps {
+export function computedStyleFor(style: ComputedStyle, props: string[], refWidth: number, viewport?: Viewport | null): ComputedStyleProps {
   const out: ComputedStyleProps = {};
   for (const p of props) {
-    const v = computedStyleString(style, p, refWidth);
+    const v = computedStyleString(style, p, refWidth, viewport);
     if (v !== null) out[p] = v;
   }
   return out;

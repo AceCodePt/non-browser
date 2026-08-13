@@ -1,0 +1,15 @@
+{
+  "name": "container-inert",
+  "note": "Documented @container gap, inert side: no container-type/container-name is established anywhere in the document, so Chrome's @container query evaluates to false and does not apply — the engine (which does not apply @container rules until layout provides container sizing) agrees. See docs/ledgers/media-queries.md.",
+  "harvest": {
+    "html": "<html><head><style>\n  body { margin: 0; }\n  #a { color: rgb(0,0,0); }\n  @container (min-width: 100px) { #a { color: rgb(255,0,0); } }\n</style></head><body><div id=\"a\">A</div></body></html>",
+    "viewports": [
+      { "width": 600, "height": 400 },
+      { "width": 800, "height": 600 }
+    ],
+    "computedStyle": [
+      { "id": "a", "props": ["color"] }
+    ]
+  },
+  "expected": { "computedStyle": "pass" }
+}

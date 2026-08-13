@@ -14,16 +14,25 @@ import { parse, type DefaultTreeAdapterTypes } from 'parse5';
 import type { CanvasFactory, CanvasLike } from '../canvas/interface.js';
 import { skiaCanvasFactory } from '../canvas/skia.js';
 import { installPretextMeasurement } from '../pretext/index.js';
+import { resolveMediaCascade, type MediaEnvironment } from '../cascade/index.js';
 import { resolveStyles, layoutRoot } from './block-inline.js';
 import { computedStyleFor, type ComputedStyleProps } from './computed-style.js';
 import { paint, type RenderOutput } from './paint.js';
 import { initMeasurement } from './measure.js';
-import type { ComputedStyle } from './css.js';
+import type { ComputedStyle, Viewport } from './css.js';
 import type { P5Element } from './types.js';
 
 export interface ComputedStyleSpec {
   id: string;
   props: string[];
+}
+
+/** Media-feature inputs beyond the viewport dimensions (media-queries phase). */
+export interface MediaInput {
+  prefersColorScheme?: 'light' | 'dark';
+  prefersReducedMotion?: 'no-preference' | 'reduce';
+  /** device resolution in dppx; default 1. */
+  dppx?: number;
 }
 
 export interface RenderOptions {
@@ -39,6 +48,8 @@ export interface RenderOptions {
   canvasFactory?: CanvasFactory;
   /** When set, resolve these computed-style properties per id (layer 2). */
   computedStyle?: ComputedStyleSpec[];
+  /** Media-feature inputs for @media evaluation (defaults: light, no-preference, 1x). */
+  media?: MediaInput;
 }
 
 export interface RenderHtmlOutput extends RenderOutput {
@@ -67,19 +78,35 @@ export function renderHtml(html: string, opts: RenderOptions): RenderHtmlOutput 
   );
   installPretextMeasurement(measureCanvas);
 
-  const styles = resolveStyles(body, {
-    fontFamily: opts.fontFamily,
-    fontSize: opts.fontSize ?? 16,
-    lineHeight: opts.lineHeight ?? 19,
-    color: { r: 0, g: 0, b: 0, a: 1 },
-    letterSpacing: 0,
-    textDecorationLines: [],
-    textDecorationColor: null,
-    textDecorationThickness: 'auto',
-    textUnderlineOffset: 0,
-  });
+  const viewport: Viewport = { width: opts.width, height: opts.height };
+  const mediaEnv: MediaEnvironment = {
+    width: opts.width,
+    height: opts.height,
+    prefersColorScheme: opts.media?.prefersColorScheme,
+    prefersReducedMotion: opts.media?.prefersReducedMotion,
+    dppx: opts.media?.dppx,
+  };
+  const styleElements: P5Element[] = [];
+  collectStyleElements(doc, styleElements);
+  const stylesheetDecls = resolveMediaCascade(body, styleElements, mediaEnv);
 
-  const root = layoutRoot(body, styles, opts.width);
+  const styles = resolveStyles(
+    body,
+    {
+      fontFamily: opts.fontFamily,
+      fontSize: opts.fontSize ?? 16,
+      lineHeight: opts.lineHeight ?? 19,
+      color: { r: 0, g: 0, b: 0, a: 1 },
+      letterSpacing: 0,
+      textDecorationLines: [],
+      textDecorationColor: null,
+      textDecorationThickness: 'auto',
+      textUnderlineOffset: 0,
+    },
+    stylesheetDecls,
+  );
+
+  const root = layoutRoot(body, styles, viewport);
   const out = paint(root, opts.width, opts.height, Object.keys(collectIds(body)), opts.fontFile, factory);
 
   const computedStyles: Record<string, ComputedStyleProps> = {};
@@ -92,11 +119,23 @@ export function renderHtml(html: string, opts: RenderOptions): RenderHtmlOutput 
       if (!el || !style) {
         throw new Error(`renderHtml: computedStyle requested for unknown id '${spec.id}'`);
       }
-      computedStyles[spec.id] = computedStyleFor(style, spec.props, opts.width);
+      computedStyles[spec.id] = computedStyleFor(style, spec.props, opts.width, viewport);
     }
   }
 
   return { ...out, computedStyles };
+}
+
+/** Collect every `<style>` element in the document (head and body). */
+function collectStyleElements(node: unknown, out: P5Element[]): void {
+  const children = (node as { childNodes?: DefaultTreeAdapterTypes.ChildNode[] }).childNodes;
+  if (!children) return;
+  for (const child of children) {
+    if ((child as { nodeName?: string }).nodeName === 'style') {
+      out.push(child as P5Element);
+    }
+    collectStyleElements(child, out);
+  }
 }
 
 function collectIds(el: P5Element): Record<string, boolean> {

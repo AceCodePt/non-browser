@@ -1,0 +1,15 @@
+{
+  "name": "resolution",
+  "note": "resolution media feature driven by the viewport input's dppx (Chrome oracle's deviceScaleFactor is set to the same value).",
+  "harvest": {
+    "html": "<html><head><style>\n  body { margin: 0; }\n  #a { color: rgb(0,0,0); }\n  @media (resolution: 1x) { #a { color: rgb(255,0,0); } }\n  @media (min-resolution: 2dppx) { #a { background-color: rgb(0,0,255); } }\n</style></head><body><div id=\"a\">A</div></body></html>",
+    "viewports": [
+      { "width": 400, "height": 300 },
+      { "width": 400, "height": 300, "dppx": 2 }
+    ],
+    "computedStyle": [
+      { "id": "a", "props": ["color", "background-color"] }
+    ]
+  },
+  "expected": { "computedStyle": "pass" }
+}

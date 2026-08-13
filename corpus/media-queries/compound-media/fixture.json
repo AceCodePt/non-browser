@@ -1,0 +1,16 @@
+{
+  "name": "compound-media",
+  "note": "Compound media conditions: `and` combines features in one query, `or` is a media-in-parens alternative, `not` negates. Precedence: not > and > or.",
+  "harvest": {
+    "html": "<html><head><style>\n  body { margin: 0; }\n  #a { color: rgb(0,0,0); }\n  @media (min-width: 500px) and (max-width: 900px) { #a { color: rgb(255,0,0); } }\n  @media (min-width: 500px) or (orientation: portrait) { #a { background-color: rgb(0,255,0); } }\n  @media not (max-width: 700px) { #a { letter-spacing: 2px; } }\n</style></head><body><div id=\"a\">A</div></body></html>",
+    "viewports": [
+      { "width": 500, "height": 700 },
+      { "width": 800, "height": 600 },
+      { "width": 1000, "height": 800 }
+    ],
+    "computedStyle": [
+      { "id": "a", "props": ["color", "background-color", "letter-spacing"] }
+    ]
+  },
+  "expected": { "computedStyle": "pass" }
+}

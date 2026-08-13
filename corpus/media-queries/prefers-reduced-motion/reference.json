@@ -1,0 +1,27 @@
+{
+  "viewports": [
+    {
+      "viewport": {
+        "width": 500,
+        "height": 400
+      },
+      "computedStyle": {
+        "a": {
+          "letter-spacing": "normal"
+        }
+      }
+    },
+    {
+      "viewport": {
+        "width": 500,
+        "height": 400,
+        "prefersReducedMotion": "reduce"
+      },
+      "computedStyle": {
+        "a": {
+          "letter-spacing": "4px"
+        }
+      }
+    }
+  ]
+}

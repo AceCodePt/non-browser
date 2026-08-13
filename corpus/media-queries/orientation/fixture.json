@@ -1,0 +1,16 @@
+{
+  "name": "orientation",
+  "note": "orientation media feature: portrait (height >= width) vs landscape (width > height).",
+  "harvest": {
+    "html": "<html><head><style>\n  body { margin: 0; }\n  #a { color: rgb(0,0,0); }\n  @media (orientation: portrait) { #a { color: rgb(0,128,0); } }\n  @media (orientation: landscape) { #a { background-color: rgb(255,255,0); } }\n</style></head><body><div id=\"a\">A</div></body></html>",
+    "viewports": [
+      { "width": 500, "height": 700 },
+      { "width": 900, "height": 400 },
+      { "width": 700, "height": 700 }
+    ],
+    "computedStyle": [
+      { "id": "a", "props": ["color", "background-color"] }
+    ]
+  },
+  "expected": { "computedStyle": "pass" }
+}

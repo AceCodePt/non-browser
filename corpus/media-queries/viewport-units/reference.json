@@ -1,0 +1,62 @@
+{
+  "viewports": [
+    {
+      "viewport": {
+        "width": 800,
+        "height": 600
+      },
+      "computedStyle": {
+        "w": {
+          "width": "400px"
+        },
+        "h": {
+          "height": "600px"
+        },
+        "min": {
+          "width": "300px"
+        },
+        "max": {
+          "width": "400px"
+        },
+        "pad": {
+          "padding-left": "40px"
+        },
+        "m": {
+          "margin-left": "80px"
+        },
+        "inline-vw": {
+          "width": "200px"
+        }
+      }
+    },
+    {
+      "viewport": {
+        "width": 1200,
+        "height": 500
+      },
+      "computedStyle": {
+        "w": {
+          "width": "600px"
+        },
+        "h": {
+          "height": "500px"
+        },
+        "min": {
+          "width": "250px"
+        },
+        "max": {
+          "width": "600px"
+        },
+        "pad": {
+          "padding-left": "60px"
+        },
+        "m": {
+          "margin-left": "120px"
+        },
+        "inline-vw": {
+          "width": "300px"
+        }
+      }
+    }
+  ]
+}
