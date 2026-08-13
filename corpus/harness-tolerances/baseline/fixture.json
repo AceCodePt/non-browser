@@ -1,0 +1,22 @@
+{
+  "name": "baseline",
+  "note": "A plain page (an absolutely-positioned blue box plus a text tag). The candidate buffer equals the Chrome reference for all four layers, so every layer is expected to pass.",
+  "harvest": {
+    "viewport": { "width": 320, "height": 240 },
+    "html": "<style>html,body{margin:0;padding:0}body{background:#fff}#box{position:absolute;left:0;top:0;width:120px;height:60px;background:#4a90d9}#tag{position:absolute;left:160px;top:10px;font:14px sans-serif;color:#333}</style><div id=\"box\"></div><div id=\"tag\">parity</div>",
+    "measureText": ["parity", "Parity Harness", "The quick brown fox"],
+    "computedStyle": [
+      { "id": "box", "props": ["display", "position", "width", "height", "background-color", "left", "top"] },
+      { "id": "tag", "props": ["display", "position", "left", "top", "font-size", "font-family", "color"] }
+    ],
+    "rects": ["box", "tag"],
+    "divergence": null,
+    "mask": null
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

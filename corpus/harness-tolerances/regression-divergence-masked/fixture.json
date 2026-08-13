@@ -1,0 +1,22 @@
+{
+  "name": "regression-divergence-masked",
+  "note": "Regression fixture (masked). Same deliberate divergence as regression-divergence, but a mask.png excludes the divergent region from the pixel diff. With the region masked out, all remaining pixels are strict and identical, so the screenshot layer must PASS. Demonstrates region masking per the charter §8.",
+  "harvest": {
+    "viewport": { "width": 320, "height": 240 },
+    "html": "<style>html,body{margin:0;padding:0}body{background:#fff}#box{position:absolute;left:0;top:0;width:120px;height:60px;background:#4a90d9}#tag{position:absolute;left:160px;top:10px;font:14px sans-serif;color:#333}</style><div id=\"box\"></div><div id=\"tag\">parity</div>",
+    "measureText": ["parity", "Parity Harness", "The quick brown fox"],
+    "computedStyle": [
+      { "id": "box", "props": ["display", "position", "width", "height", "background-color", "left", "top"] },
+      { "id": "tag", "props": ["display", "position", "left", "top", "font-size", "font-family", "color"] }
+    ],
+    "rects": ["box", "tag"],
+    "divergence": { "x": 30, "y": 15, "width": 48, "height": 24, "delta": [14, 14, 14] },
+    "mask": { "x": 28, "y": 13, "width": 52, "height": 28 }
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}
