@@ -1,0 +1,29 @@
+{
+  "name": "multiline",
+  "note": "A wrapping underlined paragraph: each line box gets its own underline spanning that line's used text width.",
+  "harvest": {
+    "viewport": {
+      "width": 460,
+      "height": 160
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"ml\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;width:240px;text-decoration:underline;color:#111\">This is a multi-line underlined paragraph that wraps onto several separate lines each carrying its own underline.</div></body></html>",
+    "measureText": [
+      {
+        "text": "This is a multi-line underlined paragraph that wraps onto several separate lines each carrying its own underline.",
+        "font": "14px 'Noto Sans'"
+      }
+    ],
+    "rects": [
+      "ml"
+    ],
+    "textElements": [
+      "ml"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

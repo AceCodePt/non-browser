@@ -1,0 +1,31 @@
+{
+  "name": "letter-spacing-decorations",
+  "note": "letter-spacing combined with text decorations: the decoration spans the full spaced text advance including the trailing letter-spacing.",
+  "harvest": {
+    "viewport": {
+      "width": 460,
+      "height": 140
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"ld1\" style=\"font-family:'Noto Sans';font-size:16px;line-height:24px;letter-spacing:4px;text-decoration:underline;color:#111\">Spread out and underlined.</div><div id=\"ld2\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;letter-spacing:2px;text-decoration:line-through overline;color:#222\">Spaced strike and overline.</div></body></html>",
+    "measureText": [
+      {
+        "text": "Spread out and underlined.",
+        "font": "16px 'Noto Sans'"
+      }
+    ],
+    "rects": [
+      "ld1",
+      "ld2"
+    ],
+    "textElements": [
+      "ld1",
+      "ld2"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "name": "decorations-mixed",
+  "note": "Multiple text-decoration lines on one element (underline + line-through + overline) and combined lines with per-element decoration colors.",
+  "harvest": {
+    "viewport": {
+      "width": 460,
+      "height": 160
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"m1\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;text-decoration:underline line-through overline;color:#111\">All three decoration lines together.</div><div id=\"m2\" style=\"font-family:'Noto Sans';font-size:16px;line-height:24px;text-decoration:underline;text-decoration-color:#00a;color:#333\">Blue underline.</div><div id=\"m3\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;text-decoration:line-through overline;text-decoration-color:#0a0;color:#222\">Green strike and overline.</div></body></html>",
+    "measureText": [
+      {
+        "text": "All three decoration lines together.",
+        "font": "14px 'Noto Sans'"
+      }
+    ],
+    "rects": [
+      "m1",
+      "m2",
+      "m3"
+    ],
+    "textElements": [
+      "m1",
+      "m2",
+      "m3"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

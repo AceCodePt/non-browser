@@ -1,0 +1,33 @@
+{
+  "measureText": {
+    "12px 'Noto Sans' | Small.": 33.94822692871094,
+    "32px 'Noto Sans' | Extra large.": 170.5283660888672
+  },
+  "computedStyle": {},
+  "rect": {
+    "z1": {
+      "x": 0,
+      "y": 0,
+      "width": 460,
+      "height": 18
+    },
+    "z2": {
+      "x": 0,
+      "y": 18,
+      "width": 460,
+      "height": 24
+    },
+    "z3": {
+      "x": 0,
+      "y": 42,
+      "width": 460,
+      "height": 36
+    },
+    "z4": {
+      "x": 0,
+      "y": 78,
+      "width": 460,
+      "height": 48
+    }
+  }
+}

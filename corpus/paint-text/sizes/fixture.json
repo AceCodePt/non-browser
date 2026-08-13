@@ -1,0 +1,39 @@
+{
+  "name": "sizes",
+  "note": "text-decoration geometry across four font sizes in one document: underline thickness and position scale with the font's vertical metrics.",
+  "harvest": {
+    "viewport": {
+      "width": 460,
+      "height": 220
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"z1\" style=\"font-family:'Noto Sans';font-size:12px;line-height:18px;text-decoration:underline;color:#111\">Small.</div><div id=\"z2\" style=\"font-family:'Noto Sans';font-size:16px;line-height:24px;text-decoration:underline;color:#222\">Medium.</div><div id=\"z3\" style=\"font-family:'Noto Sans';font-size:24px;line-height:36px;text-decoration:underline;color:#333\">Large.</div><div id=\"z4\" style=\"font-family:'Noto Sans';font-size:32px;line-height:48px;text-decoration:underline;color:#444\">Extra large.</div></body></html>",
+    "measureText": [
+      {
+        "text": "Small.",
+        "font": "12px 'Noto Sans'"
+      },
+      {
+        "text": "Extra large.",
+        "font": "32px 'Noto Sans'"
+      }
+    ],
+    "rects": [
+      "z1",
+      "z2",
+      "z3",
+      "z4"
+    ],
+    "textElements": [
+      "z1",
+      "z2",
+      "z3",
+      "z4"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

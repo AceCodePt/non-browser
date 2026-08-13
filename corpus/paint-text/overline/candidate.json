@@ -1,0 +1,27 @@
+{
+  "measureText": {
+    "14px 'Noto Sans' | Overlined text here.": 130.2100067138672,
+    "22px 'Noto Sans' | Bigger overline.": 163.0399932861328
+  },
+  "computedStyle": {},
+  "rect": {
+    "o1": {
+      "x": 0,
+      "y": 0,
+      "width": 460,
+      "height": 22
+    },
+    "o2": {
+      "x": 0,
+      "y": 22,
+      "width": 460,
+      "height": 34
+    },
+    "o3": {
+      "x": 0,
+      "y": 56,
+      "width": 460,
+      "height": 22
+    }
+  }
+}

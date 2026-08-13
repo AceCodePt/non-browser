@@ -1,0 +1,37 @@
+{
+  "name": "line-through",
+  "note": "text-decoration: line-through across sizes, with text-decoration-thickness and a color override.",
+  "harvest": {
+    "viewport": {
+      "width": 460,
+      "height": 150
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"s1\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;text-decoration:line-through;color:#111\">The quick brown fox jumps over the lazy dog.</div><div id=\"s2\" style=\"font-family:'Noto Sans';font-size:18px;line-height:28px;text-decoration:line-through;text-decoration-thickness:2px;color:#2a2\">A thicker line through the middle.</div><div id=\"s3\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;text-decoration:line-through;text-decoration-color:#c00;color:#333\">Colored strike.</div></body></html>",
+    "measureText": [
+      {
+        "text": "The quick brown fox jumps over the lazy dog.",
+        "font": "14px 'Noto Sans'"
+      },
+      {
+        "text": "A thicker line through the middle.",
+        "font": "18px 'Noto Sans'"
+      }
+    ],
+    "rects": [
+      "s1",
+      "s2",
+      "s3"
+    ],
+    "textElements": [
+      "s1",
+      "s2",
+      "s3"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

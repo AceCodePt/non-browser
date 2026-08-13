@@ -99,6 +99,8 @@ export type ContentAlign =
   | 'space-around'
   | 'space-evenly';
 
+export type DecorationLine = 'underline' | 'line-through' | 'overline';
+
 export interface ComputedStyle {
   display: 'block' | 'none' | 'grid' | 'inline-grid';
   float: 'none' | 'left' | 'right';
@@ -124,6 +126,18 @@ export interface ComputedStyle {
   fontSize: number;
   lineHeight: number;
   whiteSpace: 'normal' | 'nowrap' | 'pre';
+
+  // --- text paint properties ---
+  /** letter-spacing in px (0 = normal). Negative values are allowed. */
+  letterSpacing: number;
+  /** active text-decoration lines, in the order they should paint. */
+  textDecorationLines: DecorationLine[];
+  /** text-decoration-color; null = currentColor (the element's color). */
+  textDecorationColor: Color | null;
+  /** text-decoration-thickness resolution. */
+  textDecorationThickness: 'auto' | 'from-font' | { px: number };
+  /** text-underline-offset in px (0 = auto). */
+  textUnderlineOffset: number;
 
   // --- grid container properties ---
   gridTemplateColumns: GridTemplate | null;
@@ -556,12 +570,90 @@ function parseLineHeight(value: string, fontSize: number): number {
   return fontSize * 1.2;
 }
 
+/** Parse `letter-spacing`: a px length (negative allowed) or `normal` → 0. */
+function parseLetterSpacing(value: string): number {
+  const s = value.trim();
+  if (s === 'normal' || s === 'inherit') return 0;
+  const m = s.match(/^(-?[\d.]+)(px)?$/);
+  if (m) return parseFloat(m[1]);
+  return 0;
+}
+
+/** Parse `text-decoration-line` into an ordered line list. */
+function parseDecorationLines(value: string): DecorationLine[] {
+  const s = value.trim();
+  if (s === '' || s === 'none' || s === 'inherit') return [];
+  const out: DecorationLine[] = [];
+  if (s.includes('underline')) out.push('underline');
+  if (s.includes('line-through')) out.push('line-through');
+  if (s.includes('overline')) out.push('overline');
+  return out;
+}
+
+/** Parse `text-decoration-thickness`: auto | from-font | <length>. */
+function parseDecorationThickness(value: string): 'auto' | 'from-font' | { px: number } {
+  const s = value.trim();
+  if (s === 'auto' || s === 'inherit') return 'auto';
+  if (s === 'from-font') return 'from-font';
+  const m = s.match(/^(-?[\d.]+)(px)?$/);
+  if (m) return { px: parseFloat(m[1]) };
+  return 'auto';
+}
+
+/** Parse a px length; `auto` → 0. Used for text-underline-offset. */
+function parsePxOffset(value: string): number {
+  const s = value.trim();
+  if (s === 'auto' || s === 'inherit') return 0;
+  const m = s.match(/^(-?[\d.]+)(px)?$/);
+  if (m) return parseFloat(m[1]);
+  return 0;
+}
+
+/**
+ * Parse the `text-decoration` shorthand. Tokens: line keywords, a color, a
+ * thickness (px/from-font), style keywords (only solid is painted; others are
+ * treated as solid). Returns the resolved line list, color (null = currentColor),
+ * thickness, and underline offset contribution (none from the shorthand).
+ */
+function parseDecorationShorthand(value: string): {
+  lines: DecorationLine[];
+  color: Color | null;
+  thickness: 'auto' | 'from-font' | { px: number };
+} {
+  const tokens = value.trim().split(/\s+/);
+  const lines: DecorationLine[] = [];
+  let color: Color | null = null;
+  let thickness: 'auto' | 'from-font' | { px: number } = 'auto';
+  for (const tok of tokens) {
+    if (tok === 'underline' || tok === 'line-through' || tok === 'overline') {
+      if (!lines.includes(tok)) lines.push(tok);
+    } else if (tok === 'from-font') {
+      thickness = 'from-font';
+    } else if (tok === 'solid' || tok === 'double' || tok === 'dotted' || tok === 'dashed' || tok === 'wavy') {
+      // solid only in scope; others fall back to solid
+    } else {
+      const m = tok.match(/^(-?[\d.]+)(px)?$/);
+      if (m) {
+        thickness = { px: parseFloat(m[1]) };
+      } else if (color === null && /^[#a-zA-Z]/.test(tok)) {
+        color = parseColor(tok);
+      }
+    }
+  }
+  return { lines, color, thickness };
+}
+
 interface Defaults {
   fontFamily: string;
   fontSize: number;
   color: Color;
   lineHeight: number;
   display: 'block' | 'none';
+  letterSpacing?: number;
+  textDecorationLines?: DecorationLine[];
+  textDecorationColor?: Color | null;
+  textDecorationThickness?: 'auto' | 'from-font' | { px: number };
+  textUnderlineOffset?: number;
 }
 export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedStyle {
   const color = (name: string, dflt: Color): Color => {
@@ -701,6 +793,34 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
         : 'normal'
     : 'normal';
 
+  // --- text paint properties (inherited) ---
+  const letterSpacingDecl = decls.find((d) => d.property === 'letter-spacing');
+  const letterSpacing = letterSpacingDecl ? parseLetterSpacing(letterSpacingDecl.value) : defaults.letterSpacing ?? 0;
+
+  let textDecorationLines = defaults.textDecorationLines ?? [];
+  let textDecorationColor: Color | null = defaults.textDecorationColor ?? null;
+  let textDecorationThickness: 'auto' | 'from-font' | { px: number } =
+    defaults.textDecorationThickness ?? 'auto';
+  const decShort = decls.find((d) => d.property === 'text-decoration');
+  if (decShort) {
+    const sh = parseDecorationShorthand(decShort.value);
+    textDecorationLines = sh.lines.length > 0 ? sh.lines : textDecorationLines;
+    if (sh.color !== null) textDecorationColor = sh.color;
+    if (sh.thickness !== 'auto') textDecorationThickness = sh.thickness;
+  }
+  // Longhands override the shorthand (matches source-order semantics for the
+  // common shorthand-then-override pattern).
+  const decLineDecl = decls.find((d) => d.property === 'text-decoration-line');
+  if (decLineDecl) textDecorationLines = parseDecorationLines(decLineDecl.value);
+  const decColorDecl = decls.find((d) => d.property === 'text-decoration-color');
+  if (decColorDecl) textDecorationColor = parseColor(decColorDecl.value);
+  const decThicknessDecl = decls.find((d) => d.property === 'text-decoration-thickness');
+  if (decThicknessDecl) textDecorationThickness = parseDecorationThickness(decThicknessDecl.value);
+  const decOffsetDecl = decls.find((d) => d.property === 'text-underline-offset');
+  const textUnderlineOffset = decOffsetDecl
+    ? parsePxOffset(decOffsetDecl.value)
+    : defaults.textUnderlineOffset ?? 0;
+
   // --- grid properties ---
   const decl = (name: string) => decls.find((d) => d.property === name)?.value;
 
@@ -807,6 +927,12 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     fontSize,
     lineHeight,
     whiteSpace,
+
+    letterSpacing,
+    textDecorationLines,
+    textDecorationColor: textDecorationColor ?? defaults.textDecorationColor ?? null,
+    textDecorationThickness,
+    textUnderlineOffset,
 
     gridTemplateColumns: templateCols,
     gridTemplateRows: templateRows,

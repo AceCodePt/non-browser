@@ -42,10 +42,15 @@ export function renderHtml(html: string, opts: RenderOptions): RenderOutput {
     fontSize: opts.fontSize ?? 16,
     lineHeight: opts.lineHeight ?? 19,
     color: { r: 0, g: 0, b: 0, a: 1 },
+    letterSpacing: 0,
+    textDecorationLines: [],
+    textDecorationColor: null,
+    textDecorationThickness: 'auto',
+    textUnderlineOffset: 0,
   });
 
   const root = layoutRoot(body, styles, opts.width);
-  return paint(root, opts.width, opts.height, Object.keys(collectIds(body)));
+  return paint(root, opts.width, opts.height, Object.keys(collectIds(body)), opts.fontFile);
 }
 
 function collectIds(el: P5Element): Record<string, boolean> {

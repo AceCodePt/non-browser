@@ -1,0 +1,26 @@
+{
+  "measureText": {
+    "14px 'Noto Sans' | All three decoration lines together.": 225.97311401367188
+  },
+  "computedStyle": {},
+  "rect": {
+    "m1": {
+      "x": 0,
+      "y": 0,
+      "width": 460,
+      "height": 22
+    },
+    "m2": {
+      "x": 0,
+      "y": 22,
+      "width": 460,
+      "height": 24
+    },
+    "m3": {
+      "x": 0,
+      "y": 46,
+      "width": 460,
+      "height": 22
+    }
+  }
+}
