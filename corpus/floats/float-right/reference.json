@@ -1,0 +1,20 @@
+{
+  "measureText": {
+    "14px 'Noto Sans' | The quick brown fox jumps over the lazy dog": 293.01885986328125
+  },
+  "computedStyle": {},
+  "rect": {
+    "fl": {
+      "x": 210,
+      "y": 10,
+      "width": 80,
+      "height": 56
+    },
+    "p1": {
+      "x": 10,
+      "y": 10,
+      "width": 280,
+      "height": 80
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "float-margins",
+  "note": "A left float with margin, padding and a 2px border. The float's margin box (12px on every side) defines both the space its border box occupies and how much line boxes must give up: intrusion is 12+80+12 = 104px for the float's full margin-box height (12+56+12 = 80px).",
+  "harvest": {
+    "viewport": { "width": 320, "height": 180 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div style=\"width:280px;background:#f0f0f0;padding:10px\"><div id=\"fl\" style=\"float:left;width:80px;height:56px;margin:12px;padding:8px;border:2px solid #2c6fae;background:#4a90d9\"></div><p id=\"p1\" style=\"margin:0;font-family:'Noto Sans';font-size:14px;line-height:20px;color:#333\">The quick brown fox jumps over the lazy dog and runs around the padded blue box that sits beside this paragraph of text.</p></div></body></html>",
+    "measureText": [
+      { "text": "The quick brown fox jumps over the lazy dog", "font": "14px 'Noto Sans'" },
+      { "text": "and runs around the padded blue box", "font": "14px 'Noto Sans'" }
+    ],
+    "rects": ["fl", "p1"],
+    "textElements": ["p1"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

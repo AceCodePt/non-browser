@@ -1,0 +1,17 @@
+{
+  "name": "clear-both",
+  "note": "clear:both — a block after a left float and a taller right float clears to the bottom of whichever is lowest (the right float's 72px). No text, so the screenshot is fully strict.",
+  "harvest": {
+    "viewport": { "width": 320, "height": 180 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div style=\"width:280px;background:#f0f0f0;padding:10px\"><div id=\"f1\" style=\"float:left;width:60px;height:48px;background:#4a90d9\"></div><div id=\"f2\" style=\"float:right;width:60px;height:72px;background:#d9534f\"></div><div id=\"b1\" style=\"clear:both;height:36px;background:#90b04f\"></div></div></body></html>",
+    "measureText": [],
+    "rects": ["f1", "f2", "b1"],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "clear-left",
+  "note": "clear:left — a block that follows a left float is pushed below the float's bottom margin edge (clearance), instead of overlapping it. This fixture has no text, so the screenshot is fully strict (no mask).",
+  "harvest": {
+    "viewport": { "width": 320, "height": 160 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div style=\"width:280px;background:#f0f0f0;padding:10px\"><div id=\"f1\" style=\"float:left;width:80px;height:48px;background:#4a90d9\"></div><div id=\"b1\" style=\"clear:left;height:36px;background:#90b04f\"></div></div></body></html>",
+    "measureText": [],
+    "rects": ["f1", "b1"],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

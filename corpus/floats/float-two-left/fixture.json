@@ -1,0 +1,19 @@
+{
+  "name": "float-two-left",
+  "note": "Two left floats side by side: the second is placed to the right of the first on the same band. The combined 130px intrusion shortens lines while either float overlaps them vertically.",
+  "harvest": {
+    "viewport": { "width": 320, "height": 180 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div style=\"width:280px;background:#f0f0f0;padding:10px\"><div id=\"f1\" style=\"float:left;width:70px;height:48px;background:#4a90d9\"></div><div id=\"f2\" style=\"float:left;width:60px;height:56px;background:#8e44ad\"></div><p id=\"p1\" style=\"margin:0;font-family:'Noto Sans';font-size:14px;line-height:20px;color:#333\">The quick brown fox jumps over the lazy dog and runs around the two boxes that sit side by side on the left.</p></div></body></html>",
+    "measureText": [
+      { "text": "The quick brown fox jumps over the lazy dog", "font": "14px 'Noto Sans'" }
+    ],
+    "rects": ["f1", "f2", "p1"],
+    "textElements": ["p1"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "float-wrap-multi",
+  "note": "A tall left float and a shorter right float at different heights, with a long paragraph that wraps around both. The intrusion available to each line changes by vertical band: 60+50px while both floats overlap, 60px after the right float ends, and the full width below the left float.",
+  "harvest": {
+    "viewport": { "width": 320, "height": 260 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div style=\"width:280px;background:#f0f0f0;padding:10px\"><div id=\"f1\" style=\"float:left;width:60px;height:120px;background:#4a90d9\"></div><div id=\"f2\" style=\"float:right;width:50px;height:70px;background:#d9534f\"></div><p id=\"p1\" style=\"margin:0;font-family:'Noto Sans';font-size:14px;line-height:20px;color:#333\">The quick brown fox jumps over the lazy dog and runs around the tall blue box on the left while the shorter red box presses in from the right edge, so each line of this paragraph must dodge whichever floats are beside it at that height.</p></div></body></html>",
+    "measureText": [
+      { "text": "The quick brown fox jumps over the lazy dog", "font": "14px 'Noto Sans'" },
+      { "text": "runs around the tall blue box on the left", "font": "14px 'Noto Sans'" },
+      { "text": "shorter red box presses in from the right", "font": "14px 'Noto Sans'" }
+    ],
+    "rects": ["f1", "f2", "p1"],
+    "textElements": ["p1"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "float-negative-margin",
+  "note": "A float with a negative right margin. The margin box (and therefore the line-box intrusion) shrinks to 64px, so text starts at x=74 — inside the float's border box — demonstrating that intrusion is governed by the margin box, not the border box.",
+  "harvest": {
+    "viewport": { "width": 320, "height": 160 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div style=\"width:280px;background:#f0f0f0;padding:10px\"><div id=\"f1\" style=\"float:left;width:80px;height:56px;background:#4a90d9;margin-right:-16px\"></div><p id=\"p1\" style=\"margin:0;font-family:'Noto Sans';font-size:14px;line-height:20px;color:#333\">The quick brown fox jumps over the lazy dog and runs around the blue box whose right margin pulls the text close.</p></div></body></html>",
+    "measureText": [
+      { "text": "The quick brown fox jumps over the lazy dog", "font": "14px 'Noto Sans'" },
+      { "text": "whose right margin pulls the text close", "font": "14px 'Noto Sans'" }
+    ],
+    "rects": ["f1", "p1"],
+    "textElements": ["p1"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "measureText": {},
+  "computedStyle": {},
+  "rect": {
+    "f1": {
+      "x": 10,
+      "y": 10,
+      "width": 80,
+      "height": 48
+    },
+    "b1": {
+      "x": 10,
+      "y": 10,
+      "width": 280,
+      "height": 32
+    },
+    "b2": {
+      "x": 10,
+      "y": 78,
+      "width": 280,
+      "height": 28
+    }
+  }
+}

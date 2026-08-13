@@ -1,0 +1,17 @@
+{
+  "name": "clear-margin-collapse",
+  "note": "Margin-collapsing interacting with clearance (§9.5.2): a left float, then an in-flow block (margin-bottom 24px), then a clear:left block with margin-top 36px. The top margin collapses with the previous sibling's bottom margin (36px wins); the hypothetical border-top lands at 68px (content-relative), which is below the float's bottom (48px), so no clearance is needed and the collapsed margin stands.",
+  "harvest": {
+    "viewport": { "width": 320, "height": 180 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div style=\"width:280px;background:#f0f0f0;padding:10px\"><div id=\"f1\" style=\"float:left;width:80px;height:48px;background:#4a90d9\"></div><div id=\"b1\" style=\"height:32px;background:#e0e0e0;margin-bottom:24px\"></div><div id=\"b2\" style=\"clear:left;margin-top:36px;height:28px;background:#90b04f\"></div></div></body></html>",
+    "measureText": [],
+    "rects": ["f1", "b1", "b2"],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}
