@@ -1,0 +1,42 @@
+{
+  "name": "minmax-fitcontent",
+  "note": "minmax(), fit-content() and auto tracks sized by text: minmax(80px,160px), fit-content(120px) with a long label, and an auto column.",
+  "harvest": {
+    "viewport": {
+      "width": 320,
+      "height": 100
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"g\" style=\"display:grid;grid-template-columns:minmax(80px,160px) fit-content(120px) auto;gap:8px;background:#f0f0f0;width:320px\"><div id=\"a\" style=\"font-family:'Noto Sans';font-size:14px;line-height:20px;background:#4a90d9\">columns</div><div id=\"b\" style=\"font-family:'Noto Sans';font-size:14px;line-height:20px;background:#d9534f\">wide label that wraps</div><div id=\"c\" style=\"font-family:'Noto Sans';font-size:14px;line-height:20px;background:#90b04f\">tail</div></div></body></html>",
+    "measureText": [
+      {
+        "text": "columns",
+        "font": "14px 'Noto Sans'"
+      },
+      {
+        "text": "wide label that wraps",
+        "font": "14px 'Noto Sans'"
+      },
+      {
+        "text": "tail",
+        "font": "14px 'Noto Sans'"
+      }
+    ],
+    "rects": [
+      "g",
+      "a",
+      "b",
+      "c"
+    ],
+    "textElements": [
+      "a",
+      "b",
+      "c"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

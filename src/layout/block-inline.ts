@@ -16,6 +16,7 @@
 import { parseStyleAttribute, resolveLength, makeStyle, type ComputedStyle, type Color } from './css.js';
 import { layoutTextLines, measureTextWidth, type LineBox } from './measure.js';
 import { FloatManager, type FormattingContext } from './floats.js';
+import { layoutGridChildren } from './grid.js';
 import type { P5Element, P5Text } from './types.js';
 import type { Box } from '../harness/fixtures.js';
 
@@ -181,7 +182,7 @@ function hasInlineContent(el: P5Element, styles: Map<P5Element, ComputedStyle>):
       if (/\S/.test((child as P5Text).value)) return true;
     } else if (child.nodeName !== '#comment') {
       const s = styles.get(child as P5Element);
-      if (s && (s.display === 'block' || s.float !== 'none')) continue;
+      if (s && (s.display === 'block' || s.display === 'grid' || s.float !== 'none')) continue;
       return true;
     }
   }
@@ -195,7 +196,7 @@ function collectInlineText(el: P5Element, styles: Map<P5Element, ComputedStyle>)
       out += (child as P5Text).value;
     } else if (child.nodeName !== '#comment') {
       const s = styles.get(child as P5Element);
-      if (s && s.display === 'block') continue;
+      if (s && (s.display === 'block' || s.display === 'grid')) continue;
       out += collectInlineText(child as P5Element, styles);
     }
   }
@@ -212,7 +213,7 @@ interface LayoutBlockInput {
 }
 
 /** Lay out an element's border box and inline/block content. */
-function layoutElementBox(
+export function layoutElementBox(
   el: P5Element,
   style: ComputedStyle,
   fm: FormattingContext,
@@ -225,6 +226,7 @@ function layoutElementBox(
   styles: Map<P5Element, ComputedStyle>,
   paints: PaintOp[],
   nextOrder: () => number,
+  forcedHeight?: number,
 ): LayoutNode {
   const children: LayoutNode[] = [];
   let lines: LineBox[] = [];
@@ -258,7 +260,27 @@ function layoutElementBox(
   const padBorderV = padT + padB + bT + bB;
   const padBorderH = padL + padR + bL + bR;
 
-  if (hasInlineContent(el, styles)) {
+  const isGrid = style.display === 'grid' || style.display === 'inline-grid';
+  if (isGrid) {
+    const specH = resolveLength(style.height, contentWidth);
+    const availableHeight =
+      specH !== null
+        ? Math.max(0, (style.boxSizing === 'border-box' ? specH : specH + padBorderV) - padBorderV)
+        : null;
+    const res = layoutGridChildren({
+      el,
+      style,
+      styles,
+      contentX,
+      contentY,
+      contentWidth,
+      availableHeight,
+      paints,
+      nextOrder,
+    });
+    children.push(...res.children);
+    contentHeight = res.height;
+  } else if (hasInlineContent(el, styles)) {
     const text = collectInlineText(el, styles);
     const lineRes = layoutTextLines({
       text,
@@ -291,11 +313,13 @@ function layoutElementBox(
 
   const specH = resolveLength(style.height, contentWidth);
   const resolvedHeight =
-    specH !== null
-      ? style.boxSizing === 'border-box'
-        ? specH
-        : specH + padBorderV
-      : contentHeight + padBorderV;
+    forcedHeight !== undefined
+      ? forcedHeight
+      : specH !== null
+        ? style.boxSizing === 'border-box'
+          ? specH
+          : specH + padBorderV
+        : contentHeight + padBorderV;
 
   const node: LayoutNode = {
     element: el,

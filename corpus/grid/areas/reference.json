@@ -1,0 +1,36 @@
+{
+  "measureText": {},
+  "computedStyle": {},
+  "rect": {
+    "g": {
+      "x": 0,
+      "y": 0,
+      "width": 320,
+      "height": 146
+    },
+    "h": {
+      "x": 0,
+      "y": 0,
+      "width": 320,
+      "height": 40
+    },
+    "n": {
+      "x": 0,
+      "y": 48,
+      "width": 80,
+      "height": 60
+    },
+    "m": {
+      "x": 88,
+      "y": 48,
+      "width": 232,
+      "height": 60
+    },
+    "f": {
+      "x": 0,
+      "y": 116,
+      "width": 320,
+      "height": 30
+    }
+  }
+}
