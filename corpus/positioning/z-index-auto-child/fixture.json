@@ -1,0 +1,17 @@
+{
+  "name": "z-index-auto-child",
+  "note": "A positioned element with z-index:auto does not create a stacking context, so its in-flow child paints with it at the auto level: a later positive z-index sibling paints above the child, while the whole auto group paints above plain in-flow content.",
+  "harvest": {
+    "viewport": { "width": 220, "height": 140 },
+    "html": "<html><head><style>body{margin:0;font-family:'Noto Sans';font-size:14px;line-height:20px}</style></head><body><div id=\"rel\" style=\"position:relative;width:100px;height:70px;background:#008000\"><div id=\"kid\" style=\"background:#ffa500;width:100px;height:70px\"></div></div><div id=\"z1\" style=\"position:absolute;left:50px;top:35px;z-index:1;width:100px;height:70px;background:#0000ff\"></div><div id=\"flow\" style=\"background:#ff0000;width:100px;height:20px\"></div></body></html>",
+    "measureText": [],
+    "rects": ["rel", "kid", "z1", "flow"],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

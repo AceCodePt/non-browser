@@ -1,0 +1,30 @@
+{
+  "measureText": {},
+  "computedStyle": {},
+  "rect": {
+    "one": {
+      "x": 0,
+      "y": 0,
+      "width": 320,
+      "height": 20
+    },
+    "rel": {
+      "x": 20,
+      "y": 30,
+      "width": 80,
+      "height": 40
+    },
+    "next": {
+      "x": 0,
+      "y": 60,
+      "width": 320,
+      "height": 20
+    },
+    "rel2": {
+      "x": -15,
+      "y": 72,
+      "width": 80,
+      "height": 40
+    }
+  }
+}

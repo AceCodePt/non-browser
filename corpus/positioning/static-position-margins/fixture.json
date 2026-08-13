@@ -1,0 +1,17 @@
+{
+  "name": "static-position-margins",
+  "note": "The static position tracks the box's hypothetical in-flow position through ancestor margins: an absolute box with auto offsets inside a margin-shifted, non-positioned wrapper lands at the wrapper's content edge.",
+  "harvest": {
+    "viewport": { "width": 320, "height": 150 },
+    "html": "<html><head><style>body{margin:0;font-family:'Noto Sans';font-size:14px;line-height:20px}</style></head><body><div id=\"p\" style=\"position:relative;width:220px;height:100px;padding-left:30px;background:#e0e0e0\"><div id=\"mid\" style=\"margin-left:40px;height:20px;background:#c0c0c0\"><div id=\"a\" style=\"position:absolute;width:40px;height:20px;background:#4a90d9\"></div></div></div></body></html>",
+    "measureText": [],
+    "rects": ["p", "mid", "a"],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

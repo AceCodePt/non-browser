@@ -18,11 +18,13 @@ import { layoutTextLines, measureTextWidth, type LineBox } from './measure.js';
 import { FloatManager, type FormattingContext } from './floats.js';
 import { layoutGridChildren } from './grid.js';
 import { layoutFlexChildren } from './flexbox.js';
+import { layoutPositionedChild, initialContainingBlock, type ContainingBlock } from './positioning.js';
 import type { P5Element, P5Text } from './types.js';
 import type { Box } from '../harness/fixtures.js';
 
 export { FloatManager };
 export type { FormattingContext };
+export { layoutPositionedChild, initialContainingBlock } from './positioning.js';
 
 export interface StyleDefaults {
   fontFamily: string;
@@ -112,6 +114,8 @@ export interface LayoutNode {
   isFloat: boolean;
   marginTop: number;
   marginBottom: number;
+  /** border-box top before relative offsets are applied (flow position). */
+  flowY: number;
   children: LayoutNode[];
   lines: LineBox[];
 }
@@ -125,7 +129,8 @@ export interface TextDecorationPaint {
 }
 
 export interface PaintOp {
-  z: 0 | 1 | 2;
+  /** stacking key: the paint-order path (CSS 2.1 Appendix E, linearized). */
+  key: number[];
   order: number;
   kind: 'bg' | 'border' | 'text';
   box: Box;
@@ -150,6 +155,63 @@ export interface RootLayout {
   paints: PaintOp[];
 }
 
+// ===== paint stacking + containing-block state =====
+// Layout is a single-threaded recursive descent, so module-level stacks are
+// safe and let grid/flexbox (which delegate children to layoutElementBox)
+// inherit the current context without threading parameters through them.
+
+/** Levels for the CSS 2.1 Appendix E steps, linearized into sort keys. */
+const STEP_INFLOW = 3;
+const STEP_FLOAT = 4;
+const STEP_INLINE = 5;
+const STEP_POSITIONED = 6;
+
+let paintScPath: number[] = [];
+let paintZAutoStack: boolean[] = [];
+let paintZAutoActive = false;
+
+let cbStack: ContainingBlock[] = [];
+
+/** The root containing block (the viewport); pending root abs/fixed boxes. */
+let icbEntry: ContainingBlock = { rect: { x: 0, y: 0, width: 0, height: 0 }, heightKnown: true, pending: [] };
+
+function paintLevelFor(style: ComputedStyle): number {
+  const z = style.zIndex;
+  if (z === null || z === 0) return STEP_POSITIONED;
+  if (z < 0) return z;
+  return STEP_POSITIONED + z;
+}
+
+/** Key for in-flow/float/inline content at the current stacking position. */
+function inFlowPaintKey(step: number): number[] {
+  return [...paintScPath, paintZAutoActive ? STEP_POSITIONED : step];
+}
+
+function pushPositionedPaint(style: ComputedStyle): { key: number[]; scPushed: boolean } {
+  if (style.zIndex === null) {
+    paintZAutoStack.push(paintZAutoActive);
+    paintZAutoActive = true;
+    return { key: [...paintScPath, STEP_POSITIONED], scPushed: false };
+  }
+  paintScPath.push(paintLevelFor(style));
+  paintZAutoStack.push(paintZAutoActive);
+  paintZAutoActive = false;
+  return { key: [...paintScPath], scPushed: true };
+}
+
+function popPositionedPaint(saved: { scPushed: boolean }): void {
+  if (saved.scPushed) paintScPath.pop();
+  paintZAutoActive = paintZAutoStack.pop() ?? false;
+}
+
+function comparePaintKeys(a: number[], b: number[]): number {
+  const n = Math.min(a.length, b.length);
+  for (let i = 0; i < n; i++) {
+    if (a[i] !== b[i]) return a[i] - b[i];
+  }
+  return a.length - b.length;
+}
+
 function collapseMargins(a: number, b: number): number {
   const maxPos = Math.max(a, b, 0);
   const sumNeg = (a < 0 ? a : 0) + (b < 0 ? b : 0);
@@ -163,6 +225,15 @@ export function layoutRoot(
 ): RootLayout {
   const style = styles.get(body)!;
   const viewportWidth = viewport.width;
+
+  // Reset per-render stacking/containing-block state.
+  paintScPath = [];
+  paintZAutoStack = [];
+  paintZAutoActive = false;
+  cbStack = [];
+  icbEntry = { rect: initialContainingBlock(viewport), heightKnown: true, pending: [] };
+  cbStack.push(icbEntry);
+
   const marginL = resolveLength(style.margin.left, viewportWidth, viewport) ?? 0;
   const marginR = resolveLength(style.margin.right, viewportWidth, viewport) ?? 0;
   const marginT = resolveLength(style.margin.top, viewportWidth, viewport) ?? 0;
@@ -194,7 +265,7 @@ export function layoutRoot(
   // Body background propagates to the canvas and paints behind everything.
   if (style.backgroundColor.a > 0) {
     paints.push({
-      z: 0,
+      key: [],
       order: order++,
       kind: 'bg',
       box: { x: 0, y: 0, width: viewportWidth, height: 0 },
@@ -222,7 +293,24 @@ export function layoutRoot(
     paints[0].box.height = bodyNode.borderHeight + marginT;
   }
 
-  paints.sort((a, b) => (a.z === b.z ? a.order - b.order : a.z - b.z));
+  // Out-of-flow boxes with no positioned ancestor resolve against the ICB.
+  for (const p of icbEntry.pending) {
+    const node = layoutPositionedChild(
+      p.el,
+      p.style,
+      icbEntry.rect,
+      p.staticX,
+      p.staticY,
+      styles,
+      paints,
+      () => order++,
+      viewport,
+    );
+    bodyNode.children.push(node);
+  }
+  cbStack.pop();
+
+  paints.sort((a, b) => comparePaintKeys(a.key, b.key) || a.order - b.order);
 
   return {
     root: bodyNode,
@@ -247,7 +335,7 @@ function hasInlineContent(el: P5Element, styles: Map<P5Element, ComputedStyle>):
   return false;
 }
 
-function collectInlineText(el: P5Element, styles: Map<P5Element, ComputedStyle>): string {
+export function collectInlineText(el: P5Element, styles: Map<P5Element, ComputedStyle>): string {
   let out = '';
   for (const child of el.childNodes) {
     if (child.nodeName === '#text') {
@@ -291,23 +379,6 @@ export function layoutElementBox(
   let lines: LineBox[] = [];
   let contentHeight = 0;
 
-  // An element's own background/border paints before its contents (CSS
-  // painting order: parent background first, then children in source order).
-  // Placeholders (height 0) are pushed here and finalized after layout so the
-  // order counter keeps them ahead of every child op.
-  const ownBg = style.backgroundColor.a > 0
-    ? {
-        z: 0 as const,
-        order: nextOrder(),
-        kind: 'bg' as const,
-        box: { x: borderX, y: borderY, width: borderWidth, height: 0 },
-        color: style.backgroundColor,
-      }
-    : null;
-  if (ownBg) paints.push(ownBg);
-  const ownBorder = pushBorders(paints, nextOrder, 0, style, borderX, borderY, borderWidth, 0);
-
-
   const bT = style.borderWidth.top;
   const bB = style.borderWidth.bottom;
   const bL = style.borderWidth.left;
@@ -318,6 +389,58 @@ export function layoutElementBox(
   const padR = resolveLength(style.padding.right, contentWidth, viewport) ?? 0;
   const padBorderV = padT + padB + bT + bB;
   const padBorderH = padL + padR + bL + bR;
+
+  // Positioned boxes push their paint key and containing block for the whole
+  // subtree; their own background/border is keyed to the pushed level.
+  const positioned = style.position !== 'static';
+  let posPaint: { key: number[]; scPushed: boolean } | null = null;
+  let ownKey: number[];
+  let cbEntry: ContainingBlock | null = null;
+  if (positioned) {
+    posPaint = pushPositionedPaint(style);
+    ownKey = posPaint.key;
+    if (style.position === 'fixed') {
+      cbEntry = {
+        rect: initialContainingBlock(viewport ?? { width: 0, height: 0 }),
+        heightKnown: true,
+        pending: [],
+      };
+    } else {
+      const specH = resolveLength(style.height, contentWidth, viewport);
+      cbEntry = {
+        rect: {
+          x: borderX,
+          y: borderY,
+          width: borderWidth,
+          height:
+            specH !== null
+              ? Math.max(0, (style.boxSizing === 'border-box' ? specH : specH + padBorderV) - bT - bB)
+              : 0,
+        },
+        heightKnown: specH !== null,
+        pending: [],
+      };
+    }
+    cbStack.push(cbEntry);
+  } else {
+    ownKey = inFlowPaintKey(STEP_INFLOW);
+  }
+
+  // An element's own background/border paints before its contents (CSS
+  // painting order: parent background first, then children in source order).
+  // Placeholders (height 0) are pushed here and finalized after layout so the
+  // order counter keeps them ahead of every child op.
+  const ownBg = style.backgroundColor.a > 0
+    ? {
+        key: ownKey,
+        order: nextOrder(),
+        kind: 'bg' as const,
+        box: { x: borderX, y: borderY, width: borderWidth, height: 0 },
+        color: style.backgroundColor,
+      }
+    : null;
+  if (ownBg) paints.push(ownBg);
+  const ownBorder = pushBorders(paints, nextOrder, ownKey, style, borderX, borderY, borderWidth, 0);
 
   const isGrid = style.display === 'grid' || style.display === 'inline-grid';
   if (isGrid) {
@@ -418,6 +541,7 @@ export function layoutElementBox(
     isFloat: false,
     marginTop: 0,
     marginBottom: 0,
+    flowY: borderY,
     children,
     lines,
   };
@@ -426,7 +550,7 @@ export function layoutElementBox(
   if (ownBorder) ownBorder.box.height = resolvedHeight;
   if (lines.length > 0) {
     paints.push({
-      z: 2,
+      key: inFlowPaintKey(STEP_INLINE),
       order: nextOrder(),
       kind: 'text',
       box: { x: borderX, y: borderY, width: borderWidth, height: resolvedHeight },
@@ -447,6 +571,32 @@ export function layoutElementBox(
       },
     });
   }
+
+  // A positioned element is the containing block for its out-of-flow
+  // descendants: finalize its padding-box height and lay them out.
+  if (cbEntry) {
+    if (!cbEntry.heightKnown) {
+      cbEntry.rect.height = Math.max(0, contentHeight + padT + padB);
+      cbEntry.heightKnown = true;
+    }
+    for (const p of cbEntry.pending) {
+      const cb = p.fixed ? icbEntry.rect : cbEntry.rect;
+      const posNode = layoutPositionedChild(
+        p.el,
+        p.style,
+        cb,
+        p.staticX,
+        p.staticY,
+        styles,
+        paints,
+        nextOrder,
+        viewport,
+      );
+      children.push(posNode);
+    }
+    cbStack.pop();
+  }
+  if (posPaint) popPositionedPaint(posPaint);
   void padBorderH;
   return node;
 }
@@ -500,15 +650,29 @@ function layoutBlock(
     if (specW === null) usableWidth = Math.max(0, autoWidth - i.left - i.right);
   }
 
+  // Relative offsets shift the box without affecting in-flow layout; the next
+  // sibling still starts at the un-offset flow position.
+  const cbRect = cbStack[cbStack.length - 1].rect;
+  let paintX = borderX;
+  let paintY = borderTop;
+  if (style.position === 'relative') {
+    const offL = resolveLength(style.left, cbRect.width, viewport);
+    const offR = resolveLength(style.right, cbRect.width, viewport);
+    const offT = resolveLength(style.top, cbRect.height, viewport);
+    const offB = resolveLength(style.bottom, cbRect.height, viewport);
+    paintX = borderX + (offL !== null ? offL : offR !== null ? -offR : 0);
+    paintY = borderTop + (offT !== null ? offT : offB !== null ? -offB : 0);
+  }
+
   const node = layoutElementBox(
     el,
     style,
     fm,
-    borderX,
-    borderTop,
+    paintX,
+    paintY,
     usableWidth,
-    borderX + bL + padL,
-    borderTop + style.borderWidth.top + (resolveLength(style.padding.top, contentWidth, viewport) ?? 0),
+    paintX + bL + padL,
+    paintY + style.borderWidth.top + (resolveLength(style.padding.top, contentWidth, viewport) ?? 0),
     Math.max(0, usableWidth - bL - bR - padL - padR),
     styles,
     paints,
@@ -517,6 +681,7 @@ function layoutBlock(
   );
   node.marginTop = marginT;
   node.marginBottom = marginB;
+  node.flowY = borderTop;
   return node;
 }
 
@@ -619,23 +784,24 @@ function layoutFloat(
     isFloat: true,
     marginTop: marginT,
     marginBottom: marginB,
+    flowY: placed.borderY,
     children: [],
     lines,
   };
 
   if (style.backgroundColor.a > 0) {
     paints.push({
-      z: 1,
+      key: inFlowPaintKey(STEP_FLOAT),
       order: nextOrder(),
       kind: 'bg',
       box: { x: placed.borderX, y: placed.borderY, width: borderBoxWidth, height: borderHeight },
       color: style.backgroundColor,
     });
   }
-  pushBorders(paints, nextOrder, 1, style, placed.borderX, placed.borderY, borderBoxWidth, borderHeight);
+  pushBorders(paints, nextOrder, inFlowPaintKey(STEP_FLOAT), style, placed.borderX, placed.borderY, borderBoxWidth, borderHeight);
   if (lines.length > 0) {
     paints.push({
-      z: 2,
+      key: inFlowPaintKey(STEP_INLINE),
       order: nextOrder(),
       kind: 'text',
       box: { x: placed.borderX, y: placed.borderY, width: borderBoxWidth, height: borderHeight },
@@ -675,13 +841,25 @@ function layoutBlockChildren(
     const el = child as P5Element;
     const style = styles.get(el);
     if (!style || style.display === 'none') continue;
+    if (style.position === 'absolute' || style.position === 'fixed') {
+      // Out of flow: recorded with its static position, laid out by the
+      // nearest positioned ancestor once that box's height is final.
+      cbStack[cbStack.length - 1].pending.push({
+        el,
+        style,
+        staticX: ctx.contentX,
+        staticY: y,
+        fixed: style.position === 'fixed',
+      });
+      continue;
+    }
     if (style.float !== 'none') {
       nodes.push(layoutFloat(el, style, { ...ctx, y }, styles, paints, nextOrder, viewport));
       continue;
     }
     const node = layoutBlock(el, style, { ...ctx, y, prevBottomMargin }, styles, paints, nextOrder, viewport);
     nodes.push(node);
-    y = node.borderY + node.borderHeight + node.marginBottom;
+    y = node.flowY + node.borderHeight + node.marginBottom;
     prevBottomMargin = node.marginBottom;
   }
   return { nodes, height: y - ctx.y };
@@ -701,7 +879,7 @@ function decorationPaint(style: ComputedStyle): TextDecorationPaint | null {
 function pushBorders(
   paints: PaintOp[],
   nextOrder: () => number,
-  z: 0 | 1,
+  key: number[],
   style: ComputedStyle,
   x: number,
   y: number,
@@ -716,7 +894,7 @@ function pushBorders(
   };
   if (!(widths.top || widths.right || widths.bottom || widths.left)) return null;
   const op: PaintOp = {
-    z,
+    key,
     order: nextOrder(),
     kind: 'border',
     box: { x, y, width: w, height: h },

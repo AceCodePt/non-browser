@@ -1,0 +1,30 @@
+{
+  "measureText": {},
+  "computedStyle": {},
+  "rect": {
+    "rel": {
+      "x": 0,
+      "y": 0,
+      "width": 100,
+      "height": 70
+    },
+    "kid": {
+      "x": 0,
+      "y": 0,
+      "width": 100,
+      "height": 70
+    },
+    "z1": {
+      "x": 50,
+      "y": 35,
+      "width": 100,
+      "height": 70
+    },
+    "flow": {
+      "x": 0,
+      "y": 70,
+      "width": 100,
+      "height": 20
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "absolute-stretch",
+  "note": "An absolutely positioned box with all four offsets set and auto width/height stretches to fill the containing block, and a box with an explicit height keeps that height even when its content is taller (content overflows instead of growing the box).",
+  "harvest": {
+    "viewport": { "width": 320, "height": 180 },
+    "html": "<html><head><style>body{margin:0;font-family:'Noto Sans';font-size:14px;line-height:20px}</style></head><body><div id=\"p\" style=\"position:relative;width:220px;height:120px;background:#e0e0e0\"><div id=\"a\" style=\"position:absolute;left:10px;right:20px;top:10px;bottom:15px;background:#4a90d9\"></div><div id=\"b\" style=\"position:absolute;left:10px;top:10px;bottom:10px;width:50px;height:40px;background:#d94a4a\"><div id=\"big\" style=\"height:80px;background:#2a9d4a\"></div></div></div></body></html>",
+    "measureText": [],
+    "rects": ["p", "a", "b", "big"],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

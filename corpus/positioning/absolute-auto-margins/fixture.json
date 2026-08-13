@@ -1,0 +1,17 @@
+{
+  "name": "absolute-auto-margins",
+  "note": "Auto margins center an absolutely positioned box whose opposite offsets are both set: left:0/right:0 with margin:auto centers horizontally, and top:0/bottom:0 with margin:auto centers vertically.",
+  "harvest": {
+    "viewport": { "width": 320, "height": 160 },
+    "html": "<html><head><style>body{margin:0;font-family:'Noto Sans';font-size:14px;line-height:20px}</style></head><body><div id=\"p\" style=\"position:relative;width:260px;height:130px;background:#e0e0e0\"><div id=\"a\" style=\"position:absolute;left:0;right:0;top:10px;width:60px;height:30px;margin:auto;background:#4a90d9\"></div><div id=\"b\" style=\"position:absolute;left:0;right:0;top:0;bottom:0;width:60px;height:30px;margin:auto;background:#d94a4a\"></div></div></body></html>",
+    "measureText": [],
+    "rects": ["p", "a", "b"],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

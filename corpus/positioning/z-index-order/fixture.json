@@ -1,0 +1,17 @@
+{
+  "name": "z-index-order",
+  "note": "Overlapping positioned boxes ordered by z-index: negative below in-flow, z-index 0 and auto in tree order, then positive z-index ascending. The painted pixels verify the full stacking order (no text, so nothing is masked).",
+  "harvest": {
+    "viewport": { "width": 240, "height": 140 },
+    "html": "<html><head><style>body{margin:0;font-family:'Noto Sans';font-size:14px;line-height:20px}</style></head><body><div id=\"n1\" style=\"position:absolute;left:0;top:0;z-index:-1;width:90px;height:70px;background:#0000ff\"></div><div id=\"z0\" style=\"position:absolute;left:45px;top:25px;z-index:0;width:90px;height:70px;background:#00ff00\"></div><div id=\"a\" style=\"position:absolute;left:20px;top:45px;width:90px;height:70px;background:#ff0000\"></div><div id=\"z1\" style=\"position:absolute;left:70px;top:10px;z-index:1;width:90px;height:70px;background:#ff00ff\"></div><div id=\"z2\" style=\"position:absolute;left:35px;top:35px;z-index:2;width:90px;height:70px;background:#00ffff\"></div></body></html>",
+    "measureText": [],
+    "rects": ["n1", "z0", "a", "z1", "z2"],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

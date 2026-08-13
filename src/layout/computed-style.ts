@@ -55,6 +55,18 @@ export function computedStyleString(style: ComputedStyle, prop: string, refWidth
       const d = style.display;
       return d === 'inline-grid' ? 'grid' : d;
     }
+    case 'position':
+      return style.position;
+    case 'z-index':
+      return style.zIndex === null ? 'auto' : String(style.zIndex);
+    case 'top':
+      return lengthString(style.top, refWidth, viewport);
+    case 'right':
+      return lengthString(style.right, refWidth, viewport);
+    case 'bottom':
+      return lengthString(style.bottom, refWidth, viewport);
+    case 'left':
+      return lengthString(style.left, refWidth, viewport);
     case 'font-size':
       return `${style.fontSize}px`;
     case 'font-family':

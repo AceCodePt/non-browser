@@ -1,0 +1,17 @@
+{
+  "name": "containing-block-percent",
+  "note": "Percentages resolve against the containing block: left/top/width against the positioned ancestor's padding box. The ancestor's height is content-based (an in-flow sibling), so the containing block height is the used content height.",
+  "harvest": {
+    "viewport": { "width": 320, "height": 160 },
+    "html": "<html><head><style>body{margin:0;font-family:'Noto Sans';font-size:14px;line-height:20px}</style></head><body><div id=\"p\" style=\"position:relative;width:200px;background:#e0e0e0\"><div id=\"flow\" style=\"height:60px;background:#c0c0c0\"></div><div id=\"a\" style=\"position:absolute;left:25%;top:50%;width:40%;height:20px;background:#4a90d9\"></div><div id=\"b\" style=\"position:absolute;bottom:0;left:0;width:30%;height:20px;background:#d94a4a\"></div></div></body></html>",
+    "measureText": [],
+    "rects": ["p", "a", "b"],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

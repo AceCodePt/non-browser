@@ -1,0 +1,17 @@
+{
+  "name": "containing-block-nested",
+  "note": "A nested absolutely positioned box resolves against its nearest positioned ancestor (an absolute parent): left:0/top:0 lands on the parent's padding-box corner, right:0/bottom:0 on the opposite corner.",
+  "harvest": {
+    "viewport": { "width": 320, "height": 180 },
+    "html": "<html><head><style>body{margin:0;font-family:'Noto Sans';font-size:14px;line-height:20px}</style></head><body><div id=\"p\" style=\"position:relative;width:240px;height:140px;background:#e0e0e0\"><div id=\"pa\" style=\"position:absolute;left:10px;top:10px;width:120px;height:80px;padding:5px;background:#4a90d9\"><div id=\"c\" style=\"position:absolute;left:0;top:0;width:40px;height:20px;background:#d94a4a\"></div><div id=\"d\" style=\"position:absolute;right:0;bottom:0;width:30px;height:20px;background:#2a9d4a\"></div></div></div></body></html>",
+    "measureText": [],
+    "rects": ["p", "pa", "c", "d"],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

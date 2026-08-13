@@ -133,6 +133,14 @@ export type DecorationLine = 'underline' | 'line-through' | 'overline';
 
 export interface ComputedStyle {
   display: 'block' | 'none' | 'grid' | 'inline-grid' | 'flex';
+  position: 'static' | 'relative' | 'absolute' | 'fixed';
+  /** null = auto (no stacking context). */
+  zIndex: number | null;
+  /** top/right/bottom/left offsets (positioned boxes); auto when length auto. */
+  top: Length;
+  right: Length;
+  bottom: Length;
+  left: Length;
   float: 'none' | 'left' | 'right';
   clear: 'none' | 'left' | 'right' | 'both';
   boxSizing: 'content-box' | 'border-box';
@@ -867,13 +875,28 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   })();
 
   const floatDecl = decls.find((d) => d.property === 'float');
-  const float: 'none' | 'left' | 'right' = floatDecl
+  const positionDecl = decls.find((d) => d.property === 'position');
+  const position: 'static' | 'relative' | 'absolute' | 'fixed' = (() => {
+    if (!positionDecl) return 'static';
+    const v = positionDecl.value.trim();
+    if (v === 'relative') return 'relative';
+    if (v === 'absolute') return 'absolute';
+    if (v === 'fixed') return 'fixed';
+    return 'static';
+  })();
+  // CSS 2.1 §9.7: float computes to 'none' for abs/fixed positioned boxes.
+  let float: 'none' | 'left' | 'right' = floatDecl
     ? floatDecl.value.trim() === 'left'
       ? 'left'
       : floatDecl.value.trim() === 'right'
         ? 'right'
         : 'none'
     : 'none';
+  if (position === 'absolute' || position === 'fixed') float = 'none';
+
+  const zIndexDecl = decls.find((d) => d.property === 'z-index');
+  const zIndex: number | null =
+    zIndexDecl && /^-?\d+$/.test(zIndexDecl.value.trim()) ? parseInt(zIndexDecl.value.trim(), 10) : null;
 
   const clearDecl = decls.find((d) => d.property === 'clear');
   const clear: 'none' | 'left' | 'right' | 'both' = clearDecl
@@ -1042,6 +1065,12 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
 
   return {
     display,
+    position,
+    zIndex,
+    top: len('top'),
+    right: len('right'),
+    bottom: len('bottom'),
+    left: len('left'),
     float,
     clear,
     boxSizing,

@@ -1,0 +1,20 @@
+{
+  "name": "absolute-static-position",
+  "note": "When offsets are auto, the absolutely positioned box falls back to its static position: the spot it would have occupied in flow. Its left edge lands on the containing block's content edge and its top after the preceding in-flow sibling.",
+  "harvest": {
+    "viewport": { "width": 320, "height": 160 },
+    "html": "<html><head><style>body{margin:0;font-family:'Noto Sans';font-size:14px;line-height:20px}</style></head><body><div id=\"p\" style=\"position:relative;width:280px;height:120px;padding:10px;background:#e0e0e0\"><div id=\"prev\" style=\"height:25px;background:#c0c0c0\"></div><div id=\"a\" style=\"position:absolute;width:60px;height:30px;background:#4a90d9\">A</div><div id=\"b\" style=\"position:absolute;left:auto;right:auto;top:auto;bottom:auto;width:50px;height:20px;background:#d94a4a\">B</div></div></body></html>",
+    "measureText": [
+      { "text": "A", "font": "14px 'Noto Sans'" },
+      { "text": "B", "font": "14px 'Noto Sans'" }
+    ],
+    "rects": ["p", "prev", "a", "b"],
+    "textElements": ["a", "b"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}
