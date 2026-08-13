@@ -1,0 +1,11 @@
+{
+  "name": "nested-flex",
+  "note": "a flex item that is itself a column flex container lays out its own children and contributes its used size to the parent row.",
+  "harvest": {
+    "viewport": { "width": 320, "height": 120 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c\" style=\"display:flex;width:300px;height:90px;background:#f0f0f0\"><div id=\"a\" style=\"flex:1;display:flex;flex-direction:column;background:#4a90d9\"><div id=\"a1\" style=\"height:30px;background:#7ab0e0\"></div><div id=\"a2\" style=\"flex:1;background:#3a6f9f\"></div></div><div id=\"b\" style=\"flex:2;background:#d9534f\"></div><div id=\"e\" style=\"flex:1;background:#90b04f\"></div></div></body></html>",
+    "measureText": [],
+    "rects": ["c", "a", "a1", "a2", "b", "e"],
+    "textElements": []
+  }
+}

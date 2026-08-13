@@ -1,0 +1,11 @@
+{
+  "name": "row-reverse",
+  "note": "flex-direction:row-reverse starts the first item from the right edge.",
+  "harvest": {
+    "viewport": { "width": 320, "height": 50 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c\" style=\"display:flex;flex-direction:row-reverse;width:300px;height:40px;background:#f0f0f0\"><div id=\"a\" style=\"width:80px;height:40px;background:#4a90d9\"></div><div id=\"b\" style=\"width:80px;height:40px;background:#d9534f\"></div><div id=\"e\" style=\"width:80px;height:40px;background:#90b04f\"></div></div></body></html>",
+    "measureText": [],
+    "rects": ["c", "a", "b", "e"],
+    "textElements": []
+  }
+}

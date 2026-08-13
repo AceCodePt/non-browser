@@ -1,0 +1,11 @@
+{
+  "name": "column",
+  "note": "flex-direction:column: items stretch to the container width (align-items stretch default) and stack vertically with flex-grow filling the definite height.",
+  "harvest": {
+    "viewport": { "width": 220, "height": 260 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c\" style=\"display:flex;flex-direction:column;width:200px;height:240px;background:#f0f0f0\"><div id=\"a\" style=\"flex:1;background:#4a90d9\"></div><div id=\"b\" style=\"flex:2;background:#d9534f\"></div><div id=\"e\" style=\"flex:1;background:#90b04f\"></div></div></body></html>",
+    "measureText": [],
+    "rects": ["c", "a", "b", "e"],
+    "textElements": []
+  }
+}

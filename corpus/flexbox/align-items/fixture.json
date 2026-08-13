@@ -1,0 +1,11 @@
+{
+  "name": "align-items",
+  "note": "align-items variants: stretch (default) fills the container, flex-start/flex-end/center align within it, and a fixed-height item in the stretch row is placed at the start.",
+  "harvest": {
+    "viewport": { "width": 300, "height": 300 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c1\" style=\"display:flex;width:280px;height:70px;align-items:stretch;background:#f0f0f0\"><div id=\"a\" style=\"width:60px;flex:1;background:#4a90d9\"></div><div id=\"b\" style=\"width:60px;background:#d9534f\"></div><div id=\"e\" style=\"width:60px;flex:1;background:#90b04f\"></div></div><div id=\"c2\" style=\"display:flex;width:280px;height:70px;align-items:flex-start;margin-top:10px;background:#f0f0f0\"><div id=\"f\" style=\"width:60px;height:30px;background:#4a90d9\"></div><div id=\"g\" style=\"width:60px;height:50px;background:#d9534f\"></div><div id=\"h\" style=\"width:60px;height:40px;background:#90b04f\"></div></div><div id=\"c3\" style=\"display:flex;width:280px;height:70px;align-items:center;margin-top:10px;background:#f0f0f0\"><div id=\"i\" style=\"width:60px;height:30px;background:#4a90d9\"></div><div id=\"j\" style=\"width:60px;height:50px;background:#d9534f\"></div><div id=\"k\" style=\"width:60px;height:40px;background:#90b04f\"></div></div><div id=\"c4\" style=\"display:flex;width:280px;height:70px;align-items:flex-end;margin-top:10px;background:#f0f0f0\"><div id=\"l\" style=\"width:60px;height:30px;background:#4a90d9\"></div><div id=\"p\" style=\"width:60px;height:50px;background:#d9534f\"></div><div id=\"q\" style=\"width:60px;height:40px;background:#90b04f\"></div></div><div id=\"c5\" style=\"display:flex;width:280px;height:70px;align-items:stretch;margin-top:10px;background:#f0f0f0\"><div id=\"u\" style=\"width:60px;height:30px;background:#4a90d9\"></div><div id=\"v\" style=\"width:60px;flex:1;background:#d9534f\"></div><div id=\"w\" style=\"width:60px;height:40px;background:#90b04f\"></div></div></body></html>",
+    "measureText": [],
+    "rects": ["c1", "c2", "c3", "c4", "c5", "a", "b", "e", "f", "g", "h", "i", "j", "k", "l", "p", "q", "u", "v", "w"],
+    "textElements": []
+  }
+}

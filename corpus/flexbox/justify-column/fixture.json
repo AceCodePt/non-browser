@@ -1,0 +1,11 @@
+{
+  "name": "justify-column",
+  "note": "justify-content applies in the block (main) axis for columns: space-between stacks 20px items with the free 60px split between them.",
+  "harvest": {
+    "viewport": { "width": 170, "height": 140 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c\" style=\"display:flex;flex-direction:column;justify-content:space-between;width:150px;height:120px;background:#f0f0f0\"><div id=\"a\" style=\"height:20px;background:#4a90d9\"></div><div id=\"b\" style=\"height:20px;background:#d9534f\"></div><div id=\"e\" style=\"height:20px;background:#90b04f\"></div></div></body></html>",
+    "measureText": [],
+    "rects": ["c", "a", "b", "e"],
+    "textElements": []
+  }
+}

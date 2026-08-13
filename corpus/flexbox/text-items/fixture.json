@@ -1,0 +1,15 @@
+{
+  "name": "text-items",
+  "note": "intrinsic sizing: text items use their max-content width as the flex base and shrink (floored at the widest word) when the row overflows, wrapping text and growing their cross size.",
+  "harvest": {
+    "viewport": { "width": 340, "height": 120 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c\" style=\"display:flex;width:300px;background:#f0f0f0\"><div id=\"a\" style=\"flex:0 1 auto;font-family:'Noto Sans';font-size:14px;line-height:20px;background:#4a90d9\">alpha beta gamma delta</div><div id=\"b\" style=\"flex:0 1 auto;font-family:'Noto Sans';font-size:14px;line-height:20px;background:#d9534f\">epsilon zeta eta theta iota</div><div id=\"e\" style=\"flex:0 1 auto;font-family:'Noto Sans';font-size:14px;line-height:20px;background:#90b04f\">kappa lambda mu nu</div></div></body></html>",
+    "measureText": [
+      { "text": "alpha beta gamma delta", "font": "14px 'Noto Sans'" },
+      { "text": "epsilon zeta eta theta iota", "font": "14px 'Noto Sans'" },
+      { "text": "kappa lambda mu nu", "font": "14px 'Noto Sans'" }
+    ],
+    "rects": ["c", "a", "b", "e"],
+    "textElements": ["a", "b", "e"]
+  }
+}

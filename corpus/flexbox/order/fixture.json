@@ -1,0 +1,11 @@
+{
+  "name": "order",
+  "note": "order reorders flex items visually while keeping layout in order sequence: DOM order a,b,c,d paints as d,b,c,a.",
+  "harvest": {
+    "viewport": { "width": 220, "height": 60 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c\" style=\"display:flex;width:200px;height:40px;background:#f0f0f0\"><div id=\"a\" style=\"width:50px;height:40px;order:3;background:#4a90d9\"></div><div id=\"b\" style=\"width:50px;height:40px;order:1;background:#d9534f\"></div><div id=\"e\" style=\"width:50px;height:40px;order:2;background:#90b04f\"></div><div id=\"f\" style=\"width:50px;height:40px;background:#e8b04f\"></div></div></body></html>",
+    "measureText": [],
+    "rects": ["c", "a", "b", "e", "f"],
+    "textElements": []
+  }
+}

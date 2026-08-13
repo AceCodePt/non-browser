@@ -17,6 +17,7 @@ import { parseStyleAttribute, pxLength, resolveLength, makeStyle, type ComputedS
 import { layoutTextLines, measureTextWidth, type LineBox } from './measure.js';
 import { FloatManager, type FormattingContext } from './floats.js';
 import { layoutGridChildren } from './grid.js';
+import { layoutFlexChildren } from './flexbox.js';
 import type { P5Element, P5Text } from './types.js';
 import type { Box } from '../harness/fixtures.js';
 
@@ -239,7 +240,7 @@ function hasInlineContent(el: P5Element, styles: Map<P5Element, ComputedStyle>):
       if (/\S/.test((child as P5Text).value)) return true;
     } else if (child.nodeName !== '#comment') {
       const s = styles.get(child as P5Element);
-      if (s && (s.display === 'block' || s.display === 'grid' || s.float !== 'none')) continue;
+      if (s && (s.display === 'block' || s.display === 'grid' || s.display === 'flex' || s.float !== 'none')) continue;
       return true;
     }
   }
@@ -253,7 +254,7 @@ function collectInlineText(el: P5Element, styles: Map<P5Element, ComputedStyle>)
       out += (child as P5Text).value;
     } else if (child.nodeName !== '#comment') {
       const s = styles.get(child as P5Element);
-      if (s && (s.display === 'block' || s.display === 'grid')) continue;
+      if (s && (s.display === 'block' || s.display === 'grid' || s.display === 'flex')) continue;
       out += collectInlineText(child as P5Element, styles);
     }
   }
@@ -335,6 +336,29 @@ export function layoutElementBox(
       availableHeight,
       paints,
       nextOrder,
+    });
+    children.push(...res.children);
+    contentHeight = res.height;
+  } else if (style.display === 'flex') {
+    const specH = resolveLength(style.height, contentWidth, viewport);
+    const forcedContent = forcedHeight !== undefined ? Math.max(0, forcedHeight - padBorderV) : null;
+    const availableHeight =
+      forcedContent !== null
+        ? forcedContent
+        : specH !== null
+          ? Math.max(0, (style.boxSizing === 'border-box' ? specH : specH + padBorderV) - padBorderV)
+          : null;
+    const res = layoutFlexChildren({
+      el,
+      style,
+      styles,
+      contentX,
+      contentY,
+      contentWidth,
+      availableHeight,
+      paints,
+      nextOrder,
+      viewport,
     });
     children.push(...res.children);
     contentHeight = res.height;

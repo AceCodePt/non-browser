@@ -1,0 +1,11 @@
+{
+  "name": "flex-shrink",
+  "note": "flex-shrink: three equal 100px items in a 200px container each shrink by a third.",
+  "harvest": {
+    "viewport": { "width": 220, "height": 80 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c\" style=\"display:flex;width:200px;height:60px;background:#f0f0f0\"><div id=\"a\" style=\"flex:1 1 auto;width:100px;background:#4a90d9\"></div><div id=\"b\" style=\"flex:1 1 auto;width:100px;background:#d9534f\"></div><div id=\"e\" style=\"flex:1 1 auto;width:100px;background:#90b04f\"></div></div></body></html>",
+    "measureText": [],
+    "rects": ["c", "a", "b", "e"],
+    "textElements": []
+  }
+}

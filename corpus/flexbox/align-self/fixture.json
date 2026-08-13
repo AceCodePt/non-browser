@@ -1,0 +1,11 @@
+{
+  "name": "align-self",
+  "note": "align-self overrides align-items:flex-start: one item centers, one ends, one stretches, one uses baseline.",
+  "harvest": {
+    "viewport": { "width": 320, "height": 100 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c\" style=\"display:flex;width:300px;height:90px;align-items:flex-start;background:#f0f0f0\"><div id=\"a\" style=\"width:60px;height:30px;background:#4a90d9\"></div><div id=\"b\" style=\"width:60px;height:30px;align-self:center;background:#d9534f\"></div><div id=\"e\" style=\"width:60px;height:30px;align-self:flex-end;background:#90b04f\"></div><div id=\"f\" style=\"width:60px;align-self:stretch;background:#e8b04f\"></div></div></body></html>",
+    "measureText": [],
+    "rects": ["c", "a", "b", "e", "f"],
+    "textElements": []
+  }
+}
