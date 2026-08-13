@@ -1,0 +1,14 @@
+{
+  "name": "baseline",
+  "note": "align-items:baseline aligns the text baselines of items of different font sizes; a borderless box without text sits on the line baseline via its bottom edge.",
+  "harvest": {
+    "viewport": { "width": 320, "height": 90 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c\" style=\"display:flex;align-items:baseline;width:300px;background:#f0f0f0\"><div id=\"a\" style=\"font-family:'Noto Sans';font-size:24px;line-height:30px;background:#4a90d9\">Hello</div><div id=\"b\" style=\"font-family:'Noto Sans';font-size:14px;line-height:20px;background:#d9534f\">World</div><div id=\"e\" style=\"width:40px;height:40px;background:#90b04f\"></div></div></body></html>",
+    "measureText": [
+      { "text": "Hello", "font": "24px 'Noto Sans'" },
+      { "text": "World", "font": "14px 'Noto Sans'" }
+    ],
+    "rects": ["c", "a", "b", "e"],
+    "textElements": ["a", "b"]
+  }
+}

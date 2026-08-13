@@ -1,0 +1,11 @@
+{
+  "name": "flex-basis",
+  "note": "flex-basis auto vs fixed: auto uses width, fixed bases with flex-grow 1 share the free space proportionally, and flex:1 means basis 0%.",
+  "harvest": {
+    "viewport": { "width": 320, "height": 80 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c\" style=\"display:flex;width:300px;height:60px;background:#f0f0f0\"><div id=\"a\" style=\"flex:1;width:120px;background:#4a90d9\"></div><div id=\"b\" style=\"flex:1 1 60px;background:#d9534f\"></div><div id=\"e\" style=\"flex:1 1 0;width:100px;background:#90b04f\"></div></div></body></html>",
+    "measureText": [],
+    "rects": ["c", "a", "b", "e"],
+    "textElements": []
+  }
+}

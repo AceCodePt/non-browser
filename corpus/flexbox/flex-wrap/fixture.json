@@ -1,0 +1,11 @@
+{
+  "name": "flex-wrap",
+  "note": "flex-wrap:wrap packs 80px items into lines of the 220px row; the third item wraps to its own line.",
+  "harvest": {
+    "viewport": { "width": 240, "height": 140 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c\" style=\"display:flex;flex-wrap:wrap;width:220px;background:#f0f0f0\"><div id=\"a\" style=\"width:80px;height:60px;background:#4a90d9\"></div><div id=\"b\" style=\"width:80px;height:60px;background:#d9534f\"></div><div id=\"e\" style=\"width:80px;height:60px;background:#90b04f\"></div></div></body></html>",
+    "measureText": [],
+    "rects": ["c", "a", "b", "e"],
+    "textElements": []
+  }
+}

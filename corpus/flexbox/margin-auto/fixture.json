@@ -1,0 +1,11 @@
+{
+  "name": "margin-auto",
+  "note": "auto margins absorb free space: margin-left:auto pushes an item right, margin:auto centers a single item, and margin-top:auto pins an item to the container bottom.",
+  "harvest": {
+    "viewport": { "width": 320, "height": 160 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c1\" style=\"display:flex;width:300px;height:40px;background:#f0f0f0\"><div id=\"a\" style=\"width:50px;height:40px;background:#4a90d9\"></div><div id=\"b\" style=\"width:50px;height:40px;margin-left:auto;background:#d9534f\"></div><div id=\"e\" style=\"width:50px;height:40px;background:#90b04f\"></div></div><div id=\"c2\" style=\"display:flex;width:300px;height:40px;margin-top:8px;background:#f0f0f0\"><div id=\"f\" style=\"width:100px;height:40px;margin:auto;background:#e8b04f\"></div></div><div id=\"c3\" style=\"display:flex;width:300px;height:60px;margin-top:8px;background:#f0f0f0\"><div id=\"g\" style=\"width:100px;height:30px;margin-top:auto;background:#d0509a\"></div></div></body></html>",
+    "measureText": [],
+    "rects": ["c1", "c2", "c3", "a", "b", "e", "f", "g"],
+    "textElements": []
+  }
+}

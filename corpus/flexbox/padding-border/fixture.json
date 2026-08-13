@@ -1,0 +1,11 @@
+{
+  "name": "padding-border",
+  "note": "padding and border participate in flex sizing: content-box basis adds padding+border to the base size; box-sizing:border-box keeps the base at the specified size.",
+  "harvest": {
+    "viewport": { "width": 220, "height": 130 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c1\" style=\"display:flex;width:200px;height:50px;background:#f0f0f0\"><div id=\"a\" style=\"flex:1 1 80px;padding:10px;border:2px solid #333;background:#4a90d9\"></div><div id=\"b\" style=\"flex:1 1 80px;padding:10px;border:2px solid #333;background:#d9534f\"></div></div><div id=\"c2\" style=\"display:flex;width:200px;height:50px;margin-top:8px;background:#f0f0f0\"><div id=\"f\" style=\"flex:1 1 100px;box-sizing:border-box;padding:10px;border:2px solid #333;background:#90b04f\"></div><div id=\"g\" style=\"flex:1 1 100px;box-sizing:border-box;padding:10px;border:2px solid #333;background:#e8b04f\"></div></div></body></html>",
+    "measureText": [],
+    "rects": ["c1", "c2", "a", "b", "f", "g"],
+    "textElements": []
+  }
+}

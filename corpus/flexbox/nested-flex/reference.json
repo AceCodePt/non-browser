@@ -1,0 +1,42 @@
+{
+  "measureText": {},
+  "computedStyle": {},
+  "rect": {
+    "c": {
+      "x": 0,
+      "y": 0,
+      "width": 300,
+      "height": 90
+    },
+    "a": {
+      "x": 0,
+      "y": 0,
+      "width": 75,
+      "height": 90
+    },
+    "a1": {
+      "x": 0,
+      "y": 0,
+      "width": 75,
+      "height": 30
+    },
+    "a2": {
+      "x": 0,
+      "y": 30,
+      "width": 75,
+      "height": 60
+    },
+    "b": {
+      "x": 75,
+      "y": 0,
+      "width": 150,
+      "height": 90
+    },
+    "e": {
+      "x": 225,
+      "y": 0,
+      "width": 75,
+      "height": 90
+    }
+  }
+}

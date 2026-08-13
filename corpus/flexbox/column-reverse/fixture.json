@@ -1,0 +1,11 @@
+{
+  "name": "column-reverse",
+  "note": "flex-direction:column-reverse starts the first item from the bottom edge; items stretch to the container width.",
+  "harvest": {
+    "viewport": { "width": 170, "height": 170 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c\" style=\"display:flex;flex-direction:column-reverse;width:150px;height:150px;background:#f0f0f0\"><div id=\"a\" style=\"height:40px;background:#4a90d9\"></div><div id=\"b\" style=\"height:40px;background:#d9534f\"></div><div id=\"e\" style=\"height:40px;background:#90b04f\"></div></div></body></html>",
+    "measureText": [],
+    "rects": ["c", "a", "b", "e"],
+    "textElements": []
+  }
+}

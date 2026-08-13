@@ -1,0 +1,11 @@
+{
+  "name": "gap",
+  "note": "gap applies between flex lines and between items: a wrapped row with gap:10 8 and a column with gap 12.",
+  "harvest": {
+    "viewport": { "width": 320, "height": 200 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c1\" style=\"display:flex;flex-wrap:wrap;width:200px;gap:10px 8px;background:#f0f0f0\"><div id=\"a\" style=\"width:60px;height:30px;background:#4a90d9\"></div><div id=\"b\" style=\"width:60px;height:30px;background:#d9534f\"></div><div id=\"e\" style=\"width:60px;height:30px;background:#90b04f\"></div><div id=\"f\" style=\"width:60px;height:30px;background:#e8b04f\"></div><div id=\"g\" style=\"width:60px;height:30px;background:#d0509a\"></div><div id=\"h\" style=\"width:60px;height:30px;background:#50a0d0\"></div></div><div id=\"c2\" style=\"display:flex;flex-direction:column;gap:12px;width:200px;background:#f0f0f0;margin-top:10px\"><div id=\"i\" style=\"height:24px;background:#4a90d9\"></div><div id=\"j\" style=\"height:24px;background:#d9534f\"></div><div id=\"k\" style=\"height:24px;background:#90b04f\"></div></div></body></html>",
+    "measureText": [],
+    "rects": ["c1", "c2", "a", "b", "e", "f", "g", "h", "i", "j", "k"],
+    "textElements": []
+  }
+}

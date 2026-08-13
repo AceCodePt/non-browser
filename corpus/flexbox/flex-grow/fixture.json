@@ -1,0 +1,11 @@
+{
+  "name": "flex-grow",
+  "note": "flex-grow distribution: three items with grow factors 0, 1, 2 over fixed bases fill a 300px row.",
+  "harvest": {
+    "viewport": { "width": 320, "height": 120 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c\" style=\"display:flex;width:300px;height:80px;background:#f0f0f0\"><div id=\"a\" style=\"flex:0 1 120px;background:#4a90d9\"></div><div id=\"b\" style=\"flex:1 1 30px;background:#d9534f\"></div><div id=\"e\" style=\"flex:2 1 30px;background:#90b04f\"></div></div></body></html>",
+    "measureText": [],
+    "rects": ["c", "a", "b", "e"],
+    "textElements": []
+  }
+}

@@ -118,7 +118,7 @@ export type GridLineSpec =
   | { kind: 'span'; count: number; name?: string }
   | { kind: 'name'; value: string };
 
-export type SelfAlign = 'stretch' | 'start' | 'end' | 'center';
+export type SelfAlign = 'stretch' | 'start' | 'end' | 'center' | 'baseline';
 export type ContentAlign =
   | 'normal'
   | 'stretch'
@@ -132,7 +132,7 @@ export type ContentAlign =
 export type DecorationLine = 'underline' | 'line-through' | 'overline';
 
 export interface ComputedStyle {
-  display: 'block' | 'none' | 'grid' | 'inline-grid';
+  display: 'block' | 'none' | 'grid' | 'inline-grid' | 'flex';
   float: 'none' | 'left' | 'right';
   clear: 'none' | 'left' | 'right' | 'both';
   boxSizing: 'content-box' | 'border-box';
@@ -192,6 +192,20 @@ export interface ComputedStyle {
   gridColumnEnd: GridLineSpec | null;
   justifySelf: SelfAlign | null;
   alignSelf: SelfAlign | null;
+
+  // --- flex container properties ---
+  flexDirection: 'row' | 'row-reverse' | 'column' | 'column-reverse';
+  flexWrap: 'nowrap' | 'wrap' | 'wrap-reverse';
+
+  // --- flex item properties ---
+  /** flex-grow factor (>= 0). */
+  flexGrow: number;
+  /** flex-shrink factor (>= 0). */
+  flexShrink: number;
+  /** flex-basis; `auto` or `content` resolve against the main size / content. */
+  flexBasis: Length;
+  /** order (integer, default 0). */
+  order: number;
 }
 
 const NAMED_COLORS: Record<string, Color> = {
@@ -533,6 +547,7 @@ function parseSelfAlign(value: string): SelfAlign {
   if (s === 'start' || s === 'flex-start' || s === 'self-start') return 'start';
   if (s === 'end' || s === 'flex-end' || s === 'self-end') return 'end';
   if (s === 'center') return 'center';
+  if (s === 'baseline' || s === 'first baseline' || s === 'last baseline') return 'baseline';
   return 'stretch';
 }
 
@@ -552,6 +567,47 @@ function parseBoxShorthand(raw: string): Record<Side, Length> {
   const parts = raw.trim().split(/\s+/).map(parseLength);
   const [t = AUTO, r = t, b = t, l = r] = parts;
   return { top: t, right: r, bottom: b, left: l };
+}
+
+/** Parse `flex-basis`; `auto` and `content` both resolve to AUTO (content-based). */
+function parseFlexBasis(value: string | undefined): Length {
+  if (!value) return AUTO;
+  const s = value.trim();
+  if (s === 'auto' || s === 'content') return AUTO;
+  return parseLength(s);
+}
+
+/**
+ * Parse the `flex` shorthand per css-flexbox-1 §7.1.1. A lone number sets
+ * flex-grow with flex-shrink 1 and flex-basis 0%.
+ */
+function parseFlexShorthand(value: string): { grow: number; shrink: number; basis: Length } {
+  const parts = value.trim().split(/\s+/);
+  const isNum = (s: string): boolean => /^[\d.]+$/.test(s);
+  const isLen = (s: string): boolean => /^[\d.]+(?:px|%)$/.test(s) || s === 'auto' || s === 'content';
+  const auto = AUTO;
+  const zero = pxLength(0);
+  const basisOf = (s: string): Length => (s === 'auto' || s === 'content' ? auto : parseLength(s));
+
+  if (parts.length === 1) {
+    const p = parts[0];
+    if (p === 'none') return { grow: 0, shrink: 0, basis: auto };
+    if (p === 'auto') return { grow: 1, shrink: 1, basis: auto };
+    if (p === 'initial') return { grow: 0, shrink: 1, basis: auto };
+    if (isNum(p)) return { grow: parseFloat(p), shrink: 1, basis: zero };
+    return { grow: 1, shrink: 1, basis: basisOf(p) };
+  }
+  if (parts.length === 2) {
+    const [a, b] = parts;
+    if (isNum(a) && isNum(b)) return { grow: parseFloat(a), shrink: parseFloat(b), basis: zero };
+    if (isNum(a) && isLen(b)) return { grow: parseFloat(a), shrink: 1, basis: basisOf(b) };
+    if (isLen(a) && isNum(b)) return { grow: parseFloat(b), shrink: 1, basis: basisOf(a) };
+    return { grow: isNum(a) ? parseFloat(a) : 1, shrink: isNum(b) ? parseFloat(b) : 1, basis: isLen(a) ? basisOf(a) : isLen(b) ? basisOf(b) : zero };
+  }
+  const grow = parts[0] !== undefined && isNum(parts[0]) ? parseFloat(parts[0]) : 1;
+  const shrink = parts[1] !== undefined && isNum(parts[1]) ? parseFloat(parts[1]) : 1;
+  const basis = parts[2] !== undefined ? basisOf(parts[2]) : zero;
+  return { grow, shrink, basis };
 }
 
 /** Split a declaration block on top-level semicolons (no strings with ';' expected). */
@@ -799,13 +855,14 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   }
 
   const displayDecl = decls.find((d) => d.property === 'display');
-  const display: 'block' | 'none' | 'grid' | 'inline-grid' = (() => {
+  const display: 'block' | 'none' | 'grid' | 'inline-grid' | 'flex' = (() => {
     if (!displayDecl) return defaults.display;
     const v = displayDecl.value.trim();
     if (v === 'none') return 'none';
     if (v === 'grid') return 'grid';
     if (v === 'inline-grid') return 'grid';
-    if (v === 'inline' || v === 'inline-block' || v === 'flex' || v === 'inline-flex') return 'block';
+    if (v === 'flex' || v === 'inline-flex') return 'flex';
+    if (v === 'inline' || v === 'inline-block') return 'block';
     return 'block';
   })();
 
@@ -951,6 +1008,38 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     gridColumnEnd = specs.colEnd;
   }
 
+  // --- flex properties ---
+  const flexDir = decl('flex-direction');
+  const flexDirection: 'row' | 'row-reverse' | 'column' | 'column-reverse' =
+    flexDir === 'row-reverse'
+      ? 'row-reverse'
+      : flexDir === 'column'
+        ? 'column'
+        : flexDir === 'column-reverse'
+          ? 'column-reverse'
+          : 'row';
+  const flexWrapDecl = decl('flex-wrap');
+  const flexWrap: 'nowrap' | 'wrap' | 'wrap-reverse' =
+    flexWrapDecl === 'wrap' ? 'wrap' : flexWrapDecl === 'wrap-reverse' ? 'wrap-reverse' : 'nowrap';
+
+  let flexGrow = 0;
+  let flexShrink = 1;
+  let flexBasis = parseFlexBasis(decl('flex-basis'));
+  const growDecl = decl('flex-grow');
+  if (growDecl && /^[\d.]+$/.test(growDecl.trim())) flexGrow = parseFloat(growDecl);
+  const shrinkDecl = decl('flex-shrink');
+  if (shrinkDecl && /^[\d.]+$/.test(shrinkDecl.trim())) flexShrink = parseFloat(shrinkDecl);
+  const flexShort = decl('flex');
+  if (flexShort) {
+    const f = parseFlexShorthand(flexShort);
+    flexGrow = f.grow;
+    flexShrink = f.shrink;
+    flexBasis = f.basis;
+  }
+
+  const orderDecl = decl('order');
+  const order = orderDecl && /^-?\d+$/.test(orderDecl.trim()) ? parseInt(orderDecl, 10) : 0;
+
   return {
     display,
     float,
@@ -1000,5 +1089,12 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     gridColumnEnd,
     justifySelf: decl('justify-self') ? parseSelfAlign(decl('justify-self')!) : null,
     alignSelf: decl('align-self') ? parseSelfAlign(decl('align-self')!) : null,
+
+    flexDirection,
+    flexWrap,
+    flexGrow,
+    flexShrink,
+    flexBasis,
+    order,
   };
 }
