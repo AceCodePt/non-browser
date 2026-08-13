@@ -1,0 +1,54 @@
+{
+  "name": "basic-text",
+  "note": "The spine seam's first fixture: two block paragraphs of Latin text with explicit widths, proving greedy word wrapping, measurement, rects, and computed styles all match Chrome.",
+  "harvest": {
+    "viewport": {
+      "width": 460,
+      "height": 160
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"p1\" style=\"font-family:'Noto Sans';font-size:16px;line-height:24px;width:300px\">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.</div><div id=\"p2\" style=\"font-family:'Noto Sans';font-size:20px;line-height:30px;width:260px\">How vexingly quick daft zebras jump!</div></body></html>",
+    "measureText": [
+      {
+        "text": "The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.",
+        "font": "16px 'Noto Sans'"
+      },
+      {
+        "text": "How vexingly quick daft zebras jump!",
+        "font": "20px 'Noto Sans'"
+      },
+      {
+        "text": "Quick zephyrs blow, vexing daft Jim.",
+        "font": "12px 'Noto Sans'"
+      }
+    ],
+    "computedStyle": [
+      {
+        "id": "p1",
+        "props": [
+          "display",
+          "font-size",
+          "font-family",
+          "line-height",
+          "color",
+          "width",
+          "box-sizing",
+          "overflow",
+          "white-space",
+          "float"
+        ]
+      },
+      {
+        "id": "p2",
+        "props": ["font-size", "font-family", "line-height", "width"]
+      }
+    ],
+    "rects": ["p1", "p2"],
+    "textElements": ["p1", "p2"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "measureText": {
+    "16px 'Noto Sans' | Above the boxes.": 127.9000015258789,
+    "16px 'Noto Sans' | Below the boxes.": 126.81999969482422
+  },
+  "computedStyle": {
+    "cv": {
+      "width": "120px",
+      "height": "80px",
+      "display": "block"
+    },
+    "im": {
+      "width": "100px",
+      "height": "50px",
+      "display": "block"
+    },
+    "text": {
+      "display": "block",
+      "font-size": "16px",
+      "line-height": "24px"
+    },
+    "tail": {
+      "display": "block",
+      "font-size": "16px",
+      "line-height": "24px"
+    }
+  },
+  "rect": {
+    "text": {
+      "x": 0,
+      "y": 0,
+      "width": 460,
+      "height": 24
+    },
+    "cv": {
+      "x": 0,
+      "y": 24,
+      "width": 120,
+      "height": 80
+    },
+    "im": {
+      "x": 0,
+      "y": 104,
+      "width": 100,
+      "height": 50
+    },
+    "tail": {
+      "x": 0,
+      "y": 154,
+      "width": 460,
+      "height": 24
+    }
+  }
+}

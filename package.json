@@ -9,6 +9,8 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "verify": "npm run build && node scripts/check-charter.mjs && node scripts/verify-four-layer.mjs",
+    "verify:four-layer": "npm run build && node scripts/verify-four-layer.mjs",
     "verify:cascade-core": "node scripts/verify-cascade-core.mjs",
     "harvest:cascade-core": "node scripts/harvest-computed.mjs",
     "harvest:oracle": "node scripts/harvest-oracle.mjs",

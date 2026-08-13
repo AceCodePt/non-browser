@@ -1,15 +1,30 @@
 /**
- * Top-level render path: parse5 HTML → inline-style cascade → layout → paint.
- * The subset of CSS the floats corpus needs is supported; the viewport is an
- * input, the output is an RGBA pixel buffer plus per-id border-box rects.
+ * Top-level render path: parse5 HTML → inline-style cascade → block text layout
+ * → paint → PNG pixel buffer. The viewport is an input, the output is an RGBA
+ * pixel buffer plus per-id border-box rects and (optionally) computed-style
+ * strings for the layer-2 oracle.
+ *
+ * All measurement and paint go through the generic Canvas interface; the skia
+ * implementation is the default factory, and Pretext's measurement is wired to
+ * the same interface so the fonts a fixture is measured with are the fonts that
+ * get drawn.
  */
 
 import { parse, type DefaultTreeAdapterTypes } from 'parse5';
-import { GlobalFonts } from '@napi-rs/canvas';
+import type { CanvasFactory, CanvasLike } from '../canvas/interface.js';
+import { skiaCanvasFactory } from '../canvas/skia.js';
+import { installPretextMeasurement } from '../pretext/index.js';
 import { resolveStyles, layoutRoot } from './block-inline.js';
+import { computedStyleFor, type ComputedStyleProps } from './computed-style.js';
 import { paint, type RenderOutput } from './paint.js';
 import { initMeasurement } from './measure.js';
+import type { ComputedStyle } from './css.js';
 import type { P5Element } from './types.js';
+
+export interface ComputedStyleSpec {
+  id: string;
+  props: string[];
+}
 
 export interface RenderOptions {
   width: number;
@@ -20,13 +35,23 @@ export interface RenderOptions {
   fontFile: string;
   fontSize?: number;
   lineHeight?: number;
+  /** Canvas implementation; defaults to skia. */
+  canvasFactory?: CanvasFactory;
+  /** When set, resolve these computed-style properties per id (layer 2). */
+  computedStyle?: ComputedStyleSpec[];
+}
+
+export interface RenderHtmlOutput extends RenderOutput {
+  /** computed-style strings per id (present when opts.computedStyle is set). */
+  computedStyles: Record<string, ComputedStyleProps>;
 }
 
 /**
- * Render an HTML document. Returns the painted pixel buffer and the
- * getBoundingClientRect values for every element that carries an `id`.
+ * Render an HTML document. Returns the painted pixel buffer, the
+ * getBoundingClientRect values for every element that carries an `id`, and the
+ * requested computed styles.
  */
-export function renderHtml(html: string, opts: RenderOptions): RenderOutput {
+export function renderHtml(html: string, opts: RenderOptions): RenderHtmlOutput {
   const doc = parse(html);
   const htmlEl = (doc as unknown as { childNodes: DefaultTreeAdapterTypes.ChildNode[] }).childNodes.find(
     (n) => n.nodeName === 'html',
@@ -34,8 +59,13 @@ export function renderHtml(html: string, opts: RenderOptions): RenderOutput {
   const body = htmlEl?.childNodes.find((n) => n.nodeName === 'body') as P5Element;
   if (!body) throw new Error('renderHtml: no <body> element in input');
 
-  GlobalFonts.registerFromPath(opts.fontFile);
-  initMeasurement({ family: opts.fontFamily, filePath: opts.fontFile });
+  const factory = opts.canvasFactory ?? skiaCanvasFactory;
+  factory.registerFont(opts.fontFile);
+  const measureCanvas: CanvasLike = initMeasurement(
+    { family: opts.fontFamily, filePath: opts.fontFile },
+    factory,
+  );
+  installPretextMeasurement(measureCanvas);
 
   const styles = resolveStyles(body, {
     fontFamily: opts.fontFamily,
@@ -50,7 +80,23 @@ export function renderHtml(html: string, opts: RenderOptions): RenderOutput {
   });
 
   const root = layoutRoot(body, styles, opts.width);
-  return paint(root, opts.width, opts.height, Object.keys(collectIds(body)), opts.fontFile);
+  const out = paint(root, opts.width, opts.height, Object.keys(collectIds(body)), opts.fontFile, factory);
+
+  const computedStyles: Record<string, ComputedStyleProps> = {};
+  if (opts.computedStyle) {
+    const byId = new Map<string, P5Element>();
+    collectByElementId(body, byId);
+    for (const spec of opts.computedStyle) {
+      const el = byId.get(spec.id);
+      const style: ComputedStyle | undefined = el ? styles.get(el) : undefined;
+      if (!el || !style) {
+        throw new Error(`renderHtml: computedStyle requested for unknown id '${spec.id}'`);
+      }
+      computedStyles[spec.id] = computedStyleFor(style, spec.props, opts.width);
+    }
+  }
+
+  return { ...out, computedStyles };
 }
 
 function collectIds(el: P5Element): Record<string, boolean> {
@@ -64,4 +110,12 @@ function collectIds(el: P5Element): Record<string, boolean> {
   };
   walk(el);
   return ids;
+}
+
+function collectByElementId(el: P5Element, out: Map<string, P5Element>): void {
+  const a = el.attrs.find((x) => x.name === 'id');
+  if (a) out.set(a.value, el);
+  for (const c of el.childNodes) {
+    if (c.nodeName !== '#text' && c.nodeName !== '#comment') collectByElementId(c as P5Element, out);
+  }
 }

@@ -1,0 +1,35 @@
+{
+  "name": "wrapping",
+  "note": "Multi-line paragraph at a fixed width, exercising greedy line breaking, the Pretext seam (same break points as Chrome), and a multi-line screenshot.",
+  "harvest": {
+    "viewport": {
+      "width": 460,
+      "height": 140
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"para\" style=\"font-family:'Noto Sans';font-size:16px;line-height:24px;width:320px\">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs. Sphinx of black quartz, judge my vow.</div></body></html>",
+    "measureText": [
+      {
+        "text": "The quick brown fox jumps over the lazy dog.",
+        "font": "16px 'Noto Sans'"
+      },
+      {
+        "text": "Sphinx of black quartz, judge my vow.",
+        "font": "16px 'Noto Sans'"
+      }
+    ],
+    "computedStyle": [
+      {
+        "id": "para",
+        "props": ["display", "font-size", "font-family", "line-height", "width", "white-space"]
+      }
+    ],
+    "rects": ["para"],
+    "textElements": ["para"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

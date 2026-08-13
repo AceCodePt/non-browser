@@ -13,7 +13,7 @@
  * swap in a different FormattingContext and the same block/inline layout runs.
  */
 
-import { parseStyleAttribute, resolveLength, makeStyle, type ComputedStyle, type Color, type DecorationLine } from './css.js';
+import { parseStyleAttribute, pxLength, resolveLength, makeStyle, type ComputedStyle, type Color, type DecorationLine } from './css.js';
 import { layoutTextLines, measureTextWidth, type LineBox } from './measure.js';
 import { FloatManager, type FormattingContext } from './floats.js';
 import { layoutGridChildren } from './grid.js';
@@ -42,6 +42,7 @@ export function resolveStyles(root: P5Element, defaults: StyleDefaults): Map<P5E
       parseStyleAttribute(el.attrs.find((a) => a.name === 'style')?.value),
       { ...d, display: 'block' },
     );
+    applyReplacedSize(el, style);
     map.set(el, style);
     const childDefaults: StyleDefaults = {
       fontFamily: style.fontFamily,
@@ -60,6 +61,28 @@ export function resolveStyles(root: P5Element, defaults: StyleDefaults): Map<P5E
   };
   walk(root, defaults);
   return map;
+}
+
+/**
+ * Replaced elements (<img>, <canvas>) size their box from their `width`/`height`
+ * attributes when no CSS size is set — the "empty replaced box at layout size"
+ * contract from the charter (no image decoding in v1; the box is laid out but
+ * paints nothing unless it has a background/border). `<canvas>` without
+ * attributes defaults to 300x150 per the HTML spec.
+ */
+function applyReplacedSize(el: P5Element, style: ComputedStyle): void {
+  const tag = el.nodeName;
+  if (tag !== 'img' && tag !== 'canvas') return;
+  const attr = (name: string): string | undefined => el.attrs.find((a) => a.name === name)?.value;
+  const numeric = (v: string | undefined): number | null => (v !== undefined && /^\d+$/.test(v) ? parseInt(v, 10) : null);
+  if (style.width.auto) {
+    const w = numeric(attr('width'));
+    style.width = pxLength(w ?? (tag === 'canvas' ? 300 : 0));
+  }
+  if (style.height.auto) {
+    const h = numeric(attr('height'));
+    style.height = pxLength(h ?? (tag === 'canvas' ? 150 : 0));
+  }
 }
 
 export interface LayoutNode {
