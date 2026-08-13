@@ -16,27 +16,57 @@ export interface Color {
   a: number; // 0..1
 }
 
-/** A length that may be a px value, a percentage, or auto. */
+/**
+ * A length: a px value, a percentage, a viewport-unit value, or auto. Viewport
+ * units (vw/vh/vmin/vmax) resolve against the viewport input at computed-value
+ * time (CSS Values §5.1), which a static renderer can do deterministically.
+ */
 export interface Length {
-  /** px value when not auto and not percentage. */
+  /** px value when not auto and not a percentage/viewport unit. */
   px: number | null;
   /** percentage (0..100) when the value is a percentage. */
   pct: number | null;
+  /** viewport-width units (1vw = 1% of viewport width). */
+  vw: number | null;
+  /** viewport-height units (1vh = 1% of viewport height). */
+  vh: number | null;
+  /** viewport-min units (1vmin = 1% of the smaller viewport dimension). */
+  vmin: number | null;
+  /** viewport-max units (1vmax = 1% of the larger viewport dimension). */
+  vmax: number | null;
   /** true for `auto`. */
   auto: boolean;
 }
 
-export const AUTO: Length = { px: null, pct: null, auto: true };
+export const AUTO: Length = { px: null, pct: null, vw: null, vh: null, vmin: null, vmax: null, auto: true };
 
 export function pxLength(v: number): Length {
-  return { px: v, pct: null, auto: false };
+  return { px: v, pct: null, vw: null, vh: null, vmin: null, vmax: null, auto: false };
 }
 
-/** Resolve a Length against a reference size (containing block content width). */
-export function resolveLength(l: Length, ref: number): number | null {
+export interface Viewport {
+  width: number;
+  height: number;
+}
+
+/**
+ * Resolve a Length against a reference size (containing block content width).
+ * Percentages resolve against `ref`; viewport units resolve against the
+ * viewport input. When a viewport unit appears without a viewport, it resolves
+ * to null (auto) — callers without viewport context never see one.
+ */
+export function resolveLength(l: Length, ref: number, viewport?: Viewport | null): number | null {
   if (l.auto) return null;
   if (l.px !== null) return l.px;
   if (l.pct !== null) return (l.pct / 100) * ref;
+  if (viewport) {
+    const vw = viewport.width / 100;
+    const vh = viewport.height / 100;
+    if (l.vw !== null) return l.vw * vw;
+    if (l.vh !== null) return l.vh * vh;
+    if (l.vmin !== null) return l.vmin * Math.min(vw, vh);
+    if (l.vmax !== null) return l.vmax * Math.max(vw, vh);
+  }
   return null;
 }
 
@@ -214,17 +244,29 @@ function clamp255(v: number): number {
   return Math.max(0, Math.min(255, v));
 }
 
-/** Parse a single length value: px, %, auto, 0. */
+/** Parse a single length value: px, %, viewport unit, auto, 0. */
 export function parseLength(raw: string): Length {
   const s = raw.trim();
   if (s === 'auto') return AUTO;
-  const m = s.match(/^(-?[\d.]+)(px|%)?$/);
+  const m = s.match(/^(-?[\d.]+)(px|%|vw|vh|vmin|vmax)?$/);
   if (m) {
     const v = parseFloat(m[1]);
-    if (m[2] === '%') return { px: null, pct: v, auto: false };
-    return { px: v, pct: null, auto: false };
+    switch (m[2] ?? 'px') {
+      case '%':
+        return { px: null, pct: v, vw: null, vh: null, vmin: null, vmax: null, auto: false };
+      case 'vw':
+        return { px: null, pct: null, vw: v, vh: null, vmin: null, vmax: null, auto: false };
+      case 'vh':
+        return { px: null, pct: null, vw: null, vh: v, vmin: null, vmax: null, auto: false };
+      case 'vmin':
+        return { px: null, pct: null, vw: null, vh: null, vmin: v, vmax: null, auto: false };
+      case 'vmax':
+        return { px: null, pct: null, vw: null, vh: null, vmin: null, vmax: v, auto: false };
+      default:
+        return { px: v, pct: null, vw: null, vh: null, vmin: null, vmax: null, auto: false };
+    }
   }
-  if (s === '0') return { px: 0, pct: null, auto: false };
+  if (s === '0') return { px: 0, pct: null, vw: null, vh: null, vmin: null, vmax: null, auto: false };
   return AUTO;
 }
 
@@ -537,9 +579,9 @@ export interface Declaration {
   value: string;
 }
 
-export function parseStyleAttribute(style: string | undefined): Declaration[] {
-  if (!style) return [];
-  return splitDeclarations(style)
+/** Parse the contents of a declaration block (no braces) into declarations. */
+export function parseDeclarationBlock(block: string): Declaration[] {
+  return splitDeclarations(block)
     .map((d) => {
       const idx = d.indexOf(':');
       if (idx < 0) return null;
@@ -549,6 +591,11 @@ export function parseStyleAttribute(style: string | undefined): Declaration[] {
       };
     })
     .filter((d): d is Declaration => d !== null);
+}
+
+export function parseStyleAttribute(style: string | undefined): Declaration[] {
+  if (!style) return [];
+  return parseDeclarationBlock(style);
 }
 
 const FONT_WEIGHT: Record<string, number> = {

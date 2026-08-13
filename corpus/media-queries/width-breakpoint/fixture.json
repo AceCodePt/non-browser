@@ -1,0 +1,16 @@
+{
+  "name": "width-breakpoint",
+  "note": "Media gating on the viewport width: rules inside a false @media query are excluded from the cascade; true queries contribute. Covers min-width, max-width, and exact (width: Npx).",
+  "harvest": {
+    "html": "<html><head><style>\n  body { margin: 0; }\n  #box { color: black; }\n  @media (min-width: 600px) { #box { color: rgb(255, 0, 0); } }\n  @media (max-width: 799px) { #box { background-color: rgb(0, 0, 255); } }\n  @media (width: 600px) { #box { padding-top: 5px; } }\n</style></head><body><div id=\"box\">Box</div></body></html>",
+    "viewports": [
+      { "width": 400, "height": 300 },
+      { "width": 600, "height": 500 },
+      { "width": 800, "height": 600 }
+    ],
+    "computedStyle": [
+      { "id": "box", "props": ["color", "background-color", "padding-top"] }
+    ]
+  },
+  "expected": { "computedStyle": "pass" }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "container-gap",
+  "note": "Documented @container gap, divergence side: an ancestor DOES establish a container (container-type: inline-size, width 400px), so Chrome's @container (min-width: 100px) matches and paints #child red. The engine's @container evaluation model parses this query but layout does not yet resolve container sizes, so the rule is never applied and #child stays black. This fixture is authored with expected computedStyle: 'fail' to prove the divergence is real and documented — the check passes only when Chrome and the engine disagree exactly as the ledger describes. See docs/ledgers/media-queries.md.",
+  "harvest": {
+    "html": "<html><head><style>\n  body { margin: 0; }\n  .wrap { container-type: inline-size; width: 400px; }\n  @container (min-width: 100px) { #child { color: rgb(255,0,0); } }\n</style></head><body><div class=\"wrap\"><div id=\"child\">Child</div></div></body></html>",
+    "viewports": [
+      { "width": 600, "height": 400 },
+      { "width": 800, "height": 600 }
+    ],
+    "computedStyle": [
+      { "id": "child", "props": ["color"] }
+    ]
+  },
+  "expected": { "computedStyle": "fail" }
+}

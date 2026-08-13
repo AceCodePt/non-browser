@@ -16,6 +16,7 @@
  */
 
 import {
+  AUTO,
   resolveLength,
   type ComputedStyle,
   type ContentAlign,
@@ -379,8 +380,8 @@ function collectGridItems(
       const anonymous: ComputedStyle = {
         ...style,
         display: 'block',
-        width: { px: null, pct: null, auto: true },
-        height: { px: null, pct: null, auto: true },
+        width: AUTO,
+        height: AUTO,
       };
       items.push({
         el: synthetic,
@@ -1322,6 +1323,7 @@ export function layoutGridChildren(input: GridLayoutInput): { children: LayoutNo
       styles,
       paints,
       nextOrder,
+      undefined,
       borderH,
     );
     children.push(node);

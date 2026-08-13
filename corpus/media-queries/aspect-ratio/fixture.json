@@ -1,0 +1,16 @@
+{
+  "name": "aspect-ratio",
+  "note": "aspect-ratio media feature: exact ratio, min- and max- ratio comparisons against the viewport's width/height ratio.",
+  "harvest": {
+    "html": "<html><head><style>\n  body { margin: 0; }\n  #a { color: rgb(0,0,0); }\n  @media (aspect-ratio: 2/1) { #a { color: rgb(255,0,0); } }\n  @media (min-aspect-ratio: 1/1) { #a { background-color: rgb(0,0,255); } }\n  @media (max-aspect-ratio: 1/2) { #a { letter-spacing: 3px; } }\n</style></head><body><div id=\"a\">A</div></body></html>",
+    "viewports": [
+      { "width": 800, "height": 400 },
+      { "width": 600, "height": 800 },
+      { "width": 200, "height": 800 }
+    ],
+    "computedStyle": [
+      { "id": "a", "props": ["color", "background-color", "letter-spacing"] }
+    ]
+  },
+  "expected": { "computedStyle": "pass" }
+}

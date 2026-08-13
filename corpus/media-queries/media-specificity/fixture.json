@@ -1,0 +1,15 @@
+{
+  "name": "media-specificity",
+  "note": "Within a true @media query, rules order by specificity (id beats class; type+id beats id) then source order — matching Chrome's cascade.",
+  "harvest": {
+    "html": "<html><head><style>\n  body { margin: 0; }\n  #box { color: black; }\n  @media (min-width: 600px) {\n    #box { color: rgb(255, 0, 0); }\n    .box-class { background-color: rgb(0, 255, 0); }\n    div#box { color: rgb(0, 0, 255); }\n  }\n</style></head><body><div id=\"box\" class=\"box-class\">Box</div></body></html>",
+    "viewports": [
+      { "width": 400, "height": 300 },
+      { "width": 800, "height": 600 }
+    ],
+    "computedStyle": [
+      { "id": "box", "props": ["color", "background-color"] }
+    ]
+  },
+  "expected": { "computedStyle": "pass" }
+}

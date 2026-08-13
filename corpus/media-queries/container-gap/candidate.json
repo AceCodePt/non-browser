@@ -1,0 +1,26 @@
+{
+  "viewports": [
+    {
+      "viewport": {
+        "width": 600,
+        "height": 400
+      },
+      "computedStyle": {
+        "child": {
+          "color": "rgb(0, 0, 0)"
+        }
+      }
+    },
+    {
+      "viewport": {
+        "width": 800,
+        "height": 600
+      },
+      "computedStyle": {
+        "child": {
+          "color": "rgb(0, 0, 0)"
+        }
+      }
+    }
+  ]
+}

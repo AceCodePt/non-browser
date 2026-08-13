@@ -1,0 +1,21 @@
+{
+  "name": "viewport-units",
+  "note": "Viewport units resolve against the viewport input at computed-value time: vw, vh, vmin, vmax in the stylesheet and in an inline style.",
+  "harvest": {
+    "html": "<html><head><style>\n  body { margin: 0; }\n  #w { width: 50vw; }\n  #h { height: 100vh; }\n  #min { width: 50vmin; }\n  #max { width: 50vmax; }\n  #pad { padding-left: 5vw; }\n  #m { margin-left: 10vw; }\n</style></head><body>\n  <div id=\"w\"></div><div id=\"h\"></div><div id=\"min\"></div><div id=\"max\"></div>\n  <div id=\"pad\"></div><div id=\"m\"></div>\n  <div id=\"inline-vw\" style=\"width: 25vw\"></div>\n</body></html>",
+    "viewports": [
+      { "width": 800, "height": 600 },
+      { "width": 1200, "height": 500 }
+    ],
+    "computedStyle": [
+      { "id": "w", "props": ["width"] },
+      { "id": "h", "props": ["height"] },
+      { "id": "min", "props": ["width"] },
+      { "id": "max", "props": ["width"] },
+      { "id": "pad", "props": ["padding-left"] },
+      { "id": "m", "props": ["margin-left"] },
+      { "id": "inline-vw", "props": ["width"] }
+    ]
+  },
+  "expected": { "computedStyle": "pass" }
+}

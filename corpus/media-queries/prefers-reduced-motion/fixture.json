@@ -1,0 +1,15 @@
+{
+  "name": "prefers-reduced-motion",
+  "note": "prefers-reduced-motion media feature driven by the viewport input (Chrome oracle emulated to the same preference).",
+  "harvest": {
+    "html": "<html><head><style>\n  body { margin: 0; }\n  #a { color: rgb(0,0,0); }\n  @media (prefers-reduced-motion: reduce) { #a { letter-spacing: 4px; } }\n</style></head><body><div id=\"a\">A</div></body></html>",
+    "viewports": [
+      { "width": 500, "height": 400 },
+      { "width": 500, "height": 400, "prefersReducedMotion": "reduce" }
+    ],
+    "computedStyle": [
+      { "id": "a", "props": ["letter-spacing"] }
+    ]
+  },
+  "expected": { "computedStyle": "pass" }
+}

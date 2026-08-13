@@ -1,0 +1,16 @@
+{
+  "name": "media-query-list",
+  "note": "Comma-separated media query list: the rule applies when ANY query in the list matches (OR across queries).",
+  "harvest": {
+    "html": "<html><head><style>\n  body { margin: 0; }\n  #a { color: rgb(0,0,0); }\n  @media (max-width: 500px), (min-width: 1000px) { #a { color: rgb(255,0,0); } }\n</style></head><body><div id=\"a\">A</div></body></html>",
+    "viewports": [
+      { "width": 400, "height": 300 },
+      { "width": 800, "height": 600 },
+      { "width": 1200, "height": 900 }
+    ],
+    "computedStyle": [
+      { "id": "a", "props": ["color"] }
+    ]
+  },
+  "expected": { "computedStyle": "pass" }
+}

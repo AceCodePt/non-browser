@@ -1,0 +1,28 @@
+{
+  "viewports": [
+    {
+      "viewport": {
+        "width": 400,
+        "height": 300
+      },
+      "computedStyle": {
+        "box": {
+          "color": "rgb(0, 0, 0)",
+          "background-color": "rgba(0, 0, 0, 0)"
+        }
+      }
+    },
+    {
+      "viewport": {
+        "width": 800,
+        "height": 600
+      },
+      "computedStyle": {
+        "box": {
+          "color": "rgb(0, 0, 255)",
+          "background-color": "rgb(0, 255, 0)"
+        }
+      }
+    }
+  ]
+}

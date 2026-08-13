@@ -1,0 +1,42 @@
+{
+  "viewports": [
+    {
+      "viewport": {
+        "width": 500,
+        "height": 400
+      },
+      "computedStyle": {
+        "a": {
+          "color": "rgb(0, 0, 0)",
+          "background-color": "rgb(240, 240, 240)"
+        }
+      }
+    },
+    {
+      "viewport": {
+        "width": 500,
+        "height": 400,
+        "prefersColorScheme": "dark"
+      },
+      "computedStyle": {
+        "a": {
+          "color": "rgb(255, 255, 255)",
+          "background-color": "rgba(0, 0, 0, 0)"
+        }
+      }
+    },
+    {
+      "viewport": {
+        "width": 500,
+        "height": 400,
+        "prefersColorScheme": "light"
+      },
+      "computedStyle": {
+        "a": {
+          "color": "rgb(0, 0, 0)",
+          "background-color": "rgb(240, 240, 240)"
+        }
+      }
+    }
+  ]
+}
