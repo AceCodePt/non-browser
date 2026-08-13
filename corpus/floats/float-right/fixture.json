@@ -1,0 +1,19 @@
+{
+  "name": "float-right",
+  "note": "A single right float. Line boxes hug the right side: the float's margin box intrudes from the right edge, shortening lines that overlap it vertically.",
+  "harvest": {
+    "viewport": { "width": 320, "height": 160 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div style=\"width:280px;background:#f0f0f0;padding:10px\"><div id=\"fl\" style=\"float:right;width:80px;height:56px;background:#d9534f\"></div><p id=\"p1\" style=\"margin:0;font-family:'Noto Sans';font-size:14px;line-height:20px;color:#333\">The quick brown fox jumps over the lazy dog and runs around the red box on the right side of this paragraph.</p></div></body></html>",
+    "measureText": [
+      { "text": "The quick brown fox jumps over the lazy dog", "font": "14px 'Noto Sans'" }
+    ],
+    "rects": ["fl", "p1"],
+    "textElements": ["p1"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

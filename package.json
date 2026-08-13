@@ -12,7 +12,8 @@
     "verify:cascade-core": "node scripts/verify-cascade-core.mjs",
     "harvest:cascade-core": "node scripts/harvest-computed.mjs",
     "harvest:oracle": "node scripts/harvest-oracle.mjs",
-    "verify:report": "npm run build && node scripts/verify-report.mjs"
+    "verify:report": "npm run build && node scripts/verify-report.mjs",
+    "verify:layout-floats": "npm run build && node scripts/verify-layout-floats.mjs"
   },
   "dependencies": {
     "@chenglou/pretext": "^0.0.8",
