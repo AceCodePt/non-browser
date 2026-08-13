@@ -1,0 +1,17 @@
+{
+  "name": "absolute-basic",
+  "note": "Absolutely positioned boxes resolve top/left and right/bottom against the nearest positioned ancestor's padding box (a relative parent with padding here).",
+  "harvest": {
+    "viewport": { "width": 320, "height": 160 },
+    "html": "<html><head><style>body{margin:0;font-family:'Noto Sans';font-size:14px;line-height:20px}</style></head><body><div id=\"p\" style=\"position:relative;width:240px;height:120px;padding:10px;background:#e0e0e0\"><div id=\"a\" style=\"position:absolute;left:8px;top:12px;width:60px;height:40px;background:#4a90d9\"></div><div id=\"b\" style=\"position:absolute;right:15px;bottom:10px;width:70px;height:30px;background:#d94a4a\"></div></div></body></html>",
+    "measureText": [],
+    "rects": ["p", "a", "b"],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

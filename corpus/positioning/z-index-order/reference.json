@@ -1,0 +1,36 @@
+{
+  "measureText": {},
+  "computedStyle": {},
+  "rect": {
+    "n1": {
+      "x": 0,
+      "y": 0,
+      "width": 90,
+      "height": 70
+    },
+    "z0": {
+      "x": 45,
+      "y": 25,
+      "width": 90,
+      "height": 70
+    },
+    "a": {
+      "x": 20,
+      "y": 45,
+      "width": 90,
+      "height": 70
+    },
+    "z1": {
+      "x": 70,
+      "y": 10,
+      "width": 90,
+      "height": 70
+    },
+    "z2": {
+      "x": 35,
+      "y": 35,
+      "width": 90,
+      "height": 70
+    }
+  }
+}

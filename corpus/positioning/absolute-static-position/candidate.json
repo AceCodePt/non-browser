@@ -1,0 +1,33 @@
+{
+  "measureText": {
+    "14px 'Noto Sans' | A": 8.949999809265137,
+    "14px 'Noto Sans' | B": 9.100000381469727
+  },
+  "computedStyle": {},
+  "rect": {
+    "p": {
+      "x": 0,
+      "y": 0,
+      "width": 300,
+      "height": 140
+    },
+    "prev": {
+      "x": 10,
+      "y": 10,
+      "width": 280,
+      "height": 25
+    },
+    "a": {
+      "x": 10,
+      "y": 35,
+      "width": 60,
+      "height": 30
+    },
+    "b": {
+      "x": 10,
+      "y": 35,
+      "width": 50,
+      "height": 20
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "relative",
+  "note": "A relatively positioned box offset by top/left, followed by a sibling that stays at the un-offset flow position (relative offsets never affect in-flow layout), and a second relative box shifted by right/bottom (negative offsets).",
+  "harvest": {
+    "viewport": { "width": 320, "height": 150 },
+    "html": "<html><head><style>body{margin:0;font-family:'Noto Sans';font-size:14px;line-height:20px}</style></head><body><div id=\"one\" style=\"height:20px;background:#e0e0e0\"></div><div id=\"rel\" style=\"position:relative;top:10px;left:20px;width:80px;height:40px;background:#4a90d9\"></div><div id=\"next\" style=\"height:20px;background:#c0c0c0\"></div><div id=\"rel2\" style=\"position:relative;right:15px;bottom:8px;width:80px;height:40px;background:#d94a4a\"></div></body></html>",
+    "measureText": [],
+    "rects": ["one", "rel", "next", "rel2"],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

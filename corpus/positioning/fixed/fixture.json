@@ -1,0 +1,17 @@
+{
+  "name": "fixed",
+  "note": "position: fixed anchors against the viewport regardless of positioned ancestors: a fixed box inside a relatively positioned, margin-shifted parent still sits at viewport coordinates, while its absolute sibling resolves against the parent.",
+  "harvest": {
+    "viewport": { "width": 320, "height": 160 },
+    "html": "<html><head><style>body{margin:0;font-family:'Noto Sans';font-size:14px;line-height:20px}</style></head><body><div id=\"p\" style=\"position:relative;width:200px;height:100px;margin-top:30px;margin-left:20px;background:#e0e0e0\"><div id=\"f\" style=\"position:fixed;left:10px;top:5px;width:50px;height:30px;background:#4a90d9\"></div><div id=\"a\" style=\"position:absolute;left:10px;top:10px;width:50px;height:30px;background:#d94a4a\"></div></div></body></html>",
+    "measureText": [],
+    "rects": ["p", "f", "a"],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

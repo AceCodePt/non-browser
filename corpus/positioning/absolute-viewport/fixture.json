@@ -1,0 +1,17 @@
+{
+  "name": "absolute-viewport",
+  "note": "With no positioned ancestor, the containing block is the viewport (initial containing block): an absolutely positioned box ignores the margins of its non-positioned ancestors and anchors to the viewport corner; a second box anchors to the opposite corner via right/bottom.",
+  "harvest": {
+    "viewport": { "width": 320, "height": 150 },
+    "html": "<html><head><style>body{margin:0;font-family:'Noto Sans';font-size:14px;line-height:20px}</style></head><body><div id=\"wrap\" style=\"margin:20px 0 0 30px\"><div id=\"a\" style=\"position:absolute;left:0;top:0;width:60px;height:40px;background:#4a90d9\"></div></div><div id=\"b\" style=\"position:absolute;right:0;bottom:0;width:60px;height:40px;background:#d94a4a\"></div></body></html>",
+    "measureText": [],
+    "rects": ["a", "b"],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

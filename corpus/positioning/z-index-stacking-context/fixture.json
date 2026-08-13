@@ -1,0 +1,17 @@
+{
+  "name": "z-index-stacking-context",
+  "note": "A positioned box with z-index creates a stacking context: its in-flow child paints atomically with it (both above a lower z-index sibling that overlaps the child), so the child is visible over the sibling even though the sibling comes later.",
+  "harvest": {
+    "viewport": { "width": 220, "height": 140 },
+    "html": "<html><head><style>body{margin:0;font-family:'Noto Sans';font-size:14px;line-height:20px}</style></head><body><div id=\"s2\" style=\"position:absolute;left:10px;top:10px;z-index:2;width:100px;height:70px;background:#008000\"><div id=\"kid\" style=\"background:#ffa500;width:100px;height:70px\"></div></div><div id=\"s1\" style=\"position:absolute;left:50px;top:35px;z-index:1;width:100px;height:70px;background:#0000ff\"></div></body></html>",
+    "measureText": [],
+    "rects": ["s2", "kid", "s1"],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}
