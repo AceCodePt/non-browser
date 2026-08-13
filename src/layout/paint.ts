@@ -1,13 +1,16 @@
 /**
- * Paint a laid-out tree onto @napi-rs/canvas and collect getBoundingClientRect
- * values for every element with an `id`.
+ * Paint a laid-out tree through the generic Canvas interface and collect
+ * getBoundingClientRect values for every element with an `id`.
  *
  * Painting order follows CSS: in-flow block backgrounds/borders first, then
  * floats, then inline content (text) on top. Each element's background is
- * clipped to its border box.
+ * clipped to its border box. Nothing here knows about skia — surfaces and
+ * primitives come from the CanvasFactory, so a CoreText/HarfBuzz implementation
+ * paints the same tree unchanged.
  */
 
-import { createCanvas, type SKRSContext2D } from '@napi-rs/canvas';
+import type { CanvasFactory } from '../canvas/interface.js';
+import { skiaCanvasFactory } from '../canvas/skia.js';
 import type { Color } from './css.js';
 import type { PaintOp, RootLayout, TextDecorationPaint } from './block-inline.js';
 import type { Box } from '../harness/fixtures.js';
@@ -26,22 +29,18 @@ export interface RenderOutput {
   rects: Record<string, Box>;
 }
 
-function cssColor(c: Color): string {
-  if (c.a === 0) return 'rgba(0,0,0,0)';
-  if (c.a >= 1) return `rgb(${c.r},${c.g},${c.b})`;
-  return `rgba(${c.r},${c.g},${c.b},${c.a})`;
-}
-
 /** Draw one layout line's text, applying letter-spacing when non-zero. */
 function paintTextRun(
-  ctx: SKRSContext2D,
+  canvas: { drawText(text: string, x: number, baseline: number, font: string, color: Color): void },
   run: { text: string; x: number; baseline: number },
   fontSize: number,
   family: string,
+  color: Color,
   letterSpacing: number,
 ): void {
+  const font = `${fontSize}px '${family}'`;
   if (letterSpacing === 0) {
-    ctx.fillText(run.text, run.x, run.baseline);
+    canvas.drawText(run.text, run.x, run.baseline, font, color);
     return;
   }
   // Draw glyph-by-glyph, positioning each character at its shaped prefix
@@ -52,7 +51,7 @@ function paintTextRun(
   let prefix = '';
   for (let i = 0; i < chars.length; i++) {
     const x = run.x + measureTextWidth(prefix, fontSize, family) + i * letterSpacing;
-    ctx.fillText(chars[i], x, run.baseline);
+    canvas.drawText(chars[i], x, run.baseline, font, color);
     prefix += chars[i];
   }
 }
@@ -88,7 +87,7 @@ function resolveDecorationThickness(
  * `text-underline-position: auto` with default (zero) insets; solid style only.
  */
 function paintDecorations(
-  ctx: SKRSContext2D,
+  canvas: { fillRect(x: number, y: number, w: number, h: number, color: Color): void },
   t: NonNullable<PaintOp['text']>,
   decoration: TextDecorationPaint,
   vm: FontVerticalMetrics,
@@ -111,14 +110,13 @@ function paintDecorations(
       } else {
         top = Math.floor(contentTop - Math.floor(thickness));
       }
-      ctx.fillStyle = cssColor(decoration.color);
-      ctx.fillRect(run.x, top, run.width, drawHeight);
+      canvas.fillRect(run.x, top, run.width, drawHeight, decoration.color);
     }
   }
 }
 
 function paintBorder(
-  ctx: SKRSContext2D,
+  canvas: { fillRect(x: number, y: number, w: number, h: number, color: Color): void },
   box: Box,
   widths: SideWidths,
   colors: SideColors,
@@ -132,43 +130,39 @@ function paintBorder(
   ];
   for (const s of sides) {
     if (widths[s.side] <= 0) continue;
-    ctx.fillStyle = cssColor(colors[s.side]);
-    ctx.fillRect(s.rect.x, s.rect.y, s.rect.width, s.rect.height);
+    canvas.fillRect(s.rect.x, s.rect.y, s.rect.width, s.rect.height, colors[s.side]);
   }
 }
 
-/** Paint the layout and produce the pixel buffer + per-id rects. */
+/**
+ * Paint the layout through a CanvasFactory and produce the pixel buffer +
+ * per-id rects.
+ */
 export function paint(
   root: RootLayout,
   viewportWidth: number,
   viewportHeight: number,
   ids: string[],
   fontFile?: string,
+  factory: CanvasFactory = skiaCanvasFactory,
 ): RenderOutput {
-  const canvas = createCanvas(viewportWidth, viewportHeight);
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#fff';
-  ctx.fillRect(0, 0, viewportWidth, viewportHeight);
-
-  ctx.textBaseline = 'alphabetic';
+  const canvas = factory.create(viewportWidth, viewportHeight);
+  canvas.fillRect(0, 0, viewportWidth, viewportHeight, { r: 255, g: 255, b: 255, a: 1 });
 
   const fontMetrics = fontFile ? fontVerticalMetrics(fontFile) : null;
 
   for (const op of root.paints) {
     if (op.kind === 'bg') {
-      ctx.fillStyle = cssColor(op.color!);
-      ctx.fillRect(op.box.x, op.box.y, op.box.width, op.box.height);
+      canvas.fillRect(op.box.x, op.box.y, op.box.width, op.box.height, op.color!);
     } else if (op.kind === 'border') {
-      paintBorder(ctx, op.box, op.borderWidths!, op.borderColors!);
+      paintBorder(canvas, op.box, op.borderWidths!, op.borderColors!);
     } else if (op.kind === 'text') {
       const t = op.text!;
-      ctx.fillStyle = cssColor(t.color);
-      ctx.font = `${t.fontSize}px '${t.family}'`;
       for (const run of t.runs) {
-        paintTextRun(ctx, run, t.fontSize, t.family, t.letterSpacing);
+        paintTextRun(canvas, run, t.fontSize, t.family, t.color, t.letterSpacing);
       }
       if (t.decoration && fontMetrics) {
-        paintDecorations(ctx, t, t.decoration, fontMetrics);
+        paintDecorations(canvas, t, t.decoration, fontMetrics);
       }
     }
   }
@@ -183,7 +177,7 @@ export function paint(
   return {
     width: viewportWidth,
     height: viewportHeight,
-    rgba: canvas.toBuffer('image/png'),
+    rgba: canvas.toBuffer(),
     rects,
   };
 }

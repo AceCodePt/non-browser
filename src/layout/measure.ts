@@ -1,14 +1,17 @@
 /**
- * Text measurement and line breaking over @napi-rs/canvas.
+ * Text measurement and line breaking over the generic Canvas interface.
  *
- * Line breaking for the fixtures is plain CSS `white-space: normal` word
- * wrapping: text breaks at space opportunities, greedily filling each line up
- * to the available width. For the simple Latin fixtures this matches Chrome's
- * UAX#14-based breaking exactly (space is the break opportunity, no
- * hyphenation, no CJK).
+ * Measurement is the interface's `measureText` (skia today, CoreText/HarfBuzz
+ * later); line breaking for the fixtures is plain CSS `white-space: normal`
+ * word wrapping: text breaks at space opportunities, greedily filling each line
+ * up to the available width. For the simple Latin fixtures this matches
+ * Chrome's UAX#14-based breaking exactly (space is the break opportunity, no
+ * hyphenation, no CJK). Pretext-based breaking over the same interface is wired
+ * in src/pretext and owned by the text-breaker-parity task.
  */
 
-import { createCanvas, type CanvasRenderingContext2D } from '@napi-rs/canvas';
+import type { CanvasFactory, CanvasLike } from '../canvas/interface.js';
+import { skiaCanvasFactory } from '../canvas/skia.js';
 
 export interface FontConfig {
   /** CSS family name as Chrome/fontconfig resolves it (e.g. 'Noto Sans'). */
@@ -17,21 +20,31 @@ export interface FontConfig {
   filePath: string;
 }
 
-let context: CanvasRenderingContext2D | null = null;
+let factory: CanvasFactory = skiaCanvasFactory;
+let measurementCanvas: CanvasLike | null = null;
 
-export function initMeasurement(config: FontConfig): void {
-  // The font is registered globally by render.ts (GlobalFonts). Here we just
-  // set up a measurement context.
-  context = createCanvas(1, 1).getContext('2d');
-  context.font = `14px '${config.family}'`;
+/**
+ * Set up the measurement canvas. Font registration is the factory's job
+ * (render.ts registers via the factory before calling this). Returns the
+ * measurement surface so callers can hand it to Pretext's shim.
+ */
+export function initMeasurement(config: FontConfig, f?: CanvasFactory): CanvasLike {
+  factory = f ?? factory;
+  measurementCanvas = factory.create(1, 1);
+  measurementCanvas.measureText('', `14px '${config.family}'`);
+  return measurementCanvas;
+}
+
+export function getMeasurementCanvas(): CanvasLike {
+  if (measurementCanvas === null) measurementCanvas = factory.create(1, 1);
+  return measurementCanvas;
 }
 
 export function measureTextWidth(text: string, fontSize: number, family: string, letterSpacing = 0): number {
-  const ctx = context ?? createCanvas(1, 1).getContext('2d');
-  ctx.font = `${fontSize}px '${family}'`;
+  const m = getMeasurementCanvas().measureText(text, `${fontSize}px '${family}'`);
   // letter-spacing is added after every character (Blink applies it to the
   // trailing character too, so the used width grows by ls * length).
-  return ctx.measureText(text).width + letterSpacing * text.length;
+  return m.width + letterSpacing * text.length;
 }
 
 export interface LineBox {

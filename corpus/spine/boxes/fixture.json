@@ -1,0 +1,50 @@
+{
+  "name": "boxes",
+  "note": "The CSS box model on the spine seam: explicit width/height, margins, padding, border, and background-color, verified via computed styles, rects, and unmasked box pixels.",
+  "harvest": {
+    "viewport": {
+      "width": 460,
+      "height": 160
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"box\" style=\"font-family:'Noto Sans';font-size:16px;line-height:24px;width:300px;height:80px;margin:10px 20px;padding:8px;border:2px solid #333;background:#f0f0f0\">Boxed text inside a styled box.</div></body></html>",
+    "measureText": [
+      {
+        "text": "Boxed text inside a styled box.",
+        "font": "16px 'Noto Sans'"
+      }
+    ],
+    "computedStyle": [
+      {
+        "id": "box",
+        "props": [
+          "box-sizing",
+          "width",
+          "height",
+          "margin-top",
+          "margin-right",
+          "margin-bottom",
+          "margin-left",
+          "padding-top",
+          "padding-right",
+          "padding-bottom",
+          "padding-left",
+          "border-top-width",
+          "border-right-width",
+          "border-bottom-width",
+          "border-left-width",
+          "border-top-style",
+          "border-bottom-style",
+          "background-color"
+        ]
+      }
+    ],
+    "rects": ["box"],
+    "textElements": ["box"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

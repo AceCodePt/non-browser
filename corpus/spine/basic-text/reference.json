@@ -1,0 +1,41 @@
+{
+  "measureText": {
+    "16px 'Noto Sans' | The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.": 643.1373291015625,
+    "20px 'Noto Sans' | How vexingly quick daft zebras jump!": 348.2996520996094,
+    "12px 'Noto Sans' | Quick zephyrs blow, vexing daft Jim.": 201.5894317626953
+  },
+  "computedStyle": {
+    "p1": {
+      "display": "block",
+      "font-size": "16px",
+      "font-family": "\"Noto Sans\"",
+      "line-height": "24px",
+      "color": "rgb(0, 0, 0)",
+      "width": "300px",
+      "box-sizing": "content-box",
+      "overflow": "visible",
+      "white-space": "normal",
+      "float": "none"
+    },
+    "p2": {
+      "font-size": "20px",
+      "font-family": "\"Noto Sans\"",
+      "line-height": "30px",
+      "width": "260px"
+    }
+  },
+  "rect": {
+    "p1": {
+      "x": 0,
+      "y": 0,
+      "width": 300,
+      "height": 72
+    },
+    "p2": {
+      "x": 0,
+      "y": 72,
+      "width": 260,
+      "height": 60
+    }
+  }
+}

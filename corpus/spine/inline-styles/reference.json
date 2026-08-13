@@ -1,0 +1,51 @@
+{
+  "measureText": {
+    "16px 'Noto Sans' | Translucent red underlined.": 207.31239318847656,
+    "16px 'Noto Sans' | Spaced letter text.": 135.80828857421875,
+    "16px 'Noto Sans' | Strike on gray.": 107.66421508789062
+  },
+  "computedStyle": {
+    "c1": {
+      "color": "rgb(10, 102, 194)",
+      "text-decoration-line": "none",
+      "background-color": "rgba(0, 0, 0, 0)"
+    },
+    "c2": {
+      "color": "rgba(200, 0, 0, 0.6)",
+      "text-decoration-line": "underline"
+    },
+    "c3": {
+      "letter-spacing": "2px"
+    },
+    "c4": {
+      "background-color": "rgb(240, 240, 240)",
+      "text-decoration-line": "line-through"
+    }
+  },
+  "rect": {
+    "c1": {
+      "x": 0,
+      "y": 0,
+      "width": 460,
+      "height": 24
+    },
+    "c2": {
+      "x": 0,
+      "y": 24,
+      "width": 460,
+      "height": 24
+    },
+    "c3": {
+      "x": 0,
+      "y": 48,
+      "width": 460,
+      "height": 24
+    },
+    "c4": {
+      "x": 0,
+      "y": 72,
+      "width": 460,
+      "height": 24
+    }
+  }
+}

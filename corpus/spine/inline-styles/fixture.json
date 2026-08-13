@@ -1,0 +1,51 @@
+{
+  "name": "inline-styles",
+  "note": "Inline style resolution and text paint: fill colors (named/hex/rgba), text-decoration lines, letter-spacing, and a background, all riding the four-layer harness.",
+  "harvest": {
+    "viewport": {
+      "width": 460,
+      "height": 120
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c1\" style=\"font-family:'Noto Sans';font-size:16px;line-height:24px;color:#0a66c2\">Blue text.</div><div id=\"c2\" style=\"font-family:'Noto Sans';font-size:16px;line-height:24px;color:rgba(200,0,0,0.6);text-decoration:underline\">Translucent red underlined.</div><div id=\"c3\" style=\"font-family:'Noto Sans';font-size:16px;line-height:24px;letter-spacing:2px\">Spaced letter text.</div><div id=\"c4\" style=\"font-family:'Noto Sans';font-size:16px;line-height:24px;background-color:#f0f0f0;text-decoration:line-through\">Strike on gray.</div></body></html>",
+    "measureText": [
+      {
+        "text": "Translucent red underlined.",
+        "font": "16px 'Noto Sans'"
+      },
+      {
+        "text": "Spaced letter text.",
+        "font": "16px 'Noto Sans'"
+      },
+      {
+        "text": "Strike on gray.",
+        "font": "16px 'Noto Sans'"
+      }
+    ],
+    "computedStyle": [
+      {
+        "id": "c1",
+        "props": ["color", "text-decoration-line", "background-color"]
+      },
+      {
+        "id": "c2",
+        "props": ["color", "text-decoration-line"]
+      },
+      {
+        "id": "c3",
+        "props": ["letter-spacing"]
+      },
+      {
+        "id": "c4",
+        "props": ["background-color", "text-decoration-line"]
+      }
+    ],
+    "rects": ["c1", "c2", "c3", "c4"],
+    "textElements": ["c1", "c2", "c3", "c4"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

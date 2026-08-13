@@ -1,0 +1,24 @@
+{
+  "measureText": {
+    "16px 'Noto Sans' | The quick brown fox jumps over the lazy dog.": 339.16864013671875,
+    "16px 'Noto Sans' | Sphinx of black quartz, judge my vow.": 282.7525634765625
+  },
+  "computedStyle": {
+    "para": {
+      "display": "block",
+      "font-size": "16px",
+      "font-family": "\"Noto Sans\"",
+      "line-height": "24px",
+      "width": "320px",
+      "white-space": "normal"
+    }
+  },
+  "rect": {
+    "para": {
+      "x": 0,
+      "y": 0,
+      "width": 320,
+      "height": 96
+    }
+  }
+}
