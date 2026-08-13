@@ -1,0 +1,23 @@
+{
+  "name": "cascade-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "non-browser server-side CSS cascade: selector matching, ordering, inheritance, UA stylesheet, computed values",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "verify:cascade-core": "node scripts/verify-cascade-core.mjs",
+    "harvest:cascade-core": "node scripts/harvest-computed.mjs"
+  },
+  "dependencies": {
+    "parse5": "^7.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.9",
+    "playwright": "^1.45.0",
+    "typescript": "^5.5.3"
+  }
+}
