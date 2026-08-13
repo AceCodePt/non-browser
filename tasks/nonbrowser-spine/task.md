@@ -1,7 +1,7 @@
 ---
 wait_human_start: false
 wait_human_merge: false
-dependencies: []
+dependencies: [nonbrowser-spec]
 ---
 
 # Task: Nonbrowser-Spine
