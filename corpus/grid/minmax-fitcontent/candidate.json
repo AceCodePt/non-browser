@@ -1,0 +1,34 @@
+{
+  "measureText": {
+    "14px 'Noto Sans' | columns": 55.900001525878906,
+    "14px 'Noto Sans' | wide label that wraps": 139.9199981689453,
+    "14px 'Noto Sans' | tail": 20.1299991607666
+  },
+  "computedStyle": {},
+  "rect": {
+    "g": {
+      "x": 0,
+      "y": 0,
+      "width": 320,
+      "height": 40
+    },
+    "a": {
+      "x": 0,
+      "y": 0,
+      "width": 160,
+      "height": 40
+    },
+    "b": {
+      "x": 168,
+      "y": 0,
+      "width": 120,
+      "height": 40
+    },
+    "c": {
+      "x": 296,
+      "y": 0,
+      "width": 24,
+      "height": 40
+    }
+  }
+}

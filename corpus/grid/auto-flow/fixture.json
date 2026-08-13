@@ -1,0 +1,27 @@
+{
+  "name": "auto-flow",
+  "note": "Auto-placement in row flow: a definite column, then auto items filling rows; implicit rows via grid-auto-rows.",
+  "harvest": {
+    "viewport": {
+      "width": 320,
+      "height": 140
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"g\" style=\"display:grid;grid-template-columns:80px 80px;grid-auto-rows:40px;gap:6px;background:#f0f0f0;width:320px\"><div id=\"a\" style=\"grid-column:2;background:#4a90d9\"></div><div id=\"b\" style=\"background:#d9534f\"></div><div id=\"c\" style=\"background:#90b04f\"></div><div id=\"d\" style=\"background:#d0d0d0\"></div><div id=\"e\" style=\"background:#e0a0a0\"></div></div></body></html>",
+    "measureText": [],
+    "rects": [
+      "g",
+      "a",
+      "b",
+      "c",
+      "d",
+      "e"
+    ],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

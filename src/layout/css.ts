@@ -43,8 +43,64 @@ export function resolveLength(l: Length, ref: number): number | null {
 export type Side = 'top' | 'right' | 'bottom' | 'left';
 export const SIDES: Side[] = ['top', 'right', 'bottom', 'left'];
 
+// ===== Grid track sizing =====
+
+/** A single track sizing function, after minmax() is decomposed. */
+export type TrackFunction =
+  | { type: 'fixed'; px: number }
+  | { type: 'pct'; pct: number }
+  | { type: 'flex'; flex: number }
+  | { type: 'auto' }
+  | { type: 'min-content' }
+  | { type: 'max-content' }
+  | { type: 'fit-content'; limit: { px: number | null; pct: number | null } };
+
+/** One resolved track: a min and a max sizing function plus start line names. */
+export interface TrackDef {
+  min: TrackFunction;
+  max: TrackFunction;
+  /** line names attached to the track's start line (explicit grid line index). */
+  names: string[];
+}
+
+export interface NamedArea {
+  rowStart: number;
+  colStart: number;
+  rowEnd: number;
+  colEnd: number;
+}
+
+export interface GridTemplate {
+  /** explicit track definitions (repeat() expanded), or [] for none. */
+  tracks: TrackDef[];
+  /** row-major area name matrix; '.' marks a null cell. */
+  areas: string[][] | null;
+  /** named grid areas -> 1-based line rectangle. */
+  areasByName: Map<string, NamedArea>;
+  /** explicit line index (1-based) -> line names. */
+  lineNames: Map<number, string[]>;
+}
+
+/** A grid-line value as authored (pre-resolution). */
+export type GridLineSpec =
+  | { kind: 'auto' }
+  | { kind: 'integer'; value: number; name?: string }
+  | { kind: 'span'; count: number; name?: string }
+  | { kind: 'name'; value: string };
+
+export type SelfAlign = 'stretch' | 'start' | 'end' | 'center';
+export type ContentAlign =
+  | 'normal'
+  | 'stretch'
+  | 'start'
+  | 'end'
+  | 'center'
+  | 'space-between'
+  | 'space-around'
+  | 'space-evenly';
+
 export interface ComputedStyle {
-  display: 'block' | 'none';
+  display: 'block' | 'none' | 'grid' | 'inline-grid';
   float: 'none' | 'left' | 'right';
   clear: 'none' | 'left' | 'right' | 'both';
   boxSizing: 'content-box' | 'border-box';
@@ -53,6 +109,10 @@ export interface ComputedStyle {
   width: Length;
   /** border-box height; null = auto. */
   height: Length;
+  minWidth: Length;
+  maxWidth: Length;
+  minHeight: Length;
+  maxHeight: Length;
   margin: Record<Side, Length>;
   padding: Record<Side, Length>;
   borderWidth: Record<Side, number>;
@@ -64,6 +124,30 @@ export interface ComputedStyle {
   fontSize: number;
   lineHeight: number;
   whiteSpace: 'normal' | 'nowrap' | 'pre';
+
+  // --- grid container properties ---
+  gridTemplateColumns: GridTemplate | null;
+  gridTemplateRows: GridTemplate | null;
+  gridAutoColumns: TrackDef | null;
+  gridAutoRows: TrackDef | null;
+  /** true when grid-auto-flow: column. */
+  gridAutoFlowColumn: boolean;
+  /** true when grid-auto-flow: dense. */
+  gridAutoFlowDense: boolean;
+  rowGap: Length;
+  columnGap: Length;
+  justifyItems: SelfAlign;
+  alignItems: SelfAlign;
+  justifyContent: ContentAlign;
+  alignContent: ContentAlign;
+
+  // --- grid item properties ---
+  gridRowStart: GridLineSpec | null;
+  gridRowEnd: GridLineSpec | null;
+  gridColumnStart: GridLineSpec | null;
+  gridColumnEnd: GridLineSpec | null;
+  justifySelf: SelfAlign | null;
+  alignSelf: SelfAlign | null;
 }
 
 const NAMED_COLORS: Record<string, Color> = {
@@ -128,6 +212,284 @@ export function parseLength(raw: string): Length {
   }
   if (s === '0') return { px: 0, pct: null, auto: false };
   return AUTO;
+}
+
+// ===== Grid parsing helpers =====
+
+/** Split a value on top-level whitespace, honoring () nesting. */
+function splitTopLevel(value: string): string[] {
+  const out: string[] = [];
+  let depth = 0;
+  let cur = '';
+  for (const c of value) {
+    if (c === '(') depth++;
+    else if (c === ')') depth--;
+    if (/\s/.test(c) && depth === 0) {
+      if (cur) {
+        out.push(cur);
+        cur = '';
+      }
+    } else {
+      cur += c;
+    }
+  }
+  if (cur) out.push(cur);
+  return out;
+}
+
+function parseFixedOrPct(raw: string): { px: number | null; pct: number | null } | null {
+  const s = raw.trim();
+  if (/^-?[\d.]+px$/.test(s)) return { px: parseFloat(s), pct: null };
+  if (/^-?[\d.]+%$/.test(s)) return { px: null, pct: parseFloat(s) };
+  return null;
+}
+
+/** Parse a single sizing function token (fr/px/%/auto/min-content/max-content/fit-content). */
+function parseTrackFunction(raw: string): TrackFunction {
+  const s = raw.trim();
+  if (s.startsWith('fit-content(') && s.endsWith(')')) {
+    const limit = parseFixedOrPct(s.slice('fit-content('.length, -1));
+    return { type: 'fit-content', limit: limit ?? { px: null, pct: null } };
+  }
+  if (/^-?[\d.]+fr$/.test(s)) return { type: 'flex', flex: parseFloat(s) };
+  if (/^-?[\d.]+px$/.test(s)) return { type: 'fixed', px: parseFloat(s) };
+  if (/^-?[\d.]+%$/.test(s)) return { type: 'pct', pct: parseFloat(s) };
+  if (s === 'auto') return { type: 'auto' };
+  if (s === 'min-content') return { type: 'min-content' };
+  if (s === 'max-content') return { type: 'max-content' };
+  return { type: 'auto' };
+}
+
+/** Normalize a bare track-size value into min/max functions (spec §7.2.4). */
+function bareTrackDef(t: TrackFunction): TrackDef {
+  switch (t.type) {
+    case 'fixed':
+    case 'pct':
+      return { min: t, max: t, names: [] };
+    case 'flex':
+      return { min: { type: 'auto' }, max: t, names: [] };
+    case 'auto':
+      return { min: { type: 'auto' }, max: { type: 'auto' }, names: [] };
+    case 'min-content':
+      return { min: { type: 'min-content' }, max: { type: 'max-content' }, names: [] };
+    case 'max-content':
+      return { min: { type: 'auto' }, max: { type: 'max-content' }, names: [] };
+    case 'fit-content':
+      return { min: { type: 'auto' }, max: t, names: [] };
+  }
+}
+
+/** Decompose minmax(min, max) into a TrackDef, applying §7.2.4 normalization. */
+function minmaxTrackDef(min: TrackFunction, max: TrackFunction): TrackDef {
+  const d = { min, max, names: [] } as TrackDef;
+  if (min.type === 'flex') {
+    d.min = { type: 'auto' };
+    return d;
+  }
+  const fixedPx = (fn: TrackFunction): number | null => (fn.type === 'fixed' ? fn.px : null);
+  const minPx = fixedPx(min);
+  const maxPx = fixedPx(max);
+  if (minPx !== null && maxPx !== null && maxPx < minPx) {
+    d.max = min;
+  }
+  return d;
+}
+
+/** Parse one track-list token into a TrackDef (handles minmax()/bare values). */
+function parseTrackDef(tok: string): TrackDef {
+  const s = tok.trim();
+  if (s.startsWith('minmax(') && s.endsWith(')')) {
+    const parts = splitOnTopLevelComma(s.slice('minmax('.length, -1));
+    if (parts.length === 2) {
+      const min = parseTrackFunction(parts[0]);
+      const max = parseTrackFunction(parts[1]);
+      return minmaxTrackDef(min, max);
+    }
+  }
+  return bareTrackDef(parseTrackFunction(s));
+}
+
+function splitOnTopLevelComma(value: string): string[] {
+  const out: string[] = [];
+  let depth = 0;
+  let cur = '';
+  for (const c of value) {
+    if (c === '(') depth++;
+    else if (c === ')') depth--;
+    if (c === ',' && depth === 0) {
+      out.push(cur);
+      cur = '';
+    } else {
+      cur += c;
+    }
+  }
+  if (cur) out.push(cur);
+  return out;
+}
+
+/**
+ * Parse `grid-template-columns/rows` value into a GridTemplate (repeat() with a
+ * fixed count expanded; auto-fill/auto-fit left as-is for the caller to expand).
+ */
+export function parseTrackList(value: string): GridTemplate | null {
+  const s = value.trim();
+  if (s === '' || s === 'none') return null;
+  const tokens = splitTopLevel(s);
+  const tracks: TrackDef[] = [];
+  const lineNames = new Map<number, string[]>();
+  let line = 1;
+  for (const tok of tokens) {
+    if (tok.startsWith('[') && tok.endsWith(']')) {
+      const names = tok.slice(1, -1).split(/\s+/).filter(Boolean);
+      if (names.length) lineNames.set(line, [...(lineNames.get(line) ?? []), ...names]);
+      continue;
+    }
+    if (tok.startsWith('repeat(') && tok.endsWith(')')) {
+      const body = tok.slice('repeat('.length, -1);
+      const parts = splitOnTopLevelComma(body);
+      if (parts.length !== 2) continue;
+      const countRaw = parts[0].trim();
+      if (/^auto-(fill|fit)$/.test(countRaw)) continue; // auto-repeat handled by caller
+      const count = /^\d+$/.test(countRaw) ? parseInt(countRaw, 10) : 0;
+      const innerTokens = splitTopLevel(parts[1]);
+      for (let i = 0; i < count; i++) {
+        for (const it of innerTokens) {
+          if (it.startsWith('[') && it.endsWith(']')) {
+            const names = it.slice(1, -1).split(/\s+/).filter(Boolean);
+            if (names.length) lineNames.set(line, [...(lineNames.get(line) ?? []), ...names]);
+            continue;
+          }
+          tracks.push(parseTrackDef(it));
+          line++;
+        }
+      }
+      continue;
+    }
+    tracks.push(parseTrackDef(tok));
+    line++;
+  }
+  return { tracks, areas: null, areasByName: new Map(), lineNames };
+}
+
+/** Parse grid-template-areas string list into a name matrix + areas. */
+export function parseTemplateAreas(value: string): { areas: string[][] | null; areasByName: Map<string, NamedArea> } {
+  // Extract quoted strings; each string is one row of cells. CSS allows both
+  // single and double quotes.
+  const re = /"([^"]*)"|'([^']*)'/g;
+  const rows: string[][] = [];
+  let width = -1;
+  let m: RegExpExecArray | null = re.exec(value);
+  while (m !== null) {
+    const raw = m[1] ?? m[2];
+    const cells = raw.trim().split(/\s+/).filter(Boolean);
+    if (cells.length === 0) return { areas: null, areasByName: new Map() };
+    if (width === -1) width = cells.length;
+    else if (cells.length !== width) return { areas: null, areasByName: new Map() };
+    rows.push(cells);
+    m = re.exec(value);
+  }
+  if (rows.length === 0) return { areas: null, areasByName: new Map() };
+
+  const areasByName = new Map<string, NamedArea>();
+  const place = (name: string, r: number, c: number) => {
+    const existing = areasByName.get(name);
+    if (!existing) {
+      areasByName.set(name, { rowStart: r + 1, colStart: c + 1, rowEnd: r + 2, colEnd: c + 2 });
+      return;
+    }
+    existing.rowStart = Math.min(existing.rowStart, r + 1);
+    existing.colStart = Math.min(existing.colStart, c + 1);
+    existing.rowEnd = Math.max(existing.rowEnd, r + 2);
+    existing.colEnd = Math.max(existing.colEnd, c + 2);
+  };
+  for (let r = 0; r < rows.length; r++) {
+    for (let c = 0; c < rows[r].length; c++) {
+      const cell = rows[r][c];
+      if (cell !== '.' && cell !== '...') place(cell, r, c);
+    }
+  }
+  // Validate rectangularity of each area.
+  for (const [name, a] of areasByName) {
+    const cols = a.colEnd - a.colStart;
+    const rowsN = a.rowEnd - a.rowStart;
+    for (let r = a.rowStart - 1; r < a.rowEnd - 1; r++) {
+      for (let c = a.colStart - 1; c < a.colEnd - 1; c++) {
+        if ((rows[r] ?? [])[c] !== name) return { areas: null, areasByName: new Map() };
+      }
+    }
+    void cols;
+    void rowsN;
+  }
+  return { areas: rows, areasByName };
+}
+
+function parseGridLine(value: string): GridLineSpec {
+  const s = value.trim();
+  if (s === 'auto') return { kind: 'auto' };
+  const span = s.match(/^span(?:\s+(\d+))?(?:\s+([a-zA-Z_-][\w-]*))?$/);
+  if (span) {
+    const count = span[1] ? parseInt(span[1], 10) : 1;
+    const name = span[2];
+    return name ? { kind: 'span', count, name } : { kind: 'span', count };
+  }
+  const int = s.match(/^(-?\d+)(?:\s+([a-zA-Z_-][\w-]*))?$/);
+  if (int) {
+    const value = parseInt(int[1], 10);
+    if (value === 0) return { kind: 'auto' };
+    const name = int[2];
+    return name ? { kind: 'integer', value, name } : { kind: 'integer', value };
+  }
+  if (/^[a-zA-Z_-][\w-]*$/.test(s)) return { kind: 'name', value: s };
+  return { kind: 'auto' };
+}
+
+/** Parse grid-row/grid-column shorthand. */
+function parseGridLinePair(value: string): { start: GridLineSpec; end: GridLineSpec } {
+  const parts = value.split('/').map((p) => p.trim());
+  if (parts.length === 1) {
+    const first = parseGridLine(parts[0]);
+    const end = first.kind === 'name' ? first : { kind: 'auto' as const };
+    return { start: first, end };
+  }
+  return { start: parseGridLine(parts[0]), end: parseGridLine(parts[1]) };
+}
+
+/** Parse grid-area shorthand: row-start / column-start / row-end / column-end. */
+function parseGridArea(value: string): GridPlacementSpecs {
+  const parts = value.split('/').map((p) => p.trim());
+  if (parts.length === 1) {
+    const g = parseGridLine(parts[0]);
+    return { rowStart: g, colStart: g, rowEnd: g, colEnd: g };
+  }
+  const get = (i: number): GridLineSpec => (parts[i] ? parseGridLine(parts[i]) : { kind: 'auto' });
+  return { rowStart: get(0), colStart: get(1), rowEnd: get(2), colEnd: get(3) };
+}
+
+export interface GridPlacementSpecs {
+  rowStart: GridLineSpec;
+  rowEnd: GridLineSpec;
+  colStart: GridLineSpec;
+  colEnd: GridLineSpec;
+}
+
+function parseSelfAlign(value: string): SelfAlign {
+  const s = value.trim();
+  if (s === 'start' || s === 'flex-start' || s === 'self-start') return 'start';
+  if (s === 'end' || s === 'flex-end' || s === 'self-end') return 'end';
+  if (s === 'center') return 'center';
+  return 'stretch';
+}
+
+function parseContentAlign(value: string): ContentAlign {
+  const s = value.trim();
+  if (s === 'start' || s === 'flex-start') return 'start';
+  if (s === 'end' || s === 'flex-end') return 'end';
+  if (s === 'center') return 'center';
+  if (s === 'space-between') return 'space-between';
+  if (s === 'space-around') return 'space-around';
+  if (s === 'space-evenly') return 'space-evenly';
+  if (s === 'stretch') return 'stretch';
+  return 'normal';
 }
 
 function parseBoxShorthand(raw: string): Record<Side, Length> {
@@ -201,7 +563,6 @@ interface Defaults {
   lineHeight: number;
   display: 'block' | 'none';
 }
-
 export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedStyle {
   const color = (name: string, dflt: Color): Color => {
     const v = decls.find((d) => d.property === name);
@@ -257,10 +618,10 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
 
   const sideLens = (shorthand: string): Record<Side, Length> => {
     const sh = decls.find((d) => d.property === shorthand);
-    const top = len(`${shorthand}-top`);
-    const right = len(`${shorthand}-right`);
-    const bottom = len(`${shorthand}-bottom`);
-    const left = len(`${shorthand}-left`);
+    const top = len(`${shorthand}-top`, pxLength(0));
+    const right = len(`${shorthand}-right`, pxLength(0));
+    const bottom = len(`${shorthand}-bottom`, pxLength(0));
+    const left = len(`${shorthand}-left`, pxLength(0));
     if (sh) return parseBoxShorthand(sh.value);
     return { top, right, bottom, left };
   };
@@ -299,13 +660,15 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   }
 
   const displayDecl = decls.find((d) => d.property === 'display');
-  const display: 'block' | 'none' = displayDecl
-    ? displayDecl.value.trim() === 'none'
-      ? 'none'
-      : displayDecl.value.trim() === 'inline'
-        ? 'block'
-        : 'block'
-    : defaults.display;
+  const display: 'block' | 'none' | 'grid' | 'inline-grid' = (() => {
+    if (!displayDecl) return defaults.display;
+    const v = displayDecl.value.trim();
+    if (v === 'none') return 'none';
+    if (v === 'grid') return 'grid';
+    if (v === 'inline-grid') return 'grid';
+    if (v === 'inline' || v === 'inline-block' || v === 'flex' || v === 'inline-flex') return 'block';
+    return 'block';
+  })();
 
   const floatDecl = decls.find((d) => d.property === 'float');
   const float: 'none' | 'left' | 'right' = floatDecl
@@ -338,6 +701,89 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
         : 'normal'
     : 'normal';
 
+  // --- grid properties ---
+  const decl = (name: string) => decls.find((d) => d.property === name)?.value;
+
+  const gridTemplateColumns = parseTrackList(decl('grid-template-columns') ?? '');
+  const gridTemplateRows = parseTrackList(decl('grid-template-rows') ?? '');
+  const areasRaw = parseTemplateAreas(decl('grid-template-areas') ?? '');
+
+  // Merge line names from template tracks and implicit area lines.
+  const mergeLineNames = (template: GridTemplate | null, areas: Map<string, NamedArea> | null, axis: 'row' | 'col') => {
+    const lineNames = new Map<number, string[]>();
+    if (template) {
+      for (const [idx, names] of template.lineNames) {
+        lineNames.set(idx, [...(lineNames.get(idx) ?? []), ...names]);
+      }
+    }
+    if (areas) {
+      for (const [name, a] of areas) {
+        const start = axis === 'row' ? a.rowStart : a.colStart;
+        const end = axis === 'row' ? a.rowEnd : a.colEnd;
+        const push = (line: number, nm: string) =>
+          lineNames.set(line, [...(lineNames.get(line) ?? []), nm]);
+        push(start, `${name}-start`);
+        push(end, `${name}-end`);
+      }
+    }
+    return lineNames;
+  };
+
+  if (gridTemplateColumns) {
+    gridTemplateColumns.lineNames = mergeLineNames(gridTemplateColumns, areasRaw.areasByName, 'col');
+  }
+  if (gridTemplateRows) {
+    gridTemplateRows.lineNames = mergeLineNames(gridTemplateRows, areasRaw.areasByName, 'row');
+  }
+  const templateCols = gridTemplateColumns ? { ...gridTemplateColumns, areas: areasRaw.areas, areasByName: areasRaw.areasByName } : null;
+  const templateRows = gridTemplateRows ? { ...gridTemplateRows, areas: areasRaw.areas, areasByName: areasRaw.areasByName } : null;
+
+  const autoTracks = (v: string | undefined): TrackDef | null =>
+    v ? parseTrackList(v)?.tracks[0] ?? null : null;
+
+  const gapDecl = decl('gap') ?? decl('grid-gap');
+  const colGapDecl = decl('column-gap') ?? decl('grid-column-gap');
+  const rowGapDecl = decl('row-gap') ?? decl('grid-row-gap');
+  const parseGap = (v: string | undefined, first: boolean, fallback: Length): Length => {
+    if (!v) return fallback;
+    const parts = v.trim().split(/\s+/);
+    const part = first ? parts[0] : parts[1] ?? parts[0];
+    return parseLength(part);
+  };
+
+  const gridAutoFlow = decl('grid-auto-flow')?.trim() ?? 'row';
+  const autoFlowParts = gridAutoFlow.split(/\s+/);
+  const gridAutoFlowColumn = autoFlowParts.includes('column');
+  const gridAutoFlowDense = autoFlowParts.includes('dense');
+
+  const lineFor = (v: string | undefined): GridLineSpec | null => (v ? parseGridLine(v) : null);
+
+  // grid-column / grid-row / grid-area shorthands override the longhands.
+  let gridRowStart = lineFor(decl('grid-row-start'));
+  let gridRowEnd = lineFor(decl('grid-row-end'));
+  let gridColumnStart = lineFor(decl('grid-column-start'));
+  let gridColumnEnd = lineFor(decl('grid-column-end'));
+  const colShort = decl('grid-column');
+  const rowShort = decl('grid-row');
+  const areaShort = decl('grid-area');
+  if (colShort) {
+    const pair = parseGridLinePair(colShort);
+    gridColumnStart = pair.start;
+    gridColumnEnd = pair.end;
+  }
+  if (rowShort) {
+    const pair = parseGridLinePair(rowShort);
+    gridRowStart = pair.start;
+    gridRowEnd = pair.end;
+  }
+  if (areaShort) {
+    const specs = parseGridArea(areaShort);
+    gridRowStart = specs.rowStart;
+    gridColumnStart = specs.colStart;
+    gridRowEnd = specs.rowEnd;
+    gridColumnEnd = specs.colEnd;
+  }
+
   return {
     display,
     float,
@@ -346,6 +792,10 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     overflow,
     width: len('width'),
     height: len('height'),
+    minWidth: len('min-width'),
+    maxWidth: len('max-width'),
+    minHeight: len('min-height'),
+    maxHeight: len('max-height'),
     margin,
     padding,
     borderWidth,
@@ -357,5 +807,25 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     fontSize,
     lineHeight,
     whiteSpace,
+
+    gridTemplateColumns: templateCols,
+    gridTemplateRows: templateRows,
+    gridAutoColumns: autoTracks(decl('grid-auto-columns')),
+    gridAutoRows: autoTracks(decl('grid-auto-rows')),
+    gridAutoFlowColumn,
+    gridAutoFlowDense,
+    rowGap: parseGap(gapDecl, true, parseLength(rowGapDecl ?? '')),
+    columnGap: parseGap(gapDecl, false, parseLength(colGapDecl ?? '')),
+    justifyItems: parseSelfAlign(decl('justify-items') ?? 'stretch'),
+    alignItems: parseSelfAlign(decl('align-items') ?? 'stretch'),
+    justifyContent: parseContentAlign(decl('justify-content') ?? 'normal'),
+    alignContent: parseContentAlign(decl('align-content') ?? 'normal'),
+
+    gridRowStart,
+    gridRowEnd,
+    gridColumnStart,
+    gridColumnEnd,
+    justifySelf: decl('justify-self') ? parseSelfAlign(decl('justify-self')!) : null,
+    alignSelf: decl('align-self') ? parseSelfAlign(decl('align-self')!) : null,
   };
 }

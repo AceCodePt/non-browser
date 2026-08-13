@@ -1,0 +1,28 @@
+{
+  "name": "repeat-percent",
+  "note": "repeat() and percentage tracks: repeat(2, 30%) plus a 1fr column, rows repeat(2, 40px) with a gap.",
+  "harvest": {
+    "viewport": {
+      "width": 320,
+      "height": 100
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"g\" style=\"display:grid;grid-template-columns:repeat(2, 30%) 1fr;grid-template-rows:repeat(2, 40px);gap:6px;background:#f0f0f0;width:320px\"><div id=\"a\" style=\"background:#4a90d9\"></div><div id=\"b\" style=\"background:#d9534f\"></div><div id=\"c\" style=\"background:#90b04f\"></div><div id=\"d\" style=\"background:#d0d0d0\"></div><div id=\"e\" style=\"background:#e0a0a0\"></div><div id=\"f\" style=\"background:#a0e0a0\"></div></div></body></html>",
+    "measureText": [],
+    "rects": [
+      "g",
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+      "f"
+    ],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

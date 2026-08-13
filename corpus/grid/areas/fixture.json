@@ -1,0 +1,26 @@
+{
+  "name": "areas",
+  "note": "grid-template-areas: a header spanning two columns, a nav column, a main column and a full-width footer.",
+  "harvest": {
+    "viewport": {
+      "width": 320,
+      "height": 160
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"g\" style=\"display:grid;grid-template-areas:'h h' 'n m' 'f f';grid-template-columns:80px 1fr;grid-template-rows:40px 60px 30px;gap:8px;background:#f0f0f0;width:320px\"><div id=\"h\" style=\"grid-area:h;background:#4a90d9\"></div><div id=\"n\" style=\"grid-area:n;background:#d9534f\"></div><div id=\"m\" style=\"grid-area:m;background:#90b04f\"></div><div id=\"f\" style=\"grid-area:f;background:#d0d0d0\"></div></div></body></html>",
+    "measureText": [],
+    "rects": [
+      "g",
+      "h",
+      "n",
+      "m",
+      "f"
+    ],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

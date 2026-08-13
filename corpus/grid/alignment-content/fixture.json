@@ -1,0 +1,26 @@
+{
+  "name": "alignment-content",
+  "note": "Grid alignment within the container: justify-content space-between and align-content center on a fixed-height container.",
+  "harvest": {
+    "viewport": {
+      "width": 320,
+      "height": 160
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"g\" style=\"display:grid;grid-template-columns:60px 60px;grid-template-rows:30px 30px;width:320px;height:120px;gap:5px;justify-content:space-between;align-content:center;background:#f0f0f0\"><div id=\"a\" style=\"background:#4a90d9\"></div><div id=\"b\" style=\"background:#d9534f\"></div><div id=\"c\" style=\"background:#90b04f\"></div><div id=\"d\" style=\"background:#d0d0d0\"></div></div></body></html>",
+    "measureText": [],
+    "rects": [
+      "g",
+      "a",
+      "b",
+      "c",
+      "d"
+    ],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

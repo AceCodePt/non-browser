@@ -1,0 +1,39 @@
+{
+  "name": "text-rows",
+  "note": "Auto rows sized by text content: one line of text in an auto row and wrapped multi-line text in a 1fr column.",
+  "harvest": {
+    "viewport": {
+      "width": 320,
+      "height": 160
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"g\" style=\"display:grid;grid-template-columns:90px 1fr;grid-template-rows:auto auto;gap:8px;background:#f0f0f0;width:320px\"><div id=\"a\" style=\"font-family:'Noto Sans';font-size:14px;line-height:20px;background:#4a90d9\">one line</div><div id=\"b\" style=\"font-family:'Noto Sans';font-size:14px;line-height:20px;background:#d9534f\">The quick brown fox jumps over the lazy dog and then runs back around the whole park.</div><div id=\"c\" style=\"font-family:'Noto Sans';font-size:14px;line-height:20px;background:#90b04f\">tail</div><div id=\"d\" style=\"background:#d0d0d0\"></div></div></body></html>",
+    "measureText": [
+      {
+        "text": "one line",
+        "font": "14px 'Noto Sans'"
+      },
+      {
+        "text": "The quick brown fox jumps over the lazy dog",
+        "font": "14px 'Noto Sans'"
+      }
+    ],
+    "rects": [
+      "g",
+      "a",
+      "b",
+      "c",
+      "d"
+    ],
+    "textElements": [
+      "a",
+      "b",
+      "c"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

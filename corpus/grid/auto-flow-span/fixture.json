@@ -1,0 +1,26 @@
+{
+  "name": "auto-flow-span",
+  "note": "Auto-placement with spans: an item spanning two columns and another spanning two rows; the cursor must place around occupied cells.",
+  "harvest": {
+    "viewport": {
+      "width": 320,
+      "height": 140
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"g\" style=\"display:grid;grid-template-columns:100px 1fr 1fr;grid-auto-rows:40px;gap:8px;background:#f0f0f0;width:320px\"><div id=\"a\" style=\"grid-column:1 / span 2;grid-row:1;background:#4a90d9\"></div><div id=\"b\" style=\"grid-column:3;grid-row:1;background:#d9534f\"></div><div id=\"c\" style=\"grid-column:1 / 3;background:#90b04f\"></div><div id=\"d\" style=\"background:#d0d0d0\"></div></div></body></html>",
+    "measureText": [],
+    "rects": [
+      "g",
+      "a",
+      "b",
+      "c",
+      "d"
+    ],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}
