@@ -1,0 +1,5 @@
+# Generated scaffolding and runtime state, not project intent.
+# Real hooks (a copy of hooks/*.sample made executable and committed) ARE tracked;
+# only the inert samples are ignored.
+.state/
+hooks/*.sample

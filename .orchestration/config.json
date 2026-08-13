@@ -1,0 +1,11 @@
+{
+  "$comment": "Project knowledge only. Anything here that every project would copy verbatim belongs in orch instead.",
+  "baseBranch": "main",
+  "verify": {
+    "$comment": "How the acceptance hook (hooks/session-idle) is bounded. retryCap caps how many times a failing verification re-prompts the agent before the task lands on needs-review.",
+    "retryCap": 3
+  },
+  "scheduler": {
+    "$comment": "Let the daemon auto-dispatch todo tasks itself (wait_human_start: false tasks only). maxConcurrent caps how many task agents run in this project at once. Edit with `orch project scheduler <n>`; only the committed copy on the base branch applies."
+  }
+}
