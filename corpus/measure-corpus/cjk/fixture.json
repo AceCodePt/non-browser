@@ -1,0 +1,20 @@
+{
+  "name": "cjk",
+  "note": "CJK strings on the Droid Sans Fallback (Simplified Chinese, incl. CJK punctuation) and Droid Sans Japanese (kanji/kana) registered faces. Strings are single-script so every glyph resolves inside the one font; mixed-script strings fall back per-glyph and are tracked as known gaps.",
+  "fonts": [
+    { "family": "Droid Sans Fallback", "file": "/usr/share/fonts/google-droid-sans-fonts/DroidSansFallbackFull.ttf" },
+    { "family": "Droid Sans Japanese", "file": "/usr/share/fonts/google-droid-sans-fonts/DroidSansJapanese.ttf" }
+  ],
+  "entries": [
+    { "text": "这是一个用于测试文本宽度的中文句子，包含标点符号。", "font": "16px 'Droid Sans Fallback'", "note": "long sentence with CJK punctuation" },
+    { "text": "中文测试句子可以吗", "font": "16px 'Droid Sans Fallback'" },
+    { "text": "汉字汉字的宽度测试", "font": "12px 'Droid Sans Fallback'", "note": "small size" },
+    { "text": "中文测试", "font": "40px 'Droid Sans Fallback'", "note": "large size" },
+    { "text": "《引号》【括号】——破折号、顿号", "font": "16px 'Droid Sans Fallback'", "note": "CJK punctuation set" },
+    { "text": "中文 中文 中文", "font": "16px 'Droid Sans Fallback'", "note": "ideographs with spaces" },
+    { "text": "这是一个包含中文字符的句子", "font": "16px 'Droid Sans Fallback'" },
+    { "text": "これは日本語のテキスト幅をテストする文です。", "font": "16px 'Droid Sans Japanese'", "note": "long Japanese sentence" },
+    { "text": "日本語の文章テスト", "font": "16px 'Droid Sans Japanese'" },
+    { "text": "かなカタカナ漢字", "font": "16px 'Droid Sans Japanese'", "note": "hiragana katakana kanji" }
+  ]
+}

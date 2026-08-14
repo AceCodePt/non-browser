@@ -1,0 +1,19 @@
+{
+  "name": "tabs",
+  "note": "Tab runs on the monospace faces (Source Code Pro, Liberation Mono), where Chrome's canvas tab handling and skia's tab glyph advance coincide: single tab, tab runs, tabs inline, and a tab at 24px. Proportional-font tabs (Noto Sans) diverge because Chrome applies tab-stop semantics and skia returns the raw tab advance — tracked in the known-gaps fixture.",
+  "fonts": [
+    { "family": "Source Code Pro", "file": "/usr/share/fonts/adobe-source-code-pro/SourceCodePro-Regular.otf" },
+    { "family": "Liberation Mono", "file": "/usr/share/fonts/liberation-mono/LiberationMono-Regular.ttf" }
+  ],
+  "entries": [
+    { "text": "\t", "font": "16px 'Source Code Pro'", "note": "single tab" },
+    { "text": "\t\t\t", "font": "16px 'Source Code Pro'", "note": "tab run" },
+    { "text": "a\tb\tc\td", "font": "16px 'Source Code Pro'", "note": "tabs between letters" },
+    { "text": "a\tbb\tccc", "font": "16px 'Source Code Pro'", "note": "tab stops with varying widths" },
+    { "text": "tab\ttext\texample", "font": "16px 'Source Code Pro'", "note": "words separated by tabs" },
+    { "text": "\t", "font": "16px 'Liberation Mono'", "note": "single tab" },
+    { "text": "\t\t\t", "font": "16px 'Liberation Mono'", "note": "tab run" },
+    { "text": "a\tbb\tccc\tdddd", "font": "16px 'Liberation Mono'", "note": "tab stops" },
+    { "text": "a\tb\tc", "font": "24px 'Source Code Pro'", "note": "tabs at large size" }
+  ]
+}

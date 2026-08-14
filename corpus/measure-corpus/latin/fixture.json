@@ -1,0 +1,35 @@
+{
+  "name": "latin",
+  "note": "Latin strings across the engine's primary registered face (Noto Sans) at multiple sizes plus the family's synthetic bold/italic via font-shorthand weight/style, and the same pangram on five additional registered Latin faces. Covers sizing, uppercase/lowercase, digits, ligatures, kerning, punctuation, and whitespace characters.",
+  "fonts": [
+    { "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" },
+    { "family": "Liberation Sans", "file": "/usr/share/fonts/liberation-sans/LiberationSans-Regular.ttf" },
+    { "family": "Liberation Serif", "file": "/usr/share/fonts/liberation-serif/LiberationSerif-Regular.ttf" },
+    { "family": "Liberation Mono", "file": "/usr/share/fonts/liberation-mono/LiberationMono-Regular.ttf" },
+    { "family": "DejaVu Sans", "file": "/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf" },
+    { "family": "Source Code Pro", "file": "/usr/share/fonts/adobe-source-code-pro/SourceCodePro-Regular.otf" }
+  ],
+  "entries": [
+    { "text": "Pack my box with five dozen liquor jugs", "font": "10px 'Noto Sans'", "note": "small size" },
+    { "text": "The quick brown fox jumps over the lazy dog", "font": "16px 'Noto Sans'", "note": "pangram, default size" },
+    { "text": "How vexingly quick daft zebras jump!", "font": "16px 'Noto Sans'" },
+    { "text": "Sphinx of black quartz, judge my vow", "font": "24px 'Noto Sans'", "note": "medium size" },
+    { "text": "Amazingly few discotheques provide jukeboxes", "font": "32px 'Noto Sans'", "note": "large size" },
+    { "text": "The quick brown fox jumps over the lazy dog", "font": "48px 'Noto Sans'", "note": "very large size" },
+    { "text": "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz", "font": "16px 'Noto Sans'", "note": "upper/lowercase" },
+    { "text": "0123456789 9876543210", "font": "16px 'Noto Sans'", "note": "digits" },
+    { "text": "office ff fi fl ffi ffl", "font": "16px 'Noto Sans'", "note": "ligature-prone pairs" },
+    { "text": "AVATAR TA Te To", "font": "48px 'Noto Sans'", "note": "kerning-heavy pairs at large size" },
+    { "text": "He said \u201chello\u201d \u2014 and left.", "font": "16px 'Noto Sans'", "note": "quotes and em dash" },
+    { "text": "one\u2026two", "font": "16px 'Noto Sans'", "note": "ellipsis" },
+    { "text": "1\u202f000\u00a0000", "font": "16px 'Noto Sans'", "note": "narrow no-break space and nbsp" },
+    { "text": "The quick brown fox jumps over the lazy dog", "font": "16px 'Liberation Sans'" },
+    { "text": "The quick brown fox jumps over the lazy dog", "font": "16px 'Liberation Serif'" },
+    { "text": "The quick brown fox jumps over the lazy dog", "font": "16px 'Liberation Mono'" },
+    { "text": "The quick brown fox jumps over the lazy dog", "font": "16px 'DejaVu Sans'" },
+    { "text": "The quick brown fox jumps over the lazy dog", "font": "16px 'Source Code Pro'" },
+    { "text": "The quick brown fox jumps", "font": "700 16px 'Noto Sans'", "note": "bold weight via shorthand" },
+    { "text": "The quick brown fox jumps", "font": "600 16px 'Noto Sans'", "note": "semibold weight via shorthand" },
+    { "text": "The quick brown fox jumps", "font": "italic 16px 'Noto Sans'", "note": "italic style via shorthand" }
+  ]
+}

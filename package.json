@@ -21,6 +21,7 @@
     "verify:layout-positioning": "npm run build && node scripts/verify-layout-positioning.mjs",
     "verify:media-queries": "npm run build && node scripts/verify-media-queries.mjs",
     "verify:paint-text": "npm run build && node scripts/verify-paint-text.mjs",
+    "verify:text-measure": "npm run build && node scripts/verify-text-measure.mjs",
     "verify:firefox": "npm run build && node scripts/verify-firefox.mjs"
   },
   "dependencies": {
