@@ -15,6 +15,8 @@ export interface FontVerticalMetrics {
   ascent: number;
   /** hhea descender, in font units (positive magnitude, above baseline = -y). */
   descent: number;
+  /** OS/2 sxHeight, in font units (used for `vertical-align: middle`). */
+  sxHeight: number;
   /** post underlinePosition, in font units (positive = below baseline). */
   underlinePosition: number;
   /** post underlineThickness, in font units. */
@@ -28,6 +30,7 @@ const FALLBACK: FontVerticalMetrics = {
   unitsPerEm: 1000,
   ascent: 1069,
   descent: 293,
+  sxHeight: 536,
   underlinePosition: 100,
   underlineThickness: 50,
 };
@@ -75,12 +78,14 @@ export function fontVerticalMetrics(filePath: string): FontVerticalMetrics {
     const buf = readFileSync(filePath);
     const head = tableOffset(buf, 'head');
     const hhea = tableOffset(buf, 'hhea');
+    const os2 = tableOffset(buf, 'OS/2');
     const post = tableOffset(buf, 'post');
-    if (head !== null && hhea !== null && post !== null) {
+    if (head !== null && hhea !== null && os2 !== null && post !== null) {
       metrics = {
         unitsPerEm: Math.max(u16(buf, head + 18), 1),
         ascent: s16(buf, hhea + 4),
         descent: Math.abs(s16(buf, hhea + 6)),
+        sxHeight: Math.max(s16(buf, os2 + 86), 1),
         underlinePosition: -s16(buf, post + 8),
         underlineThickness: s16(buf, post + 10),
       };
@@ -94,4 +99,58 @@ export function fontVerticalMetrics(filePath: string): FontVerticalMetrics {
 
 export function fontMetricsKey(filePath: string): string {
   return createHash('sha1').update(filePath).digest('hex').slice(0, 12);
+}
+
+// ===== line-box vertical metrics =====
+//
+// Blink sizes each line box from the fonts' vertical metrics (hhea ascender /
+// descender) scaled by font size and ROUNDED to whole pixels, then distributes
+// half-leading (line-height − content height) around it. The strut (the
+// anonymous inline box carrying the block's line-height) places the line's
+// baseline at `ascent`, and glyph baselines / baseline-aligned inline-blocks
+// align to it. Empirically verified against Chrome over font sizes 10–40 and
+// line-heights 14–80 (probe-tmp*): ascent contribution =
+// floor(roundedAscent + (lineHeight − roundedAscent − roundedDescent) / 2).
+// These helpers let inline layout share the exact numbers Chrome produces.
+
+let activeMetrics: FontVerticalMetrics | null = null;
+
+/** Set the font metrics for the current render (render.ts does this once). */
+export function setActiveFontMetrics(m: FontVerticalMetrics | null): void {
+  activeMetrics = m;
+}
+
+export function activeFontMetrics(): FontVerticalMetrics | null {
+  return activeMetrics;
+}
+
+/** Rounded font ascent/descent at a given font size (Chrome's FontMetrics ints). */
+export function roundedAscent(metrics: FontVerticalMetrics, fontSize: number): number {
+  return Math.round((metrics.ascent / metrics.unitsPerEm) * fontSize);
+}
+
+export function roundedDescent(metrics: FontVerticalMetrics, fontSize: number): number {
+  return Math.round((metrics.descent / metrics.unitsPerEm) * fontSize);
+}
+
+/**
+ * The baseline offset of a line box from its top for a run with the given
+ * font-size/line-height — the strut ascent contribution. `metrics` may be null
+ * (falls back to the legacy 0.75em heuristic) when the font file is unknown.
+ */
+export function lineAscentContribution(fontSize: number, lineHeight: number, metrics: FontVerticalMetrics | null): number {
+  if (!metrics) return (lineHeight + fontSize * 0.75) / 2;
+  const a = roundedAscent(metrics, fontSize);
+  const d = roundedDescent(metrics, fontSize);
+  return Math.floor(a + (lineHeight - a - d) / 2);
+}
+
+/** The strut's descent contribution (line box height − ascent). */
+export function lineDescentContribution(fontSize: number, lineHeight: number, metrics: FontVerticalMetrics | null): number {
+  return lineHeight - lineAscentContribution(fontSize, lineHeight, metrics);
+}
+
+/** Half the font's x-height (os/2 sxHeight), used by `vertical-align: middle`. */
+export function halfXHeight(metrics: FontVerticalMetrics, fontSize: number): number {
+  return (metrics.sxHeight / metrics.unitsPerEm) * fontSize / 2;
 }

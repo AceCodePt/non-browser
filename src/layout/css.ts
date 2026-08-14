@@ -157,8 +157,12 @@ export const ZERO_BORDER_RADIUS: BorderRadius = {
   bottomLeft: ZERO_RADIUS,
 };
 
+export type DisplayValue = 'block' | 'none' | 'grid' | 'inline-grid' | 'flex' | 'inline-block' | 'inline';
+
+export type VerticalAlign = 'baseline' | 'top' | 'middle' | 'bottom';
+
 export interface ComputedStyle {
-  display: 'block' | 'none' | 'grid' | 'inline-grid' | 'flex';
+  display: DisplayValue;
   position: 'static' | 'relative' | 'absolute' | 'fixed';
   /** null = auto (no stacking context). */
   zIndex: number | null;
@@ -169,6 +173,7 @@ export interface ComputedStyle {
   left: Length;
   float: 'none' | 'left' | 'right';
   clear: 'none' | 'left' | 'right' | 'both';
+  verticalAlign: VerticalAlign;
   boxSizing: 'content-box' | 'border-box';
   overflow: 'visible' | 'hidden';
   /** border-box width; null = auto. */
@@ -859,7 +864,7 @@ interface Defaults {
   fontSize: number;
   color: Color;
   lineHeight: number;
-  display: 'block' | 'none';
+  display: DisplayValue;
   letterSpacing?: number;
   textDecorationLines?: DecorationLine[];
   textDecorationColor?: Color | null;
@@ -964,14 +969,15 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   }
 
   const displayDecl = decls.find((d) => d.property === 'display');
-  const display: 'block' | 'none' | 'grid' | 'inline-grid' | 'flex' = (() => {
+  const display: DisplayValue = (() => {
     if (!displayDecl) return defaults.display;
     const v = displayDecl.value.trim();
     if (v === 'none') return 'none';
     if (v === 'grid') return 'grid';
     if (v === 'inline-grid') return 'grid';
     if (v === 'flex' || v === 'inline-flex') return 'flex';
-    if (v === 'inline' || v === 'inline-block') return 'block';
+    if (v === 'inline-block') return 'inline-block';
+    if (v === 'inline') return 'inline';
     return 'block';
   })();
 
@@ -1003,6 +1009,11 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   const clear: 'none' | 'left' | 'right' | 'both' = clearDecl
     ? (clearDecl.value.trim() as 'none' | 'left' | 'right' | 'both')
     : 'none';
+
+  const verticalAlignDecl = decls.find((d) => d.property === 'vertical-align');
+  const verticalAlign: VerticalAlign = verticalAlignDecl
+    ? (verticalAlignDecl.value.trim() as VerticalAlign)
+    : 'baseline';
 
   const boxSizingDecl = decls.find((d) => d.property === 'box-sizing');
   const boxSizing: 'content-box' | 'border-box' =
@@ -1174,6 +1185,7 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     left: len('left'),
     float,
     clear,
+    verticalAlign,
     boxSizing,
     overflow,
     width: len('width'),

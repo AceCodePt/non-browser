@@ -1,0 +1,55 @@
+{
+  "measureText": {
+    "14px 'Noto Sans' | Order NEW ships today.": 155.6934051513672,
+    "14px 'Noto Sans' | NEW": 31.443862915039062
+  },
+  "computedStyle": {
+    "b1": {
+      "display": "inline-block",
+      "vertical-align": "baseline",
+      "padding-left": "6px",
+      "padding-right": "6px",
+      "padding-top": "1px",
+      "padding-bottom": "1px",
+      "border-top-left-radius": "2px",
+      "background-color": "rgb(74, 144, 217)"
+    },
+    "box": {
+      "display": "block",
+      "width": "280px",
+      "padding-left": "10px"
+    }
+  },
+  "rect": {
+    "box": {
+      "x": 0,
+      "y": 0,
+      "width": 300,
+      "height": 42
+    },
+    "b1": {
+      "x": 52.375,
+      "y": 10,
+      "width": 43.453125,
+      "height": 22
+    },
+    "t1": {
+      "x": 10,
+      "y": 11,
+      "width": 38.734375,
+      "height": 19
+    },
+    "t2": {
+      "x": 99.46875,
+      "y": 11,
+      "width": 78.25,
+      "height": 19
+    },
+    "b1t": {
+      "x": 58.375,
+      "y": 11,
+      "width": 31.453125,
+      "height": 19
+    }
+  }
+}

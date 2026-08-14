@@ -1,0 +1,68 @@
+{
+  "measureText": {
+    "14px 'Noto Sans' | The quick brown fox jumps over the lazy dog": 293.01885986328125,
+    "14px 'Noto Sans' | jumps": 40.66984558105469
+  },
+  "computedStyle": {
+    "b1": {
+      "display": "inline-block",
+      "vertical-align": "baseline",
+      "padding-left": "4px",
+      "padding-right": "4px"
+    },
+    "b2": {
+      "display": "inline-block",
+      "vertical-align": "baseline",
+      "width": "48px",
+      "height": "18px"
+    },
+    "box": {
+      "display": "block",
+      "width": "240px"
+    }
+  },
+  "rect": {
+    "box": {
+      "x": 0,
+      "y": 0,
+      "width": 256,
+      "height": 61
+    },
+    "b1": {
+      "x": 144.34375,
+      "y": 8,
+      "width": 48.671875,
+      "height": 22
+    },
+    "b2": {
+      "x": 91.40625,
+      "y": 30,
+      "width": 48,
+      "height": 18
+    },
+    "t1": {
+      "x": 8,
+      "y": 9,
+      "width": 132.703125,
+      "height": 19
+    },
+    "t2": {
+      "x": 8,
+      "y": 9,
+      "width": 217.640625,
+      "height": 43
+    },
+    "t3": {
+      "x": 143.046875,
+      "y": 33,
+      "width": 99.234375,
+      "height": 19
+    },
+    "b1t": {
+      "x": 148.34375,
+      "y": 9,
+      "width": 40.671875,
+      "height": 19
+    }
+  }
+}

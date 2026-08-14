@@ -1,0 +1,75 @@
+{
+  "measureText": {
+    "14px 'Noto Sans' | Align done.": 74.44999694824219
+  },
+  "computedStyle": {
+    "a": {
+      "display": "inline-block",
+      "vertical-align": "top",
+      "width": "20px",
+      "height": "28px"
+    },
+    "b": {
+      "display": "inline-block",
+      "vertical-align": "middle",
+      "width": "20px",
+      "height": "28px"
+    },
+    "c": {
+      "display": "inline-block",
+      "vertical-align": "bottom",
+      "width": "20px",
+      "height": "28px"
+    },
+    "d": {
+      "display": "inline-block",
+      "vertical-align": "baseline",
+      "width": "20px",
+      "height": "28px"
+    }
+  },
+  "rect": {
+    "box": {
+      "x": 0,
+      "y": 0,
+      "width": 320,
+      "height": 58.248
+    },
+    "a": {
+      "x": 47.070000410079956,
+      "y": 10,
+      "width": 20,
+      "height": 28
+    },
+    "b": {
+      "x": 67.07000041007996,
+      "y": 20.247999999999998,
+      "width": 20,
+      "height": 28
+    },
+    "c": {
+      "x": 87.07000041007996,
+      "y": 20.247999999999998,
+      "width": 20,
+      "height": 28
+    },
+    "d": {
+      "x": 107.07000041007996,
+      "y": 10,
+      "width": 20,
+      "height": 28
+    },
+    "t1": {
+      "x": 10,
+      "y": 23,
+      "width": 33.43000030517578,
+      "height": 19
+    },
+    "t2": {
+      "x": 130.71000051498413,
+      "y": 23,
+      "width": 37.380001068115234,
+      "height": 19
+    }
+  }
+}

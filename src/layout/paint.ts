@@ -95,11 +95,12 @@ function paintDecorations(
   decoration: TextDecorationPaint,
   vm: FontVerticalMetrics,
 ): void {
-  const { ascent, descent } = contentMetrics(t.fontSize, vm);
   const thickness = resolveDecorationThickness(decoration.thickness, t.fontSize, vm);
   const drawHeight = Math.max(1, Math.floor(thickness));
 
   for (const run of t.runs) {
+    const runFontSize = run.fontSize ?? t.fontSize;
+    const { ascent, descent } = contentMetrics(runFontSize, vm);
     const contentTop = run.y + (run.height - (ascent + descent)) / 2;
     for (const line of decoration.lines) {
       let top: number;
@@ -267,7 +268,11 @@ export function paint(
     } else if (op.kind === 'text') {
       const t = op.text!;
       for (const run of t.runs) {
-        paintTextRun(canvas, run, t.fontSize, t.family, t.color, t.letterSpacing);
+        const fontSize = run.fontSize ?? t.fontSize;
+        const family = run.family ?? t.family;
+        const color = run.color ?? t.color;
+        const letterSpacing = run.letterSpacing ?? t.letterSpacing;
+        paintTextRun(canvas, run, fontSize, family, color, letterSpacing);
       }
       if (t.decoration && fontMetrics) {
         paintDecorations(canvas, t, t.decoration, fontMetrics);

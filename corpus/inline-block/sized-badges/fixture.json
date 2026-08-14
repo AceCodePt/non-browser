@@ -1,0 +1,24 @@
+{
+  "name": "sized-badges",
+  "note": "Sized inline-blocks among text: explicit width/height per box-sizing (one badge is content-box padding + width, one is border-box), horizontal margins shrink the inline advance and the vertical margins sit inside the line box. Each badge's background is compared strictly at layer-4; its border box and the surrounding text spans are compared at layer-3.",
+  "harvest": {
+    "viewport": { "width": 320, "height": 120 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"box\" style=\"width:300px;font-family:'Noto Sans';font-size:14px;line-height:20px;color:#333;background:#f6f6f6;padding:10px\"><span id=\"t1\">Sizes</span> <span id=\"a\" style=\"display:inline-block;background:#4a90d9;width:40px;height:20px;margin:0 6px\"></span><span id=\"b\" style=\"display:inline-block;background:#e05;width:60px;height:28px;padding:4px;box-sizing:border-box\"></span><span id=\"c\" style=\"display:inline-block;background:#3b6;width:50px;height:16px;margin:2px 4px\"></span> <span id=\"t2\">fit inline.</span></div></body></html>",
+    "measureText": [
+      { "text": "Sizes fit inline.", "font": "14px 'Noto Sans'" }
+    ],
+    "rects": ["box", "a", "b", "c", "t1", "t2"],
+    "textElements": ["t1", "t2"],
+    "computedStyle": [
+      { "id": "a", "props": ["display", "width", "height", "margin-left", "margin-right", "vertical-align"] },
+      { "id": "b", "props": ["display", "width", "height", "padding-left", "padding-right", "box-sizing"] },
+      { "id": "c", "props": ["display", "width", "height", "margin-top", "margin-left", "margin-right"] }
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

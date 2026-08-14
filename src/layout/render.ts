@@ -19,6 +19,7 @@ import { resolveStyles, layoutRoot } from './block-inline.js';
 import { computedStyleFor, type ComputedStyleProps } from './computed-style.js';
 import { paint, type RenderOutput } from './paint.js';
 import { initMeasurement } from './measure.js';
+import { fontVerticalMetrics, setActiveFontMetrics } from './fontmetrics.js';
 import type { ComputedStyle, Viewport } from './css.js';
 import type { P5Element } from './types.js';
 import { setActiveBrowserConfig, type BrowserConfig } from '../config/browser-config.js';
@@ -88,6 +89,7 @@ export function renderHtml(html: string, opts: RenderOptions): RenderHtmlOutput 
   };
   setActiveBrowserConfig(config);
   for (const f of config.fonts) factory.registerFont(f.filePath);
+  setActiveFontMetrics(fontVerticalMetrics(config.defaultFile));
   const measureCanvas: CanvasLike = initMeasurement(
     { family: config.defaultFamily, filePath: config.defaultFile },
     factory,

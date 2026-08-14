@@ -1,0 +1,25 @@
+{
+  "name": "vertical-align",
+  "note": "Baseline alignment per css-inline-3: the same 28px inline-block is aligned with the surrounding text as top, middle, bottom, and (default) baseline. Each badge's border box y is compared to Chrome at layer-3, so the baseline computation must match exactly; layer-4 compares the badges strictly.",
+  "harvest": {
+    "viewport": { "width": 320, "height": 120 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"box\" style=\"width:300px;font-family:'Noto Sans';font-size:14px;line-height:20px;color:#333;background:#f6f6f6;padding:10px\"><span id=\"t1\">Align</span> <span id=\"a\" style=\"display:inline-block;background:#4a90d9;width:20px;height:28px;vertical-align:top\"></span><span id=\"b\" style=\"display:inline-block;background:#e05;width:20px;height:28px;vertical-align:middle\"></span><span id=\"c\" style=\"display:inline-block;background:#3b6;width:20px;height:28px;vertical-align:bottom\"></span><span id=\"d\" style=\"display:inline-block;background:#c50;width:20px;height:28px\"></span> <span id=\"t2\">done.</span></div></body></html>",
+    "measureText": [
+      { "text": "Align done.", "font": "14px 'Noto Sans'" }
+    ],
+    "rects": ["box", "a", "b", "c", "d", "t1", "t2"],
+    "textElements": ["t1", "t2"],
+    "computedStyle": [
+      { "id": "a", "props": ["display", "vertical-align", "width", "height"] },
+      { "id": "b", "props": ["display", "vertical-align", "width", "height"] },
+      { "id": "c", "props": ["display", "vertical-align", "width", "height"] },
+      { "id": "d", "props": ["display", "vertical-align", "width", "height"] }
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}
