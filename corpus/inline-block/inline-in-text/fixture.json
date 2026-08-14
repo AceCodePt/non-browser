@@ -1,0 +1,24 @@
+{
+  "name": "inline-in-text",
+  "note": "An inline-block badge sits on the same line as the surrounding text: it is shrink-to-fit sized (padding + its text), baseline-aligned with the line (its last line box's baseline matches the surrounding text baseline), and the text continues after it with the intervening whitespace respected. Layer-3 compares the badge border box and the text spans against Chrome; layer-4 compares the badge background strictly (only the text spans are under the text tier).",
+  "harvest": {
+    "viewport": { "width": 320, "height": 120 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"box\" style=\"width:280px;font-family:'Noto Sans';font-size:14px;line-height:20px;color:#333;background:#f6f6f6;padding:10px\"><span id=\"t1\">Order</span> <span id=\"b1\" style=\"display:inline-block;background:#4a90d9;color:#fff;padding:1px 6px;border-radius:2px\"><span id=\"b1t\">NEW</span></span> <span id=\"t2\">ships today.</span></div></body></html>",
+    "measureText": [
+      { "text": "Order NEW ships today.", "font": "14px 'Noto Sans'" },
+      { "text": "NEW", "font": "14px 'Noto Sans'" }
+    ],
+    "rects": ["box", "b1", "t1", "t2", "b1t"],
+    "textElements": ["t1", "b1t", "t2"],
+    "computedStyle": [
+      { "id": "b1", "props": ["display", "vertical-align", "padding-left", "padding-right", "padding-top", "padding-bottom", "border-top-left-radius", "background-color"] },
+      { "id": "box", "props": ["display", "width", "padding-left"] }
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

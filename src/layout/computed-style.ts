@@ -161,6 +161,8 @@ export function computedStyleString(style: ComputedStyle, prop: string, refWidth
       return style.float;
     case 'clear':
       return style.clear;
+    case 'vertical-align':
+      return style.verticalAlign;
     case 'letter-spacing':
       // Chrome serializes the initial `normal` keyword as 'normal', and an
       // explicit `0px` as '0px'. The engine collapses both to 0; fixtures that

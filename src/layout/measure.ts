@@ -13,6 +13,7 @@
 import type { CanvasFactory, CanvasLike } from '../canvas/interface.js';
 import { skiaCanvasFactory } from '../canvas/skia.js';
 import { getActiveBrowserConfig, resolveFontFamily } from '../config/browser-config.js';
+import type { Color } from './css.js';
 
 export interface FontConfig {
   /** CSS family name as Chrome/fontconfig resolves it (e.g. 'Noto Sans'). */
@@ -63,6 +64,16 @@ export interface LineBox {
   /** the word indices on this line. */
   startWord: number;
   endWord: number;
+  /** absolute baseline y of the line (inline layout sets it; plain text layout leaves it unset). */
+  baseline?: number;
+  /**
+   * Optional per-run style overrides (inline layout with styled inline boxes).
+   * When absent, the caller's op-level text style applies.
+   */
+  fontSize?: number;
+  family?: string;
+  color?: Color;
+  letterSpacing?: number;
 }
 
 /**

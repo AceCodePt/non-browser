@@ -15,6 +15,7 @@
     "harvest:oracle": "node scripts/harvest-oracle.mjs",
     "verify:report": "npm run build && node scripts/verify-report.mjs",
     "verify:layout-floats": "npm run build && node scripts/verify-layout-floats.mjs",
+    "verify:inline-block": "npm run build && node scripts/verify-layout-inline-block.mjs",
     "verify:layout-grid": "npm run build && node scripts/verify-layout-grid.mjs",
     "verify:layout-flexbox": "npm run build && node scripts/verify-layout-flexbox.mjs",
     "verify:layout-positioning": "npm run build && node scripts/verify-layout-positioning.mjs",

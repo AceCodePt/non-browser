@@ -1,0 +1,69 @@
+{
+  "measureText": {
+    "14px 'Noto Sans' | Sizes fit inline.": 93.02999877929688
+  },
+  "computedStyle": {
+    "a": {
+      "display": "inline-block",
+      "width": "40px",
+      "height": "20px",
+      "margin-left": "6px",
+      "margin-right": "6px",
+      "vertical-align": "baseline"
+    },
+    "b": {
+      "display": "inline-block",
+      "width": "60px",
+      "height": "28px",
+      "padding-left": "4px",
+      "padding-right": "4px",
+      "box-sizing": "border-box"
+    },
+    "c": {
+      "display": "inline-block",
+      "width": "50px",
+      "height": "16px",
+      "margin-top": "2px",
+      "margin-left": "4px",
+      "margin-right": "4px"
+    }
+  },
+  "rect": {
+    "box": {
+      "x": 0,
+      "y": 0,
+      "width": 320,
+      "height": 53
+    },
+    "a": {
+      "x": 52.1199996471405,
+      "y": 18,
+      "width": 40,
+      "height": 20
+    },
+    "b": {
+      "x": 98.1199996471405,
+      "y": 10,
+      "width": 60,
+      "height": 28
+    },
+    "c": {
+      "x": 162.1199996471405,
+      "y": 20,
+      "width": 50,
+      "height": 16
+    },
+    "t1": {
+      "x": 10,
+      "y": 23,
+      "width": 32.47999954223633,
+      "height": 19
+    },
+    "t2": {
+      "x": 219.75999975204468,
+      "y": 23,
+      "width": 56.90999984741211,
+      "height": 19
+    }
+  }
+}

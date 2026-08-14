@@ -45,6 +45,7 @@ Pretext seam (break-point parity vs Chrome line fragments): PASS, means
 | `verify:segmenter` | PASS 72/72 | grapheme + Pretext layout parity, node icu 78.3 vs chrome |
 | `verify:media-queries` | PASS | reduced-motion 2/2, resolution 2/4, viewport-units 2/14, width-breakpoint 3/9 |
 | `verify:firefox` | PASS | screenshot 0 exceeding; Pretext seam Δ 0.0000px |
+| `verify:inline-block` | PASS 4/4 | rect max Δ 0.029px, screenshot ≤ 0.66% exceeding (badge backgrounds compared strictly, text under the tier) |
 | `verify:layout-{flexbox,grid,floats,positioning}`, `verify:paint-text`, `verify:report` | PASS | rect max Δ 0.0000px, screenshot 0 exceeding everywhere |
 
 `check-charter`: PASS — charter ratified, runtime within pin.

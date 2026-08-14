@@ -1,0 +1,25 @@
+{
+  "name": "wrapping",
+  "note": "Inline-blocks wrap across lines with the surrounding text: a text badge and a sized badge sit inline with a narrow paragraph, and the text re-flows around them with the inline whitespace between elements respected (the badges break to later lines when they no longer fit). Layer-3 checks each badge and the multi-line text spans (union rects) against Chrome; layer-4 compares the badge backgrounds strictly.",
+  "harvest": {
+    "viewport": { "width": 300, "height": 160 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"box\" style=\"width:240px;font-family:'Noto Sans';font-size:14px;line-height:20px;color:#333;background:#f6f6f6;padding:8px\"><span id=\"t1\">The quick brown fox</span> <span id=\"b1\" style=\"display:inline-block;background:#4a90d9;padding:1px 4px\"><span id=\"b1t\">jumps</span></span> <span id=\"t2\">over the lazy dog</span> <span id=\"b2\" style=\"display:inline-block;background:#e05;width:48px;height:18px\"></span> <span id=\"t3\">and runs away.</span></div></body></html>",
+    "measureText": [
+      { "text": "The quick brown fox jumps over the lazy dog", "font": "14px 'Noto Sans'" },
+      { "text": "jumps", "font": "14px 'Noto Sans'" }
+    ],
+    "rects": ["box", "b1", "b2", "t1", "t2", "t3", "b1t"],
+    "textElements": ["t1", "b1t", "t2", "t3"],
+    "computedStyle": [
+      { "id": "b1", "props": ["display", "vertical-align", "padding-left", "padding-right"] },
+      { "id": "b2", "props": ["display", "vertical-align", "width", "height"] },
+      { "id": "box", "props": ["display", "width"] }
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}
