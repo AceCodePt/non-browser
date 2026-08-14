@@ -11,5 +11,11 @@
       { "id": "child", "props": ["color"] }
     ]
   },
-  "expected": { "computedStyle": "fail" }
+  "expected": {
+    "computedStyle": {
+      "result": "fail",
+      "reason": "The @container gap: an ancestor DOES establish a container (.wrap, container-type: inline-size, width 400px), so Chrome's @container (min-width: 100px) matches and paints #child red, while the engine parses the query but layout does not yet resolve container sizes, so the rule never applies and #child stays black. Documented in docs/ledgers/media-queries.md.",
+      "sunset": "Sunset when layout resolves container sizes (container-type/container-name plumbing lands); the fixture then flips to pass and the corpus exercises @container for real."
+    }
+  }
 }

@@ -17,6 +17,10 @@
     "measureText": "pass",
     "computedStyle": "pass",
     "rect": "pass",
-    "screenshot": "fail"
+    "screenshot": {
+      "result": "fail",
+      "reason": "Deliberate 48x24px divergence region (~1.5% of the viewport, per-pixel delta-E ~5) injected into the candidate buffer to prove the screenshot layer's <=1% exceed gate fails as designed; the other three layers match exactly. Owner: the harness regression self-test (see the fixture note).",
+      "sunset": "Permanent harness regression guard, not an engine gap — no expiry; retire only when the screenshot layer gains an independent divergence-injection check that does not require a fixture."
+    }
   }
 }

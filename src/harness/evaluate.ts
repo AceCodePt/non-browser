@@ -1,5 +1,5 @@
 import { comparePixelBuffers } from './deltaE.js';
-import type { Box, Fixture, LayerName } from './fixtures.js';
+import type { Box, Fixture, LayerExpectation, LayerName } from './fixtures.js';
 
 export interface MeasureTextLayerResult {
   layer: 'measureText';
@@ -61,7 +61,7 @@ export interface FixtureResult {
   name: string;
   note?: string;
   layers: Record<LayerName, LayerResult>;
-  expected: Record<LayerName, 'pass' | 'fail'>;
+  expected: Record<LayerName, LayerExpectation>;
   checkPass: boolean;
 }
 

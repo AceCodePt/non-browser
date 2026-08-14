@@ -8,13 +8,13 @@ Per-string shaped advances resolved against the registered font set: the engine 
 
 ## Latest Run
 
-- Generated: 2026-08-14T11:50:22.728Z
+- Generated: 2026-08-14T16:10:42.325Z
 - Strings measured: 89 (82 pass corpus + 7 documented known gaps)
 - Pass rate (pass corpus): 100.0% (82/82 within tolerance)
 - Mean delta (pass corpus): 0.0016px
 - Worst delta (pass corpus): 0.0050px
 - Worst delta (all strings, incl. gaps): 146.0025px
-- Tolerance: mean ≤ 0.01px, no string > 0.5px (charter §2, tolerances.json v1)
+- Tolerance: mean ≤ 0.01px, no string > 0.5px (charter §2, tolerances.json v2)
 - Categories: 8, all PASS
 
 ## Categories

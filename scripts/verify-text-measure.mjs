@@ -12,9 +12,10 @@
  * The sub-pixel tolerance (mean <= 0.01px, no string > 0.5px, per charter §2 /
  * tolerances.json) is applied by the harness layer-1 runner
  * (`evaluateMeasureText`), not reimplemented here. Categories whose fixtures
- * carry `expected: "fail"` are documented known gaps: every gap entry must
- * still diverge (each needs a `reason`), so a gap that closes surfaces as a
- * failure and can be reclassified into the pass corpus.
+ * declare a typed gap on a layer (`expected.<layer>: { result:'fail', reason,
+ * sunset }`, see scripts/lib/expected.mjs) are documented known gaps: every gap
+ * entry must still diverge (each needs a `reason`), so a gap that closes
+ * surfaces as a failure and can be reclassified into the pass corpus.
  *
  * Writes the per-string ledger docs/ledgers/text-measure.md (widths, deltas,
  * pass/fail, failing fonts, run summary). Exits 0 only when the pass corpus is
@@ -27,6 +28,7 @@ import { join, resolve } from 'node:path';
 import { loadTolerances } from '../dist/harness/tolerances.js';
 import { evaluateMeasureText } from '../dist/harness/evaluate.js';
 import { skiaCanvasFactory } from '../dist/canvas/index.js';
+import { gapLayers, expectedLabel } from './lib/expected.mjs';
 
 const corpus = resolve('corpus/measure-corpus');
 const ledgerPath = resolve('docs/ledgers/text-measure.md');
@@ -108,7 +110,7 @@ let totalStrings = 0;
 try {
   for (const { name, raw } of fixtures()) {
     const entries = raw.entries ?? [];
-    const isGapFixture = raw.expected === 'fail';
+    const isGapFixture = gapLayers(raw.expected).length > 0;
     const passEntries = [];
     const gapEntries = [];
     for (const e of entries) {
@@ -116,7 +118,7 @@ try {
         if (!e.reason) throw new Error(`fixture ${name}: expected:fail entries need a 'reason'`);
         gapEntries.push(e);
       } else {
-        if (e.expected === 'fail') throw new Error(`fixture ${name}: use fixture-level expected:'fail' for known gaps`);
+        if (e.expected) throw new Error(`fixture ${name}: entry-level expected is retired; declare a typed fixture-level expected.<layer> gap`);
         passEntries.push(e);
       }
     }
@@ -150,7 +152,7 @@ try {
 
     let checkPass;
     let detail;
-    if (raw.expected === 'fail') {
+    if (isGapFixture) {
       // Documented known gap: every entry must still diverge.
       const closed = gapEntries.filter((e) => {
         const key = keyOf(e.text, e.font, e.letterSpacing);
@@ -173,7 +175,7 @@ try {
     categoryRows.push({
       name,
       note: raw.note ?? '',
-      expected: raw.expected ?? 'pass',
+      expected: expectedLabel(raw.expected),
       strings: catCount,
       meanDelta: catCount > 0 ? stringRows.filter((r) => r.category === name).reduce((s, r) => s + r.delta, 0) / catCount : 0,
       maxDelta: worstHere,

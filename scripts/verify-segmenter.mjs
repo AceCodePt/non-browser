@@ -18,9 +18,11 @@
  *     Chrome ICU data version (parsed from the oracle's `icudtl.dat`) plus the
  *     run result into docs/ledgers/icu.md.
  *
- * A fixture may declare `"expected": "fail"` for documented divergences: every
- * such entry needs a `reason`, and the script asserts each still diverges (so a
- * closed gap surfaces for reclassification into the pass corpus).
+ * A fixture may declare a typed gap on a layer (`expected.<layer>:
+ * { result:'fail', reason, sunset }`, see scripts/lib/expected.mjs) for
+ * documented divergences: every such entry needs a `reason`, and the script
+ * asserts each still diverges (so a closed gap surfaces for reclassification
+ * into the pass corpus).
  *
  * Exits 0 only when every pass entry segments and lays out identically, every
  * documented gap still diverges, and the ledger is written.
@@ -34,6 +36,7 @@ import { setLocale } from '@chenglou/pretext';
 import { installPretextMeasurement, layoutLines, prepareText, segmentGraphemes } from '../dist/pretext/index.js';
 import { getMeasurementCanvas } from '../dist/layout/measure.js';
 import { skiaCanvasFactory } from '../dist/canvas/index.js';
+import { gapLayers, expectedLabel } from './lib/expected.mjs';
 
 const corpus = resolve('corpus/segmenter-icu');
 const ledgerPath = resolve('docs/ledgers/icu.md');
@@ -208,7 +211,7 @@ try {
 
   // --- per-entry checks ---
   for (const { name, raw } of fixtureList) {
-    const isGapFixture = raw.expected === 'fail';
+    const isGapFixture = gapLayers(raw.expected).length > 0;
     const entries = raw.entries ?? [];
     if (entries.length === 0) {
       failFast(`fixture '${name}' has no entries`);
@@ -276,7 +279,7 @@ try {
 
     const checkPass = catSegPass && catLayoutPass;
     const detail = details.length > 0 ? details.join('; ') : 'segments + layout identical';
-    categoryRows.push({ name, expected: raw.expected ?? 'pass', strings: catStrings, segPass: catSegPass, layoutPass: catLayoutPass, detail });
+    categoryRows.push({ name, expected: expectedLabel(raw.expected), strings: catStrings, segPass: catSegPass, layoutPass: catLayoutPass, detail });
     if (!checkPass) failures.push(`fixture '${name}': ${detail}`);
     console.log(`  ${name}: ${checkPass ? 'PASS' : 'FAIL'} — ${catStrings} string(s), ${detail}`);
   }
@@ -350,7 +353,7 @@ md.push('## Divergences');
 md.push('');
 if (allPass) {
   md.push(
-    'None recorded for this run — every corpus string segmented identically (Node ICU vs Chrome ICU) and laid out identically through Pretext. The `expected: "fail"` fixture mechanism is the place to record Chrome-vs-Node ICU divergences in segmentation behavior when the corpus grows past the current strings.',
+    'None recorded for this run — every corpus string segmented identically (Node ICU vs Chrome ICU) and laid out identically through Pretext. The typed gap-declaration fixture mechanism (expected.<layer> = { result: "fail", reason, sunset }) is the place to record Chrome-vs-Node ICU divergences in segmentation behavior when the corpus grows past the current strings.',
   );
 } else {
   md.push('The following divergences were observed and documented:');

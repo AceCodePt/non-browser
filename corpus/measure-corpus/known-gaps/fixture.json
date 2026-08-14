@@ -1,7 +1,13 @@
 {
   "name": "known-gaps",
   "note": "Documented known gaps: strings where the engine and Chrome resolve glyphs differently and the layer-1 delta exceeds tolerance. Each entry records the divergence mechanism; the ledger carries the observed per-string numbers. The verify script asserts each of these still diverges (so a closed gap surfaces for reclassification), and the corpus stays green only because each has a documented reason.",
-  "expected": "fail",
+  "expected": {
+    "measureText": {
+      "result": "fail",
+      "reason": "Seven font-fallback divergences where skia resolves glyphs differently than Chrome's fontconfig fallback: emoji smileys, proportional-font tabs, mixed-script runs, Thai, and Arabic punctuation/letter-spacing. Each entry below carries its divergence mechanism; docs/ledgers/text-measure.md records the observed per-string deltas, and the fixture note is the owner of record.",
+      "sunset": "Reclassify each entry into the pass corpus when skia's font fallback matches Chrome's per-glyph fallback and tab-stop semantics (e.g. an emoji-capable face registered system-wide or engine-side fontconfig-style fallback). No entry may be removed without its divergence first closing."
+    }
+  },
   "fonts": [
     { "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" },
     { "family": "Droid Sans Fallback", "file": "/usr/share/fonts/google-droid-sans-fonts/DroidSansFallbackFull.ttf" },
