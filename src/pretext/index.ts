@@ -86,6 +86,19 @@ export function installPretextMeasurement(canvas: CanvasLike): void {
   (globalThis as Record<PropertyKey, unknown>)[shimSymbol] = canvas;
 }
 
+/**
+ * Segment text into extended grapheme clusters via `Intl.Segmenter` (charter
+ * §6). This is the segmentation primitive Pretext consumes at grapheme
+ * granularity; parity with the oracle browser's ICU is proven by
+ * `npm run verify:segmenter` (corpus/segmenter-icu/, ledger docs/ledgers/icu.md).
+ */
+export function segmentGraphemes(text: string): string[] {
+  const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+  const out: string[] = [];
+  for (const s of segmenter.segment(text)) out.push(s.segment);
+  return out;
+}
+
 /** Prepare a text run for Pretext layout over the Canvas interface. */
 export function prepareText(
   text: string,

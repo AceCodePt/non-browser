@@ -1,0 +1,26 @@
+{
+  "name": "skin-tones",
+  "note": "Emoji skin-tone modifiers: a base emoji plus a Fitzpatrick modifier is one grapheme, including modifiers combined with ZWJ (e.g. man-technologist-dark, two people holding hands with different tones).",
+  "layout": {
+    "font": "16px 'Noto Sans'",
+    "maxWidth": 120,
+    "lineHeight": 24
+  },
+  "fonts": [
+    { "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" }
+  ],
+  "entries": [
+    { "text": "👍🏻 👍🏼 👍🏽 👍🏾 👍🏿", "note": "thumbs-up across all five skin tones" },
+    { "text": "👍🏻", "note": "thumbs-up light" },
+    { "text": "👍🏿", "note": "thumbs-up darkest" },
+    { "text": "👋🏽", "note": "waving hand medium" },
+    { "text": "✋🏻", "note": "raised hand light" },
+    { "text": "🙋🏽‍♀️", "note": "woman raising hand (ZWJ + female sign)" },
+    { "text": "👨🏿‍💻", "note": "man technologist dark (ZWJ)" },
+    { "text": "🧑🏽‍🤝‍🧑🏼", "note": "two people holding hands, different tones (ZWJ)" },
+    { "text": "🏃🏽‍♀️", "note": "woman running medium (ZWJ + female sign)" },
+    { "text": "👮🏽", "note": "police officer medium" },
+    { "text": "💁🏿‍♀️", "note": "woman tipping hand darkest (ZWJ + female sign)" },
+    { "text": "👍🏻 👍🏼 👍🏽", "note": "three tones separated by spaces" }
+  ]
+}

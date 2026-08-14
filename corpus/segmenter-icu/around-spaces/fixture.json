@@ -1,0 +1,27 @@
+{
+  "name": "around-spaces",
+  "note": "Grapheme clusters adjacent to spaces: the space boundaries and the clusters on either side must stay independent graphemes. Covers ZWJ families, flags, skin-tone emoji, combining marks, and Indic conjuncts sitting next to space, double space, non-breaking space, and adjacent Latin letters.",
+  "layout": {
+    "font": "16px 'Noto Sans'",
+    "maxWidth": 200,
+    "lineHeight": 24
+  },
+  "fonts": [
+    { "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" },
+    { "family": "Droid Sans Devanagari", "file": "/usr/share/fonts/google-droid-sans-fonts/DroidSansDevanagari-Regular.ttf" }
+  ],
+  "entries": [
+    { "text": "hello 👨‍👩‍👧‍👦 world", "note": "ZWJ family between Latin words" },
+    { "text": "🇺🇸 usa 🇯🇵", "note": "flags around a Latin word" },
+    { "text": "नमस्ते दुनिया", "note": "Devanagari words" },
+    { "text": "a\u0300 b\u0300", "note": "combining marks adjacent to spaces" },
+    { "text": "👍🏻 ok 👍🏽", "note": "skin-tone emoji around a Latin word" },
+    { "text": "héllo wörld", "note": "accented Latin" },
+    { "text": "word  é\u0301  word", "note": "double spaces between clusters" },
+    { "text": "👨‍👩‍👧‍👦x", "note": "ZWJ family attached to Latin (no space)" },
+    { "text": "x👨‍👩‍👧‍👦y", "note": "Latin letters around a ZWJ family" },
+    { "text": "a\u0308  b\u0308", "note": "combining marks with double space" },
+    { "text": "क्ष त्र", "note": "conjuncts adjacent to a space" },
+    { "text": "👨‍👩‍👧‍👦\u00A0ok", "note": "non-breaking space after a ZWJ family" }
+  ]
+}
