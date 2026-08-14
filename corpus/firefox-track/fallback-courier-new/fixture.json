@@ -1,0 +1,43 @@
+{
+  "name": "fallback-courier-new",
+  "note": "Firefox-specific font-fallback fixture: the engine resolves the unregistered family 'Courier New' through the firefox fallback table to the registered Source Code Pro face, whose advances Gecko reproduces for Courier New (the oracle measures the same sub-pixel widths). Proves the browser-config fallback path: unregistered-family text measures and lays out identically to Firefox.",
+  "harvest": {
+    "viewport": {
+      "width": 460,
+      "height": 160
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"p1\" style=\"font-family:'Courier New';font-size:16px;line-height:24px;width:300px\">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.</div><div id=\"p2\" style=\"font-family:'Courier New';font-size:20px;line-height:30px;width:260px\">How vexingly quick daft zebras jump!</div></body></html>",
+    "measureText": [
+      {
+        "text": "The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.",
+        "font": "16px 'Courier New'"
+      },
+      {
+        "text": "How vexingly quick daft zebras jump!",
+        "font": "20px 'Courier New'"
+      },
+      {
+        "text": "Quick zephyrs blow, vexing daft Jim.",
+        "font": "12px 'Courier New'"
+      }
+    ],
+    "computedStyle": [
+      {
+        "id": "p1",
+        "props": ["display", "font-size", "font-family", "line-height", "width", "box-sizing", "white-space"]
+      },
+      {
+        "id": "p2",
+        "props": ["font-size", "font-family", "line-height", "width"]
+      }
+    ],
+    "rects": ["p1", "p2"],
+    "textElements": ["p1", "p2"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

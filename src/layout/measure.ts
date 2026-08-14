@@ -12,6 +12,7 @@
 
 import type { CanvasFactory, CanvasLike } from '../canvas/interface.js';
 import { skiaCanvasFactory } from '../canvas/skia.js';
+import { getActiveBrowserConfig, resolveFontFamily } from '../config/browser-config.js';
 
 export interface FontConfig {
   /** CSS family name as Chrome/fontconfig resolves it (e.g. 'Noto Sans'). */
@@ -41,7 +42,8 @@ export function getMeasurementCanvas(): CanvasLike {
 }
 
 export function measureTextWidth(text: string, fontSize: number, family: string, letterSpacing = 0): number {
-  const m = getMeasurementCanvas().measureText(text, `${fontSize}px '${family}'`);
+  const resolved = resolveFontFamily(getActiveBrowserConfig(), family);
+  const m = getMeasurementCanvas().measureText(text, `${fontSize}px '${resolved}'`);
   // letter-spacing is added after every character (Blink applies it to the
   // trailing character too, so the used width grows by ls * length).
   return m.width + letterSpacing * text.length;

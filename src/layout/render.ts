@@ -21,6 +21,7 @@ import { paint, type RenderOutput } from './paint.js';
 import { initMeasurement } from './measure.js';
 import type { ComputedStyle, Viewport } from './css.js';
 import type { P5Element } from './types.js';
+import { setActiveBrowserConfig, type BrowserConfig } from '../config/browser-config.js';
 
 export interface ComputedStyleSpec {
   id: string;
@@ -42,6 +43,13 @@ export interface RenderOptions {
   fontFamily: string;
   /** Path to the TTF that both the engine and the Chrome oracle resolve to. */
   fontFile: string;
+  /**
+   * Per-browser config (fallback table + font-registration set). When set, its
+   * font set is registered instead of the single `fontFile`, and CSS font
+   * stacks resolve through its fallback table (charter §4). Defaults to a
+   * chrome config built from `fontFamily`/`fontFile`.
+   */
+  browserConfig?: BrowserConfig;
   fontSize?: number;
   lineHeight?: number;
   /** Canvas implementation; defaults to skia. */
@@ -71,9 +79,17 @@ export function renderHtml(html: string, opts: RenderOptions): RenderHtmlOutput 
   if (!body) throw new Error('renderHtml: no <body> element in input');
 
   const factory = opts.canvasFactory ?? skiaCanvasFactory;
-  factory.registerFont(opts.fontFile);
+  const config: BrowserConfig = opts.browserConfig ?? {
+    browser: 'chrome',
+    fonts: [{ family: opts.fontFamily, filePath: opts.fontFile }],
+    fallback: {},
+    defaultFamily: opts.fontFamily,
+    defaultFile: opts.fontFile,
+  };
+  setActiveBrowserConfig(config);
+  for (const f of config.fonts) factory.registerFont(f.filePath);
   const measureCanvas: CanvasLike = initMeasurement(
-    { family: opts.fontFamily, filePath: opts.fontFile },
+    { family: config.defaultFamily, filePath: config.defaultFile },
     factory,
   );
   installPretextMeasurement(measureCanvas);
@@ -107,7 +123,7 @@ export function renderHtml(html: string, opts: RenderOptions): RenderHtmlOutput 
   );
 
   const root = layoutRoot(body, styles, viewport);
-  const out = paint(root, opts.width, opts.height, Object.keys(collectIds(body)), opts.fontFile, factory);
+  const out = paint(root, opts.width, opts.height, Object.keys(collectIds(body)), config.defaultFile, factory);
 
   const computedStyles: Record<string, ComputedStyleProps> = {};
   if (opts.computedStyle) {
