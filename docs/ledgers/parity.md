@@ -15,7 +15,9 @@ fixture with the engine and collects the same quantities from headless Chrome
   Chrome `ctx.measureText`), mean ≤ 0.01px, no string > 0.5px.
 - layer-2 `computedStyle` — exact string equality on the fixture's props.
 - layer-3 `rect` — `getBoundingClientRect` per box, ≤ 0.5px per dimension.
-- layer-4 `screenshot` — per-pixel ΔE ≤ 2, ≤ 1% of pixels exceeding.
+- layer-4 `screenshot` — per-pixel ΔE ≤ 2, ≤ 1% of pixels exceeding for
+  non-text pixels; text pixels compared under the tiered text-region tolerance
+  (`tolerances.json` v2 — see `text-mask.md`).
 
 All numbers below are from a fresh run on `main`
 (2026-08-14, node 26.7.0 / icu 78.3, Chrome 151.0.7922.34, Playwright).
@@ -52,17 +54,25 @@ Pretext seam (break-point parity vs Chrome line fragments): PASS, means
 The headline numbers are real but incomplete. The following limit the claims
 the green run supports, in order of impact.
 
-### 1. Layer-4 never compares glyph pixels
+### 1. Text pixels are compared under a tiered tolerance, not a blanket mask
 
-Every text fixture masks all text-fragment pixels from the screenshot diff
-(`scripts/verify-four-layer.mjs` builds the mask from Chrome's line-fragment
-rects, plus declared rects). The observed `0.0000` worst/mean ΔE is therefore
-over **non-text pixels only** — background, borders, box fills. Masked share
-in the text fixtures: wrapping 35% (22552 of 64400 px), inline-styles 25%
-(14003 of 55200 px), replaced-boxes 12.5% (11504 of 92000 px). Because engine
-and oracle both rasterize via Skia, the charter's
-§10 "same Skia-vs-Skia band" for glyphs is **not actually tested**. The pixel
-parity percentage should be read as "non-text pixels".
+The four-layer diff previously masked every text-fragment pixel
+(`scripts/verify-four-layer.mjs`), so the observed `0.0000` worst/mean ΔE was
+over **non-text pixels only**. That changed with `text-mask-parity`: the probe
+(`scripts/probe-text-mask.mjs`) rendered the spine text fixtures unmasked and
+found the two Skia instances (Chrome's compositor vs `@napi-rs/canvas`) are
+**structurally divergent** on text — different font hinting/AA — with 60–74% of
+glyph-interior (core-ink) pixels exceeding ΔE 2 even though Chrome's *own
+canvas* `fillText` is 73% divergent from its own DOM-text screenshot. So text
+is not excluded any more: it is compared under a documented tiered
+text-region tolerance (`tolerances.json` v2, `docs/ledgers/text-mask.md`), and
+every fixture reports its text-region pixels compared, mean/worst ΔE, and
+text-pixel mask share (0 by default — only declared `maskRects`/`maskElements`
+such as the `<img>` broken-image icon stay masked). The charter §10 band claim
+is scoped to non-text pixels; the text tier's within-region exceed allowance
+(97%) is the measured rasterizer gap. Caveat: the per-corpus verifiers
+(`verify:paint-text`, `verify:layout-{floats,grid,flexbox,positioning}`,
+`verify:firefox`) still blanket-mask text — porting the tier is follow-up.
 
 ### 2. The layer-1 seam mean tolerance is informational, not enforced
 
@@ -134,5 +144,5 @@ mean wall-clock per fixture:
 ## Divergences
 
 The substantive divergences are items 1–6 above and the seven gaps in
-`text-measure.md`. No charter tolerance changes are recorded here; see
-`tolerances.md`.
+`text-measure.md`. The one tolerance change is the text-region tier
+(`tolerances.json` v2), recorded in `tolerances.md` and `text-mask.md`.

@@ -1,6 +1,6 @@
 {
   "$comment": "Per-layer parity tolerances. version bumps whenever a tolerance diverges from the charter defaults; every such change is recorded in docs/ledgers/tolerances.md. Defaults below are the charter §2 values.",
-  "version": 1,
+  "version": 2,
   "layers": {
     "measureText": {
       "meanPx": 0.01,
@@ -14,7 +14,11 @@
     },
     "screenshot": {
       "deltaE": 2,
-      "exceedPct": 1
+      "exceedPct": 1,
+      "text": {
+        "deltaE": 2,
+        "exceedPct": 97
+      }
     }
   }
 }

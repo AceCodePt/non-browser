@@ -34,8 +34,6 @@ import { getMeasurementCanvas } from '../dist/layout/measure.js';
 
 const FONT_FILE = process.env.FONT_FILE ?? '/usr/share/fonts/google-noto/NotoSans-Regular.ttf';
 const FONT_FAMILY = process.env.FONT_FAMILY ?? 'Noto Sans';
-/** px to expand text-fragment rects when building the screenshot mask. */
-const MASK_PAD = 2;
 
 const corpus = resolve('corpus/spine');
 
@@ -49,16 +47,28 @@ function* fixtures() {
   }
 }
 
-/** Build the exclusion mask (1 = excluded) from Chrome's text fragment rects. */
-function rectsToMask(width, height, rects, pad) {
+/**
+ * Text-region mask = every pixel inside Chrome's text fragment rects that
+ * either rasterizer paints as anything other than pure white — glyph ink, the
+ * AA fringe, and Chrome's LCD/subpixel fringes that bleed past grayscale AA.
+ * These are the pixels where text rasterization policy (hinting/AA) can
+ * differ, so they are compared under the documented text tier
+ * (tolerances.json layers.screenshot.text, justified by docs/ledgers/text-mask.md).
+ * Pure-white pixels are not text and stay under the §10 band.
+ */
+function textRegionMask(width, height, rects, refData, candData) {
   const mask = new Uint8Array(width * height);
+  const isWhite = (d, o) => d[o] === 255 && d[o + 1] === 255 && d[o + 2] === 255;
   for (const r of rects) {
-    const x0 = Math.max(0, Math.floor(r.x) - pad);
-    const y0 = Math.max(0, Math.floor(r.y) - pad);
-    const x1 = Math.min(width, Math.ceil(r.x + r.width) + pad);
-    const y1 = Math.min(height, Math.ceil(r.y + r.height) + pad);
+    const x0 = Math.max(0, Math.floor(r.x));
+    const y0 = Math.max(0, Math.floor(r.y));
+    const x1 = Math.min(width, Math.ceil(r.x + r.width));
+    const y1 = Math.min(height, Math.ceil(r.y + r.height));
     for (let y = y0; y < y1; y++) {
-      for (let x = x0; x < x1; x++) mask[y * width + x] = 1;
+      for (let x = x0; x < x1; x++) {
+        const o = (y * width + x) * 4;
+        if (!isWhite(refData, o) || !isWhite(candData, o)) mask[y * width + x] = 1;
+      }
     }
   }
   return mask;
@@ -222,8 +232,15 @@ try {
       pretextResults.push({ name, pass: pretextPass, detail: pretextDetail });
     }
 
-    // --- screenshot mask: text fragments ∪ declared maskRects (e.g. <img>) ---
-    const mask = rectsToMask(width, height, fragments, MASK_PAD);
+    // --- screenshot masks: text-region mask (fragments) and exclusion mask
+    // (declared maskRects / maskElements only). Text pixels are NOT excluded
+    // any more: they are compared under the documented text tier
+    // (tolerances.json layers.screenshot.text), justified by
+    // scripts/probe-text-mask.mjs (docs/ledgers/text-mask.md). The exclusion
+    // mask covers only what the engine cannot reproduce (e.g. the Chrome
+    // broken-image icon on <img>) — every masked pixel is justified per fixture.
+    const textMask = textRegionMask(width, height, fragments, refImg.data, candImg.data);
+    const mask = new Uint8Array(width * height);
     for (const r of h.maskRects ?? []) {
       const x0 = Math.max(0, Math.floor(r.x));
       const y0 = Math.max(0, Math.floor(r.y));
@@ -266,11 +283,15 @@ try {
     );
     writeFileSync(join(dir, 'reference.png'), shot);
     writeFileSync(join(dir, 'candidate.png'), encodePng(candImg.width, candImg.height, candImg.data));
-    if (mask.some((b) => b === 1)) {
+    const writeMaskPng = (file, m) => {
       const rgba = Buffer.alloc(width * height * 4);
-      for (let i = 0; i < width * height; i++) if (mask[i] === 1) rgba[i * 4 + 3] = 255;
-      writeFileSync(join(dir, 'mask.png'), encodePng(width, height, rgba));
-    }
+      for (let i = 0; i < width * height; i++) if (m[i] === 1) rgba[i * 4 + 3] = 255;
+      writeFileSync(join(dir, file), encodePng(width, height, rgba));
+    };
+    if (mask.some((b) => b === 1)) writeMaskPng('mask.png', mask);
+    if (textMask.some((b) => b === 1)) writeMaskPng('text-mask.png', textMask);
+
+    const textPixels = textMask.reduce((a, b) => a + b, 0);
 
     const fixture = {
       name,
@@ -285,6 +306,7 @@ try {
       referenceRgba: refImg.data,
       candidateRgba: candImg.data,
       mask,
+      textMask,
       reference: { measureText: referenceMeasure, computedStyle: referenceComputed, rect: referenceRects },
       candidate: { measureText: candidateMeasure, computedStyle: out.computedStyles, rect: candidateRects },
       width,
@@ -294,7 +316,7 @@ try {
     results.push(evaluateFixture(fixture));
     console.log(
       `verified ${name}: ${width}x${height}, ${fragments.length} text fragments, ` +
-        `${mask.some((b) => b === 1) ? 'masked' : 'no mask'}` +
+        `${textPixels} text px compared, ${mask.reduce((a, b) => a + b, 0)} masked` +
         (h.textElements && fragments.length > 0 ? `, pretext ${pretextPass ? 'PASS' : 'FAIL'} (${pretextDetail})` : ''),
     );
   }

@@ -10,9 +10,22 @@ export interface ComputedStyleTolerance {
 export interface RectTolerance {
   maxPx: number;
 }
+/**
+ * Text-region tolerance for the screenshot layer. Text pixels are compared
+ * under this tier instead of being excluded: the per-pixel `deltaE` keeps the
+ * charter value, while `exceedPct` is raised because the two Skia instances
+ * (Chrome's compositor vs @napi-rs/canvas) apply different font hinting/AA —
+ * a measured, documented rasterizer gap (docs/ledgers/text-mask.md), not an
+ * AA-only fringe. Defaults to the charter band (no divergence).
+ */
+export interface TextTolerance {
+  deltaE: number;
+  exceedPct: number;
+}
 export interface ScreenshotTolerance {
   deltaE: number;
   exceedPct: number;
+  text: TextTolerance;
 }
 export interface LayerTolerances {
   measureText: MeasureTextTolerance;
@@ -32,7 +45,7 @@ export const CHARTER_DEFAULTS: Tolerances = {
     measureText: { meanPx: 0.01, maxPx: 0.5 },
     computedStyle: { mode: 'exact' },
     rect: { maxPx: 0.5 },
-    screenshot: { deltaE: 2, exceedPct: 1 },
+    screenshot: { deltaE: 2, exceedPct: 1, text: { deltaE: 2, exceedPct: 1 } },
   },
 };
 
@@ -58,6 +71,7 @@ export function loadTolerances(path: string): Tolerances {
   const computedStyleRaw = (layersRaw.computedStyle ?? {}) as Record<string, unknown>;
   const rectRaw = (layersRaw.rect ?? {}) as Record<string, unknown>;
   const screenshotRaw = (layersRaw.screenshot ?? {}) as Record<string, unknown>;
+  const textRaw = (screenshotRaw.text ?? {}) as Record<string, unknown>;
 
   const measureText: MeasureTextTolerance = {
     meanPx: numValue(measureTextRaw, 'meanPx', CHARTER_DEFAULTS.layers.measureText.meanPx),
@@ -72,6 +86,10 @@ export function loadTolerances(path: string): Tolerances {
   const screenshot: ScreenshotTolerance = {
     deltaE: numValue(screenshotRaw, 'deltaE', CHARTER_DEFAULTS.layers.screenshot.deltaE),
     exceedPct: numValue(screenshotRaw, 'exceedPct', CHARTER_DEFAULTS.layers.screenshot.exceedPct),
+    text: {
+      deltaE: numValue(textRaw, 'deltaE', CHARTER_DEFAULTS.layers.screenshot.text.deltaE),
+      exceedPct: numValue(textRaw, 'exceedPct', CHARTER_DEFAULTS.layers.screenshot.text.exceedPct),
+    },
   };
 
   if (!isFiniteNumber(measureText.meanPx) || measureText.meanPx < 0) {
@@ -89,6 +107,12 @@ export function loadTolerances(path: string): Tolerances {
   if (!isFiniteNumber(screenshot.exceedPct) || screenshot.exceedPct < 0 || screenshot.exceedPct > 100) {
     throw new Error('tolerances.layers.screenshot.exceedPct must be between 0 and 100');
   }
+  if (!isFiniteNumber(screenshot.text.deltaE) || screenshot.text.deltaE < 0) {
+    throw new Error('tolerances.layers.screenshot.text.deltaE must be a non-negative number');
+  }
+  if (!isFiniteNumber(screenshot.text.exceedPct) || screenshot.text.exceedPct < 0 || screenshot.text.exceedPct > 100) {
+    throw new Error('tolerances.layers.screenshot.text.exceedPct must be between 0 and 100');
+  }
 
   const version = typeof raw.version === 'number' && Number.isInteger(raw.version) ? raw.version : 1;
 
@@ -103,7 +127,11 @@ export function mergeTolerances(base: Tolerances, override: Partial<LayerToleran
       measureText: { ...base.layers.measureText, ...(override.measureText ?? {}) },
       computedStyle: { mode: 'exact', ...(override.computedStyle ?? {}) },
       rect: { ...base.layers.rect, ...(override.rect ?? {}) },
-      screenshot: { ...base.layers.screenshot, ...(override.screenshot ?? {}) },
+      screenshot: {
+        ...base.layers.screenshot,
+        ...(override.screenshot ?? {}),
+        text: { ...base.layers.screenshot.text, ...(override.screenshot?.text ?? {}) },
+      },
     },
   };
 }

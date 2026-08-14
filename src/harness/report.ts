@@ -35,7 +35,11 @@ function layerDetail(r: LayerResult): string {
     case 'screenshot':
       return `${r.comparedPixels} px compared, ${r.maskedPixels} masked, ` +
         `${r.exceedingPixels} exceeding (${formatNum(r.percentExceeding, 4)}%), ` +
-        `worst ΔE ${formatNum(r.worstDeltaE)}, mean ΔE ${formatNum(r.meanDeltaE)}`;
+        `worst ΔE ${formatNum(r.worstDeltaE)}, mean ΔE ${formatNum(r.meanDeltaE)}` +
+        `; text ${r.textRegion.pixels} px compared, ` +
+        `mask share ${formatNum(r.textRegion.maskSharePct, 2)}%, ` +
+        `mean ΔE ${formatNum(r.textRegion.meanDeltaE)}, worst ΔE ${formatNum(r.textRegion.worstDeltaE)}, ` +
+        `${r.textRegion.exceedingPixels} exceeding (${formatNum(r.textRegion.percentExceeding, 2)}%)`;
   }
 }
 
@@ -48,7 +52,8 @@ function layerThresholds(r: LayerResult): string {
     case 'rect':
       return `≤ ${r.thresholds.maxPx}px per box dimension`;
     case 'screenshot':
-      return `per-pixel ΔE ≤ ${r.thresholds.deltaE}; ≤ ${r.thresholds.exceedPct}% of pixels exceeding`;
+      return `per-pixel ΔE ≤ ${r.thresholds.deltaE}; ≤ ${r.thresholds.exceedPct}% of pixels exceeding` +
+        ` (text region: ΔE ≤ ${r.thresholds.textDeltaE}, ≤ ${r.thresholds.textExceedPct}% exceeding)`;
   }
 }
 

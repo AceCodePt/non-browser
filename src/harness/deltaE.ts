@@ -1,14 +1,28 @@
-import type { ScreenshotTolerance } from './tolerances.js';
+import type { ScreenshotTolerance, TextTolerance } from './tolerances.js';
+
+export interface TextRegionResult {
+  /** text-region pixels actually compared (in textMask, not excluded). */
+  pixels: number;
+  /** text-region pixels excluded by the exclusion mask (the text-pixel mask share). */
+  maskedPixels: number;
+  exceedingPixels: number;
+  percentExceeding: number;
+  worstDeltaE: number;
+  meanDeltaE: number;
+  pass: boolean;
+}
 
 export interface PixelCompareResult {
   width: number;
   height: number;
+  /** non-text pixels compared under the §10 band. */
   comparedPixels: number;
   maskedPixels: number;
   exceedingPixels: number;
   percentExceeding: number;
   worstDeltaE: number;
   meanDeltaE: number;
+  textRegion: TextRegionResult;
   pass: boolean;
 }
 
@@ -60,22 +74,32 @@ export interface CompareInputs {
   width: number;
   height: number;
   mask?: Uint8Array | null; // 1 = excluded from the diff
+  /** 1 = text-region pixel; compared under `textTolerance` instead of `tolerance`. */
+  textMask?: Uint8Array | null;
   tolerance: ScreenshotTolerance;
+  /** Text-region tier; required (in practice) when textMask is present. */
+  textTolerance?: TextTolerance | null;
 }
 
 /**
  * Compare a candidate buffer against a reference buffer per pixel.
- * A pixel "exceeds" when its delta-E is above tolerance.deltaE; the layer
- * passes when the fraction of exceeding pixels is at most tolerance.exceedPct.
- * Masked pixels are excluded from both the count and the denominator.
+ * Non-text pixels pass when at most `tolerance.exceedPct` exceed `tolerance.deltaE`
+ * (the charter §10 band). Pixels inside `textMask` are compared under the
+ * documented `textTolerance` tier instead (same per-pixel deltaE, raised
+ * exceed allowance for the Skia rasterizer gap). Masked pixels are excluded
+ * from both the count and the denominator of whichever region they belong to.
  */
 export function comparePixelBuffers(inputs: CompareInputs): PixelCompareResult {
-  const { candidate, reference, width, height, mask, tolerance } = inputs;
+  const { candidate, reference, width, height, mask, textMask, tolerance } = inputs;
+  const textTolerance = inputs.textTolerance ?? tolerance.text;
   if (candidate.length !== width * height * 4 || reference.length !== width * height * 4) {
     throw new Error('pixel buffer size mismatch');
   }
   if (mask !== null && mask !== undefined && mask.length !== width * height) {
     throw new Error('mask size mismatch');
+  }
+  if (textMask !== null && textMask !== undefined && textMask.length !== width * height) {
+    throw new Error('textMask size mismatch');
   }
 
   const refLab = new Float64Array(width * height * 3);
@@ -92,19 +116,41 @@ export function comparePixelBuffers(inputs: CompareInputs): PixelCompareResult {
   let exceeding = 0;
   let sum = 0;
   let worst = 0;
+  let textSum = 0;
+  const text: TextRegionResult = {
+    pixels: 0,
+    maskedPixels: 0,
+    exceedingPixels: 0,
+    percentExceeding: 0,
+    worstDeltaE: 0,
+    meanDeltaE: 0,
+    pass: true,
+  };
   for (let i = 0; i < width * height; i++) {
+    const isText = textMask !== null && textMask !== undefined && textMask[i] === 1;
     if (mask !== null && mask !== undefined && mask[i] === 1) {
       maskedCount++;
+      if (isText) text.maskedPixels++;
       continue;
     }
-    compared++;
     const o = i * 4;
     const lab = srgbToLab(candidate[o], candidate[o + 1], candidate[o + 2]);
     const d = deltaE76(lab[0], lab[1], lab[2], refLab[i * 3], refLab[i * 3 + 1], refLab[i * 3 + 2]);
+    if (isText) {
+      text.pixels++;
+      textSum += d;
+      if (d > text.worstDeltaE) text.worstDeltaE = d;
+      if (d > textTolerance.deltaE) text.exceedingPixels++;
+      continue;
+    }
+    compared++;
     sum += d;
     if (d > worst) worst = d;
     if (d > tolerance.deltaE) exceeding++;
   }
+  text.meanDeltaE = text.pixels > 0 ? textSum / text.pixels : 0;
+  text.percentExceeding = text.pixels > 0 ? (text.exceedingPixels / text.pixels) * 100 : 0;
+  text.pass = text.pixels === 0 || text.percentExceeding <= textTolerance.exceedPct;
 
   const percentExceeding = compared > 0 ? (exceeding / compared) * 100 : 0;
   const meanDeltaE = compared > 0 ? sum / compared : 0;
@@ -117,6 +163,7 @@ export function comparePixelBuffers(inputs: CompareInputs): PixelCompareResult {
     percentExceeding,
     worstDeltaE: worst,
     meanDeltaE,
-    pass: percentExceeding <= tolerance.exceedPct,
+    textRegion: text,
+    pass: percentExceeding <= tolerance.exceedPct && text.pass,
   };
 }

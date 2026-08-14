@@ -28,6 +28,8 @@ export interface Fixture {
   referenceRgba: Buffer;
   candidateRgba: Buffer;
   mask: Uint8Array | null;
+  /** 1 = text-region pixel, compared under the screenshot text tier. */
+  textMask: Uint8Array | null;
   reference: LayerValues;
   candidate: LayerValues;
   width: number;
@@ -80,6 +82,12 @@ function loadFixture(dir: string, baseTolerances: Tolerances): Fixture {
     mask = loadMask(readFileSync(maskPath), width, height);
   }
 
+  const textMaskPath = join(dir, 'text-mask.png');
+  let textMask: Uint8Array | null = null;
+  if (statSync(textMaskPath, { throwIfNoEntry: false })?.isFile()) {
+    textMask = loadMask(readFileSync(textMaskPath), width, height);
+  }
+
   return {
     name,
     note: raw.note,
@@ -88,6 +96,7 @@ function loadFixture(dir: string, baseTolerances: Tolerances): Fixture {
     referenceRgba: refImg.data,
     candidateRgba: candImg.data,
     mask,
+    textMask,
     reference,
     candidate,
     width,
