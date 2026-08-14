@@ -26,6 +26,8 @@ import { setActiveBrowserConfig, type BrowserConfig } from '../config/browser-co
 
 export interface ComputedStyleSpec {
   id: string;
+  /** pseudo-element to read the style from (e.g. 'before' → getComputedStyle(el, '::before')). */
+  pseudo?: 'before' | 'after';
   props: string[];
 }
 
@@ -106,7 +108,7 @@ export function renderHtml(html: string, opts: RenderOptions): RenderHtmlOutput 
   };
   const styleElements: P5Element[] = [];
   collectStyleElements(doc, styleElements);
-  const stylesheetDecls = resolveMediaCascade(body, styleElements, mediaEnv);
+  const cascade = resolveMediaCascade(body, styleElements, mediaEnv);
 
   const styles = resolveStyles(
     body,
@@ -121,7 +123,8 @@ export function renderHtml(html: string, opts: RenderOptions): RenderHtmlOutput 
       textDecorationThickness: 'auto',
       textUnderlineOffset: 0,
     },
-    stylesheetDecls,
+    cascade.element,
+    cascade.pseudo,
   );
 
   const root = layoutRoot(body, styles, viewport);
@@ -133,11 +136,21 @@ export function renderHtml(html: string, opts: RenderOptions): RenderHtmlOutput 
     collectByElementId(body, byId);
     for (const spec of opts.computedStyle) {
       const el = byId.get(spec.id);
-      const style: ComputedStyle | undefined = el ? styles.get(el) : undefined;
-      if (!el || !style) {
+      const elementStyle: ComputedStyle | undefined = el ? styles.get(el) : undefined;
+      if (!el || !elementStyle) {
         throw new Error(`renderHtml: computedStyle requested for unknown id '${spec.id}'`);
       }
-      computedStyles[spec.id] = computedStyleFor(style, spec.props, opts.width, viewport);
+      let style: ComputedStyle = elementStyle;
+      if (spec.pseudo) {
+        const box = elementStyle[spec.pseudo];
+        if (!box) {
+          throw new Error(`renderHtml: computedStyle for '${spec.id}::${spec.pseudo}' but no rule targets that pseudo`);
+        }
+        style = box.style;
+      }
+      // Key by `${id}::${pseudo}` when a pseudo is queried so the same element
+      // can report its ::before and ::after styles without collision.
+      computedStyles[spec.pseudo ? `${spec.id}::${spec.pseudo}` : spec.id] = computedStyleFor(style, spec.props, opts.width, viewport);
     }
   }
 

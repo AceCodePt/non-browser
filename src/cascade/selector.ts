@@ -16,6 +16,8 @@ export interface CompoundSelector {
   tag: string | null;
   id: string | null;
   classes: string[];
+  /** pseudo-element part (::before/::after or legacy :before/:after); null when absent. */
+  pseudo: 'before' | 'after' | null;
 }
 
 export interface ComplexSelector {
@@ -36,13 +38,13 @@ export function parseSelector(input: string): ComplexSelector | null {
   const text = input.trim();
   if (text === '') return null;
   const parts: { combinator: ' ' | '>'; compound: CompoundSelector }[] = [];
-  let cur: CompoundSelector = { tag: null, id: null, classes: [] };
+  let cur: CompoundSelector = { tag: null, id: null, classes: [], pseudo: null };
   let lastCombinator: ' ' | '>' = ' ';
   let pendingSpace = false;
 
   const flush = (): void => {
     parts.push({ combinator: lastCombinator, compound: cur });
-    cur = { tag: null, id: null, classes: [] };
+    cur = { tag: null, id: null, classes: [], pseudo: null };
   };
 
   let i = 0;
@@ -82,8 +84,23 @@ export function parseSelector(input: string): ComplexSelector | null {
       const close = text.indexOf(']', i);
       i = close < 0 ? n : close + 1;
     } else if (c === ':') {
-      // pseudo-class / pseudo-element — skip the identifier
-      i = readIdentEnd(text, i + 1);
+      // `::before` / `::after`, or the legacy single-colon form. Any other
+      // pseudo (class or element) is skipped — the engine does not match it.
+      const j = readIdentEnd(text, i + 1);
+      const name = text.slice(i + 1, j).toLowerCase();
+      if (text[j] === ':') {
+        const k = readIdentEnd(text, j + 1);
+        const pname = text.slice(j + 1, k).toLowerCase();
+        if (pname === 'before') cur.pseudo = 'before';
+        else if (pname === 'after') cur.pseudo = 'after';
+        i = k;
+      } else if (name === 'before' || name === 'after') {
+        cur.pseudo = name;
+        i = j;
+      } else {
+        // pseudo-class — skip the identifier
+        i = j;
+      }
     } else {
       const j = readIdentEnd(text, i);
       if (j === i) {
@@ -158,6 +175,8 @@ export function specificity(sel: ComplexSelector): Specificity {
     if (compound.id) a++;
     b += compound.classes.length;
     if (compound.tag) c++;
+    // ::before/::after count as a type selector for specificity (CSS Pseudo-Elements §2.3).
+    if (compound.pseudo) c++;
   }
   return [a, b, c];
 }

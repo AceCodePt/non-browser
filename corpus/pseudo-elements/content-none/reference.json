@@ -1,0 +1,34 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "e1::after": {
+      "content": "\"\""
+    },
+    "e2::after": {
+      "content": "none"
+    },
+    "e3::after": {
+      "content": "none"
+    }
+  },
+  "rect": {
+    "e1": {
+      "x": 0,
+      "y": 0,
+      "width": 320,
+      "height": 0
+    },
+    "e2": {
+      "x": 0,
+      "y": 0,
+      "width": 320,
+      "height": 0
+    },
+    "e3": {
+      "x": 0,
+      "y": 0,
+      "width": 320,
+      "height": 0
+    }
+  }
+}

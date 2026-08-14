@@ -1,0 +1,23 @@
+{
+  "name": "after-suffix",
+  "note": "::after generates its inline box after the element's other inline content: the div's text is followed by the generated suffix on the same line, measured exactly like authored text (layer-1), the box height grows to fit the line (layer-3), the pseudo's computed style reports the string content, and the generated glyphs are compared in the screenshot region (layer-4).",
+  "harvest": {
+    "viewport": { "width": 320, "height": 90 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}#box::after{content:' (incl. tax)'}</style></head><body><div id=\"box\" style=\"width:280px;padding:8px;font-family:'Noto Sans';font-size:14px;line-height:20px;color:#333;background:#f6f6f6\"><span id=\"t1\">Total</span></div></body></html>",
+    "measureText": [
+      { "text": "Total (incl. tax)", "font": "14px 'Noto Sans'" }
+    ],
+    "rects": ["box", "t1"],
+    "textElements": ["t1"],
+    "computedStyle": [
+      { "id": "box", "pseudo": "after", "props": ["content", "color", "font-size", "font-family", "line-height", "display"] },
+      { "id": "t1", "props": ["font-size", "color"] }
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

@@ -128,11 +128,44 @@ function readIdentEnd(s: string, start: number): number {
   return i;
 }
 
-/** Split a selector prelude on top-level commas. */
+/**
+ * Split a selector prelude on top-level commas. Tracks parens (so
+ * `:not(.a, .b)` stays intact), brackets (attribute selectors), and quoted
+ * strings, and returns the raw substrings — so `::before`, `:hover`, and
+ * attribute commas survive untouched.
+ */
 function splitSelectors(prelude: string): string[] {
-  return splitTopLevel(tokenize(prelude), ',')
-    .map((t) => t.join(' ').replace(/\s+/g, ' ').trim())
-    .filter(Boolean);
+  const out: string[] = [];
+  let depth = 0;
+  let bracket = 0;
+  let quote: string | null = null;
+  let cur = '';
+  for (let i = 0; i < prelude.length; i++) {
+    const c = prelude[i];
+    if (quote) {
+      cur += c;
+      if (c === '\\' && i + 1 < prelude.length) cur += prelude[++i];
+      else if (c === quote) quote = null;
+      continue;
+    }
+    if (c === '"' || c === "'") {
+      quote = c;
+      cur += c;
+      continue;
+    }
+    if (c === '(') depth++;
+    else if (c === ')') depth--;
+    else if (c === '[') bracket++;
+    else if (c === ']') bracket--;
+    if (c === ',' && depth === 0 && bracket === 0) {
+      out.push(cur.trim());
+      cur = '';
+      continue;
+    }
+    cur += c;
+  }
+  out.push(cur.trim());
+  return out.filter(Boolean);
 }
 
 /** Container prelude: `@container [<name>] <condition>` -> name + condition. */
