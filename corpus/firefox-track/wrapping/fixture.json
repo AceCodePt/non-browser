@@ -1,0 +1,35 @@
+{
+  "name": "wrapping",
+  "note": "Firefox-track subset of the chrome spine wrapping fixture: a multi-line paragraph at a fixed width in the firefox-registered face, exercising greedy line breaking, the Pretext seam, and a multi-line screenshot against Playwright Firefox.",
+  "harvest": {
+    "viewport": {
+      "width": 460,
+      "height": 140
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"para\" style=\"font-family:'Source Code Pro';font-size:16px;line-height:24px;width:320px\">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs. Sphinx of black quartz, judge my vow.</div></body></html>",
+    "measureText": [
+      {
+        "text": "The quick brown fox jumps over the lazy dog.",
+        "font": "16px 'Source Code Pro'"
+      },
+      {
+        "text": "Sphinx of black quartz, judge my vow.",
+        "font": "16px 'Source Code Pro'"
+      }
+    ],
+    "computedStyle": [
+      {
+        "id": "para",
+        "props": ["display", "font-size", "font-family", "line-height", "width", "white-space"]
+      }
+    ],
+    "rects": ["para"],
+    "textElements": ["para"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

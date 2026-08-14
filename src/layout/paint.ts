@@ -11,6 +11,7 @@
 
 import type { CanvasFactory } from '../canvas/interface.js';
 import { skiaCanvasFactory } from '../canvas/skia.js';
+import { getActiveBrowserConfig, resolveFontFamily } from '../config/browser-config.js';
 import type { Color } from './css.js';
 import type { PaintOp, RootLayout, TextDecorationPaint } from './block-inline.js';
 import type { Box } from '../harness/fixtures.js';
@@ -38,6 +39,7 @@ function paintTextRun(
   color: Color,
   letterSpacing: number,
 ): void {
+  family = resolveFontFamily(getActiveBrowserConfig(), family);
   const font = `${fontSize}px '${family}'`;
   if (letterSpacing === 0) {
     canvas.drawText(run.text, run.x, run.baseline, font, color);
