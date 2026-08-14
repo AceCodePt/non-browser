@@ -157,7 +157,25 @@ export const ZERO_BORDER_RADIUS: BorderRadius = {
   bottomLeft: ZERO_RADIUS,
 };
 
-export type DisplayValue = 'block' | 'none' | 'grid' | 'inline-grid' | 'flex' | 'inline-block' | 'inline';
+export type DisplayValue =
+  | 'block'
+  | 'none'
+  | 'grid'
+  | 'inline-grid'
+  | 'flex'
+  | 'inline-block'
+  | 'inline'
+  // --- table display values (CSS 2.1 §17.2.1) ---
+  | 'table'
+  | 'inline-table'
+  | 'table-row'
+  | 'table-cell'
+  | 'table-header-group'
+  | 'table-footer-group'
+  | 'table-row-group'
+  | 'table-column-group'
+  | 'table-column'
+  | 'table-caption';
 
 export type VerticalAlign = 'baseline' | 'top' | 'middle' | 'bottom';
 
@@ -189,6 +207,17 @@ export interface ComputedStyle {
   float: 'none' | 'left' | 'right';
   clear: 'none' | 'left' | 'right' | 'both';
   verticalAlign: VerticalAlign;
+  /** horizontal text alignment (start/end normalized to left/right). */
+  textAlign: 'left' | 'center' | 'right';
+  // --- table properties (CSS 2.1 §17.6) ---
+  borderCollapse: 'separate' | 'collapse';
+  /** horizontal border-spacing in px (separate model). */
+  borderSpacingH: number;
+  /** vertical border-spacing in px (separate model). */
+  borderSpacingV: number;
+  captionSide: 'top' | 'bottom';
+  tableLayout: 'auto' | 'fixed';
+  emptyCells: 'show' | 'hide';
   boxSizing: 'content-box' | 'border-box';
   overflow: 'visible' | 'hidden';
   /** border-box width; null = auto. */
@@ -928,6 +957,24 @@ interface Defaults {
   textDecorationColor?: Color | null;
   textDecorationThickness?: 'auto' | 'from-font' | { px: number };
   textUnderlineOffset?: number;
+  /** UA-level default padding (e.g. td/th get 1px). */
+  paddingDefault?: Length;
+  /** UA-level default vertical-align (e.g. table cells get 'middle'). */
+  verticalAlignDefault?: VerticalAlign;
+  /** UA-level default text-align (e.g. th gets 'center'); wins over inherited. */
+  textAlignDefault?: 'left' | 'center' | 'right';
+  /** inherited text-align (text-align is inherited; used when no author value). */
+  textAlignInherited?: 'left' | 'center' | 'right';
+  /** UA-level default border-collapse (table gets 'separate'). */
+  borderCollapseDefault?: 'separate' | 'collapse';
+  /** UA-level default horizontal border-spacing (table gets 2px). */
+  borderSpacingDefault?: number;
+  /** UA-level default vertical border-spacing (table gets 2px). */
+  borderSpacingVDefault?: number;
+  /** UA-level default table-layout (table gets 'auto'). */
+  tableLayoutDefault?: 'auto' | 'fixed';
+  /** UA-level default caption-side (caption gets 'top'). */
+  captionSideDefault?: 'top' | 'bottom';
 }
 export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedStyle {
   const color = (name: string, dflt: Color): Color => {
@@ -984,10 +1031,11 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
 
   const sideLens = (shorthand: string): Record<Side, Length> => {
     const sh = decls.find((d) => d.property === shorthand);
-    const top = len(`${shorthand}-top`, pxLength(0));
-    const right = len(`${shorthand}-right`, pxLength(0));
-    const bottom = len(`${shorthand}-bottom`, pxLength(0));
-    const left = len(`${shorthand}-left`, pxLength(0));
+    const dflt = shorthand === 'padding' ? defaults.paddingDefault ?? pxLength(0) : pxLength(0);
+    const top = len(`${shorthand}-top`, dflt);
+    const right = len(`${shorthand}-right`, dflt);
+    const bottom = len(`${shorthand}-bottom`, dflt);
+    const left = len(`${shorthand}-left`, dflt);
     if (sh) return parseBoxShorthand(sh.value);
     return { top, right, bottom, left };
   };
@@ -1036,6 +1084,16 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     if (v === 'flex' || v === 'inline-flex') return 'flex';
     if (v === 'inline-block') return 'inline-block';
     if (v === 'inline') return 'inline';
+    if (v === 'table') return 'table';
+    if (v === 'inline-table') return 'inline-table';
+    if (v === 'table-row') return 'table-row';
+    if (v === 'table-cell') return 'table-cell';
+    if (v === 'table-header-group') return 'table-header-group';
+    if (v === 'table-footer-group') return 'table-footer-group';
+    if (v === 'table-row-group') return 'table-row-group';
+    if (v === 'table-column-group') return 'table-column-group';
+    if (v === 'table-column') return 'table-column';
+    if (v === 'table-caption') return 'table-caption';
     return 'block';
   })();
 
@@ -1071,7 +1129,48 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   const verticalAlignDecl = decls.find((d) => d.property === 'vertical-align');
   const verticalAlign: VerticalAlign = verticalAlignDecl
     ? (verticalAlignDecl.value.trim() as VerticalAlign)
-    : 'baseline';
+    : (defaults.verticalAlignDefault ?? 'baseline');
+
+  const textAlignDecl = decls.find((d) => d.property === 'text-align');
+  const textAlign: 'left' | 'center' | 'right' = (() => {
+    if (textAlignDecl) {
+      const v = textAlignDecl.value.trim();
+      if (v === 'center') return 'center';
+      if (v === 'right' || v === 'end') return 'right';
+      return 'left';
+    }
+    return defaults.textAlignDefault ?? defaults.textAlignInherited ?? 'left';
+  })();
+
+  // --- table properties ---
+  const borderCollapseDecl = decls.find((d) => d.property === 'border-collapse');
+  const borderCollapse: 'separate' | 'collapse' =
+    borderCollapseDecl && borderCollapseDecl.value.trim() === 'collapse' ? 'collapse' : (defaults.borderCollapseDefault ?? 'separate');
+  const borderSpacingDecl = decls.find((d) => d.property === 'border-spacing');
+  const parseSpacing = (): { h: number; v: number } => {
+    if (borderSpacingDecl) {
+      const parts = borderSpacingDecl.value.trim().split(/\s+/);
+      const pxOf = (s: string | undefined): number => {
+        if (!s) return 0;
+        const m = s.trim().match(/^(-?[\d.]+)px$/);
+        return m ? parseFloat(m[1]) : 0;
+      };
+      const h = pxOf(parts[0]);
+      const v = pxOf(parts[1]) || h;
+      return { h, v };
+    }
+    return { h: defaults.borderSpacingDefault ?? 0, v: defaults.borderSpacingVDefault ?? defaults.borderSpacingDefault ?? 0 };
+  };
+  const spacing = parseSpacing();
+  const captionSideDecl = decls.find((d) => d.property === 'caption-side');
+  const captionSide: 'top' | 'bottom' =
+    captionSideDecl && captionSideDecl.value.trim() === 'bottom' ? 'bottom' : (defaults.captionSideDefault ?? 'top');
+  const tableLayoutDecl = decls.find((d) => d.property === 'table-layout');
+  const tableLayout: 'auto' | 'fixed' =
+    tableLayoutDecl && tableLayoutDecl.value.trim() === 'fixed' ? 'fixed' : (defaults.tableLayoutDefault ?? 'auto');
+  const emptyCellsDecl = decls.find((d) => d.property === 'empty-cells');
+  const emptyCells: 'show' | 'hide' =
+    emptyCellsDecl && emptyCellsDecl.value.trim() === 'hide' ? 'hide' : 'show';
 
   const boxSizingDecl = decls.find((d) => d.property === 'box-sizing');
   const boxSizing: 'content-box' | 'border-box' =
@@ -1244,6 +1343,13 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     float,
     clear,
     verticalAlign,
+    textAlign,
+    borderCollapse,
+    borderSpacingH: spacing.h,
+    borderSpacingV: spacing.v,
+    captionSide,
+    tableLayout,
+    emptyCells,
     boxSizing,
     overflow,
     width: len('width'),
