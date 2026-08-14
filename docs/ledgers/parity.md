@@ -49,6 +49,25 @@ Pretext seam (break-point parity vs Chrome line fragments): PASS, means
 
 `check-charter`: PASS — charter ratified, runtime within pin.
 
+## Known Gaps (typed, trend toward zero)
+
+Three fixtures currently declare a typed `expected.<layer>: { result:'fail',
+reason, sunset }` gap (single per-layer form per improvement-plan §4). Every gap
+carries its owner (reason) and expiry (sunset) as data in the fixture; the
+verify scripts assert each still diverges, so a declaration can only move toward
+zero by closing (flipping to `pass`) — never by silent removal. Current count: 3
+declarations (7 entry-level known-gap strings inside `known-gaps`).
+
+| Fixture | Layer | Reason (summary) | Sunset |
+| --- | --- | --- | --- |
+| `measure-corpus/known-gaps` | measureText | skia vs Chrome fontconfig fallback: emoji smileys, proportional tabs, mixed-script runs, Thai, Arabic punctuation/letter-spacing (7 entries; per-string deltas in `text-measure.md`) | reclassify each entry to pass when skia fallback matches Chrome's per-glyph fallback / tab-stop semantics |
+| `media-queries/container-gap` | computedStyle | engine parses `@container` but layout never applies it (no container sizing); Chrome resolves the 400px container and paints `#child` red (see `media-queries.md`) | when layout resolves container sizes (`container-type`/`container-name` plumbing lands) |
+| `harness-tolerances/regression-divergence` | screenshot | deliberate 48x24px divergence proving the screenshot gate fails as designed (regression self-test, not an engine gap) | permanent — retire only when the screenshot layer gains a fixture-free divergence-injection check |
+
+Gap count over runs: 3 (as of 2026-08-14). Each reduction requires closing the
+divergence the declaration documents; the fixtures assert the divergence still
+exists, so a stale or removed declaration fails `npm run verify`.
+
 ## Honest Reading (what the green run does and does not prove)
 
 The headline numbers are real but incomplete. The following limit the claims

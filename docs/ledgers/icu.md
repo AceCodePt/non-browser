@@ -16,7 +16,7 @@ Runtime pin record per the charter §6: every segmentation verification run reco
 
 ## Latest Run
 
-- Generated: 2026-08-14T11:51:49.721Z
+- Generated: 2026-08-14T16:11:21.441Z
 - Node ICU `78.3` vs Chrome 151.0.7922.34 ICU: **parity**
 - Strings segmented: 72 (72 pass corpus + 0 documented gaps)
 - Grapheme clusters: 182 (up to 13 in one string)
@@ -114,4 +114,4 @@ Runtime pin record per the charter §6: every segmentation verification run reco
 
 ## Divergences
 
-None recorded for this run — every corpus string segmented identically (Node ICU vs Chrome ICU) and laid out identically through Pretext. The `expected: "fail"` fixture mechanism is the place to record Chrome-vs-Node ICU divergences in segmentation behavior when the corpus grows past the current strings.
+None recorded for this run — every corpus string segmented identically (Node ICU vs Chrome ICU) and laid out identically through Pretext. The typed gap-declaration fixture mechanism (expected.<layer> = { result: "fail", reason, sunset }) is the place to record Chrome-vs-Node ICU divergences in segmentation behavior when the corpus grows past the current strings.

@@ -10,9 +10,10 @@
  * via emulateMedia / deviceScaleFactor and to the engine via renderHtml's
  * `media` option, so both evaluate @media against the same environment.
  *
- * A fixture with `expected.computedStyle: 'fail'` asserts the *documented
- * divergence* (the @container gap — see docs/ledgers/media-queries.md): the
- * check passes only when Chrome and the engine disagree, proving the gap is
+ * A fixture that declares a typed gap on `computedStyle`
+ * (`expected.computedStyle: { result:'fail', reason, sunset }`) asserts the
+ * *documented divergence* (the @container gap — see docs/ledgers/media-queries.md):
+ * the check passes only when Chrome and the engine disagree, proving the gap is
  * real rather than silently wrong.
  *
  * Writes reference.json (Chrome) and candidate.json (engine) into each fixture
@@ -24,6 +25,7 @@ import { chromium } from 'playwright';
 import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { renderHtml } from '../dist/layout/render.js';
+import { isGapExpectation } from './lib/expected.mjs';
 
 const FONT_FILE = process.env.FONT_FILE ?? '/usr/share/fonts/google-noto/NotoSans-Regular.ttf';
 const FONT_FAMILY = process.env.FONT_FAMILY ?? 'Noto Sans';
@@ -69,7 +71,8 @@ try {
     const h = raw.harvest;
     const specs = h.computedStyle ?? [];
     const viewports = h.viewports ?? (h.viewport ? [h.viewport] : []);
-    const expected = raw.expected?.computedStyle ?? 'pass';
+    const computedEx = raw.expected?.computedStyle ?? 'pass';
+    const expected = isGapExpectation(computedEx) ? 'fail' : 'pass';
 
     const viewportData = [];
     let totalProps = 0;
