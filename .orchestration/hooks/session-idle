@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# session-idle - verification hook for this project.
+#
+# Contract: exit 0 passes AND commits the work; non-zero fails and everything
+# written to stdout/stderr is fed back to the agent as its next instructions
+# (the daemon retries up to verify.retryCap, then marks the task needs-review).
+# Only the version committed on the base branch runs.
+#
+# Dispatch: run the feature-relevant verify subset by TASK_NAME instead of the
+# full Playwright-heavy suite. Every subset rebuilds (tsc) before diffing its
+# corpus; unknown/unmapped features fall back to the full `npm run verify`
+# (build + charter check + four-layer spine diff). Pattern order matters - first
+# match wins, so keep specific prefixes before looser ones.
+
+set -euo pipefail
+cd "${WORKTREE_PATH:-$(git rev-parse --show-toplevel)}" || exit 1
+
+case "${TASK_NAME:-}" in
+  *flexbox*)          npm run verify:layout-flexbox ;;
+  *float*)            npm run verify:layout-floats ;;
+  *grid*)             npm run verify:layout-grid ;;
+  *position*)         npm run verify:layout-positioning ;;
+  *media*)            npm run verify:media-queries ;;
+  *paint-text*)       npm run verify:paint-text ;;
+  *text-measure*|*measure-corpus*) npm run verify:text-measure ;;
+  *firefox*|*font-fallback*) npm run verify:firefox ;;
+  *segmenter*|*text-breaker*) npm run verify:segmenter ;;
+  *spine*)            npm run verify:four-layer ;;
+  *harness-tolerance*) npm run verify:report ;;
+  *)                  npm run verify ;;
+esac
+
+# Verification passed: commit the work (idempotent - an empty tree has nothing to
+# commit, and it still passes so the daemon can re-run it safely).
+if [ -n "$(git status --porcelain)" ]; then
+  git add -A
+  git -c user.name=orch -c user.email=orch@localhost \
+      commit -q -m "orch: session-idle verification passed"
+fi
+exit 0
