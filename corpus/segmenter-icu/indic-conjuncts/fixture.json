@@ -1,0 +1,31 @@
+{
+  "name": "indic-conjuncts",
+  "note": "Indic scripts: conjunct clusters formed with the virama/halant — the conjunct plus its vowel signs must hold together as one grapheme. Covers Devanagari, Bengali, Tamil, Malayalam, Telugu, and multi-word Devanagari strings.",
+  "layout": {
+    "font": "16px 'Noto Sans'",
+    "maxWidth": 200,
+    "lineHeight": 24
+  },
+  "fonts": [
+    { "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" },
+    { "family": "Droid Sans Devanagari", "file": "/usr/share/fonts/google-droid-sans-fonts/DroidSansDevanagari-Regular.ttf" }
+  ],
+  "entries": [
+    { "text": "क्ष", "note": "Devanagari ka+virama+ssa conjunct" },
+    { "text": "त्र", "note": "Devanagari ta+virama+ra" },
+    { "text": "ज्ञ", "note": "Devanagari ja+virama+nya" },
+    { "text": "श्र", "note": "Devanagari sha+virama+ra" },
+    { "text": "জ্ঞ", "note": "Bengali jna conjunct" },
+    { "text": "க்ஷ", "note": "Tamil ksha conjunct" },
+    { "text": "ക്ഷ", "note": "Malayalam ksha conjunct" },
+    { "text": "క్ష", "note": "Telugu ksha conjunct" },
+    { "text": "द्द", "note": "Devanagari dda conjunct" },
+    { "text": "क्क", "note": "Devanagari kka conjunct" },
+    { "text": "श्री", "note": "shri (sha+virama+ra+i matra)" },
+    { "text": "नमस्ते दुनिया", "note": "greeting with matras, two words" },
+    { "text": "हिन्दी", "note": "hindī" },
+    { "text": "संस्कृतम्", "note": "sanskrit" },
+    { "text": "क्षितिज", "note": "horizon (conjunct word)" },
+    { "text": "दुर्गा", "note": "durga" }
+  ]
+}

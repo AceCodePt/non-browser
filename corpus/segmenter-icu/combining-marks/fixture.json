@@ -1,0 +1,26 @@
+{
+  "name": "combining-marks",
+  "note": "Combining characters: base + one or more combining marks (spacing combining marks, double marks) and their precomposed equivalents must produce the same extended grapheme clusters. Also covers Devanagari combining vowel marks (matras) and anusvara. Node and Chrome must agree on cluster count and boundaries for every decomposed/precomposed pair.",
+  "layout": {
+    "font": "16px 'Noto Sans'",
+    "maxWidth": 120,
+    "lineHeight": 24
+  },
+  "fonts": [
+    { "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" },
+    { "family": "Droid Sans Devanagari", "file": "/usr/share/fonts/google-droid-sans-fonts/DroidSansDevanagari-Regular.ttf" }
+  ],
+  "entries": [
+    { "text": "e\u0301\u0323", "note": "e + acute + dot below (double combining)" },
+    { "text": "a\u0308\u0301", "note": "a + diaeresis + acute (double combining)" },
+    { "text": "ế", "note": "precomposed Vietnamese e-circumflex-acute" },
+    { "text": "a\u0300 b\u0300", "note": "combining marks adjacent to spaces" },
+    { "text": "e\u0301", "note": "decomposed e + acute" },
+    { "text": "é", "note": "precomposed e-acute" },
+    { "text": "a\u0308\u0301\u0323", "note": "triple combining marks" },
+    { "text": "क\u093F", "note": "Devanagari i-matra (combining vowel mark)" },
+    { "text": "अ\u0902", "note": "Devanagari anusvara" },
+    { "text": "t\u0323\u0302", "note": "t + dot below + circumflex" },
+    { "text": "o\u0308\u0304", "note": "o + diaeresis + macron" }
+  ]
+}

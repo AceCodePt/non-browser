@@ -1,0 +1,21 @@
+{
+  "name": "flags",
+  "note": "Regional-indicator flags and subdivision tag sequences. A flag is a pair of regional-indicator letters (or a black-flag + tag characters + cancel-tag for subdivisions); the grapheme rule holds the whole sequence together. Flags adjacent without a space must stay two distinct clusters (GB12/GB13).",
+  "layout": {
+    "font": "16px 'Noto Sans'",
+    "maxWidth": 120,
+    "lineHeight": 24
+  },
+  "fonts": [
+    { "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" }
+  ],
+  "entries": [
+    { "text": "🇺🇸 🇨🇳 🇯🇵 🇩🇪", "note": "four flags separated by spaces" },
+    { "text": "🇺🇸🇨🇳", "note": "two flags adjacent, no space" },
+    { "text": "🇺🇳", "note": "United Nations flag (RI pair)" },
+    { "text": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "note": "England subdivision flag (tag sequence)" },
+    { "text": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "note": "Scotland subdivision flag (tag sequence)" },
+    { "text": "🇺🇸 🇨🇳 🇯🇵 🇩🇪 🇧🇷 🇮🇳", "note": "six flags spaced" },
+    { "text": "🇪🇺", "note": "European Union flag" }
+  ]
+}

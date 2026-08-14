@@ -1,0 +1,28 @@
+{
+  "name": "zwj-emoji",
+  "note": "Zero-width-joiner emoji sequences: the grapheme cluster rule keeps the whole ZWJ chain as one extended grapheme. Node ICU and Chrome ICU must agree on the single cluster boundary (count and boundaries) and Pretext must lay each family out as one unbreakable unit.",
+  "layout": {
+    "font": "16px 'Noto Sans'",
+    "maxWidth": 120,
+    "lineHeight": 24
+  },
+  "fonts": [
+    { "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" }
+  ],
+  "entries": [
+    { "text": "👨‍👩‍👧‍👦", "note": "family: man+ZWJ+woman+ZWJ+girl+ZWJ+boy" },
+    { "text": "👩‍👧‍👦", "note": "mother+ZWJ+girl+ZWJ+boy" },
+    { "text": "👨‍❤️‍👨", "note": "two men with heart (ZWJ + VS16)" },
+    { "text": "👩‍❤️‍💋‍👨", "note": "kiss with heart (ZWJ + VS16)" },
+    { "text": "🧑‍🤝‍🧑", "note": "people holding hands (ZWJ)" },
+    { "text": "👨‍👩‍👧", "note": "3-person family" },
+    { "text": "👨‍👨‍👦‍👦", "note": "two-men two-boys family" },
+    { "text": "👩‍👩‍👧‍👧", "note": "two-women two-girls family" },
+    { "text": "🏃‍♂️", "note": "runner with male sign (ZWJ + VS16)" },
+    { "text": "👩‍⚕️", "note": "woman health worker (ZWJ + VS16)" },
+    { "text": "🧑‍🚀", "note": "astronaut (ZWJ)" },
+    { "text": "👨‍👩", "note": "couple (two-member ZWJ chain)" },
+    { "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦", "note": "two adjacent ZWJ families, no space" },
+    { "text": "👩‍❤️‍👨", "note": "woman and man with heart" }
+  ]
+}
