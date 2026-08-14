@@ -72,9 +72,34 @@ export class SkiaCanvas implements CanvasLike {
     this.ctx.closePath();
   }
 
-  fillPath(color: CanvasColor): void {
+  ellipse(
+    x: number,
+    y: number,
+    radiusX: number,
+    radiusY: number,
+    rotation: number,
+    startAngle: number,
+    endAngle: number,
+    counterclockwise?: boolean,
+  ): void {
+    this.ctx.ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle, counterclockwise ?? false);
+  }
+
+  save(): void {
+    this.ctx.save();
+  }
+
+  restore(): void {
+    this.ctx.restore();
+  }
+
+  clip(fillRule: 'nonzero' | 'evenodd' = 'nonzero'): void {
+    this.ctx.clip(fillRule);
+  }
+
+  fillPath(color: CanvasColor, fillRule: 'nonzero' | 'evenodd' = 'nonzero'): void {
     this.ctx.fillStyle = cssColor(color);
-    this.ctx.fill();
+    this.ctx.fill(fillRule);
   }
 
   strokePath(color: CanvasColor, lineWidth: number): void {

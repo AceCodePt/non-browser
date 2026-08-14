@@ -123,7 +123,7 @@ export function renderHtml(html: string, opts: RenderOptions): RenderHtmlOutput 
   );
 
   const root = layoutRoot(body, styles, viewport);
-  const out = paint(root, opts.width, opts.height, Object.keys(collectIds(body)), config.defaultFile, factory);
+  const out = paint(root, opts.width, opts.height, Object.keys(collectIds(body)), config.defaultFile, factory, viewport);
 
   const computedStyles: Record<string, ComputedStyleProps> = {};
   if (opts.computedStyle) {

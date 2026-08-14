@@ -1,0 +1,47 @@
+{
+  "name": "rounded-button",
+  "note": "A button-like box with a uniform border-radius, a solid border, and label text: the background is clipped to the rounded border-box, the border is the ring between the outer and inner (padding-edge) rounded rects, and the label paints inside. Covers shorthand border-radius, uniform corners, and a rounded border.",
+  "harvest": {
+    "viewport": {
+      "width": 260,
+      "height": 120
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"btn\" style=\"position:relative;left:20px;top:20px;width:180px;height:44px;background:#3575e0;border:2px solid #0d2a52;border-radius:12px;padding:0 20px;box-sizing:border-box;font-family:'Noto Sans';font-size:16px;line-height:40px;color:#fff\">Submit</div></body></html>",
+    "measureText": [
+      {
+        "text": "Submit",
+        "font": "16px 'Noto Sans'"
+      }
+    ],
+    "computedStyle": [
+      {
+        "id": "btn",
+        "props": [
+          "display",
+          "box-sizing",
+          "overflow",
+          "width",
+          "height",
+          "border-top-width",
+          "border-right-width",
+          "border-bottom-width",
+          "border-left-width",
+          "border-radius",
+          "border-top-left-radius",
+          "border-top-right-radius",
+          "border-bottom-right-radius",
+          "border-bottom-left-radius",
+          "background-color"
+        ]
+      }
+    ],
+    "rects": ["btn"],
+    "textElements": ["btn"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

@@ -10,7 +10,7 @@
  * explicit keywords — not `auto` where Chrome reports the used value).
  */
 
-import type { Color, ComputedStyle, Length, Viewport } from './css.js';
+import type { Color, ComputedStyle, CornerRadii, Length, Viewport } from './css.js';
 
 export type ComputedStyleProps = Record<string, string>;
 
@@ -43,6 +43,34 @@ function lengthString(l: Length, ref: number, viewport?: Viewport | null): strin
 function fontFamilyString(family: string): string {
   if (/^[-_a-zA-Z][-_a-zA-Z0-9]*$/.test(family)) return family;
   return `"${family.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
+
+/**
+ * Shortest repeating-form serialization of one radius axis, matching Chrome:
+ * all-equal → 1 value, TL=BR & TR=BL → 2, TR=BL → 3, else 4.
+ */
+function radiusAxisString(corners: CornerRadii[], get: (c: CornerRadii) => Length, refWidth: number, viewport?: Viewport | null): string {
+  const s = corners.map((c) => lengthString(get(c), refWidth, viewport) ?? '0px');
+  if (s.every((v) => v === s[0])) return s[0];
+  if (s[0] === s[2] && s[1] === s[3]) return `${s[0]} ${s[1]}`;
+  if (s[1] === s[3]) return `${s[0]} ${s[1]} ${s[2]}`;
+  return s.join(' ');
+}
+
+/** Serialize the `border-radius` shorthand (horizontal axis [/ vertical axis]). */
+function borderRadiusString(style: ComputedStyle, refWidth: number, viewport?: Viewport | null): string {
+  const { topLeft, topRight, bottomRight, bottomLeft } = style.borderRadius;
+  const corners = [topLeft, topRight, bottomRight, bottomLeft];
+  const h = radiusAxisString(corners, (c) => c.rx, refWidth, viewport);
+  const v = radiusAxisString(corners, (c) => c.ry, refWidth, viewport);
+  return h === v ? h : `${h} / ${v}`;
+}
+
+/** Serialize one corner longhand: `rx` when rx===ry, else `rx ry`. */
+function cornerRadiusString(c: CornerRadii, refWidth: number, viewport?: Viewport | null): string {
+  const rx = lengthString(c.rx, refWidth, viewport) ?? '0px';
+  const ry = lengthString(c.ry, refWidth, viewport) ?? '0px';
+  return rx === ry ? rx : `${rx} ${ry}`;
 }
 
 /**
@@ -113,6 +141,16 @@ export function computedStyleString(style: ComputedStyle, prop: string, refWidth
       return style.borderStyle.bottom;
     case 'border-left-style':
       return style.borderStyle.left;
+    case 'border-radius':
+      return borderRadiusString(style, refWidth, viewport);
+    case 'border-top-left-radius':
+      return cornerRadiusString(style.borderRadius.topLeft, refWidth, viewport);
+    case 'border-top-right-radius':
+      return cornerRadiusString(style.borderRadius.topRight, refWidth, viewport);
+    case 'border-bottom-right-radius':
+      return cornerRadiusString(style.borderRadius.bottomRight, refWidth, viewport);
+    case 'border-bottom-left-radius':
+      return cornerRadiusString(style.borderRadius.bottomLeft, refWidth, viewport);
     case 'box-sizing':
       return style.boxSizing;
     case 'overflow':

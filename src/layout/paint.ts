@@ -9,10 +9,11 @@
  * paints the same tree unchanged.
  */
 
-import type { CanvasFactory } from '../canvas/interface.js';
+import type { CanvasFactory, CanvasLike } from '../canvas/interface.js';
 import { skiaCanvasFactory } from '../canvas/skia.js';
 import { getActiveBrowserConfig, resolveFontFamily } from '../config/browser-config.js';
-import type { Color } from './css.js';
+import type { Color, Viewport } from './css.js';
+import { hasNonZeroRadius, innerRadii, resolveBorderRadius, traceRoundedRect, type RoundedClip, type ResolvedRadii } from './radius.js';
 import type { PaintOp, RootLayout, TextDecorationPaint } from './block-inline.js';
 import type { Box } from '../harness/fixtures.js';
 import { measureTextWidth } from './measure.js';
@@ -136,6 +137,96 @@ function paintBorder(
   }
 }
 
+/** True when any resolved radius is non-zero (a plain rect otherwise). */
+function hasResolvedRadius(r: ResolvedRadii): boolean {
+  const c = [r.topLeft, r.topRight, r.bottomRight, r.bottomLeft];
+  return c.some((k) => k.rx > 0 || k.ry > 0);
+}
+
+/** Fill a rounded rectangle for a background op, matching Chrome's raster. */
+function paintRoundedBackground(
+  canvas: CanvasLike,
+  op: PaintOp,
+  viewport?: Viewport | null,
+): void {
+  const radii = resolveBorderRadius(op.borderRadius!, op.box.width, op.box.height, viewport);
+  if (!hasResolvedRadius(radii)) {
+    canvas.fillRect(op.box.x, op.box.y, op.box.width, op.box.height, op.color!);
+    return;
+  }
+  canvas.beginPath();
+  traceRoundedRect(canvas, op.box.x, op.box.y, op.box.width, op.box.height, radii);
+  canvas.fillPath(op.color!);
+}
+
+/**
+ * Paint a rounded solid border as the region between the outer border-box
+ * rounded rect and the inner padding-box rounded rect (outer radii minus the
+ * border widths). With a uniform border color the whole ring fills once; with
+ * differing side colors each side fills its band clipped to the ring.
+ */
+function paintRoundedBorder(
+  canvas: CanvasLike,
+  op: PaintOp,
+  viewport?: Viewport | null,
+): void {
+  const widths = op.borderWidths!;
+  const colors = op.borderColors!;
+  const outer = resolveBorderRadius(op.borderRadius!, op.box.width, op.box.height, viewport);
+  const inner = innerRadii(outer, widths, op.box.width, op.box.height);
+  const traceRing = (): void => {
+    traceRoundedRect(canvas, op.box.x, op.box.y, op.box.width, op.box.height, outer);
+    traceRoundedRect(
+      canvas,
+      op.box.x + widths.left,
+      op.box.y + widths.top,
+      op.box.width - widths.left - widths.right,
+      op.box.height - widths.top - widths.bottom,
+      inner,
+    );
+  };
+
+  const sides = ['top', 'right', 'bottom', 'left'] as const;
+  const uniform = sides.every(
+    (s) => colors.top.r === colors[s].r && colors.top.g === colors[s].g && colors.top.b === colors[s].b && colors.top.a === colors[s].a,
+  );
+  if (uniform) {
+    canvas.beginPath();
+    traceRing();
+    canvas.fillPath(colors.top, 'evenodd');
+    return;
+  }
+
+  const bands = [
+    { x: op.box.x, y: op.box.y, w: op.box.width, h: widths.top, color: colors.top },
+    { x: op.box.x + op.box.width - widths.right, y: op.box.y, w: widths.right, h: op.box.height, color: colors.right },
+    { x: op.box.x, y: op.box.y + op.box.height - widths.bottom, w: op.box.width, h: widths.bottom, color: colors.bottom },
+    { x: op.box.x, y: op.box.y, w: widths.left, h: op.box.height, color: colors.left },
+  ];
+  for (const b of bands) {
+    if (b.h <= 0 || b.w <= 0) continue;
+    canvas.save();
+    canvas.beginPath();
+    canvas.moveTo(b.x, b.y);
+    canvas.lineTo(b.x + b.w, b.y);
+    canvas.lineTo(b.x + b.w, b.y + b.h);
+    canvas.lineTo(b.x, b.y + b.h);
+    canvas.closePath();
+    canvas.clip();
+    canvas.beginPath();
+    traceRing();
+    canvas.fillPath(b.color, 'evenodd');
+    canvas.restore();
+  }
+}
+
+/** Clip to a rounded overflow clip rect (border box + its radii). */
+function applyRoundedClip(canvas: CanvasLike, clip: RoundedClip, viewport?: Viewport | null): void {
+  const radii = resolveBorderRadius(clip.radii, clip.width, clip.height, viewport);
+  traceRoundedRect(canvas, clip.x, clip.y, clip.width, clip.height, radii);
+  canvas.clip();
+}
+
 /**
  * Paint the layout through a CanvasFactory and produce the pixel buffer +
  * per-id rects.
@@ -147,6 +238,7 @@ export function paint(
   ids: string[],
   fontFile?: string,
   factory: CanvasFactory = skiaCanvasFactory,
+  viewport?: Viewport | null,
 ): RenderOutput {
   const canvas = factory.create(viewportWidth, viewportHeight);
   canvas.fillRect(0, 0, viewportWidth, viewportHeight, { r: 255, g: 255, b: 255, a: 1 });
@@ -154,10 +246,24 @@ export function paint(
   const fontMetrics = fontFile ? fontVerticalMetrics(fontFile) : null;
 
   for (const op of root.paints) {
+    const clipped = op.clip != null;
+    if (clipped) {
+      canvas.save();
+      canvas.beginPath();
+      applyRoundedClip(canvas, op.clip!, viewport);
+    }
     if (op.kind === 'bg') {
-      canvas.fillRect(op.box.x, op.box.y, op.box.width, op.box.height, op.color!);
+      if (op.borderRadius && hasNonZeroRadius(op.borderRadius)) {
+        paintRoundedBackground(canvas, op, viewport);
+      } else {
+        canvas.fillRect(op.box.x, op.box.y, op.box.width, op.box.height, op.color!);
+      }
     } else if (op.kind === 'border') {
-      paintBorder(canvas, op.box, op.borderWidths!, op.borderColors!);
+      if (op.borderRadius && hasNonZeroRadius(op.borderRadius)) {
+        paintRoundedBorder(canvas, op, viewport);
+      } else {
+        paintBorder(canvas, op.box, op.borderWidths!, op.borderColors!);
+      }
     } else if (op.kind === 'text') {
       const t = op.text!;
       for (const run of t.runs) {
@@ -167,6 +273,7 @@ export function paint(
         paintDecorations(canvas, t, t.decoration, fontMetrics);
       }
     }
+    if (clipped) canvas.restore();
   }
 
   const rects: Record<string, Box> = {};

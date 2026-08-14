@@ -1,0 +1,26 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "c": {
+      "display": "block",
+      "box-sizing": "content-box",
+      "overflow": "visible",
+      "width": "140px",
+      "height": "140px",
+      "border-radius": "50%",
+      "border-top-left-radius": "50%",
+      "border-top-right-radius": "50%",
+      "border-bottom-right-radius": "50%",
+      "border-bottom-left-radius": "50%",
+      "background-color": "rgb(230, 83, 74)"
+    }
+  },
+  "rect": {
+    "c": {
+      "x": 30,
+      "y": 30,
+      "width": 140,
+      "height": 140
+    }
+  }
+}

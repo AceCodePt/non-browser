@@ -1,0 +1,33 @@
+{
+  "name": "ellipse-50",
+  "note": "border-radius: 50% on a rectangle makes an ellipse: the horizontal radii resolve against the width and the vertical radii against the height, so rx != ry and the shape is a true ellipse (the non-circular 50% case). Must match Chrome's ellipse exactly.",
+  "harvest": {
+    "viewport": {
+      "width": 280,
+      "height": 200
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"e\" style=\"position:relative;left:30px;top:30px;width:200px;height:120px;background:#4aa0e6;border-radius:50%\"></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "e",
+        "props": [
+          "width",
+          "height",
+          "border-radius",
+          "border-top-left-radius",
+          "border-top-right-radius",
+          "border-bottom-right-radius",
+          "border-bottom-left-radius",
+          "background-color"
+        ]
+      }
+    ],
+    "rects": ["e"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "name": "circle-50",
+  "note": "border-radius: 50% on a square makes a circle — every corner's radii are half the box dimension, and the whole border-box becomes one circle that must match Chrome's raster (the 50% circle case). No text: the whole screenshot is compared under the strict band.",
+  "harvest": {
+    "viewport": {
+      "width": 220,
+      "height": 220
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c\" style=\"position:relative;left:30px;top:30px;width:140px;height:140px;background:#e6534a;border-radius:50%\"></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "c",
+        "props": [
+          "display",
+          "box-sizing",
+          "overflow",
+          "width",
+          "height",
+          "border-radius",
+          "border-top-left-radius",
+          "border-top-right-radius",
+          "border-bottom-right-radius",
+          "border-bottom-left-radius",
+          "background-color"
+        ]
+      }
+    ],
+    "rects": ["c"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

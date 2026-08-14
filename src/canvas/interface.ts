@@ -47,7 +47,29 @@ export interface CanvasLike {
   moveTo(x: number, y: number): void;
   lineTo(x: number, y: number): void;
   closePath(): void;
-  fillPath(color: CanvasColor): void;
+  /**
+   * Add an elliptical arc to the current path (canvas `ellipse` semantics: a
+   * straight line is drawn from the current point to the arc start). Angles in
+   * radians, clockwise by default.
+   */
+  ellipse(
+    x: number,
+    y: number,
+    radiusX: number,
+    radiusY: number,
+    rotation: number,
+    startAngle: number,
+    endAngle: number,
+    counterclockwise?: boolean,
+  ): void;
+  /** Save the drawing state (clip region, style) onto the state stack. */
+  save(): void;
+  /** Restore the drawing state pushed by the most recent `save()`. */
+  restore(): void;
+  /** Clip to the current path; subsequent draws are masked to it. */
+  clip(fillRule?: 'nonzero' | 'evenodd'): void;
+  /** Fill the current path; `fillRule` defaults to `nonzero`. */
+  fillPath(color: CanvasColor, fillRule?: 'nonzero' | 'evenodd'): void;
   strokePath(color: CanvasColor, lineWidth: number): void;
 
   /** Composite the surface to a PNG-encoded pixel buffer. */
