@@ -1,0 +1,18 @@
+{
+  "name": "combining-marks",
+  "note": "Combining characters and complex-script shaping: Latin base+combining diacritics (decomposed vs precomposed, double marks) on Noto Sans, and Devanagari conjuncts, matras, and Devanagari digits on Droid Sans Devanagari. Both sides ride the same shaping engine (HarfBuzz), so grapheme clusters agree to sub-pixel.",
+  "fonts": [
+    { "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" },
+    { "family": "Droid Sans Devanagari", "file": "/usr/share/fonts/google-droid-sans-fonts/DroidSansDevanagari-Regular.ttf" }
+  ],
+  "entries": [
+    { "text": "a\u0300 e\u0301 i\u0302 o\u0303 u\u0308", "font": "16px 'Noto Sans'", "note": "decomposed Latin accents" },
+    { "text": "é è ñ ô ü à", "font": "16px 'Noto Sans'", "note": "precomposed equivalents" },
+    { "text": "e\u0301\u0323 a\u0308\u0301", "font": "16px 'Noto Sans'", "note": "double combining marks" },
+    { "text": "नमस्ते दुनिया", "font": "16px 'Droid Sans Devanagari'", "note": "Devanagari greeting" },
+    { "text": "क्ष त्र ज्ञ श्र", "font": "16px 'Droid Sans Devanagari'", "note": "conjunct clusters" },
+    { "text": "का की कु कू के कै को कौ", "font": "16px 'Droid Sans Devanagari'", "note": "matra vowel marks" },
+    { "text": "संख्याएँ १२३४५६७८९०", "font": "16px 'Droid Sans Devanagari'", "note": "Devanagari digits" },
+    { "text": "१२३४५६७८९०", "font": "16px 'Droid Sans Devanagari'", "note": "Devanagari digits only" }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "name": "letter-spacing",
+  "note": "Letter-spaced runs: the engine measures the base advance with the Canvas interface's measureText and adds letterSpacing × codepoint count (Blink semantics — spacing applies after the trailing character too), while the Chrome oracle sets ctx.letterSpacing. Covers positive, fractional, and negative spacing on Latin, CJK, and kerning-heavy pairs. Letter-spacing on Arabic is a known gap: Chrome does not apply letter-spacing to joining scripts.",
+  "fonts": [
+    { "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" },
+    { "family": "Droid Sans Fallback", "file": "/usr/share/fonts/google-droid-sans-fonts/DroidSansFallbackFull.ttf" }
+  ],
+  "entries": [
+    { "text": "Letter spacing matters here", "font": "16px 'Noto Sans'", "letterSpacing": 1, "note": "1px spacing" },
+    { "text": "Letter spacing matters here", "font": "16px 'Noto Sans'", "letterSpacing": 2.5, "note": "fractional spacing" },
+    { "text": "Letter spacing matters here", "font": "16px 'Noto Sans'", "letterSpacing": -0.5, "note": "negative spacing" },
+    { "text": "The quick brown fox jumps over the lazy dog", "font": "16px 'Noto Sans'", "letterSpacing": 1.5, "note": "long run" },
+    { "text": "Kerning pairs AV To", "font": "32px 'Noto Sans'", "letterSpacing": 1, "note": "kerning pairs with spacing" },
+    { "text": "中文测试", "font": "16px 'Droid Sans Fallback'", "letterSpacing": 2, "note": "CJK spacing" },
+    { "text": "Short", "font": "16px 'Noto Sans'", "letterSpacing": 0.25, "note": "small fractional spacing" },
+    { "text": "中文 中文", "font": "16px 'Droid Sans Fallback'", "letterSpacing": 0.5, "note": "CJK with spaces" }
+  ]
+}

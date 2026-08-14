@@ -1,0 +1,21 @@
+{
+  "name": "rtl",
+  "note": "Right-to-left scripts on Droid Arabic Kufi (Arabic with harakat/vowel marks and Arabic-Indic digits) and Droid Sans Hebrew (incl. niqqud vowel points). Strings are pure-script: Latin punctuation or ASCII digits in an Arabic/Hebrew context fall back per-glyph in Chrome and are tracked as known gaps.",
+  "fonts": [
+    { "family": "Droid Arabic Kufi", "file": "/usr/share/fonts/google-droid-sans-fonts/DroidKufi-Regular.ttf" },
+    { "family": "Droid Sans Hebrew", "file": "/usr/share/fonts/google-droid-sans-fonts/DroidSansHebrew-Regular.ttf" }
+  ],
+  "entries": [
+    { "text": "مرحبا بالعالم هذا نص عربي", "font": "16px 'Droid Arabic Kufi'", "note": "Arabic greeting" },
+    { "text": "هذا نص عربي طويل لاختبار قياس عرض النص في متصفح كروم", "font": "16px 'Droid Arabic Kufi'", "note": "long Arabic sentence" },
+    { "text": "السلام عليكم ورحمة الله وبركاته", "font": "16px 'Droid Arabic Kufi'", "note": "joining letters" },
+    { "text": "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ", "font": "16px 'Droid Arabic Kufi'", "note": "Arabic with harakat (vowel marks)" },
+    { "text": "الأرقام العربية ٠١٢٣٤٥٦٧٨٩", "font": "16px 'Droid Arabic Kufi'", "note": "Arabic-Indic digits" },
+    { "text": "رقم ٥ ورقم ٧", "font": "16px 'Droid Arabic Kufi'", "note": "Arabic-Indic digits in prose" },
+    { "text": "شَدَّة تَشْكِيل", "font": "16px 'Droid Arabic Kufi'", "note": "shadda/diacritics" },
+    { "text": "שלום עולם טקסט בעברית", "font": "16px 'Droid Sans Hebrew'", "note": "Hebrew greeting" },
+    { "text": "זהו טקסט עברי לבדיקת רוחב טקסט בדפדפן", "font": "16px 'Droid Sans Hebrew'", "note": "long Hebrew sentence" },
+    { "text": "אבגדהוזחטיכלמנסעפצקרשת", "font": "16px 'Droid Sans Hebrew'", "note": "full Hebrew alphabet" },
+    { "text": "שָׁלוֹם עוֹלָם", "font": "16px 'Droid Sans Hebrew'", "note": "Hebrew with niqqud (vowel points)" }
+  ]
+}

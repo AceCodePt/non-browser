@@ -1,0 +1,25 @@
+{
+  "name": "emoji",
+  "note": "Emoji and symbol sequences that both the engine and Chrome resolve identically on this font set: ZWJ family/kiss sequences, regional-indicator flags, keycap sequences, skin-tone-modified thumbs, and dingbats/arrows/symbols on DejaVu Sans. Simple smileys (U+1F600) diverge because the system has no emoji font installed and Chrome falls back to an emoji-capable face while skia stays in Noto Sans — tracked in the known-gaps fixture.",
+  "fonts": [
+    { "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" },
+    { "family": "DejaVu Sans", "file": "/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf" }
+  ],
+  "entries": [
+    { "text": "👨‍👩‍👧‍👦", "font": "16px 'Noto Sans'", "note": "ZWJ family" },
+    { "text": "👨‍👩‍👧‍👦", "font": "32px 'Noto Sans'", "note": "ZWJ family at large size" },
+    { "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦", "font": "16px 'Noto Sans'", "note": "two ZWJ families" },
+    { "text": "👩‍👧", "font": "16px 'Noto Sans'", "note": "ZWJ mother-daughter" },
+    { "text": "👩‍❤️‍💋‍👨", "font": "16px 'Noto Sans'", "note": "ZWJ kiss with VS16" },
+    { "text": "🇺🇸", "font": "16px 'Noto Sans'", "note": "regional-indicator flag" },
+    { "text": "🇺🇸 🇨🇳 🇯🇵", "font": "16px 'Noto Sans'", "note": "flags separated by spaces" },
+    { "text": "1️⃣ 2️⃣ 3️⃣", "font": "16px 'Noto Sans'", "note": "keycap sequences" },
+    { "text": "👍🏻 👍🏼 👍🏽", "font": "16px 'Noto Sans'", "note": "skin-tone modifiers" },
+    { "text": "😀", "font": "16px 'DejaVu Sans'", "note": "smiley glyph on DejaVu Sans" },
+    { "text": "✈️ ☕ ⚽", "font": "16px 'DejaVu Sans'", "note": "dingbats on DejaVu Sans" },
+    { "text": "→ ⇒ ↗ ⬇", "font": "16px 'DejaVu Sans'", "note": "arrows" },
+    { "text": "© ® ™ € £ ¥ § ¶", "font": "16px 'DejaVu Sans'", "note": "symbols and currency" },
+    { "text": "❤️ 💙 💚", "font": "16px 'DejaVu Sans'", "note": "hearts" },
+    { "text": "⭐ 🌟 ✨", "font": "16px 'DejaVu Sans'", "note": "stars" }
+  ]
+}

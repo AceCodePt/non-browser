@@ -1,0 +1,48 @@
+{
+  "name": "known-gaps",
+  "note": "Documented known gaps: strings where the engine and Chrome resolve glyphs differently and the layer-1 delta exceeds tolerance. Each entry records the divergence mechanism; the ledger carries the observed per-string numbers. The verify script asserts each of these still diverges (so a closed gap surfaces for reclassification), and the corpus stays green only because each has a documented reason.",
+  "expected": "fail",
+  "fonts": [
+    { "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" },
+    { "family": "Droid Sans Fallback", "file": "/usr/share/fonts/google-droid-sans-fonts/DroidSansFallbackFull.ttf" },
+    { "family": "Droid Arabic Kufi", "file": "/usr/share/fonts/google-droid-sans-fonts/DroidKufi-Regular.ttf" }
+  ],
+  "entries": [
+    {
+      "text": "😀 😃 😄",
+      "font": "16px 'Noto Sans'",
+      "reason": "No emoji font is installed system-wide; Chrome falls back to an emoji-capable face for U+1F600-range smileys while skia's GlobalFonts keeps the missing glyph in Noto Sans. ZWJ sequences, flags, and keycaps measure identically (see emoji/), but plain smileys diverge."
+    },
+    {
+      "text": "\t\t\t",
+      "font": "16px 'Noto Sans'",
+      "reason": "Proportional-font tabs: Chrome's canvas applies tab-stop semantics (a tab advances to the next tab stop) while skia returns the font's raw U+0009 advance. Monospace tabs agree (see tabs/); this is the proportional-font tab case."
+    },
+    {
+      "text": "abc 中文 😀 def",
+      "font": "16px 'Noto Sans'",
+      "reason": "Mixed-script string: Chrome resolves each missing glyph through its per-glyph fallback (CJK and emoji faces), while skia keeps the whole run in Noto Sans. Single-script strings in one font agree (see cjk/, rtl/); mixed runs diverge."
+    },
+    {
+      "text": "English 中文 mixed text テスト",
+      "font": "16px 'Droid Sans Fallback'",
+      "reason": "Mixed-script fallback: Chrome shapes Latin and Japanese through fallback faces rather than the registered CJK face; skia keeps the run in Droid Sans Fallback."
+    },
+    {
+      "text": "مرحبا! هل أنت بخير؟",
+      "font": "16px 'Droid Arabic Kufi'",
+      "reason": "Latin punctuation (!) in an Arabic run: Chrome falls the ASCII glyph back to a Latin face while skia keeps it in Droid Arabic Kufi. Pure-script Arabic and Arabic-Indic digits agree (see rtl/)."
+    },
+    {
+      "text": "สวัสดีชาวโลก ภาษาไทย",
+      "font": "16px 'Droid Sans Fallback'",
+      "reason": "Thai glyphs: the registered set has no Thai face, so skia's fallback and Chrome's fontconfig fallback resolve the run to different fonts and widths."
+    },
+    {
+      "text": "مرحبا",
+      "font": "16px 'Droid Arabic Kufi'",
+      "letterSpacing": 1.5,
+      "reason": "Letter-spacing on a joining script: Chrome does not apply ctx.letterSpacing to Arabic, while the engine's letter-spacing model adds spacing after every codepoint. Latin and CJK letter-spacing agree (see letter-spacing/)."
+    }
+  ]
+}
