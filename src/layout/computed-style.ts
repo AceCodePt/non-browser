@@ -95,6 +95,20 @@ export function computedStyleString(style: ComputedStyle, prop: string, refWidth
       return lengthString(style.bottom, refWidth, viewport);
     case 'left':
       return lengthString(style.left, refWidth, viewport);
+    case 'text-align':
+      return style.textAlign;
+    case 'border-collapse':
+      return style.borderCollapse;
+    case 'border-spacing':
+      return style.borderSpacingH === style.borderSpacingV
+        ? `${style.borderSpacingH}px`
+        : `${style.borderSpacingH}px ${style.borderSpacingV}px`;
+    case 'caption-side':
+      return style.captionSide;
+    case 'table-layout':
+      return style.tableLayout;
+    case 'empty-cells':
+      return style.emptyCells;
     case 'font-size':
       return `${style.fontSize}px`;
     case 'font-family':

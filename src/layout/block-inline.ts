@@ -13,7 +13,7 @@
  * swap in a different FormattingContext and the same block/inline layout runs.
  */
 
-import { parseStyleAttribute, pxLength, resolveLength, makeStyle, type BorderRadius, type ComputedStyle, type Color, type Declaration, type DecorationLine, type DisplayValue, type PseudoBox, type Viewport } from './css.js';
+import { parseStyleAttribute, pxLength, resolveLength, makeStyle, type BorderRadius, type ComputedStyle, type Color, type Declaration, type DecorationLine, type DisplayValue, type PseudoBox, type VerticalAlign, type Viewport } from './css.js';
 import { layoutTextLines, measureTextWidth, type LineBox } from './measure.js';
 import { FloatManager, type FormattingContext } from './floats.js';
 import { layoutGridChildren } from './grid.js';
@@ -39,6 +39,20 @@ export interface StyleDefaults {
   textDecorationColor: Color | null;
   textDecorationThickness: 'auto' | 'from-font' | { px: number };
   textUnderlineOffset: number;
+  /** UA-level default padding (e.g. td/th get 1px). */
+  padding?: import('./css.js').Length;
+  /** UA-level default vertical-align (e.g. table cells get 'middle'). */
+  verticalAlign?: VerticalAlign;
+  /** UA-level default text-align (e.g. th gets 'center'); wins over inherited. */
+  textAlign?: 'left' | 'center' | 'right';
+  /** inherited text-align (text-align inherits; used when no author value). */
+  textAlignInherited?: 'left' | 'center' | 'right';
+  /** UA-level default border-collapse (table gets 'separate'). */
+  borderCollapse?: 'separate' | 'collapse';
+  /** UA-level default horizontal border-spacing (table gets 2px). */
+  borderSpacing?: number;
+  /** UA-level default vertical border-spacing (table gets 2px). */
+  borderSpacingV?: number;
 }
 
 /** Tags whose UA default display is inline (mini-UA: the full table is a later task). */
@@ -48,8 +62,48 @@ const INLINE_TAGS = new Set([
   'var', 'wbr',
 ]);
 
+/** HTML tags whose UA default display is a table display value (CSS 2.1 §17.2.1). */
+const TABLE_TAGS: Record<string, DisplayValue> = {
+  table: 'table',
+  caption: 'table-caption',
+  thead: 'table-header-group',
+  tbody: 'table-row-group',
+  tfoot: 'table-footer-group',
+  tr: 'table-row',
+  td: 'table-cell',
+  th: 'table-cell',
+  col: 'table-column',
+  colgroup: 'table-column-group',
+};
+
 function defaultDisplayFor(tag: string): DisplayValue {
-  return INLINE_TAGS.has(tag.toLowerCase()) ? 'inline' : 'block';
+  const t = tag.toLowerCase();
+  if (TABLE_TAGS[t]) return TABLE_TAGS[t];
+  return INLINE_TAGS.has(t) ? 'inline' : 'block';
+}
+
+/**
+ * UA-level style defaults for a table-related tag (Chrome's html.css table
+ * rules): `table` gets border-collapse:separate + border-spacing:2px, `tr` gets
+ * vertical-align:middle, `td`/`th` get 1px padding and vertical-align:middle,
+ * and `th` gets text-align:center.
+ */
+function tableDefaultsFor(tag: string): Partial<StyleDefaults> {
+  const t = tag.toLowerCase();
+  if (t === 'table') {
+    return { borderCollapse: 'separate', borderSpacing: 2, borderSpacingV: 2 };
+  }
+  if (t === 'tr') {
+    return { verticalAlign: 'middle' };
+  }
+  if (t === 'td' || t === 'th') {
+    return {
+      padding: pxLength(1),
+      verticalAlign: 'middle',
+      textAlign: t === 'th' ? 'center' : undefined,
+    };
+  }
+  return {};
 }
 
 export function resolveStyles(
@@ -67,7 +121,18 @@ export function resolveStyles(
     // specificity/source order, then inline styles) feed the merged list in
     // reverse — the winner appears first.
     const decls = cascade && cascade.length > 0 ? [...cascade, ...inline].reverse() : inline;
-    const style = makeStyle(decls, { ...d, display: defaultDisplayFor(el.nodeName) });
+    const tagDefaults = tableDefaultsFor(el.nodeName);
+    const style = makeStyle(decls, {
+      ...d,
+      display: defaultDisplayFor(el.nodeName),
+      paddingDefault: tagDefaults.padding,
+      verticalAlignDefault: tagDefaults.verticalAlign,
+      textAlignDefault: tagDefaults.textAlign,
+      textAlignInherited: d.textAlignInherited ?? d.textAlign ?? 'left',
+      borderCollapseDefault: tagDefaults.borderCollapse,
+      borderSpacingDefault: tagDefaults.borderSpacing,
+      borderSpacingVDefault: tagDefaults.borderSpacingV,
+    });
     style.before = computePseudoBox(el, style, pseudoDecls, 'before');
     style.after = computePseudoBox(el, style, pseudoDecls, 'after');
     applyReplacedSize(el, style);
@@ -82,6 +147,7 @@ export function resolveStyles(
       textDecorationColor: style.textDecorationColor,
       textDecorationThickness: style.textDecorationThickness,
       textUnderlineOffset: style.textUnderlineOffset,
+      textAlignInherited: style.textAlign,
     };
     for (const child of el.childNodes) {
       if (child.nodeName !== '#text') {
