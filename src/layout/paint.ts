@@ -29,6 +29,13 @@ export interface RenderOutput {
   rgba: Buffer;
   /** getBoundingClientRect per element id (border boxes). */
   rects: Record<string, Box>;
+  /**
+   * Absolute rects of the line boxes laid out for elements that generate
+   * ::before/::after content — where the engine painted the generated glyphs.
+   * The verify harness uses these to place the generated text under the
+   * documented text tier (Chrome cannot report pseudo text fragments).
+   */
+  generatedTextRects: Box[];
 }
 
 /** Draw one layout line's text, applying letter-spacing when non-zero. */
@@ -283,6 +290,8 @@ export function paint(
 
   const rects: Record<string, Box> = {};
   collectRects(root, rects);
+  const generatedTextRects: Box[] = [];
+  collectGeneratedTextRects(root, generatedTextRects);
   const missing: string[] = [];
   for (const id of ids) if (!rects[id]) missing.push(id);
   if (missing.length > 0) {
@@ -293,6 +302,7 @@ export function paint(
     height: viewportHeight,
     rgba: canvas.toBuffer(),
     rects,
+    generatedTextRects,
   };
 }
 
@@ -317,4 +327,22 @@ function collectRects(root: RootLayout, out: Record<string, Box>): void {
     const id = idOf(f.element);
     if (id && !out[id]) out[id] = { x: f.borderX, y: f.borderY, width: f.borderWidth, height: f.borderHeight };
   }
+}
+
+/**
+ * Collect the line-box rects of elements that generate ::before/::after text
+ * (their lines already carry absolute coordinates). These are the generated
+ * glyph regions the verify harness compares under the text tier.
+ */
+function collectGeneratedTextRects(root: RootLayout, out: Box[]): void {
+  const walk = (node: RootLayout['root']): void => {
+    const s = node.style;
+    if (node.lines.length > 0 && (s.before !== null || s.after !== null)) {
+      for (const l of node.lines) {
+        out.push({ x: l.x, y: l.y, width: l.width, height: l.height });
+      }
+    }
+    for (const child of node.children) walk(child);
+  };
+  walk(root.root);
 }

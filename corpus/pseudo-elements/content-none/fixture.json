@@ -1,0 +1,22 @@
+{
+  "name": "content-none",
+  "note": "content:none and content:normal produce no generated box: the empty divs stay 0px tall (layer-3) while the ::after computed content reports \"none\", and content:'' — still a generated box in the model, but with no glyphs — reports \"\" while also leaving the div 0px tall. The distinction between none, '' and text is therefore observable in the computed style and in layout.",
+  "harvest": {
+    "viewport": { "width": 320, "height": 90 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}#e1::after{content:''}#e2::after{content:none}#e3::after{content:normal}</style></head><body><div id=\"e1\"></div><div id=\"e2\"></div><div id=\"e3\"></div></body></html>",
+    "measureText": [],
+    "rects": ["e1", "e2", "e3"],
+    "textElements": [],
+    "computedStyle": [
+      { "id": "e1", "pseudo": "after", "props": ["content"] },
+      { "id": "e2", "pseudo": "after", "props": ["content"] },
+      { "id": "e3", "pseudo": "after", "props": ["content"] }
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

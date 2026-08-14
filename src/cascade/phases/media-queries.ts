@@ -40,6 +40,22 @@ export interface ContainerSize {
 }
 
 /**
+ * Declarations that target a pseudo-element, keyed per originating element.
+ * `before`/`after` hold the cascade-ordered declaration lists for that
+ * element's ::before / ::after (empty when no rule matched the pseudo).
+ */
+export interface PseudoDecls {
+  before: Declaration[];
+  after: Declaration[];
+}
+
+/** The resolved cascade: element styles plus pseudo-element styles, both in ascending cascade order. */
+export interface CascadeResult {
+  element: Map<P5Element, Declaration[]>;
+  pseudo: Map<P5Element, PseudoDecls>;
+}
+
+/**
  * Evaluate a container condition against a container's size — the @container
  * evaluation model. `condition` is the parsed `@container` condition; features
  * are width/height comparisons (min/max/exact/range) and aspect-ratio.
@@ -135,6 +151,10 @@ function mediaGroupsActive(groups: MediaQuery[][], env: MediaEnvironment): boole
  * in ascending cascade order (weakest specificity/source first). Inline style
  * attributes are layered above by the caller.
  *
+ * Rules whose selector carries a ::before/::after pseudo-element match the
+ * originating element and their declarations are collected separately (per
+ * pseudo), never applied to the element itself.
+ *
  * @container rules parse but never apply (no container sizing from layout yet);
  * they are excluded here by construction, which is the documented gap.
  */
@@ -142,7 +162,7 @@ export function resolveMediaCascade(
   root: P5Element,
   styleElements: P5Element[],
   env: MediaEnvironment,
-): Map<P5Element, Declaration[]> {
+): CascadeResult {
   const rules: CascadeRule[] = [];
   for (const el of styleElements) {
     const css = styleText(el);
@@ -158,22 +178,46 @@ export function resolveMediaCascade(
     }
   }
 
-  const map = new Map<P5Element, Declaration[]>();
+  const element = new Map<P5Element, Declaration[]>();
+  const pseudo = new Map<P5Element, PseudoDecls>();
   const walk = (el: P5Element): void => {
-    const matched: { spec: Specificity; order: number; decls: Declaration[] }[] = [];
+    // Each selector in a rule targets the element or one of its pseudos; a rule
+    // may target several at once (`.a, .a::after`), so track the best
+    // specificity per target and record the rule against every target it matches.
+    const matched: { spec: Specificity; order: number; decls: Declaration[]; target: 'element' | 'before' | 'after' }[] = [];
     for (const rule of rules) {
-      let best: Specificity | null = null;
+      let elementBest: Specificity | null = null;
+      let beforeBest: Specificity | null = null;
+      let afterBest: Specificity | null = null;
       for (const s of rule.selectors) {
         const sel: ComplexSelector | null = parseSelector(s);
         if (sel && matchesComplex(sel, el)) {
           const sp = specificity(sel);
-          if (best === null || compareSpecificity(sp, best) > 0) best = sp;
+          const target = sel.parts[sel.parts.length - 1].compound.pseudo ?? 'element';
+          const slot = target === 'before' ? beforeBest : target === 'after' ? afterBest : elementBest;
+          if (slot === null || compareSpecificity(sp, slot) > 0) {
+            if (target === 'before') beforeBest = sp;
+            else if (target === 'after') afterBest = sp;
+            else elementBest = sp;
+          }
         }
       }
-      if (best !== null) matched.push({ spec: best, order: rule.order, decls: rule.declarations });
+      if (elementBest !== null) matched.push({ spec: elementBest, order: rule.order, decls: rule.declarations, target: 'element' });
+      if (beforeBest !== null) matched.push({ spec: beforeBest, order: rule.order, decls: rule.declarations, target: 'before' });
+      if (afterBest !== null) matched.push({ spec: afterBest, order: rule.order, decls: rule.declarations, target: 'after' });
     }
     matched.sort((x, y) => compareSpecificity(x.spec, y.spec) || x.order - y.order);
-    if (matched.length > 0) map.set(el, matched.flatMap((m) => m.decls));
+    if (matched.length > 0) {
+      const elementDecls: Declaration[] = [];
+      const pseudoDecls: PseudoDecls = { before: [], after: [] };
+      for (const m of matched) {
+        if (m.target === 'before') pseudoDecls.before.push(...m.decls);
+        else if (m.target === 'after') pseudoDecls.after.push(...m.decls);
+        else elementDecls.push(...m.decls);
+      }
+      if (elementDecls.length > 0) element.set(el, elementDecls);
+      if (pseudoDecls.before.length > 0 || pseudoDecls.after.length > 0) pseudo.set(el, pseudoDecls);
+    }
 
     for (const child of el.childNodes) {
       if (child.nodeName === '#text' || child.nodeName === '#comment') continue;
@@ -183,7 +227,7 @@ export function resolveMediaCascade(
     }
   };
   walk(root);
-  return map;
+  return { element, pseudo };
 }
 
 function styleText(el: P5Element): string | null {

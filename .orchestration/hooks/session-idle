@@ -24,6 +24,7 @@ case "${TASK_NAME:-}" in
   *paint-text*)       npm run verify:paint-text ;;
   *border-radius*)    npm run verify:border-radius ;;
   *text-measure*|*measure-corpus*) npm run verify:text-measure ;;
+  *pseudo-elements*|*pseudo-element*) npm run verify:pseudo-elements ;;
   *firefox*|*font-fallback*) npm run verify:firefox ;;
   *segmenter*|*text-breaker*) npm run verify:segmenter ;;
   *spine*)            npm run verify:four-layer ;;

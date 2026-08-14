@@ -1,0 +1,23 @@
+{
+  "name": "block-pseudo",
+  "note": "::before on a block element: the generated prefix opens the block's inline formatting context (an anonymous inline box at the element's boundary), the block's height is driven by the line the generated text creates, the following text span sits after the prefix, and the generated glyphs appear in the compared screenshot region.",
+  "harvest": {
+    "viewport": { "width": 320, "height": 90 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}#b::before{content:'» ';color:#d93025}</style></head><body><div id=\"b\" style=\"width:280px;padding:8px;font-family:'Noto Sans';font-size:14px;line-height:20px;color:#222;background:#f6f6f6\"><span id=\"bt\">Item</span></div></body></html>",
+    "measureText": [
+      { "text": "» Item", "font": "14px 'Noto Sans'" }
+    ],
+    "rects": ["b", "bt"],
+    "textElements": ["bt"],
+    "computedStyle": [
+      { "id": "b", "pseudo": "before", "props": ["content", "color", "font-size", "font-family", "display"] },
+      { "id": "b", "props": ["font-size", "line-height"] }
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

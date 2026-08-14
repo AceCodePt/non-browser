@@ -171,6 +171,13 @@ export function computedStyleString(style: ComputedStyle, prop: string, refWidth
       return style.letterSpacing === 0 ? 'normal' : `${style.letterSpacing}px`;
     case 'text-decoration-line':
       return style.textDecorationLines.length === 0 ? 'none' : style.textDecorationLines.join(' ');
+    case 'content': {
+      // Chrome serializes none/normal as 'none' on pseudo-elements and string
+      // content as a double-quoted CSS string (escapes backslashes and quotes).
+      if (style.content.kind !== 'text') return 'none';
+      const escaped = style.content.text.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+      return `"${escaped}"`;
+    }
     default:
       return null;
   }

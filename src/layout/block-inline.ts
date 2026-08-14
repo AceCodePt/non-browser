@@ -13,7 +13,7 @@
  * swap in a different FormattingContext and the same block/inline layout runs.
  */
 
-import { parseStyleAttribute, pxLength, resolveLength, makeStyle, type BorderRadius, type ComputedStyle, type Color, type Declaration, type DecorationLine, type DisplayValue, type Viewport } from './css.js';
+import { parseStyleAttribute, pxLength, resolveLength, makeStyle, type BorderRadius, type ComputedStyle, type Color, type Declaration, type DecorationLine, type DisplayValue, type PseudoBox, type Viewport } from './css.js';
 import { layoutTextLines, measureTextWidth, type LineBox } from './measure.js';
 import { FloatManager, type FormattingContext } from './floats.js';
 import { layoutGridChildren } from './grid.js';
@@ -23,6 +23,7 @@ import { hasNonZeroRadius, type RoundedClip } from './radius.js';
 import { activeFontMetrics, halfXHeight, lineAscentContribution, lineDescentContribution, roundedAscent, roundedDescent, type FontVerticalMetrics } from './fontmetrics.js';
 import type { P5Element, P5Text } from './types.js';
 import type { Box } from '../harness/fixtures.js';
+import type { PseudoDecls } from '../cascade/phases/media-queries.js';
 
 export { FloatManager };
 export type { FormattingContext };
@@ -55,6 +56,7 @@ export function resolveStyles(
   root: P5Element,
   defaults: StyleDefaults,
   stylesheetDecls?: Map<P5Element, Declaration[]>,
+  pseudoDecls?: Map<P5Element, PseudoDecls>,
 ): Map<P5Element, ComputedStyle> {
   const map = new Map<P5Element, ComputedStyle>();
   const walk = (el: P5Element, d: StyleDefaults): void => {
@@ -66,6 +68,8 @@ export function resolveStyles(
     // reverse — the winner appears first.
     const decls = cascade && cascade.length > 0 ? [...cascade, ...inline].reverse() : inline;
     const style = makeStyle(decls, { ...d, display: defaultDisplayFor(el.nodeName) });
+    style.before = computePseudoBox(el, style, pseudoDecls, 'before');
+    style.after = computePseudoBox(el, style, pseudoDecls, 'after');
     applyReplacedSize(el, style);
     map.set(el, style);
     const childDefaults: StyleDefaults = {
@@ -111,6 +115,37 @@ function applyReplacedSize(el: P5Element, style: ComputedStyle): void {
     const h = numeric(attr('height'));
     style.height = pxLength(h ?? (tag === 'canvas' ? 150 : 0));
   }
+}
+
+/**
+ * Resolve one pseudo-element (::before/::after) of an element into a
+ * `PseudoBox`. The generated inline box inherits the element's font/color (its
+ * computed style is built from the element's resolved inherited properties)
+ * and honors author declarations targeting the pseudo. Returns null when no
+ * rule targets the pseudo; `box.text` is null when the pseudo's content is
+ * none/normal (no box generated).
+ */
+function computePseudoBox(
+  el: P5Element,
+  style: ComputedStyle,
+  pseudoDecls: Map<P5Element, PseudoDecls> | undefined,
+  which: 'before' | 'after',
+): PseudoBox | null {
+  const decls = pseudoDecls?.get(el)?.[which];
+  if (!decls || decls.length === 0) return null;
+  const box = makeStyle(decls, {
+    fontFamily: style.fontFamily,
+    fontSize: style.fontSize,
+    lineHeight: style.lineHeight,
+    color: style.color,
+    letterSpacing: style.letterSpacing,
+    textDecorationLines: style.textDecorationLines,
+    textDecorationColor: style.textDecorationColor,
+    textDecorationThickness: style.textDecorationThickness,
+    textUnderlineOffset: style.textUnderlineOffset,
+    display: 'inline',
+  });
+  return { text: box.content.kind === 'text' ? box.content.text : null, style: box };
 }
 
 export interface LayoutNode {
@@ -367,6 +402,10 @@ export function layoutRoot(
 
 /** Does this element have direct inline content (text) rather than block children? */
 function hasInlineContent(el: P5Element, styles: Map<P5Element, ComputedStyle>): boolean {
+  const self = styles.get(el);
+  // Generated ::before/::after text counts as inline content (an empty string
+  // box is invisible and does not force a line box, matching Chrome).
+  if (self && ((self.before && self.before.text) || (self.after && self.after.text))) return true;
   for (const child of el.childNodes) {
     if (child.nodeName === '#text') {
       if (/\S/.test((child as P5Text).value)) return true;
@@ -381,6 +420,8 @@ function hasInlineContent(el: P5Element, styles: Map<P5Element, ComputedStyle>):
 
 export function collectInlineText(el: P5Element, styles: Map<P5Element, ComputedStyle>): string {
   let out = '';
+  const self = styles.get(el);
+  if (self?.before?.text) out += self.before.text;
   for (const child of el.childNodes) {
     if (child.nodeName === '#text') {
       out += (child as P5Text).value;
@@ -390,6 +431,7 @@ export function collectInlineText(el: P5Element, styles: Map<P5Element, Computed
       out += collectInlineText(child as P5Element, styles);
     }
   }
+  if (self?.after?.text) out += self.after.text;
   return out;
 }
 
@@ -1108,11 +1150,26 @@ function piecesContentSizes(pieces: InlinePiece[], style: ComputedStyle): { min:
 }
 
 /**
+ * Turn one generated pseudo box into inline pieces: its text becomes word
+ * pieces styled with the pseudo's computed style. An empty content string still
+ * produces a box (a zero-width piece) so it is not conflated with none/normal.
+ */
+function pushPseudoPieces(box: PseudoBox, owner: P5Element, out: InlinePiece[]): void {
+  if (box.text === null) return;
+  if (box.text === '') {
+    out.push({ kind: 'word', text: '', style: runStyleOf(box.style), owner });
+    return;
+  }
+  pushTextPieces(box.text, runStyleOf(box.style), owner, out);
+}
+
+/**
  * Flatten an element's inline content into ordered pieces. Inline elements
  * (spans) contribute their text under their own style; inline-blocks become
  * atomic pieces sized up-front; block-level/floated/positioned children are
  * not part of the inline flow and are dropped (matching the pre-existing
- * block-with-inline behavior).
+ * block-with-inline behavior). Generated ::before content leads and ::after
+ * content trails the element's own inline content.
  */
 function buildPieces(
   el: P5Element,
@@ -1122,6 +1179,7 @@ function buildPieces(
   viewport: Viewport | undefined,
 ): InlinePiece[] {
   const out: InlinePiece[] = [];
+  if (style.before) pushPseudoPieces(style.before, el, out);
   for (const child of el.childNodes) {
     if (child.nodeName === '#text') {
       pushTextPieces((child as P5Text).value, runStyleOf(style), el, out);
@@ -1155,6 +1213,7 @@ function buildPieces(
     }
     for (const p of buildPieces(childEl, s, styles, refWidth, viewport)) out.push(p);
   }
+  if (style.after) pushPseudoPieces(style.after, el, out);
   return out;
 }
 

@@ -161,6 +161,21 @@ export type DisplayValue = 'block' | 'none' | 'grid' | 'inline-grid' | 'flex' | 
 
 export type VerticalAlign = 'baseline' | 'top' | 'middle' | 'bottom';
 
+/** The parsed `content` value of a ::before/::after pseudo-element. */
+export type ContentValue = { kind: 'none' } | { kind: 'text'; text: string };
+
+/**
+ * The generated box a ::before/::after pseudo-element produces on its
+ * originating element. `text` is null when the pseudo's content is none/normal
+ * (no box is generated); an empty string still generates a box.
+ */
+export interface PseudoBox {
+  /** content text ('' allowed); null = content none/normal → no generated box. */
+  text: string | null;
+  /** the pseudo-element's computed style (font/color etc. — inherits the element). */
+  style: ComputedStyle;
+}
+
 export interface ComputedStyle {
   display: DisplayValue;
   position: 'static' | 'relative' | 'absolute' | 'fixed';
@@ -247,6 +262,14 @@ export interface ComputedStyle {
   flexBasis: Length;
   /** order (integer, default 0). */
   order: number;
+
+  // --- generated content (::before / ::after) ---
+  /** parsed `content` value; none/normal → no generated box. */
+  content: ContentValue;
+  /** resolved ::before box (null when no rule targets the pseudo). */
+  before: PseudoBox | null;
+  /** resolved ::after box (null when no rule targets the pseudo). */
+  after: PseudoBox | null;
 }
 
 const NAMED_COLORS: Record<string, Color> = {
@@ -653,6 +676,41 @@ export interface GridPlacementSpecs {
   rowEnd: GridLineSpec;
   colStart: GridLineSpec;
   colEnd: GridLineSpec;
+}
+
+/** Unescape one CSS string token body: `\X` → X (incl. hex escapes). */
+function unescapeCssString(s: string): string {
+  return s.replace(/\\([0-9a-fA-F]{1,6})\s?|\\/g, (_m, hex: string | undefined) =>
+    hex ? String.fromCodePoint(parseInt(hex, 16)) : '',
+  );
+}
+
+/**
+ * Parse the `content` property (generated content, CSS Generated Content §3).
+ * `none`/`normal` (and empty) mean no generated box; string tokens concatenate
+ * to the generated text. Other token types (attr(), url(), counter()) are out
+ * of scope and fall back to none.
+ */
+function parseContent(value: string): ContentValue {
+  const s = value.trim();
+  if (s === '' || s === 'none' || s === 'normal') return { kind: 'none' };
+  let out = '';
+  let rest = s;
+  let sawString = false;
+  while (rest.length > 0) {
+    const m = rest.match(/^\s*(['"])((?:\\.|(?!\1)[\s\S])*)\1/);
+    if (!m) break;
+    sawString = true;
+    out += unescapeCssString(m[2]);
+    rest = rest.slice(m[0].length);
+  }
+  return sawString ? { kind: 'text', text: out } : { kind: 'none' };
+}
+
+/** Parse `content` from a declaration list (none when the property is absent). */
+function contentOf(decls: Declaration[]): ContentValue {
+  const d = decls.find((x) => x.property === 'content');
+  return d ? parseContent(d.value) : { kind: 'none' };
 }
 
 function parseSelfAlign(value: string): SelfAlign {
@@ -1239,5 +1297,8 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     flexShrink,
     flexBasis,
     order,
+    content: contentOf(decls),
+    before: null,
+    after: null,
   };
 }

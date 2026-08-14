@@ -1,0 +1,32 @@
+{
+  "measureText": {
+    "14px 'Noto Sans' | » Item": 41.551849365234375
+  },
+  "computedStyle": {
+    "b::before": {
+      "content": "\"» \"",
+      "color": "rgb(217, 48, 37)",
+      "font-size": "14px",
+      "font-family": "\"Noto Sans\"",
+      "display": "inline"
+    },
+    "b": {
+      "font-size": "14px",
+      "line-height": "20px"
+    }
+  },
+  "rect": {
+    "b": {
+      "x": 0,
+      "y": 0,
+      "width": 296,
+      "height": 36
+    },
+    "bt": {
+      "x": 18.78125,
+      "y": 8,
+      "width": 30.796875,
+      "height": 19
+    }
+  }
+}

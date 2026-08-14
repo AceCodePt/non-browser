@@ -19,6 +19,7 @@
     "verify:layout-grid": "npm run build && node scripts/verify-layout-grid.mjs",
     "verify:layout-flexbox": "npm run build && node scripts/verify-layout-flexbox.mjs",
     "verify:layout-positioning": "npm run build && node scripts/verify-layout-positioning.mjs",
+    "verify:pseudo-elements": "npm run build && node scripts/verify-pseudo-elements.mjs",
     "verify:media-queries": "npm run build && node scripts/verify-media-queries.mjs",
     "verify:paint-text": "npm run build && node scripts/verify-paint-text.mjs",
     "verify:text-measure": "npm run build && node scripts/verify-text-measure.mjs",
