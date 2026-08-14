@@ -8,6 +8,6 @@
   "scheduler": {
     "$comment": "Let the daemon auto-dispatch todo tasks itself (wait_human_start: false tasks only). maxConcurrent caps how many task agents run in this project at once. Edit with `orch project scheduler <n>`; only the committed copy on the base branch applies.",
     "enabled": true,
-    "maxConcurrent": 1
+    "maxConcurrent": 2
   }
 }

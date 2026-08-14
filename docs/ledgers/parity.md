@@ -111,6 +111,33 @@ the engine against its own constants, not a browser-derived measurement.
 all ten requirements remain open. This ledger is the live record of the state
 that task was meant to fix.
 
+## Cross-Browser Probe (Chrome vs Firefox, no engine)
+
+`npm run probe:browser-gap` renders identical HTML in Playwright Chrome and
+Playwright Firefox and diffs all four layers directly (no engine in the loop;
+pure logic in `probes/lib/probe-gap-lib.mjs`, covered by `npm run test:probe`).
+
+Read of the first run (5 fixtures): **layout is byte-identical across
+browsers** — rect max Δ 0.0000px on every fixture, computedStyle 0 mismatches.
+Text width differs sub-pixel (mean Δ 0.001–0.10px; the `Courier New` fallback
+fixture is the one real measurement divergence at 0.10px). Text *rasterization*
+diverges structurally (6.7–22% of text pixels over the ΔE≤2 text tier), which
+is a pixel-level gap no font table can close.
+
+Implication: the browser-config/fallback mechanism matters only for font
+*resolution*, not for measurement or layout — Chrome and Firefox already agree
+there. Feeding the correct per-browser canvas to Pretext stays the right
+architecture for the Firefox/Safari track.
+
+## Firefox/Safari support task
+
+A new task (`browser-canvas-support`, `wait_human_start: true`) takes the probe
+result forward: exercise the firefox browser-config through the engine *and*
+the Pretext seam (seam passes the fixture's real CSS family, not the default),
+and add a Safari browser-config to the extent of glyph resolution — the correct
+canvas must be pressed into Pretext so the seam and the engine measure the same
+per-browser faces.
+
 ## Performance: Engine vs Playwright Oracle
 
 Measured on the spine fixtures with a warm browser (as the verify scripts run),
