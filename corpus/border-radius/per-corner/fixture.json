@@ -1,0 +1,38 @@
+{
+  "name": "per-corner",
+  "note": "Per-corner radii from the longhands (border-top-left-radius etc., including one elliptical 50px 25px corner), a 4-value shorthand box, and a 2-value shorthand on a square where the adjacent-radius sums exceed the box and trigger the §4.3 overlap reduction (f = min(1, Si/Li) scales every radius, 80px 30px on 100x100 → f = 100/110). Both the longhand serialization and the reduced radii must match Chrome.",
+  "harvest": {
+    "viewport": {
+      "width": 300,
+      "height": 320
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"p\" style=\"position:relative;left:20px;top:20px;width:200px;height:140px;background:#b08ae0;border-top-left-radius:40px;border-top-right-radius:20px;border-bottom-right-radius:50px 25px;border-bottom-left-radius:15px\"></div><div id=\"p2\" style=\"position:relative;left:20px;top:180px;width:120px;height:80px;background:#e0a04a;border-radius:40px 10px 20px 30px\"></div><div id=\"p3\" style=\"position:relative;left:170px;top:180px;width:100px;height:100px;background:#4ac2a0;border-radius:80px 30px\"></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "p",
+        "props": [
+          "border-radius",
+          "border-top-left-radius",
+          "border-top-right-radius",
+          "border-bottom-right-radius",
+          "border-bottom-left-radius"
+        ]
+      },
+      {
+        "id": "p2",
+        "props": ["border-radius", "border-top-left-radius", "border-top-right-radius"]
+      },
+      {
+        "id": "p3",
+        "props": ["border-radius", "border-top-left-radius", "border-top-right-radius"]
+      }
+    ],
+    "rects": ["p", "p2", "p3"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

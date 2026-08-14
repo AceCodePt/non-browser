@@ -131,6 +131,32 @@ export type ContentAlign =
 
 export type DecorationLine = 'underline' | 'line-through' | 'overline';
 
+/**
+ * One corner's radii as authored (pre-resolution): a horizontal and a vertical
+ * radius. Elliptical corners have rx !== ry; a single length gives both.
+ */
+export interface CornerRadii {
+  rx: Length;
+  ry: Length;
+}
+
+/** The four corners of a border-radius, in TL/TR/BR/BL order. */
+export interface BorderRadius {
+  topLeft: CornerRadii;
+  topRight: CornerRadii;
+  bottomRight: CornerRadii;
+  bottomLeft: CornerRadii;
+}
+
+export const ZERO_RADIUS: CornerRadii = { rx: pxLength(0), ry: pxLength(0) };
+
+export const ZERO_BORDER_RADIUS: BorderRadius = {
+  topLeft: ZERO_RADIUS,
+  topRight: ZERO_RADIUS,
+  bottomRight: ZERO_RADIUS,
+  bottomLeft: ZERO_RADIUS,
+};
+
 export interface ComputedStyle {
   display: 'block' | 'none' | 'grid' | 'inline-grid' | 'flex';
   position: 'static' | 'relative' | 'absolute' | 'fixed';
@@ -158,6 +184,8 @@ export interface ComputedStyle {
   borderWidth: Record<Side, number>;
   borderColor: Record<Side, Color>;
   borderStyle: Record<Side, 'none' | 'solid'>;
+  /** per-corner border radii (px/%/viewport lengths, pre-resolution). */
+  borderRadius: BorderRadius;
   backgroundColor: Color;
   color: Color;
   fontFamily: string;
@@ -290,6 +318,78 @@ export function parseLength(raw: string): Length {
   }
   if (s === '0') return { px: 0, pct: null, vw: null, vh: null, vmin: null, vmax: null, auto: false };
   return AUTO;
+}
+
+/**
+ * Parse a border-radius longhand value: `<length-percentage>{1,2}` where the
+ * first is the horizontal radius and the second (optional) the vertical one
+ * (defaults to the horizontal when omitted).
+ */
+function parseRadiusPair(value: string): CornerRadii {
+  const parts = value.trim().split(/\s+/).filter(Boolean);
+  const rx = parts[0] !== undefined ? parseLength(parts[0]) : pxLength(0);
+  const ry = parts[1] !== undefined ? parseLength(parts[1]) : rx;
+  return { rx, ry };
+}
+
+/**
+ * Expand a 1-4 value radius list into the four corners in TL/TR/BR/BL order
+ * (CSS Backgrounds §4.3): 1 value → all, 2 → (a,b) with BR=TL and BL=TR,
+ * 3 → (a,b,c) with BL=TR, 4 → as written.
+ */
+function expandRadiusList(list: Length[]): [Length, Length, Length, Length] {
+  const v0 = list[0] ?? pxLength(0);
+  const v1 = list[1] ?? v0;
+  const v2 = list[2] ?? v0;
+  const v3 = list[3] ?? v1;
+  return [v0, v1, v2, v3];
+}
+
+/**
+ * Parse the `border-radius` shorthand: horizontal and vertical radius lists
+ * separated by an optional `/`. Without a slash, the vertical radii equal the
+ * horizontal ones.
+ */
+function parseRadiusShorthand(value: string): { rx: Length[]; ry: Length[] } {
+  const parts = value.split('/');
+  const horizRaw = parts[0] ?? '';
+  const vertRaw = parts[1] ?? '';
+  const rx = horizRaw.trim().split(/\s+/).filter(Boolean).map(parseLength);
+  // Without a slash the vertical radii are the same as the horizontal ones.
+  const ry = vertRaw.trim() === '' ? rx : vertRaw.trim().split(/\s+/).filter(Boolean).map(parseLength);
+  return { rx, ry };
+}
+
+const RADIUS_LONGHANDS: Record<string, keyof BorderRadius> = {
+  'border-top-left-radius': 'topLeft',
+  'border-top-right-radius': 'topRight',
+  'border-bottom-right-radius': 'bottomRight',
+  'border-bottom-left-radius': 'bottomLeft',
+};
+
+/** Parse `border-radius` (shorthand + longhands) into a per-corner radii set. */
+function parseBorderRadius(decls: Declaration[]): BorderRadius {
+  const out: BorderRadius = {
+    topLeft: ZERO_RADIUS,
+    topRight: ZERO_RADIUS,
+    bottomRight: ZERO_RADIUS,
+    bottomLeft: ZERO_RADIUS,
+  };
+  const shorthand = decls.find((d) => d.property === 'border-radius');
+  if (shorthand) {
+    const { rx, ry } = parseRadiusShorthand(shorthand.value);
+    const [tlx, trx, brx, blx] = expandRadiusList(rx);
+    const [tly, try_, bry, bly] = expandRadiusList(ry);
+    out.topLeft = { rx: tlx, ry: tly };
+    out.topRight = { rx: trx, ry: try_ };
+    out.bottomRight = { rx: brx, ry: bry };
+    out.bottomLeft = { rx: blx, ry: bly };
+  }
+  for (const [prop, corner] of Object.entries(RADIUS_LONGHANDS)) {
+    const d = decls.find((x) => x.property === prop);
+    if (d) out[corner] = parseRadiusPair(d.value);
+  }
+  return out;
 }
 
 // ===== Grid parsing helpers =====
@@ -835,6 +935,7 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   const borderWidth: Record<Side, number> = { top: 0, right: 0, bottom: 0, left: 0 };
   const borderColor: Record<Side, Color> = { top: parseColor('black'), right: parseColor('black'), bottom: parseColor('black'), left: parseColor('black') };
   const borderStyle: Record<Side, 'none' | 'solid'> = { top: 'none', right: 'none', bottom: 'none', left: 'none' };
+  const borderRadius = parseBorderRadius(decls);
   const borderDecl = decls.find((d) => d.property === 'border');
   if (borderDecl) {
     const parts = borderDecl.value.trim().split(/\s+/);
@@ -1086,6 +1187,7 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     borderWidth,
     borderColor,
     borderStyle,
+    borderRadius,
     backgroundColor: bgDecl ? parseColor(bgDecl.value) : { r: 0, g: 0, b: 0, a: 0 },
     color: color('color', defaults.color),
     fontFamily,

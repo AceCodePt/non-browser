@@ -13,12 +13,13 @@
  * swap in a different FormattingContext and the same block/inline layout runs.
  */
 
-import { parseStyleAttribute, pxLength, resolveLength, makeStyle, type ComputedStyle, type Color, type Declaration, type DecorationLine, type Viewport } from './css.js';
+import { parseStyleAttribute, pxLength, resolveLength, makeStyle, type BorderRadius, type ComputedStyle, type Color, type Declaration, type DecorationLine, type Viewport } from './css.js';
 import { layoutTextLines, measureTextWidth, type LineBox } from './measure.js';
 import { FloatManager, type FormattingContext } from './floats.js';
 import { layoutGridChildren } from './grid.js';
 import { layoutFlexChildren } from './flexbox.js';
 import { layoutPositionedChild, initialContainingBlock, type ContainingBlock } from './positioning.js';
+import { hasNonZeroRadius, type RoundedClip } from './radius.js';
 import type { P5Element, P5Text } from './types.js';
 import type { Box } from '../harness/fixtures.js';
 
@@ -137,6 +138,10 @@ export interface PaintOp {
   color?: Color;
   borderWidths?: Record<'top' | 'right' | 'bottom' | 'left', number>;
   borderColors?: Record<'top' | 'right' | 'bottom' | 'left', Color>;
+  /** rounded-corner radii for this box's background/border paint. */
+  borderRadius?: BorderRadius;
+  /** rounded-rect clip from a rounded overflow:hidden ancestor (border box). */
+  clip?: RoundedClip;
   text?: {
     runs: { text: string; x: number; y: number; width: number; height: number; baseline: number }[];
     fontSize: number;
@@ -171,6 +176,21 @@ let paintZAutoStack: boolean[] = [];
 let paintZAutoActive = false;
 
 let cbStack: ContainingBlock[] = [];
+
+/**
+ * Active rounded overflow clips. Each entry is the border box of a rounded
+ * `overflow:hidden` ancestor; paint ops pushed while an entry is on the stack
+ * are clipped to it (its `box` object is mutated once the ancestor's final
+ * border-box height is known, so ops reference the final rect).
+ */
+let clipStack: RoundedClip[] = [];
+
+/** Push a paint op, tagging it with the innermost active rounded clip. */
+function pushPaintOp(paints: PaintOp[], op: PaintOp): void {
+  const clip = clipStack.length > 0 ? clipStack[clipStack.length - 1] : null;
+  if (clip) op.clip = clip;
+  paints.push(op);
+}
 
 /** The root containing block (the viewport); pending root abs/fixed boxes. */
 let icbEntry: ContainingBlock = { rect: { x: 0, y: 0, width: 0, height: 0 }, heightKnown: true, pending: [] };
@@ -231,6 +251,7 @@ export function layoutRoot(
   paintZAutoStack = [];
   paintZAutoActive = false;
   cbStack = [];
+  clipStack = [];
   icbEntry = { rect: initialContainingBlock(viewport), heightKnown: true, pending: [] };
   cbStack.push(icbEntry);
 
@@ -264,7 +285,7 @@ export function layoutRoot(
 
   // Body background propagates to the canvas and paints behind everything.
   if (style.backgroundColor.a > 0) {
-    paints.push({
+    pushPaintOp(paints, {
       key: [],
       order: order++,
       kind: 'bg',
@@ -437,10 +458,27 @@ export function layoutElementBox(
         kind: 'bg' as const,
         box: { x: borderX, y: borderY, width: borderWidth, height: 0 },
         color: style.backgroundColor,
+        borderRadius: style.borderRadius,
       }
     : null;
-  if (ownBg) paints.push(ownBg);
+  if (ownBg) pushPaintOp(paints, ownBg);
   const ownBorder = pushBorders(paints, nextOrder, ownKey, style, borderX, borderY, borderWidth, 0);
+
+  // A rounded overflow:hidden box clips its whole subtree (own background and
+  // border excluded) to its border-box rounded rect. The clip box is a shared
+  // mutable object: ops reference it, and its height is finalized once the
+  // border-box height is known below.
+  let clipEntry: RoundedClip | null = null;
+  if (style.overflow === 'hidden' && hasNonZeroRadius(style.borderRadius)) {
+    clipEntry = {
+      x: borderX,
+      y: borderY,
+      width: borderWidth,
+      height: 0,
+      radii: style.borderRadius,
+    };
+    clipStack.push(clipEntry);
+  }
 
   const isGrid = style.display === 'grid' || style.display === 'inline-grid';
   if (isGrid) {
@@ -548,8 +586,9 @@ export function layoutElementBox(
 
   if (ownBg) ownBg.box.height = resolvedHeight;
   if (ownBorder) ownBorder.box.height = resolvedHeight;
+  if (clipEntry) clipEntry.height = resolvedHeight;
   if (lines.length > 0) {
-    paints.push({
+    pushPaintOp(paints, {
       key: inFlowPaintKey(STEP_INLINE),
       order: nextOrder(),
       kind: 'text',
@@ -596,6 +635,7 @@ export function layoutElementBox(
     }
     cbStack.pop();
   }
+  if (clipEntry) clipStack.pop();
   if (posPaint) popPositionedPaint(posPaint);
   void padBorderH;
   return node;
@@ -790,17 +830,18 @@ function layoutFloat(
   };
 
   if (style.backgroundColor.a > 0) {
-    paints.push({
+    pushPaintOp(paints, {
       key: inFlowPaintKey(STEP_FLOAT),
       order: nextOrder(),
       kind: 'bg',
       box: { x: placed.borderX, y: placed.borderY, width: borderBoxWidth, height: borderHeight },
       color: style.backgroundColor,
+      borderRadius: style.borderRadius,
     });
   }
   pushBorders(paints, nextOrder, inFlowPaintKey(STEP_FLOAT), style, placed.borderX, placed.borderY, borderBoxWidth, borderHeight);
   if (lines.length > 0) {
-    paints.push({
+    pushPaintOp(paints, {
       key: inFlowPaintKey(STEP_INLINE),
       order: nextOrder(),
       kind: 'text',
@@ -905,7 +946,8 @@ function pushBorders(
       bottom: style.borderColor.bottom,
       left: style.borderColor.left,
     },
+    borderRadius: style.borderRadius,
   };
-  paints.push(op);
+  pushPaintOp(paints, op);
   return op;
 }

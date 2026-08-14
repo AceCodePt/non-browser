@@ -1,0 +1,28 @@
+{
+  "name": "overflow-clip",
+  "note": "overflow:hidden on a rounded element clips its children to the rounded border-box shape: a child that pokes out of the right/bottom edges and a corner is cut to the rounded rect (no border, so padding and border boxes coincide). A second rounded overflow:hidden element with a 10px border clips to the border-box rounded rect with the border painted over the ring. Both verified pixel-exactly against Chrome.",
+  "harvest": {
+    "viewport": {
+      "width": 280,
+      "height": 320
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"oc\" style=\"position:relative;left:20px;top:20px;width:180px;height:120px;background:#f0f0f0;border-radius:32px;overflow:hidden\"><div style=\"width:220px;height:160px;background:#e06040;margin-left:40px;margin-top:60px\"></div></div><div id=\"oc2\" style=\"position:relative;left:20px;top:160px;width:180px;height:120px;background:#e8e8e8;border:10px solid #222;border-radius:32px;overflow:hidden\"><div style=\"width:200px;height:140px;background:#4060c0;margin-left:20px;margin-top:20px\"></div></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "oc",
+        "props": ["display", "overflow", "border-radius", "width", "height", "background-color"]
+      },
+      {
+        "id": "oc2",
+        "props": ["overflow", "border-radius", "border-top-width", "width", "height"]
+      }
+    ],
+    "rects": ["oc", "oc2"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}
