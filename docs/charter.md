@@ -90,4 +90,4 @@ Operational results, decisions, and divergences are recorded under `docs/ledgers
 ## 10. Parity Target
 
 - Layout and metrics (layers 1–3) must be **exact** within the §2 tolerances.
-- Rasterization (layer 4) targets the same Skia-vs-Skia band: delta-E <=2, with <=1% of pixels exceeding. The aggregate report tracks the pixel-parity percentage against the 95–99% target.
+- Rasterization (layer 4) targets the same Skia-vs-Skia band: delta-E <=2, with <=1% of pixels exceeding, for **non-text pixels** — the aggregate report tracks the pixel-parity percentage against the 95–99% target. The two Skia instances (Chrome's compositor vs `@napi-rs/canvas`) apply different font hinting/AA, so **text pixels are compared under a documented tiered text-region tolerance** (`tolerances.json` `layers.screenshot.text`, justified by `scripts/probe-text-mask.mjs` → `docs/ledgers/text-mask.md`) instead of being masked. Text pixels are therefore compared and reported (per-fixture text-region ΔE and text-pixel mask share) rather than silently excluded; their per-pixel ΔE threshold is unchanged at <=2, only the within-region exceed allowance is tiered.

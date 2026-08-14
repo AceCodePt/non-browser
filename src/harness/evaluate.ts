@@ -30,13 +30,25 @@ export interface RectLayerResult {
 export interface ScreenshotLayerResult {
   layer: 'screenshot';
   pass: boolean;
+  /** non-text pixels compared under the §10 band. */
   comparedPixels: number;
   maskedPixels: number;
   exceedingPixels: number;
   percentExceeding: number;
   worstDeltaE: number;
   meanDeltaE: number;
-  thresholds: { deltaE: number; exceedPct: number };
+  /** per-fixture text-parity metric: text pixels compared under the text tier. */
+  textRegion: {
+    pixels: number;
+    maskedPixels: number;
+    maskSharePct: number;
+    exceedingPixels: number;
+    percentExceeding: number;
+    worstDeltaE: number;
+    meanDeltaE: number;
+    pass: boolean;
+  };
+  thresholds: { deltaE: number; exceedPct: number; textDeltaE: number; textExceedPct: number };
 }
 
 export type LayerResult =
@@ -136,8 +148,11 @@ export function evaluateScreenshot(fixture: Fixture): ScreenshotLayerResult {
     width: fixture.width,
     height: fixture.height,
     mask: fixture.mask,
+    textMask: fixture.textMask,
     tolerance: tol,
   });
+  const text = result.textRegion;
+  const maskSharePct = text.pixels + text.maskedPixels > 0 ? (text.maskedPixels / (text.pixels + text.maskedPixels)) * 100 : 0;
   return {
     layer: 'screenshot',
     pass: result.pass,
@@ -147,7 +162,17 @@ export function evaluateScreenshot(fixture: Fixture): ScreenshotLayerResult {
     percentExceeding: result.percentExceeding,
     worstDeltaE: result.worstDeltaE,
     meanDeltaE: result.meanDeltaE,
-    thresholds: { deltaE: tol.deltaE, exceedPct: tol.exceedPct },
+    textRegion: {
+      pixels: text.pixels,
+      maskedPixels: text.maskedPixels,
+      maskSharePct,
+      exceedingPixels: text.exceedingPixels,
+      percentExceeding: text.percentExceeding,
+      worstDeltaE: text.worstDeltaE,
+      meanDeltaE: text.meanDeltaE,
+      pass: text.pass,
+    },
+    thresholds: { deltaE: tol.deltaE, exceedPct: tol.exceedPct, textDeltaE: tol.text.deltaE, textExceedPct: tol.text.exceedPct },
   };
 }
 
