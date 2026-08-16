@@ -1,0 +1,58 @@
+{
+  "measureText": {
+    "14px 'Noto Sans' | start keyword text that wraps onto two separate lines": 349.8299865722656,
+    "14px 'Noto Sans' | end keyword text that wraps onto two separate lines": 344.5400085449219
+  },
+  "computedStyle": {
+    "s": {
+      "text-align": "start"
+    },
+    "en": {
+      "text-align": "end"
+    }
+  },
+  "rect": {
+    "s": {
+      "x": 0,
+      "y": 0,
+      "width": 240,
+      "height": 44
+    },
+    "en": {
+      "x": 0,
+      "y": 44,
+      "width": 240,
+      "height": 44
+    }
+  },
+  "fragments": {
+    "s": [
+      {
+        "x": 0,
+        "y": 1,
+        "width": 226.52999877929688,
+        "height": 19
+      },
+      {
+        "x": 0,
+        "y": 23,
+        "width": 119.66000366210938,
+        "height": 19
+      }
+    ],
+    "en": [
+      {
+        "x": 18.75000023841858,
+        "y": 45,
+        "width": 221.24000549316406,
+        "height": 19
+      },
+      {
+        "x": 120.34000062942505,
+        "y": 67,
+        "width": 119.66000366210938,
+        "height": 19
+      }
+    ]
+  }
+}

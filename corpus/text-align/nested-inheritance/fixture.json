@@ -1,0 +1,68 @@
+{
+  "name": "nested-inheritance",
+  "note": "text-align inherits: a directly-centered block, a wrapping parent with text-align:right whose block child inherits the right alignment, and a grandchild that overrides back to left. Each block aligns its own lines independently; computed values match Chrome per element.",
+  "harvest": {
+    "viewport": {
+      "width": 480,
+      "height": 320
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"outer\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;width:240px;text-align:center\">outer text is centered and wraps onto several lines inside its own box</div><div id=\"wrap\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;width:240px;text-align:right\"><div id=\"mid\" style=\"font-size:14px;line-height:22px\">this nested block inherits the right alignment from its parent</div><div id=\"inn\" style=\"font-size:14px;line-height:22px;text-align:left\">this innermost block overrides the inherited alignment back to left</div></div></body></html>",
+    "measureText": [
+      {
+        "text": "outer text is centered and wraps onto several lines inside its own box",
+        "font": "14px 'Noto Sans'"
+      },
+      {
+        "text": "this nested block inherits the right alignment from its parent",
+        "font": "14px 'Noto Sans'"
+      },
+      {
+        "text": "this innermost block overrides the inherited alignment back to left",
+        "font": "14px 'Noto Sans'"
+      }
+    ],
+    "rects": [
+      "outer",
+      "wrap",
+      "mid",
+      "inn"
+    ],
+    "computedStyle": [
+      {
+        "id": "outer",
+        "props": [
+          "text-align"
+        ]
+      },
+      {
+        "id": "wrap",
+        "props": [
+          "text-align"
+        ]
+      },
+      {
+        "id": "mid",
+        "props": [
+          "text-align"
+        ]
+      },
+      {
+        "id": "inn",
+        "props": [
+          "text-align"
+        ]
+      }
+    ],
+    "textElements": [
+      "outer",
+      "mid",
+      "inn"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

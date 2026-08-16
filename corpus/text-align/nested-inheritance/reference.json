@@ -1,0 +1,91 @@
+{
+  "measureText": {
+    "14px 'Noto Sans' | outer text is centered and wraps onto several lines inside its own box": 451.9322509765625,
+    "14px 'Noto Sans' | this nested block inherits the right alignment from its parent": 397.6124572753906,
+    "14px 'Noto Sans' | this innermost block overrides the inherited alignment back to left": 435.13232421875
+  },
+  "computedStyle": {
+    "outer": {
+      "text-align": "center"
+    },
+    "wrap": {
+      "text-align": "right"
+    },
+    "mid": {
+      "text-align": "right"
+    },
+    "inn": {
+      "text-align": "left"
+    }
+  },
+  "rect": {
+    "outer": {
+      "x": 0,
+      "y": 0,
+      "width": 240,
+      "height": 44
+    },
+    "wrap": {
+      "x": 0,
+      "y": 44,
+      "width": 240,
+      "height": 88
+    },
+    "mid": {
+      "x": 0,
+      "y": 44,
+      "width": 240,
+      "height": 44
+    },
+    "inn": {
+      "x": 0,
+      "y": 88,
+      "width": 240,
+      "height": 44
+    }
+  },
+  "fragments": {
+    "outer": [
+      {
+        "x": 13.734375,
+        "y": 1,
+        "width": 212.53125,
+        "height": 19
+      },
+      {
+        "x": 2.109375,
+        "y": 23,
+        "width": 235.78125,
+        "height": 19
+      }
+    ],
+    "mid": [
+      {
+        "x": 14.796875,
+        "y": 45,
+        "width": 225.203125,
+        "height": 19
+      },
+      {
+        "x": 71.21875,
+        "y": 67,
+        "width": 168.78125,
+        "height": 19
+      }
+    ],
+    "inn": [
+      {
+        "x": 0,
+        "y": 89,
+        "width": 224.578125,
+        "height": 19
+      },
+      {
+        "x": 0,
+        "y": 111,
+        "width": 206.921875,
+        "height": 19
+      }
+    ]
+  }
+}

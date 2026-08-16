@@ -17,7 +17,7 @@ import { hasNonZeroRadius, innerRadii, resolveBorderRadius, traceRoundedRect, ty
 import type { PaintOp, RootLayout, TextDecorationPaint } from './block-inline.js';
 import type { Box } from '../harness/fixtures.js';
 import { measureTextWidth } from './measure.js';
-import { fontVerticalMetrics, type FontVerticalMetrics } from './fontmetrics.js';
+import { fontVerticalMetrics, lineAscentContribution, roundedAscent, roundedDescent, type FontVerticalMetrics } from './fontmetrics.js';
 
 type SideWidths = Record<'top' | 'right' | 'bottom' | 'left', number>;
 type SideColors = Record<'top' | 'right' | 'bottom' | 'left', Color>;
@@ -36,6 +36,14 @@ export interface RenderOutput {
    * documented text tier (Chrome cannot report pseudo text fragments).
    */
   generatedTextRects: Box[];
+  /**
+   * Per-element absolute line-box rects for the ids requested via
+   * RenderOptions.textElements — the engine's line fragments for the elements
+   * that carry inline content. Chrome reports the same geometry through
+   * Range.getClientRects(), which is how the text-align verify harness diffs
+   * line placement (layer-3) independently of element border boxes.
+   */
+  textFragments: Record<string, Box[]>;
 }
 
 /** Draw one layout line's text, applying letter-spacing when non-zero. */
@@ -247,6 +255,7 @@ export function paint(
   fontFile?: string,
   factory: CanvasFactory = skiaCanvasFactory,
   viewport?: Viewport | null,
+  textElements?: string[],
 ): RenderOutput {
   const canvas = factory.create(viewportWidth, viewportHeight);
   canvas.fillRect(0, 0, viewportWidth, viewportHeight, { r: 255, g: 255, b: 255, a: 1 });
@@ -292,6 +301,8 @@ export function paint(
   collectRects(root, rects);
   const generatedTextRects: Box[] = [];
   collectGeneratedTextRects(root, generatedTextRects);
+  const textFragments: Record<string, Box[]> = {};
+  if (textElements && textElements.length > 0) collectTextFragments(root, textElements, textFragments, fontMetrics);
   const missing: string[] = [];
   for (const id of ids) if (!rects[id]) missing.push(id);
   if (missing.length > 0) {
@@ -303,6 +314,7 @@ export function paint(
     rgba: canvas.toBuffer(),
     rects,
     generatedTextRects,
+    textFragments,
   };
 }
 
@@ -341,6 +353,37 @@ function collectGeneratedTextRects(root: RootLayout, out: Box[]): void {
       for (const l of node.lines) {
         out.push({ x: l.x, y: l.y, width: l.width, height: l.height });
       }
+    }
+    for (const child of node.children) walk(child);
+  };
+  walk(root.root);
+}
+
+/**
+ * Collect the absolute text-box rects of the requested text elements. Chrome's
+ * Range.getClientRects() reports each line's text box (the font's rounded
+ * ascent/descent content box, positioned by half-leading within the line box),
+ * not the full line-height box — so each fragment rect is `baseline − ascent`
+ * tall `ascent + descent`, matching the oracle exactly. The inline layout
+ * writes the aligned positions into `node.lines`, so this is the engine's view
+ * of the line fragments the text-align harness diffs (layer-3).
+ */
+function collectTextFragments(
+  root: RootLayout,
+  textElements: string[],
+  out: Record<string, Box[]>,
+  metrics: FontVerticalMetrics | null,
+): void {
+  const walk = (node: RootLayout['root']): void => {
+    const id = idOf(node.element);
+    if (id && textElements.includes(id) && node.lines.length > 0) {
+      out[id] = node.lines.map((l) => {
+        const fs = l.fontSize ?? node.style.fontSize;
+        const a = metrics ? roundedAscent(metrics, fs) : 0;
+        const d = metrics ? roundedDescent(metrics, fs) : 0;
+        const baseline = l.baseline ?? l.y + lineAscentContribution(fs, l.height, metrics);
+        return { x: l.x, y: baseline - a, width: l.width, height: a + d };
+      });
     }
     for (const child of node.children) walk(child);
   };

@@ -179,6 +179,13 @@ export type DisplayValue =
 
 export type VerticalAlign = 'baseline' | 'top' | 'middle' | 'bottom';
 
+/**
+ * Used text-alignment: the layout keyword after `start`/`end` resolve against
+ * the direction (LTR: start→left, end→right). `justify` is the used value for
+ * stretching; the last line of a block always lays out left-aligned.
+ */
+export type TextAlign = 'left' | 'center' | 'right' | 'justify';
+
 /** The parsed `content` value of a ::before/::after pseudo-element. */
 export type ContentValue = { kind: 'none' } | { kind: 'text'; text: string };
 
@@ -207,8 +214,10 @@ export interface ComputedStyle {
   float: 'none' | 'left' | 'right';
   clear: 'none' | 'left' | 'right' | 'both';
   verticalAlign: VerticalAlign;
-  /** horizontal text alignment (start/end normalized to left/right). */
-  textAlign: 'left' | 'center' | 'right';
+  /** used horizontal text alignment (start/end normalized to left/right). */
+  textAlign: TextAlign;
+  /** the CSSOM computed value (`getComputedStyle().textAlign`): left|center|right|justify|start|end verbatim. */
+  textAlignComputed: string;
   // --- table properties (CSS 2.1 §17.6) ---
   borderCollapse: 'separate' | 'collapse';
   /** horizontal border-spacing in px (separate model). */
@@ -962,9 +971,11 @@ interface Defaults {
   /** UA-level default vertical-align (e.g. table cells get 'middle'). */
   verticalAlignDefault?: VerticalAlign;
   /** UA-level default text-align (e.g. th gets 'center'); wins over inherited. */
-  textAlignDefault?: 'left' | 'center' | 'right';
+  textAlignDefault?: TextAlign;
   /** inherited text-align (text-align is inherited; used when no author value). */
-  textAlignInherited?: 'left' | 'center' | 'right';
+  textAlignInherited?: TextAlign;
+  /** inherited computed text-align string (start/end/justify/... preserved verbatim). */
+  textAlignComputedInherited?: string;
   /** UA-level default border-collapse (table gets 'separate'). */
   borderCollapseDefault?: 'separate' | 'collapse';
   /** UA-level default horizontal border-spacing (table gets 2px). */
@@ -1132,15 +1143,27 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     : (defaults.verticalAlignDefault ?? 'baseline');
 
   const textAlignDecl = decls.find((d) => d.property === 'text-align');
-  const textAlign: 'left' | 'center' | 'right' = (() => {
+  const textAlignInheritedUsed = defaults.textAlignInherited ?? 'left';
+  // Used value: `start`/`end` resolve against LTR (start→left, end→right);
+  // `justify` carries through as the used value for line stretching.
+  const textAlign: TextAlign = (() => {
     if (textAlignDecl) {
       const v = textAlignDecl.value.trim();
       if (v === 'center') return 'center';
       if (v === 'right' || v === 'end') return 'right';
+      if (v === 'justify') return 'justify';
       return 'left';
     }
-    return defaults.textAlignDefault ?? defaults.textAlignInherited ?? 'left';
+    return defaults.textAlignDefault ?? textAlignInheritedUsed;
   })();
+  // Computed value matches Chrome's `getComputedStyle().textAlign` verbatim:
+  // the authored keyword (start/end kept logical under LTR), else the inherited
+  // computed value, else the UA default, else the initial `start` (CSS Text 3
+  // changed the initial from CSS2.1's `left`; Chrome's computed initial is
+  // 'start' while the used value stays left in LTR).
+  const textAlignComputed: string = textAlignDecl
+    ? textAlignDecl.value.trim()
+    : defaults.textAlignDefault ?? defaults.textAlignComputedInherited ?? 'start';
 
   // --- table properties ---
   const borderCollapseDecl = decls.find((d) => d.property === 'border-collapse');
@@ -1344,6 +1367,7 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     clear,
     verticalAlign,
     textAlign,
+    textAlignComputed,
     borderCollapse,
     borderSpacingH: spacing.h,
     borderSpacingV: spacing.v,

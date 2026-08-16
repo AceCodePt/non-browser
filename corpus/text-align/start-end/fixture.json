@@ -1,0 +1,49 @@
+{
+  "name": "start-end",
+  "note": "Logical keywords under LTR: text-align:start computes to 'start' in Chrome but uses left alignment, text-align:end computes to 'end' but uses right alignment. The computed value is compared verbatim; the fragment geometry proves the used alignment.",
+  "harvest": {
+    "viewport": {
+      "width": 480,
+      "height": 200
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"s\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;width:240px;text-align:start\">start keyword text that wraps onto two separate lines</div><div id=\"en\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;width:240px;text-align:end\">end keyword text that wraps onto two separate lines</div></body></html>",
+    "measureText": [
+      {
+        "text": "start keyword text that wraps onto two separate lines",
+        "font": "14px 'Noto Sans'"
+      },
+      {
+        "text": "end keyword text that wraps onto two separate lines",
+        "font": "14px 'Noto Sans'"
+      }
+    ],
+    "rects": [
+      "s",
+      "en"
+    ],
+    "computedStyle": [
+      {
+        "id": "s",
+        "props": [
+          "text-align"
+        ]
+      },
+      {
+        "id": "en",
+        "props": [
+          "text-align"
+        ]
+      }
+    ],
+    "textElements": [
+      "s",
+      "en"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

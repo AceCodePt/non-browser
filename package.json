@@ -28,6 +28,7 @@
     "verify:cross-family": "npm run build && node scripts/verify-cross-family.mjs",
     "generate:sweep": "npm run build && node scripts/generate-sweep.mjs",
     "verify:sweep": "npm run build && node scripts/generate-sweep.mjs && node scripts/verify-sweep.mjs",
+    "verify:text-align": "npm run build && node scripts/verify-text-align.mjs",
     "probe:browser-gap": "npm run build && node probes/probe-browser-gap.mjs",
     "test:probe": "npm run build && node --test probes/probe-gap-lib.test.mjs"
   },

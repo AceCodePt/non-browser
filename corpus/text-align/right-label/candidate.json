@@ -1,0 +1,40 @@
+{
+  "measureText": {
+    "14px 'Noto Sans' | A right aligned label that wraps onto more than one line inside the box.": 467.95001220703125
+  },
+  "computedStyle": {
+    "r": {
+      "text-align": "right"
+    }
+  },
+  "rect": {
+    "r": {
+      "x": 0,
+      "y": 0,
+      "width": 220,
+      "height": 66
+    }
+  },
+  "fragments": {
+    "r": [
+      {
+        "x": 14.42000126838684,
+        "y": 1,
+        "width": 205.5800018310547,
+        "height": 19
+      },
+      {
+        "x": 18.100000619888306,
+        "y": 23,
+        "width": 201.88999938964844,
+        "height": 19
+      },
+      {
+        "x": 166.80000042915344,
+        "y": 45,
+        "width": 53.20000076293945,
+        "height": 19
+      }
+    ]
+  }
+}

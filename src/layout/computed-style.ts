@@ -96,7 +96,7 @@ export function computedStyleString(style: ComputedStyle, prop: string, refWidth
     case 'left':
       return lengthString(style.left, refWidth, viewport);
     case 'text-align':
-      return style.textAlign;
+      return style.textAlignComputed;
     case 'border-collapse':
       return style.borderCollapse;
     case 'border-spacing':

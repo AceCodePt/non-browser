@@ -1,0 +1,37 @@
+{
+  "name": "justify-multiline",
+  "note": "text-align:justify on a multi-line paragraph: every non-last line stretches its inter-word spaces so the line fills the block's content width; the final line stays left-aligned. Line-fragment x/width match Chrome's stretched lines within the rect tolerance.",
+  "harvest": {
+    "viewport": {
+      "width": 480,
+      "height": 240
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"j\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;width:240px;text-align:justify\">justify this paragraph of text across multiple lines so that it wraps and the inter word spacing stretches to fill the full available width of the box each line</div></body></html>",
+    "measureText": [
+      {
+        "text": "justify this paragraph of text across multiple lines so that it wraps and the inter word spacing stretches to fill the full available width of the box each line",
+        "font": "14px 'Noto Sans'"
+      }
+    ],
+    "rects": [
+      "j"
+    ],
+    "computedStyle": [
+      {
+        "id": "j",
+        "props": [
+          "text-align"
+        ]
+      }
+    ],
+    "textElements": [
+      "j"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}
