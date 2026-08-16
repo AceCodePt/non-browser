@@ -38,26 +38,10 @@ import {
 } from './css.js';
 import { layoutTextLines, measureTextWidth } from './measure.js';
 import { FloatManager, layoutElementBox, type LayoutNode, type PaintOp } from './block-inline.js';
+import { activeFontMetrics, lineAscentContribution } from './fontmetrics.js';
 import type { P5Element, P5Text } from './types.js';
 
 const EPS = 0.001;
-
-/**
- * Noto Sans vertical metrics (hhea ascent/descent / unitsPerEm), matching the
- * engine's registered font (fontmetrics.ts FALLBACK). Blink derives a line
- * box's baseline from the font's floored ascent/descent at the used font-size,
- * so baseline alignment must reproduce that to land text baselines where the
- * oracle does.
- */
-const FONT_ASCENT_FRAC = 1069 / 1000;
-const FONT_DESCENT_FRAC = 293 / 1000;
-
-/** Baseline offset of a text line box from the content-box top (Blink's). */
-function textBaselineOffset(fontSize: number, lineHeight: number): number {
-  const ascent = Math.floor(fontSize * FONT_ASCENT_FRAC);
-  const descent = Math.floor(fontSize * FONT_DESCENT_FRAC);
-  return ascent + (lineHeight - ascent - descent) / 2;
-}
 
 export interface FlexLayoutInput {
   el: P5Element;
@@ -537,7 +521,9 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
   // --- 5. line cross sizes + align-content distribution ---
   // Baseline info first: for row-direction lines with baseline-aligned items,
   // the line baseline is the max item baseline offset and the line cross grows
-  // to accommodate the lowest baseline-aligned item's bottom edge.
+  // to accommodate the lowest baseline-aligned item's bottom edge. This runs
+  // for every line (single-line definite containers included), so
+  // align-items:baseline places items against the line baseline everywhere.
   const baselinePerItem = new Map<FlexItem, number>();
   const isBaselineItem = new Map<FlexItem, boolean>();
   if (isRow) {
@@ -546,6 +532,17 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
       if (isBaselineItem.get(item)) {
         baselinePerItem.set(item, baselineFromMarginBoxTop(item, styles, item.hypotheticalCrossSize));
       }
+    }
+    for (const line of lines) {
+      let lineBaseline = -Infinity;
+      let anyBaseline = false;
+      for (const item of line.items) {
+        if (isBaselineItem.get(item)) {
+          anyBaseline = true;
+          lineBaseline = Math.max(lineBaseline, baselinePerItem.get(item)!);
+        }
+      }
+      line.baseline = anyBaseline ? lineBaseline : 0;
     }
   }
   const alignContent = style.alignContent === 'normal' || style.alignContent === 'stretch' ? 'stretch' : style.alignContent;
@@ -556,20 +553,13 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
   } else {
     for (const line of lines) {
       let max = 0;
-      let anyBaseline = false;
-      let lineBaseline = -Infinity;
       for (const item of line.items) {
         max = Math.max(max, item.hypotheticalCrossSize);
-        if (isBaselineItem.get(item)) {
-          anyBaseline = true;
-          lineBaseline = Math.max(lineBaseline, baselinePerItem.get(item)!);
-        }
       }
-      line.baseline = anyBaseline ? lineBaseline : 0;
-      if (anyBaseline) {
+      if (line.baseline > 0) {
         for (const item of line.items) {
           const bi = baselinePerItem.get(item);
-          const extent = bi !== undefined ? lineBaseline - bi + item.hypotheticalCrossSize : item.hypotheticalCrossSize;
+          const extent = bi !== undefined ? line.baseline - bi + item.hypotheticalCrossSize : item.hypotheticalCrossSize;
           max = Math.max(max, extent);
         }
       }
@@ -887,7 +877,7 @@ function baselineFromMarginBoxTop(
   const marginTop = item.crossStart;
   if (hasInlineText(item.el, styles)) {
     const padTop = (resolveLength(s.padding.top, 0) ?? 0) + s.borderWidth.top;
-    const lineBaseline = textBaselineOffset(s.fontSize, s.lineHeight);
+    const lineBaseline = lineAscentContribution(s.fontSize, s.lineHeight, activeFontMetrics());
     return marginTop + padTop + lineBaseline;
   }
   return marginTop + crossSize + item.crossEnd;
