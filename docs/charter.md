@@ -42,7 +42,7 @@ The renderer takes a **`browser`-config parameter** (a `browser-config`) that se
 
 - **`chrome`** (default, first): Chrome/Blink fallback tables and the primary golden corpus.
 - **`firefox`** (later): Firefox/Gecko fallback tables and a Firefox golden corpus; same Skia substrate, differs only in fallback/font config.
-- **`safari`** (parked): tracked on macOS CI, not scheduled until the platform is provisioned.
+- **`safari`** (parked for browser parity): the `safari` browser-config exists to the extent of glyph resolution (`src/config/safari.ts` — font-registration set + fallback table over the same Canvas seam), but the WebKit oracle is tracked on macOS CI and not scheduled until the platform is provisioned. Probes/seam checks consult the WebKit oracle when it launches and otherwise fall back to a documented reference (see `docs/ledgers/safari.md`).
 
 The `browser-config` selects:
 

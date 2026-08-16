@@ -148,14 +148,14 @@ try {
             frags.push({ x: r.x, y: r.y, width: r.width, height: r.height });
           }
           const cs = getComputedStyle(el);
-          return { text: el.textContent, clientWidth: el.clientWidth, fontSize: cs.fontSize, letterSpacing: cs.letterSpacing, frags };
+          return { text: el.textContent, clientWidth: el.clientWidth, fontSize: cs.fontSize, fontFamily: cs.fontFamily, letterSpacing: cs.letterSpacing, frags };
         }, id);
         if (!info) continue;
         fragments.push(...info.frags);
         fragmentsById[id] = info.frags.map((f) => f.width);
         textsById[id] = info.text ?? '';
         widthsById[id] = info.clientWidth;
-        fontById[id] = { fontSize: info.fontSize, letterSpacing: info.letterSpacing };
+        fontById[id] = { fontSize: info.fontSize, fontFamily: info.fontFamily, letterSpacing: info.letterSpacing };
       }
     }
 
@@ -189,9 +189,12 @@ try {
     // --- Pretext seam: prepare/layout over the Canvas interface ---
     // Proves the seam runs: Pretext's prepare/layout over the interface must
     // break each text block into the same number of lines as Chrome, with line
-    // widths within the layer-3 sub-pixel (<=0.5px) tolerance. (Raw
-    // measureText parity is layer-1 above; Pretext's own width reporting rounds
-    // ~0.02px differently, so gating on the 0.5px band keeps this stable.)
+    // widths within the layer-1 sub-pixel (<=0.5px) tolerance. The seam is fed
+    // the fixture's real computed font-family, resolved through the active
+    // browser-config before measurement — the same resolution authority as the
+    // engine measure path. (Raw measureText parity is layer-1 above; Pretext's
+    // own width reporting rounds ~0.02px differently, so gating on the 0.5px
+    // band keeps this stable.)
     let pretextPass = true;
     let pretextDetail = 'no text elements';
     const textIds = h.textElements ?? [];
@@ -204,10 +207,11 @@ try {
         const text = textsById[id];
         const maxWidth = widthsById[id] ?? viewport.width;
         if (!text || !text.trim()) continue;
-        const f = fontById[id] ?? { fontSize: '16px', letterSpacing: 'normal' };
+        const f = fontById[id] ?? { fontSize: '16px', fontFamily: FONT_FAMILY, letterSpacing: 'normal' };
         const fontSize = parseFloat(f.fontSize) || 16;
+        const family = f.fontFamily && f.fontFamily.trim() ? f.fontFamily.trim().replace(/^["']+|["']+$/g, '') : FONT_FAMILY;
         const ls = f.letterSpacing && f.letterSpacing !== 'normal' ? parseFloat(f.letterSpacing) : 0;
-        const prepared = prepareText(text, `${fontSize}px '${FONT_FAMILY}'`, { letterSpacing: ls });
+        const prepared = prepareText(text, `${fontSize}px '${family}'`, { letterSpacing: ls });
         const res = layoutLines(prepared, maxWidth, 24);
         const chromeWidths = fragmentsById[id] ?? [];
         if (chromeWidths.length === 0) continue;
@@ -224,7 +228,7 @@ try {
         }
       }
       if (pretextPass && totalLines > 0) {
-        const maxPx = tolerances.layers.rect.maxPx;
+        const maxPx = tolerances.layers.measureText.maxPx;
         const meanDelta = meanSum / totalLines;
         pretextPass = maxDelta <= maxPx;
         pretextDetail = `mean Δ ${meanDelta.toFixed(4)}px, max Δ ${maxDelta.toFixed(4)}px over ${totalLines} lines (≤ ${maxPx}px)`;

@@ -79,12 +79,22 @@ firefoxConfig`, and evaluates all four layers under `tolerances.json` (charter
 defaults, version 1). Reference/candidate JSON+PNGs and the text mask are
 written into each fixture dir as golden data.
 
+The Pretext seam is fed each text element's **real computed font-family**
+(harvested from the element, not the config's hard-coded default family), so
+the seam exercises the same fallback table the engine measure path does: a
+fixture whose element uses an unregistered family (e.g. `Courier New`) is
+resolved through the firefox fallback table to the registered face before the
+Canvas is touched. The seam gates on the **layer-1 mean AND max** tolerances
+(mean ≤ 0.01px, max ≤ 0.5px) — the fallback fixture resolves to Source Code
+Pro, which Firefox reproduces exactly, so its seam mean is 0.0000px.
+
 ## Results
 
 `npm run verify:firefox` exits 0 — all 4 fixtures pass all four layers, every
 row at 0.0000px / 0 exceeding pixels (text masked, as in the paint-text
-corpus). `npm run verify:four-layer` still exits 0 — the chrome path is
-unregressed.
+corpus), and the seam (real resolved family) passes every fixture with mean Δ
+0.0000px incl. the `fallback-courier-new` fixture. `npm run verify:four-layer`
+still exits 0 — the chrome path is unregressed.
 
 ## Divergences
 

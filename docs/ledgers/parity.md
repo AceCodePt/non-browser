@@ -160,14 +160,52 @@ Implication: the browser-config/fallback mechanism matters only for font
 there. Feeding the correct per-browser canvas to Pretext stays the right
 architecture for the Firefox/Safari track.
 
+## Cross-Browser Probe (three browsers + the safari seam)
+
+`probe:browser-gap` now attempts **Chrome, Firefox and Safari (Playwright
+WebKit)** and reports per-pair deltas (measureText, computedStyle, rect, line
+fragments, screenshot) for every pair among the browsers that launch, over 8
+fixtures — the original 5 plus three safari-track fixtures
+(`safari-courier-new`, `safari-monospace-generic`, `safari-serif-generic`)
+authored to families the chrome and safari fallback tables resolve to the same
+registered faces.
+
+On this host the WebKit oracle cannot launch: Playwright's WebKit build requires
+glibc ≥ 2.35–2.38 (Ubuntu 24.04 arm64) while Oracle Linux 9 ships glibc 2.34, so
+`safari (WebKit) not available` is reported and its pairs skipped (charter §8
+parks Safari on a provisioned platform). The probe still runs the **safari**
+browser-config seam on every flat-text fixture, feeding each element's real
+computed font-family through Pretext over the Canvas interface (the safari
+canvas pressed in per `renderHtml`) and diffing seam line widths against
+Chrome's fragments within the layer-1 max band — the WebKit-free reference,
+since chrome and safari resolve the probe families identically. The safari seam
+passes every fixture (mean Δ 0.008–0.015px, the Pretext width-reporting
+rounding from Honest Reading #2; max Δ ≤ 0.024px). The seam's *resolution*
+authority — that a fallback family's seam measurement equals the resolved
+face's within the layer-1 mean tolerance (≤ 0.01px) — is asserted by the
+probe's test suite and by the firefox fallback seam at 0.0000px
+(`verify:firefox`). Details: `docs/ledgers/safari.md`.
+
 ## Firefox/Safari support task
 
-A new task (`browser-canvas-support`, `wait_human_start: true`) takes the probe
-result forward: exercise the firefox browser-config through the engine *and*
-the Pretext seam (seam passes the fixture's real CSS family, not the default),
-and add a Safari browser-config to the extent of glyph resolution — the correct
-canvas must be pressed into Pretext so the seam and the engine measure the same
-per-browser faces.
+`browser-canvas-support` shipped the browser-config seam through the engine and
+Pretext:
+
+- **One font-resolution authority** — the Pretext measurement context resolves
+  the CSS family through the active `BrowserConfig` (`resolveFontFamily`)
+  before hitting the Canvas (`src/pretext/index.ts`), identical to the engine's
+  `cssFontString`; the seam and the engine measure the same per-browser faces.
+- **Real families through the seam** — `verify-firefox.mjs` and
+  `verify-four-layer.mjs` harvest each element's computed font-family and pass
+  it to the seam instead of the hard-coded default family.
+- **Firefox exercised end-to-end** — the seam on `fallback-courier-new`
+  resolves `Courier New` through the firefox fallback table to Source Code Pro
+  and matches Firefox's line fragments at mean Δ 0.0000px (layer-1 mean gate,
+  ≤ 0.01px).
+- **Safari config to the extent of glyph resolution** — `src/config/safari.ts`
+  registers the faces WebKit resolves and carries a fallback table; the safari
+  canvas is pressed into Pretext (see `safari.md`). The WebKit oracle itself
+  stays parked pending platform provision (glibc limitation above).
 
 ## Performance: Engine vs Playwright Oracle
 

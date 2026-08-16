@@ -11,7 +11,7 @@
 
 import { chromeConfig } from './chrome.js';
 
-export type BrowserTarget = 'chrome' | 'firefox';
+export type BrowserTarget = 'chrome' | 'firefox' | 'safari';
 
 /** One font file the engine registers, under a CSS family name. */
 export interface FontRegistration {

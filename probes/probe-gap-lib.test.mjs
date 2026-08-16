@@ -19,6 +19,10 @@ import {
   FIXTURES,
 } from './lib/probe-gap-lib.mjs';
 import { loadTolerances } from '../dist/harness/tolerances.js';
+import { getBrowserConfig, setActiveBrowserConfig, firefoxConfig, safariConfig, resolveFontFamily } from '../dist/config/index.js';
+import { resolveFontFamilyInShorthand, installPretextMeasurement, prepareText, layoutLines } from '../dist/pretext/index.js';
+import { skiaCanvasFactory } from '../dist/canvas/skia.js';
+import { initMeasurement } from '../dist/layout/measure.js';
 import { resolve } from 'node:path';
 
 const tolerances = loadTolerances(resolve('tolerances.json'));
@@ -352,6 +356,94 @@ describe('validateFixtures', () => {
     assert.equal(results[0].fixture, 'a');
     assert.equal(results[1].fixture, 'b');
     assert.ok(results[1].problems.length > 0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Seam font-resolution authority (browser-canvas-support)
+// ---------------------------------------------------------------------------
+//
+// One font-resolution authority: Pretext's measurement context and the engine's
+// measureTextWidth must resolve a CSS family through the active browser-config
+// (resolveFontFamily) identically, so the seam measures the same per-browser
+// faces the engine does. These tests are the regression gate — each fails if
+// the seam measures a family the active config would resolve differently.
+
+describe('seam font-resolution authority', () => {
+  const SEAM_TEXT = 'The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.';
+
+  const resolvedOf = (config, family) => resolveFontFamily(config, family);
+
+  /** Seam line widths for a family under a config, at a fixed wrap width. */
+  const seamWidths = (config, family, text = SEAM_TEXT, maxWidth = 300, fontSize = 16) => {
+    setActiveBrowserConfig(config);
+    for (const reg of config.fonts) skiaCanvasFactory.registerFont(reg.filePath);
+    const canvas = initMeasurement({ family: config.defaultFamily, filePath: config.defaultFile }, skiaCanvasFactory);
+    installPretextMeasurement(canvas);
+    const prepared = prepareText(text, `${fontSize}px '${family}'`, {});
+    return layoutLines(prepared, maxWidth, 24).lines.map((l) => l.width);
+  };
+
+  const meanDelta = (a, b) => {
+    const n = Math.min(a.length, b.length);
+    if (n === 0) return 0;
+    let s = 0;
+    for (let i = 0; i < n; i++) s += Math.abs(a[i] - b[i]);
+    return s / n;
+  };
+
+  test('the firefox config resolves the unregistered Courier New family to Source Code Pro', () => {
+    assert.equal(resolvedOf(firefoxConfig, 'Courier New'), 'Source Code Pro');
+  });
+
+  test('the safari config resolves the fallback-table families to registered faces', () => {
+    assert.equal(resolvedOf(safariConfig, 'Courier New'), 'Liberation Mono');
+    assert.equal(resolvedOf(safariConfig, 'serif'), 'Liberation Serif');
+    // monospace maps to a registered face (Hack Nerd Font when installed).
+    const mono = resolvedOf(safariConfig, 'monospace');
+    assert.ok(safariConfig.fonts.some((f) => f.family === mono), `monospace resolves to registered face '${mono}'`);
+  });
+
+  test('a registered family is untouched by the resolution authority', () => {
+    assert.equal(resolvedOf(safariConfig, 'Noto Sans'), 'Noto Sans');
+  });
+
+  test('resolveFontFamilyInShorthand replaces only the family, preserving size/style', () => {
+    setActiveBrowserConfig(firefoxConfig);
+    assert.equal(resolveFontFamilyInShorthand("16px 'Courier New'"), "16px 'Source Code Pro'");
+    assert.equal(resolveFontFamilyInShorthand("italic 16px 'Courier New'"), "italic 16px 'Source Code Pro'");
+    assert.equal(resolveFontFamilyInShorthand("bold 14px 'Courier New'"), "bold 14px 'Source Code Pro'");
+    setActiveBrowserConfig(safariConfig);
+    assert.equal(resolveFontFamilyInShorthand("16px 'monospace'"), `16px '${resolvedOf(safariConfig, 'monospace')}'`);
+    assert.equal(resolveFontFamilyInShorthand('16px serif'), "16px 'Liberation Serif'");
+    // A registered family passes through unchanged.
+    assert.equal(resolveFontFamilyInShorthand("16px 'Noto Sans'"), "16px 'Noto Sans'");
+  });
+
+  test("a fallback family's seam matches the config-resolved face's seam within the layer-1 mean", () => {
+    const c = getBrowserConfig('safari');
+    assert.ok(meanDelta(seamWidths(c, 'Courier New'), seamWidths(c, resolvedOf(c, 'Courier New'))) <= TOL.measureText.meanPx);
+    assert.ok(meanDelta(seamWidths(c, 'serif'), seamWidths(c, resolvedOf(c, 'serif'))) <= TOL.measureText.meanPx);
+    assert.ok(meanDelta(seamWidths(c, 'monospace'), seamWidths(c, resolvedOf(c, 'monospace'))) <= TOL.measureText.meanPx);
+  });
+
+  test('the seam would fail if it measured a family the active config resolves differently', () => {
+    // Regression gate: under the safari config the seam must measure a family
+    // through the ACTIVE fallback table (serif -> the registered serif face).
+    // A seam that resolved serif along another config's table (firefox ->
+    // Source Code Pro, a mono face) would widen every line by ~16px and blow
+    // the layer-1 band — proving the gate has teeth.
+    const c = getBrowserConfig('safari');
+    const correct = seamWidths(c, resolvedOf(c, 'serif'));
+    const resolvedByFirefox = seamWidths(c, resolvedOf(firefoxConfig, 'serif'));
+    assert.ok(meanDelta(correct, resolvedByFirefox) > TOL.measureText.meanPx * 10, 'different resolutions give visibly different seam widths');
+  });
+
+  test('the probe fixtures integrate the safari-track families', () => {
+    const names = FIXTURES.map((f) => f.name);
+    assert.ok(names.includes('safari-courier-new'), 'safari-track Courier New fallback fixture');
+    assert.ok(names.includes('safari-monospace-generic'), 'safari-track generic monospace fixture');
+    assert.ok(names.includes('safari-serif-generic'), 'safari-track generic serif fixture');
   });
 });
 
