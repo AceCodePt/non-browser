@@ -10,7 +10,7 @@
  * explicit keywords — not `auto` where Chrome reports the used value).
  */
 
-import type { Color, ComputedStyle, CornerRadii, Length, Viewport } from './css.js';
+import type { Color, ComputedStyle, CornerRadii, Length, Shadow, Viewport } from './css.js';
 
 export type ComputedStyleProps = Record<string, string>;
 
@@ -68,6 +68,25 @@ function cornerRadiusString(c: CornerRadii, refWidth: number, viewport?: Viewpor
   const rx = lengthString(c.rx, refWidth, viewport) ?? '0px';
   const ry = lengthString(c.ry, refWidth, viewport) ?? '0px';
   return rx === ry ? rx : `${rx} ${ry}`;
+}
+
+/**
+ * Serialize a shadow list the way Chrome's CSSOM does: `none` for an empty
+ * list, `color offset-x offset-y blur` with the optional spread and trailing
+ * `inset` per shadow (color always first, even when authored last).
+ * text-shadow has no spread and no inset.
+ */
+function shadowListString(shadows: Shadow[], refWidth: number, viewport?: Viewport | null, text = false): string {
+  if (shadows.length === 0) return 'none';
+  const len = (l: Length): string => lengthString(l, refWidth, viewport) ?? '0px';
+  return shadows
+    .map((s) => {
+      let str = `${colorString(s.color)} ${len(s.x)} ${len(s.y)} ${len(s.blur)}`;
+      if (!text) str += ` ${len(s.spread)}`;
+      if (s.inset) str += ' inset';
+      return str;
+    })
+    .join(', ');
 }
 
 /**
@@ -170,6 +189,10 @@ export function computedStyleString(style: ComputedStyle, prop: string, refWidth
     }
     case 'border-radius':
       return borderRadiusString(style, refWidth, viewport);
+    case 'box-shadow':
+      return shadowListString(style.boxShadow, refWidth, viewport, false);
+    case 'text-shadow':
+      return shadowListString(style.textShadow, refWidth, viewport, true);
     case 'border-top-left-radius':
       return cornerRadiusString(style.borderRadius.topLeft, refWidth, viewport);
     case 'border-top-right-radius':

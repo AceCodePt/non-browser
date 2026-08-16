@@ -154,6 +154,21 @@ export interface BorderRadius {
   bottomLeft: CornerRadii;
 }
 
+/**
+ * One box-shadow / text-shadow in the parsed (pre-resolution) form. The sharp
+ * shadow shape is the box expanded by `spread` and translated by `x`/`y`;
+ * `blur` (>= 0) is the CSS blur radius. Lengths stay Lengths so serialization
+ * resolves them the way CSSOM does (css-backgrounds-3 §7.1 / css-text-decor-3).
+ */
+export interface Shadow {
+  inset: boolean;
+  x: Length;
+  y: Length;
+  blur: Length;
+  spread: Length;
+  color: Color;
+}
+
 export const ZERO_RADIUS: CornerRadii = { rx: pxLength(0), ry: pxLength(0) };
 
 export const ZERO_BORDER_RADIUS: BorderRadius = {
@@ -258,6 +273,10 @@ export interface ComputedStyle {
   borderRadius: BorderRadius;
   backgroundColor: Color;
   color: Color;
+  /** box-shadows, in source order (first shadow paints on top). Not inherited. */
+  boxShadow: Shadow[];
+  /** text-shadows (inherited), first on top. */
+  textShadow: Shadow[];
   fontFamily: string;
   fontSize: number;
   fontWeight: number;
@@ -381,6 +400,45 @@ export function parseColor(input: string): Color {
 
 function clamp255(v: number): number {
   return Math.max(0, Math.min(255, v));
+}
+
+/**
+ * Parse one box-shadow / text-shadow value (css-backgrounds-3 §7.1,
+ * css-text-decor-3 §7). A comma-separated list becomes a shadow per item, each
+ * item's tokens are `inset? && <length>{2,4} && <color>?` with the color
+ * allowed anywhere; a missing color is `currentColor` (the element's color).
+ * text-shadow shares the grammar minus `inset` and the 4th (spread) length.
+ */
+export function parseShadowList(value: string, currentColor: Color): Shadow[] {
+  const parts = splitOnTopLevelComma(value);
+  const out: Shadow[] = [];
+  for (const part of parts) {
+    const tokens = splitTopLevel(part);
+    let inset = false;
+    const lenses: string[] = [];
+    let color: Color | null = null;
+    for (const t of tokens) {
+      if (t === 'inset') {
+        inset = true;
+        continue;
+      }
+      if (/^#|^rgba?\(|^hsla?\(|^[a-zA-Z]/.test(t) && !/^-?[\d.]/.test(t)) {
+        color = t.toLowerCase() === 'currentcolor' ? currentColor : parseColor(t);
+        continue;
+      }
+      lenses.push(t);
+    }
+    const lens = lenses.map((t) => parseLength(t));
+    out.push({
+      inset,
+      x: lens[0] ?? pxLength(0),
+      y: lens[1] ?? pxLength(0),
+      blur: lens[2] ?? pxLength(0),
+      spread: lens[3] ?? pxLength(0),
+      color: color ?? currentColor,
+    });
+  }
+  return out;
 }
 
 export function parseLength(raw: string): Length {
@@ -983,6 +1041,8 @@ interface Defaults {
   textDecorationColor?: Color | null;
   textDecorationThickness?: 'auto' | 'from-font' | { px: number };
   textUnderlineOffset?: number;
+  /** inherited text-shadows (text-shadow inherits; box-shadow does not). */
+  textShadow?: Shadow[];
   fontWeightDefault?: number;
   fontStyleDefault?: 'normal' | 'italic';
   /** inherited list-style-type (default disc, matching the CSS initial). */
@@ -1357,6 +1417,21 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     ? parsePxOffset(decOffsetDecl.value)
     : defaults.textUnderlineOffset ?? 0;
 
+  const boxShadow = (() => {
+    const d = decls.find((x) => x.property === 'box-shadow');
+    if (!d) return [];
+    const s = d.value.trim();
+    if (s === '' || s === 'none') return [];
+    return parseShadowList(s, elementColor);
+  })();
+  const textShadow = (() => {
+    const d = decls.find((x) => x.property === 'text-shadow');
+    if (!d) return defaults.textShadow ?? [];
+    const s = d.value.trim();
+    if (s === '' || s === 'none') return [];
+    return parseShadowList(s, elementColor);
+  })();
+
   const decl = (name: string) => decls.find((d) => d.property === name)?.value;
 
   const gridTemplateColumns = parseTrackList(decl('grid-template-columns') ?? '');
@@ -1504,6 +1579,8 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     borderRadius,
     backgroundColor: bgDecl ? parseColor(bgDecl.value) : { r: 0, g: 0, b: 0, a: 0 },
     color: elementColor,
+    boxShadow,
+    textShadow,
     fontFamily,
     fontSize,
     fontWeight,

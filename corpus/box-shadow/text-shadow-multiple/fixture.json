@@ -1,0 +1,25 @@
+{
+  "name": "text-shadow-multiple",
+  "note": "Two text-shadows stacked (first on top): a tight red glow and a hard green offset. The reverse paint order + a hard (blur 0) text shadow both exercised; glyph ink is masked under the text tier, the shadow blobs compared strictly.",
+  "harvest": {
+    "viewport": {
+      "width": 300,
+      "height": 120
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"t\" style=\"position:relative;left:40px;top:44px;font-family:'Noto Sans';font-size:36px;text-shadow:0px 0px 5px #ff0000, 2px 2px 0px #00aa00\">Glow</div></body></html>",
+    "computedStyle": [
+      {
+        "id": "t",
+        "props": ["text-shadow"]
+      }
+    ],
+    "rects": ["t"],
+    "textElements": ["t"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

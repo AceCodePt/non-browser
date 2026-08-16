@@ -139,6 +139,8 @@ the charter and the corpus cannot silently diverge:
 | text | white-space | yes | corpus/spine, corpus/white-space | white-space |
 | text | letter-spacing | yes | corpus/paint-text, corpus/measure-corpus | letter-spacing |
 | text | text-decoration | yes | corpus/paint-text | text-decoration |
+| text | text-shadow | yes | corpus/box-shadow | text-shadow |
+| paint | box-shadow | yes | corpus/box-shadow | box-shadow |
 | font | font-family (fallback tables) | yes | corpus/cross-family, corpus/firefox-track | font-family |
 | ua-stylesheet | UA defaults at lowest cascade priority | yes | corpus/ua-styles | UA stylesheet |
 | lists | list-style-type markers | yes | corpus/lists, corpus/ua-styles | list-style-type |

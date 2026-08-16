@@ -136,8 +136,11 @@ reading:
 - **The green run proves parity for the verified corpus, not arbitrary HTML.**
   The corpus is authored alongside the engine; features it doesn't exercise
   (yet) are documented in the coverage matrix and `tasks/`, not implied to work:
-  `calc()`, opacity compositing, box-shadows, `direction: rtl` box layout,
-  tables, and image decoding are not in v1.
+  `calc()`, opacity compositing, `direction: rtl` box layout, tables, and image
+  decoding are not in v1. box-shadow/text-shadow paint is corpus-covered
+  (`corpus/box-shadow/`, `npm run verify:shadow`): offset/blur/spread/color +
+  inset + multiple + text-shadow; blurred shadows with spread and blurred inset
+  remain unpainted (parsed and serialized, but skipped at paint time).
 - **The engine's shipped text wrapping is still narrower than the seam.**
   Break-parity with Chrome is proven for the Pretext-based seam; the shipped
   greedy wrapper for plain text is being unified onto it (`pretext-breaker-path`

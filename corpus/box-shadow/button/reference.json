@@ -1,0 +1,19 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "btn": {
+      "box-shadow": "rgba(0, 0, 0, 0.35) 0px 4px 10px 0px",
+      "background-color": "rgb(53, 117, 224)",
+      "border-radius": "22px",
+      "text-align": "center"
+    }
+  },
+  "rect": {
+    "btn": {
+      "x": 20,
+      "y": 30,
+      "width": 150,
+      "height": 44
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "button",
+  "note": "A button: rounded background, centered label text, and a soft elevation shadow (blur 10, no spread). The shadow is compared under the strict band; the label glyphs are masked via the text tier like the other paint corpora. Combines border-radius shadow paint with text shadow-free content.",
+  "harvest": {
+    "viewport": {
+      "width": 260,
+      "height": 120
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"btn\" style=\"position:relative;left:20px;top:30px;width:150px;height:44px;background:#3575e0;border-radius:22px;box-shadow:0px 4px 10px rgba(0,0,0,0.35);font-family:'Noto Sans';font-size:16px;line-height:44px;color:#ffffff;text-align:center\">Submit</div></body></html>",
+    "computedStyle": [
+      {
+        "id": "btn",
+        "props": ["box-shadow", "background-color", "border-radius", "text-align"]
+      }
+    ],
+    "rects": ["btn"],
+    "textElements": ["btn"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "multiple",
+  "note": "A stacked pair of outer shadows (list order: first on top): a tight ambient shadow (blur 2) over a wide drop shadow (blur 16). The canvas blur primitive paints each shadow in reverse list order, then the opaque box background covers both shape fills — the composite must match Chrome's two-shadow stacking.",
+  "harvest": {
+    "viewport": {
+      "width": 280,
+      "height": 200
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"m\" style=\"position:relative;left:30px;top:30px;width:140px;height:100px;background:#ffffff;box-shadow:0px 1px 2px rgba(0,0,0,0.25), 0px 12px 24px rgba(0,0,0,0.15)\"></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "m",
+        "props": ["box-shadow"]
+      }
+    ],
+    "rects": ["m"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "stacking",
+  "note": "Shadow-list stacking order (first shadow paints on top): a tight red ambient shadow over a wide blue drop shadow. Near the box edges the two blurs overlap, so a reversed paint order would tint the overlap wrong — Chrome's front-to-back composite must be reproduced exactly.",
+  "harvest": {
+    "viewport": {
+      "width": 280,
+      "height": 200
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"s\" style=\"position:relative;left:40px;top:40px;width:120px;height:90px;background:#ffffff;box-shadow:0px 0px 2px rgba(255,0,0,0.8), 0px 0px 18px rgba(0,0,255,0.6)\"></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "s",
+        "props": ["box-shadow"]
+      }
+    ],
+    "rects": ["s"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

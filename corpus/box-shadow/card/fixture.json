@@ -1,0 +1,24 @@
+{
+  "name": "card",
+  "note": "A card-style box: a uniform rounded corner, an opaque background, and a soft outer shadow (blur 8, no spread) — the most common real-world shadow form. The shadow is painted behind the box with the canvas blur primitive (Chrome's box-shadow kernel) and must match Chrome's blurred, rounded-corner shadow raster pixel-exactly.",
+  "harvest": {
+    "viewport": {
+      "width": 280,
+      "height": 200
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"card\" style=\"position:relative;left:30px;top:30px;width:200px;height:120px;background:#ffffff;border-radius:12px;box-shadow:0px 2px 8px rgba(0,0,0,0.2)\"></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "card",
+        "props": ["box-shadow", "background-color", "border-radius"]
+      }
+    ],
+    "rects": ["card"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

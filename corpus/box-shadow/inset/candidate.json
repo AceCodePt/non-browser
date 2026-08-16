@@ -1,0 +1,35 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "i1": {
+      "box-shadow": "rgba(0, 0, 0, 0.45) 4px 5px 0px 0px inset"
+    },
+    "i2": {
+      "box-shadow": "rgba(50, 120, 200, 0.5) 0px 0px 0px 5px inset",
+      "background-color": "rgb(255, 255, 255)"
+    },
+    "i3": {
+      "box-shadow": "rgba(60, 60, 60, 0.3) 2px 3px 0px 4px inset"
+    }
+  },
+  "rect": {
+    "i1": {
+      "x": 20,
+      "y": 20,
+      "width": 120,
+      "height": 90
+    },
+    "i2": {
+      "x": 160,
+      "y": 110,
+      "width": 100,
+      "height": 90
+    },
+    "i3": {
+      "x": 20,
+      "y": 310,
+      "width": 120,
+      "height": 50
+    }
+  }
+}
