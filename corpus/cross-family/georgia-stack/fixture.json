@@ -1,0 +1,25 @@
+{
+  "name": "georgia-stack",
+  "browser": "chrome",
+  "note": "Multi-family stack in layout: 'Georgia', 'Liberation Serif', serif resolves the first family through the chrome fallback table (Georgia -> Liberation Serif) and lays out (wraps) with the resolved serif face, matching Chrome's fontconfig resolution on this system. Cross-family layout at three sizes in one fixture.",
+  "harvest": {
+    "viewport": { "width": 480, "height": 200 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"s1\" style=\"font-family:Georgia, 'Liberation Serif', serif;font-size:14px;line-height:22px;width:280px\">The five boxing wizards jump quickly. Sphinx of black quartz, judge my vow.</div><div id=\"s2\" style=\"font-family:Georgia, 'Liberation Serif', serif;font-size:18px;line-height:28px;width:300px\">Amazingly few discotheques provide jukeboxes.</div></body></html>",
+    "measureText": [
+      { "text": "The five boxing wizards jump quickly. Sphinx of black quartz, judge my vow.", "font": "14px 'Georgia'" },
+      { "text": "Amazingly few discotheques provide jukeboxes.", "font": "18px 'Georgia'" }
+    ],
+    "computedStyle": [
+      { "id": "s1", "props": ["display", "font-size", "line-height", "width", "box-sizing"] },
+      { "id": "s2", "props": ["display", "font-size", "line-height", "width", "box-sizing"] }
+    ],
+    "rects": ["s1", "s2"],
+    "textElements": ["s1", "s2"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

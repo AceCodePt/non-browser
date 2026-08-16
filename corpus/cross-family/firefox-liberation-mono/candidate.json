@@ -1,0 +1,38 @@
+{
+  "measureText": {
+    "14px 'Liberation Mono' | The five boxing wizards jump quickly. How vexingly quick daft zebras jump!": 621.5999755859375,
+    "18px 'Liberation Mono' | Pack my box with five dozen liquor jugs.": 432
+  },
+  "computedStyle": {
+    "n1": {
+      "display": "block",
+      "font-size": "14px",
+      "line-height": "22px",
+      "width": "340px",
+      "box-sizing": "content-box",
+      "white-space": "normal"
+    },
+    "n2": {
+      "display": "block",
+      "font-size": "18px",
+      "line-height": "28px",
+      "width": "300px",
+      "box-sizing": "content-box",
+      "white-space": "normal"
+    }
+  },
+  "rect": {
+    "n1": {
+      "x": 0,
+      "y": 0,
+      "width": 340,
+      "height": 44
+    },
+    "n2": {
+      "x": 0,
+      "y": 44,
+      "width": 300,
+      "height": 56
+    }
+  }
+}

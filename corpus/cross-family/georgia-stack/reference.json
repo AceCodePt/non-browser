@@ -1,0 +1,36 @@
+{
+  "measureText": {
+    "14px 'Georgia' | The five boxing wizards jump quickly. Sphinx of black quartz, judge my vow.": 437.1513671875,
+    "18px 'Georgia' | Amazingly few discotheques provide jukeboxes.": 350.4111328125
+  },
+  "computedStyle": {
+    "s1": {
+      "display": "block",
+      "font-size": "14px",
+      "line-height": "22px",
+      "width": "280px",
+      "box-sizing": "content-box"
+    },
+    "s2": {
+      "display": "block",
+      "font-size": "18px",
+      "line-height": "28px",
+      "width": "300px",
+      "box-sizing": "content-box"
+    }
+  },
+  "rect": {
+    "s1": {
+      "x": 0,
+      "y": 0,
+      "width": 280,
+      "height": 44
+    },
+    "s2": {
+      "x": 0,
+      "y": 44,
+      "width": 300,
+      "height": 56
+    }
+  }
+}

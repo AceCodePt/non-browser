@@ -1,0 +1,26 @@
+{
+  "name": "flex-nowrap-space-around-stretch",
+  "note": "Value-sweep fixture (flex): nowrap/space-around/stretch. Generated programmatically by scripts/generate-sweep.mjs from the flex axis tables.",
+  "harvest": {
+    "viewport": {
+      "width": 320,
+      "height": 140
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c\" style=\"display:flex;flex-wrap:nowrap;justify-content:space-around;align-items:stretch;width:300px;height:120px;gap:8px;background:#f0f0f0\"><div id=\"a\" style=\"width:90px;height:40px;background:#4a90d9\"></div><div id=\"b\" style=\"width:70px;height:60px;background:#d9534f\"></div><div id=\"e\" style=\"width:110px;height:30px;background:#90b04f\"></div><div id=\"d\" style=\"width:60px;height:50px;background:#d0a0a0\"></div></div></body></html>",
+    "measureText": [],
+    "rects": [
+      "c",
+      "a",
+      "b",
+      "e",
+      "d"
+    ],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

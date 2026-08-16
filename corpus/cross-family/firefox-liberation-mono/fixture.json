@@ -1,0 +1,25 @@
+{
+  "name": "firefox-liberation-mono",
+  "browser": "firefox",
+  "note": "Multi-family stack landing on Source Code Pro via the firefox fallback table at layout time: 'Liberation Mono', 'Courier New', monospace resolves the first family (Liberation Mono) -> Source Code Pro (firefox.ts fallback), and the block text wraps/paints with the resolved mono face — matching Firefox's Gecko resolution on this system. A second firefox fallback entry exercised at layout time.",
+  "harvest": {
+    "viewport": { "width": 480, "height": 200 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"n1\" style=\"font-family:'Liberation Mono', 'Courier New', monospace;font-size:14px;line-height:22px;width:340px\">The five boxing wizards jump quickly. How vexingly quick daft zebras jump!</div><div id=\"n2\" style=\"font-family:'Liberation Mono', 'Courier New', monospace;font-size:18px;line-height:28px;width:300px\">Pack my box with five dozen liquor jugs.</div></body></html>",
+    "measureText": [
+      { "text": "The five boxing wizards jump quickly. How vexingly quick daft zebras jump!", "font": "14px 'Liberation Mono'" },
+      { "text": "Pack my box with five dozen liquor jugs.", "font": "18px 'Liberation Mono'" }
+    ],
+    "computedStyle": [
+      { "id": "n1", "props": ["display", "font-size", "line-height", "width", "box-sizing", "white-space"] },
+      { "id": "n2", "props": ["display", "font-size", "line-height", "width", "box-sizing", "white-space"] }
+    ],
+    "rects": ["n1", "n2"],
+    "textElements": ["n1", "n2"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

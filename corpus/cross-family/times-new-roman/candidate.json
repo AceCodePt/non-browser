@@ -1,0 +1,38 @@
+{
+  "measureText": {
+    "16px 'Times New Roman' | The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.": 564.3400268554688,
+    "20px 'Times New Roman' | How vexingly quick daft zebras jump!": 308.25
+  },
+  "computedStyle": {
+    "p1": {
+      "display": "block",
+      "font-size": "16px",
+      "line-height": "24px",
+      "width": "300px",
+      "box-sizing": "content-box",
+      "white-space": "normal"
+    },
+    "p2": {
+      "display": "block",
+      "font-size": "20px",
+      "line-height": "30px",
+      "width": "260px",
+      "box-sizing": "content-box",
+      "white-space": "normal"
+    }
+  },
+  "rect": {
+    "p1": {
+      "x": 0,
+      "y": 0,
+      "width": 300,
+      "height": 48
+    },
+    "p2": {
+      "x": 0,
+      "y": 48,
+      "width": 260,
+      "height": 60
+    }
+  }
+}
