@@ -27,7 +27,18 @@ measurements) maps `Times New Roman`/`Georgia`/`serif` → Liberation Serif,
 `Arial`/`sans-serif` → Liberation Sans, and `Courier New` → Liberation Mono, so
 the cross-family corpus (`corpus/cross-family/`, `npm run verify:cross-family`)
 exercises `resolveFontFamily` at layout time. The firefox table maps `Courier
-New`/`Liberation Mono` → Source Code Pro (see `firefox.md`).
+New`/`Liberation Mono` → Source Code Pro (see `firefox.md`). The safari table
+(`src/config/safari.ts`) resolves the generics and metric-compatible families
+through the host's fontconfig resolution — `Courier New` → Liberation Mono,
+`Arial`/`sans-serif` → Liberation Sans, `Times New Roman`/`Georgia`/`serif` →
+Liberation Serif, `monospace` → the installed fixed-pitch face (Hack Nerd Font
+when present, else Liberation Mono) — see `safari.md`.
+
+Pretext's measurement context resolves the same authority the engine measure
+path uses: `src/pretext/index.ts` resolves the CSS family inside the font
+shorthand through the active config via `resolveFontFamily` before the Canvas is
+touched (identical to `cssFontString` in `src/layout/measure.ts`), so the seam
+and the engine measure the same per-browser faces for any fixture family.
 
 ## Method
 

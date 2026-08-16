@@ -23,8 +23,27 @@ import {
   type PreparedTextWithSegments,
 } from '@chenglou/pretext';
 import type { CanvasLike } from '../canvas/interface.js';
+import { getActiveBrowserConfig, resolveFontFamily } from '../config/browser-config.js';
 
 export type { PrepareOptions };
+
+/**
+ * Resolve the CSS font-family inside a Pretext font shorthand through the
+ * active browser-config, so the seam measures the exact family the engine's
+ * measureTextWidth would. `prepareText`/`layoutLines` receive the fixture's
+ * real computed family (e.g. `16px 'Courier New'`); the shorthand keeps its
+ * size/weight/style prefix and only the family is replaced with the resolved
+ * registered face — identical to `cssFontString` in src/layout/measure.ts, so
+ * the seam and the engine share one font-resolution authority.
+ */
+export function resolveFontFamilyInShorthand(font: string): string {
+  const sizeMatch = font.match(/[\d.]+px(?:\/(?:[\d.]+|normal))?(\s+[^;]+)$/);
+  if (!sizeMatch) return font;
+  const familyPart = sizeMatch[1].trim().replace(/^["']+|["']+$/g, '');
+  if (familyPart === '') return font;
+  const resolved = resolveFontFamily(getActiveBrowserConfig(), familyPart);
+  return font.slice(0, font.length - sizeMatch[1].length) + ` '${resolved}'`;
+}
 
 /** The subset of a 2d measurement context Pretext actually consumes. */
 export interface MeasureContextLike {
@@ -35,7 +54,10 @@ export interface MeasureContextLike {
 /**
  * A 2d context adapter whose `measureText` goes through the Canvas interface.
  * Pretext only ever sets `.font` and calls `.measureText(...).width`, so this
- * is the whole surface it needs.
+ * is the whole surface it needs. Each measurement resolves the CSS family
+ * through the active browser-config before hitting the Canvas (see
+ * `resolveFontFamilyInShorthand`), keeping the seam on the same face the engine
+ * measures with — the body of the browser-config seam parity work.
  */
 class InterfaceMeasureContext implements MeasureContextLike {
   private currentFont = '14px sans-serif';
@@ -51,7 +73,7 @@ class InterfaceMeasureContext implements MeasureContextLike {
   }
 
   measureText(text: string): { width: number } {
-    return { width: this.canvas.measureText(text, this.currentFont).width };
+    return { width: this.canvas.measureText(text, resolveFontFamilyInShorthand(this.currentFont)).width };
   }
 }
 

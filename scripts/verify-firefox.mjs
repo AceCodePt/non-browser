@@ -143,14 +143,14 @@ try {
             frags.push({ x: r.x, y: r.y, width: r.width, height: r.height });
           }
           const cs = getComputedStyle(el);
-          return { text: el.textContent, clientWidth: el.clientWidth, fontSize: cs.fontSize, letterSpacing: cs.letterSpacing, frags };
+          return { text: el.textContent, clientWidth: el.clientWidth, fontSize: cs.fontSize, fontFamily: cs.fontFamily, letterSpacing: cs.letterSpacing, frags };
         }, id);
         if (!info) continue;
         fragments.push(...info.frags);
         fragmentsById[id] = info.frags.map((f) => f.width);
         textsById[id] = info.text ?? '';
         widthsById[id] = info.clientWidth;
-        fontById[id] = { fontSize: info.fontSize, letterSpacing: info.letterSpacing };
+        fontById[id] = { fontSize: info.fontSize, fontFamily: info.fontFamily, letterSpacing: info.letterSpacing };
       }
     }
 
@@ -183,6 +183,9 @@ try {
     }
 
     // --- Pretext seam over the Canvas interface (same seam as the chrome path) ---
+    // The seam is handed the fixture's real computed font-family (harvested
+    // from the element, not the hard-coded default), so a fallback fixture
+    // resolves via resolveFontFamily exactly as the engine measure path does.
     let pretextPass = true;
     let pretextDetail = 'no text elements';
     const textIds = h.textElements ?? [];
@@ -195,10 +198,11 @@ try {
         const text = textsById[id];
         const maxWidth = widthsById[id] ?? viewport.width;
         if (!text || !text.trim()) continue;
-        const f = fontById[id] ?? { fontSize: '16px', letterSpacing: 'normal' };
+        const f = fontById[id] ?? { fontSize: '16px', fontFamily: FONT_FAMILY, letterSpacing: 'normal' };
         const fontSize = parseFloat(f.fontSize) || 16;
+        const family = f.fontFamily && f.fontFamily.trim() ? f.fontFamily.trim().replace(/^["']+|["']+$/g, '') : FONT_FAMILY;
         const ls = f.letterSpacing && f.letterSpacing !== 'normal' ? parseFloat(f.letterSpacing) : 0;
-        const prepared = prepareText(text, `${fontSize}px '${FONT_FAMILY}'`, { letterSpacing: ls });
+        const prepared = prepareText(text, `${fontSize}px '${family}'`, { letterSpacing: ls });
         const res = layoutLines(prepared, maxWidth, 24);
         const chromeWidths = fragmentsById[id] ?? [];
         if (chromeWidths.length === 0) continue;
@@ -215,10 +219,15 @@ try {
         }
       }
       if (pretextPass && totalLines > 0) {
-        const maxPx = tolerances.layers.rect.maxPx;
+        // Gate the seam on the charter layer-1 tolerances, mean AND max: the
+        // seam must render the fixture's real family within <0.01px mean and
+        // ≤ maxPx per line (the fallback fixture resolves through the firefox
+        // fallback table to Source Code Pro, which Firefox reproduces exactly).
+        const maxPx = tolerances.layers.measureText.maxPx;
+        const meanPx = tolerances.layers.measureText.meanPx;
         const meanDelta = meanSum / totalLines;
-        pretextPass = maxDelta <= maxPx;
-        pretextDetail = `mean Δ ${meanDelta.toFixed(4)}px, max Δ ${maxDelta.toFixed(4)}px over ${totalLines} lines (≤ ${maxPx}px)`;
+        pretextPass = maxDelta <= maxPx && meanDelta <= meanPx;
+        pretextDetail = `mean Δ ${meanDelta.toFixed(4)}px, max Δ ${maxDelta.toFixed(4)}px over ${totalLines} lines (mean ≤ ${meanPx}px, max ≤ ${maxPx}px)`;
       }
       pretextResults.push({ name, pass: pretextPass, detail: pretextDetail });
     }

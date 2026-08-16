@@ -136,6 +136,69 @@ export const FIXTURES = [
     rects: ['a', 'b'],
     textElements: ['a', 'b'],
   },
+  {
+    name: 'safari-courier-new',
+    note: "safari-track: unregistered family WebKit's fontconfig resolves to Liberation Mono (safari fallback table carries it; chrome agrees, firefox diverges via its own table)",
+    viewport: { width: 460, height: 160 },
+    html:
+      "<html><head><style>html,body{margin:0;padding:0}</style></head>" +
+      "<body><div id=\"p1\" style=\"font-family:'Courier New';font-size:16px;line-height:24px;width:300px\">" +
+      "The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.</div>" +
+      "<div id=\"p2\" style=\"font-family:'Courier New';font-size:20px;line-height:30px;width:260px\">" +
+      "How vexingly quick daft zebras jump!</div></body></html>",
+    measureText: [
+      { text: 'The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.', font: "16px 'Courier New'" },
+      { text: 'How vexingly quick daft zebras jump!', font: "20px 'Courier New'" },
+    ],
+    computedStyle: [
+      { id: 'p1', props: ['font-family', 'font-size', 'line-height', 'width'] },
+      { id: 'p2', props: ['font-family', 'font-size', 'line-height', 'width'] },
+    ],
+    rects: ['p1', 'p2'],
+    textElements: ['p1', 'p2'],
+  },
+  {
+    name: 'safari-monospace-generic',
+    note: 'safari-track: the generic monospace family resolves through the safari fallback table to the installed fixed-pitch face (fc-match monospace)',
+    viewport: { width: 460, height: 160 },
+    html:
+      "<html><head><style>html,body{margin:0;padding:0}</style></head>" +
+      "<body><div id=\"p1\" style=\"font-family:'monospace';font-size:16px;line-height:24px;width:300px\">" +
+      "The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.</div>" +
+      "<div id=\"p2\" style=\"font-family:'monospace';font-size:20px;line-height:30px;width:260px\">" +
+      "How vexingly quick daft zebras jump!</div></body></html>",
+    measureText: [
+      { text: 'The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.', font: "16px 'monospace'" },
+      { text: 'How vexingly quick daft zebras jump!', font: "20px 'monospace'" },
+    ],
+    computedStyle: [
+      { id: 'p1', props: ['font-family', 'font-size', 'line-height', 'width'] },
+      { id: 'p2', props: ['font-family', 'font-size', 'line-height', 'width'] },
+    ],
+    rects: ['p1', 'p2'],
+    textElements: ['p1', 'p2'],
+  },
+  {
+    name: 'safari-serif-generic',
+    note: 'safari-track: the generic serif family resolves through the safari fallback table to the installed serif face (fc-match serif)',
+    viewport: { width: 460, height: 160 },
+    html:
+      "<html><head><style>html,body{margin:0;padding:0}</style></head>" +
+      "<body><div id=\"p1\" style=\"font-family:'serif';font-size:16px;line-height:24px;width:300px\">" +
+      "The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.</div>" +
+      "<div id=\"p2\" style=\"font-family:'serif';font-size:20px;line-height:30px;width:260px\">" +
+      "How vexingly quick daft zebras jump!</div></body></html>",
+    measureText: [
+      { text: 'The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.', font: "16px 'serif'" },
+      { text: 'How vexingly quick daft zebras jump!', font: "20px 'serif'" },
+    ],
+    computedStyle: [
+      { id: 'p1', props: ['font-family', 'font-size', 'line-height', 'width'] },
+      { id: 'p2', props: ['font-family', 'font-size', 'line-height', 'width'] },
+    ],
+    rects: ['p1', 'p2'],
+    textElements: ['p1', 'p2'],
+  },
 ];
 
 /**
