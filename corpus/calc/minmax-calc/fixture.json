@@ -1,0 +1,26 @@
+{
+  "name": "minmax-calc",
+  "note": "calc() track sizes in minmax(): a minmax with a calc() max, a bare calc() track, and minmax + fr interplay (definite calc tracks subtract from fr space).",
+  "harvest": {
+    "viewport": {
+      "width": 340,
+      "height": 100
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"g\" style=\"display:grid;grid-template-columns:minmax(100px,calc(50% - 30px)) calc(20% + 10px) 1fr minmax(50px,calc(30% + 10px));gap:8px;width:320px;background:#f0f0f0\"><div id=\"a\" style=\"height:30px;background:#4a90d9\"></div><div id=\"b\" style=\"height:30px;background:#d9534f\"></div><div id=\"c\" style=\"height:30px;background:#90b04f\"></div><div id=\"d\" style=\"height:30px;background:#4a90d9\"></div></div></body></html>",
+    "measureText": [],
+    "rects": [
+      "g",
+      "a",
+      "b",
+      "c",
+      "d"
+    ],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

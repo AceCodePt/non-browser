@@ -1,0 +1,26 @@
+{
+  "name": "nested-calc",
+  "note": "Nested value functions: min()/max()/clamp() as calc() arguments and as the whole length, plus clamp() with a calc() middle value.",
+  "harvest": {
+    "viewport": {
+      "width": 320,
+      "height": 160
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"par\" style=\"width:280px;background:#f0f0f0;overflow:hidden\"><div id=\"a\" style=\"height:30px;width:calc(min(50%, 120px) + 8px);background:#4a90d9\"></div><div id=\"b\" style=\"height:30px;width:clamp(50px, 40% + 10px, 140px);background:#d9534f\"></div><div id=\"c\" style=\"height:30px;width:max(20%, 90px);background:#90b04f\"></div><div id=\"d\" style=\"height:30px;width:calc(max(30%, 60px) - 10px);background:#4a90d9\"></div></div></body></html>",
+    "measureText": [],
+    "rects": [
+      "par",
+      "a",
+      "b",
+      "c",
+      "d"
+    ],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

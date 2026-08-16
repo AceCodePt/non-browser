@@ -1,0 +1,25 @@
+{
+  "name": "width-calc",
+  "note": "Block widths with calc() mixing px and % (css-values-4 unit mixing) plus a px-only height calc; box-sizing defaults to content-box.",
+  "harvest": {
+    "viewport": {
+      "width": 320,
+      "height": 160
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"par\" style=\"width:280px;background:#f0f0f0;overflow:hidden\"><div id=\"a\" style=\"height:40px;width:calc(50% - 20px);background:#4a90d9\"></div><div id=\"b\" style=\"height:40px;width:calc(30% + 40px);background:#d9534f\"></div><div id=\"c\" style=\"height:calc(30px + 10px);width:calc(100% - 60px);background:#90b04f\"></div></div></body></html>",
+    "measureText": [],
+    "rects": [
+      "par",
+      "a",
+      "b",
+      "c"
+    ],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "inset-calc",
+  "note": "Absolutely-positioned box offset by calc() insets mixing % and px: left resolves against the containing block width, top against its height.",
+  "harvest": {
+    "viewport": {
+      "width": 320,
+      "height": 220
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"par\" style=\"position:relative;width:280px;height:160px;background:#f0f0f0\"><div id=\"a\" style=\"position:absolute;left:calc(100% - 60px);top:calc(50% - 20px);width:50px;height:40px;background:#4a90d9\"></div><div id=\"b\" style=\"position:absolute;right:calc(30% + 10px);bottom:calc(25% + 4px);width:70px;height:30px;background:#d9534f\"></div></div></body></html>",
+    "measureText": [],
+    "rects": [
+      "par",
+      "a",
+      "b"
+    ],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

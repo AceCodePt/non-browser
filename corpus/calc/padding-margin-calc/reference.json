@@ -1,0 +1,24 @@
+{
+  "measureText": {},
+  "computedStyle": {},
+  "rect": {
+    "par": {
+      "x": 0,
+      "y": 0,
+      "width": 280,
+      "height": 144
+    },
+    "a": {
+      "x": 10.390625,
+      "y": 18,
+      "width": 228,
+      "height": 68
+    },
+    "b": {
+      "x": 24,
+      "y": 104,
+      "width": 108,
+      "height": 40
+    }
+  }
+}

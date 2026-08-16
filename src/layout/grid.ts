@@ -28,6 +28,7 @@ import {
   type SelfAlign,
   type TrackDef,
   type TrackFunction,
+  type Viewport,
 } from './css.js';
 import { layoutTextLines, measureTextWidth } from './measure.js';
 import { FloatManager, layoutElementBox, type LayoutNode, type PaintOp } from './block-inline.js';
@@ -45,12 +46,14 @@ function marginsBlock(style: ComputedStyle, ref: number): { top: number; bottom:
   return { top: resolveLength(style.margin.top, ref) ?? 0, bottom: resolveLength(style.margin.bottom, ref) ?? 0 };
 }
 
-function resolveTrackFn(fn: TrackFunction, containerSize: number | null): number | null {
+function resolveTrackFn(fn: TrackFunction, containerSize: number | null, viewport?: Viewport | null): number | null {
   switch (fn.type) {
     case 'fixed':
       return fn.px;
     case 'pct':
       return containerSize === null ? null : (fn.pct / 100) * containerSize;
+    case 'calc':
+      return resolveLength(fn.len, containerSize ?? 0, viewport);
     default:
       return null;
   }
@@ -565,16 +568,16 @@ interface TrackSet {
   flexFactor: number;
 }
 
-function buildSets(trackDefs: TrackDef[], containerSize: number | null): TrackSet[] {
+function buildSets(trackDefs: TrackDef[], containerSize: number | null, viewport?: Viewport | null): TrackSet[] {
   return trackDefs.map((def, index) => {
-    const base = resolveTrackFn(def.min, containerSize);
-    const gl = resolveTrackFn(def.max, containerSize);
+    const base = resolveTrackFn(def.min, containerSize, viewport);
+    const gl = resolveTrackFn(def.max, containerSize, viewport);
     const set: TrackSet = {
       index,
       def,
       baseSize: base ?? 0,
       growthLimit: gl ?? Infinity,
-      fitContentLimit: def.max.type === 'fit-content' ? (def.max.limit.px ?? (def.max.limit.pct !== null && containerSize !== null ? (def.max.limit.pct / 100) * containerSize : null)) : null,
+      fitContentLimit: def.max.type === 'fit-content' && !def.max.limit.auto ? resolveLength(def.max.limit, containerSize ?? 0, viewport) : null,
       isInfinitelyGrowable: false,
       itemIncurredIncrease: 0,
       plannedIncrease: -1,
@@ -934,8 +937,9 @@ function computeTrackSizes(
   availableSize: number | null,
   gutterSize: number,
   contentAlignment: ContentAlign,
+  viewport?: Viewport | null,
 ): number[] {
-  const sets = buildSets(trackDefs, availableSize);
+  const sets = buildSets(trackDefs, availableSize, viewport);
   if (sets.some((s) => s.hasIntrinsicMin || s.hasIntrinsicMax)) {
     resolveIntrinsic(sets, items, gutterSize);
   }
@@ -1020,10 +1024,11 @@ export interface GridLayoutInput {
   availableHeight: number | null;
   paints: PaintOp[];
   nextOrder: () => number;
+  viewport?: Viewport | null;
 }
 
 export function layoutGridChildren(input: GridLayoutInput): { children: LayoutNode[]; height: number } {
-  const { el, style, styles, contentX, contentY, contentWidth, availableHeight, paints, nextOrder } = input;
+  const { el, style, styles, contentX, contentY, contentWidth, availableHeight, paints, nextOrder, viewport } = input;
   const styleRef = style;
 
   const explicitColCount = styleRef.gridTemplateColumns?.tracks.length ?? 0;
@@ -1098,7 +1103,7 @@ export function layoutGridChildren(input: GridLayoutInput): { children: LayoutNo
     });
   }
 
-  const colSizes = computeTrackSizes(colDefs, colItems, contentWidth, colGap, styleRef.justifyContent);
+  const colSizes = computeTrackSizes(colDefs, colItems, contentWidth, colGap, styleRef.justifyContent, viewport);
   const { offsets: colOffsets, adjustedGutter: colGutter } = trackOffsets(colSizes, colGap, contentWidth, styleRef.justifyContent);
 
   const rowItems: SizingItem[] = [];
@@ -1125,7 +1130,7 @@ export function layoutGridChildren(input: GridLayoutInput): { children: LayoutNo
     });
   }
 
-  const rowSizes = computeTrackSizes(rowDefs, rowItems, availableHeight, rowGap, styleRef.alignContent);
+  const rowSizes = computeTrackSizes(rowDefs, rowItems, availableHeight, rowGap, styleRef.alignContent, viewport);
   const { offsets: rowOffsets, adjustedGutter: rowGutter } = trackOffsets(rowSizes, rowGap, availableHeight, styleRef.alignContent);
 
   const contentHeight =
