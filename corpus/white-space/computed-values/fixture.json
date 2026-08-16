@@ -1,0 +1,77 @@
+{
+  "name": "computed-values",
+  "note": "Computed white-space values are exact for every value the engine computes (normal, nowrap, pre, pre-wrap, pre-line), and the property inherits: the span under a white-space:pre parent computes to 'pre'. Each box holds a single 'x' so rect/screenshot layers stay trivial while layer-2 is exact.",
+  "harvest": {
+    "viewport": {
+      "width": 480,
+      "height": 200
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"n\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;width:60px;white-space:normal\">x</div><div id=\"w\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;width:60px;white-space:nowrap\">x</div><div id=\"p\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;width:60px;white-space:pre\">x</div><div id=\"pw\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;width:60px;white-space:pre-wrap\">x</div><div id=\"pl\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;width:60px;white-space:pre-line\">x</div><div id=\"wrap\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;width:60px;white-space:pre\"><span id=\"inh\">x</span></div></body></html>",
+    "measureText": [
+      {
+        "text": "x",
+        "font": "14px 'Noto Sans'"
+      }
+    ],
+    "rects": [
+      "n",
+      "w",
+      "p",
+      "pw",
+      "pl",
+      "wrap"
+    ],
+    "computedStyle": [
+      {
+        "id": "n",
+        "props": [
+          "white-space"
+        ]
+      },
+      {
+        "id": "w",
+        "props": [
+          "white-space"
+        ]
+      },
+      {
+        "id": "p",
+        "props": [
+          "white-space"
+        ]
+      },
+      {
+        "id": "pw",
+        "props": [
+          "white-space"
+        ]
+      },
+      {
+        "id": "pl",
+        "props": [
+          "white-space"
+        ]
+      },
+      {
+        "id": "inh",
+        "props": [
+          "white-space"
+        ]
+      }
+    ],
+    "textElements": [
+      "n",
+      "w",
+      "p",
+      "pw",
+      "pl",
+      "wrap"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

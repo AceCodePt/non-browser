@@ -1,0 +1,45 @@
+{
+  "name": "pre-basic",
+  "note": "white-space:pre on multi-line text: runs of spaces and the leading indentation are preserved verbatim, newlines force line breaks, no wrapping occurs. The line-fragment widths (incl. the double space and the indented second line) are the geometry under test.",
+  "harvest": {
+    "viewport": {
+      "width": 480,
+      "height": 200
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;width:200px;white-space:pre\">first  line\n   indented  second\nthird</div></body></html>",
+    "measureText": [
+      {
+        "text": "first  line",
+        "font": "14px 'Noto Sans'"
+      },
+      {
+        "text": "   indented  second",
+        "font": "14px 'Noto Sans'"
+      },
+      {
+        "text": "third",
+        "font": "14px 'Noto Sans'"
+      }
+    ],
+    "rects": [
+      "c"
+    ],
+    "computedStyle": [
+      {
+        "id": "c",
+        "props": [
+          "white-space"
+        ]
+      }
+    ],
+    "textElements": [
+      "c"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

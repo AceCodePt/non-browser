@@ -1,0 +1,37 @@
+{
+  "name": "nowrap-mixed",
+  "note": "white-space:nowrap on mixed inline content (text + an inline span): no wrapping even though a space separates the pieces, so the whole run overflows the 100px box on one line. Collapse still applies (leading/trailing and runs collapse), matching Chrome's single line box.",
+  "harvest": {
+    "viewport": {
+      "width": 480,
+      "height": 200
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;width:100px;white-space:nowrap\">a <span>very</span> long label</div></body></html>",
+    "measureText": [
+      {
+        "text": "a very long label",
+        "font": "14px 'Noto Sans'"
+      }
+    ],
+    "rects": [
+      "c"
+    ],
+    "computedStyle": [
+      {
+        "id": "c",
+        "props": [
+          "white-space"
+        ]
+      }
+    ],
+    "textElements": [
+      "c"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

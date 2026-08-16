@@ -186,6 +186,14 @@ export type VerticalAlign = 'baseline' | 'top' | 'middle' | 'bottom';
  */
 export type TextAlign = 'left' | 'center' | 'right' | 'justify';
 
+/**
+ * The used `white-space` value (CSS Text 3 §3): how runs of white space and
+ * newlines are processed and whether the text wraps. The full five-value set
+ * is computed so the breaker can honor it; the old three-value set (normal /
+ * nowrap / pre) is a strict subset.
+ */
+export type WhiteSpaceValue = 'normal' | 'nowrap' | 'pre' | 'pre-wrap' | 'pre-line';
+
 /** The parsed `content` value of a ::before/::after pseudo-element. */
 export type ContentValue = { kind: 'none' } | { kind: 'text'; text: string };
 
@@ -249,7 +257,7 @@ export interface ComputedStyle {
   fontFamily: string;
   fontSize: number;
   lineHeight: number;
-  whiteSpace: 'normal' | 'nowrap' | 'pre';
+  whiteSpace: WhiteSpaceValue;
 
   // --- text paint properties ---
   /** letter-spacing in px (0 = normal). Negative values are allowed. */
@@ -976,6 +984,8 @@ interface Defaults {
   textAlignInherited?: TextAlign;
   /** inherited computed text-align string (start/end/justify/... preserved verbatim). */
   textAlignComputedInherited?: string;
+  /** inherited white-space (white-space is inherited; used when no author value). */
+  whiteSpaceDefault?: WhiteSpaceValue;
   /** UA-level default border-collapse (table gets 'separate'). */
   borderCollapseDefault?: 'separate' | 'collapse';
   /** UA-level default horizontal border-spacing (table gets 2px). */
@@ -1204,13 +1214,14 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     overflowDecl && overflowDecl.value.trim() !== 'visible' ? 'hidden' : 'visible';
 
   const wsDecl = decls.find((d) => d.property === 'white-space');
-  const whiteSpace: 'normal' | 'nowrap' | 'pre' = wsDecl
-    ? wsDecl.value.trim() === 'pre'
-      ? 'pre'
-      : wsDecl.value.trim() === 'nowrap'
-        ? 'nowrap'
-        : 'normal'
-    : 'normal';
+  let whiteSpace: WhiteSpaceValue = wsDecl
+    ? (wsDecl.value.trim() as WhiteSpaceValue)
+    : (defaults.whiteSpaceDefault ?? 'normal');
+  if (whiteSpace !== 'normal' && whiteSpace !== 'nowrap' && whiteSpace !== 'pre' && whiteSpace !== 'pre-wrap' && whiteSpace !== 'pre-line') {
+    // Unknown / out-of-scope keyword: fall back to the inherited default
+    // (Chrome computes unknown values to `normal` for the legacy property).
+    whiteSpace = defaults.whiteSpaceDefault ?? 'normal';
+  }
 
   // --- text paint properties (inherited) ---
   const letterSpacingDecl = decls.find((d) => d.property === 'letter-spacing');

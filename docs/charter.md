@@ -136,7 +136,7 @@ the charter and the corpus cannot silently diverge:
 | block/inline | position | yes | corpus/positioning | position |
 | block/inline | z-index | yes | corpus/positioning | z-index |
 | block/inline | box-sizing | yes | corpus/spine | box-sizing |
-| text | white-space | yes | corpus/spine | white-space |
+| text | white-space | yes | corpus/spine, corpus/white-space | white-space |
 | text | letter-spacing | yes | corpus/paint-text, corpus/measure-corpus | letter-spacing |
 | text | text-decoration | yes | corpus/paint-text | text-decoration |
 | font | font-family (fallback tables) | yes | corpus/cross-family, corpus/firefox-track | font-family |

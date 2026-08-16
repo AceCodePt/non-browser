@@ -1,0 +1,45 @@
+{
+  "name": "pre-wrap",
+  "note": "white-space:pre-wrap preserves space sequences and newlines while wrapping at spaces: line 1 wraps before 'epsilon' keeping a single hung space (Chrome's 3.64px box), 'epsilon' wraps to line 2, and the third line keeps its 2-space indentation. Line fragment geometry is compared per line.",
+  "harvest": {
+    "viewport": {
+      "width": 480,
+      "height": 200
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;width:200px;white-space:pre-wrap\">alpha   beta gamma delta epsilon\n  zeta   eta</div></body></html>",
+    "measureText": [
+      {
+        "text": "alpha   beta gamma delta epsilon",
+        "font": "14px 'Noto Sans'"
+      },
+      {
+        "text": "alpha   beta gamma delta",
+        "font": "14px 'Noto Sans'"
+      },
+      {
+        "text": "  zeta   eta",
+        "font": "14px 'Noto Sans'"
+      }
+    ],
+    "rects": [
+      "c"
+    ],
+    "computedStyle": [
+      {
+        "id": "c",
+        "props": [
+          "white-space"
+        ]
+      }
+    ],
+    "textElements": [
+      "c"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

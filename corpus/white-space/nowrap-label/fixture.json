@@ -1,0 +1,37 @@
+{
+  "name": "nowrap-label",
+  "note": "white-space:nowrap suppresses wrapping: a label wider than its 120px box lays out on one line and overflows the box (matching Chrome's single fragment and the 22px element height). Newlines collapse to spaces, so no break is possible.",
+  "harvest": {
+    "viewport": {
+      "width": 480,
+      "height": 200
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;width:120px;white-space:nowrap\">a very long single line label that overflows the box</div></body></html>",
+    "measureText": [
+      {
+        "text": "a very long single line label that overflows the box",
+        "font": "14px 'Noto Sans'"
+      }
+    ],
+    "rects": [
+      "c"
+    ],
+    "computedStyle": [
+      {
+        "id": "c",
+        "props": [
+          "white-space"
+        ]
+      }
+    ],
+    "textElements": [
+      "c"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

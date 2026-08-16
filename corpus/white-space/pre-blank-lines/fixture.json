@@ -1,0 +1,37 @@
+{
+  "name": "pre-blank-lines",
+  "note": "white-space:pre with leading, interior, and trailing blank lines: each segment between newlines is a line box (empty segments included as full-height empty lines), while the trailing newline's final empty segment is dropped — Chrome lays out exactly four 22px lines for '\\n\\n  blank lines above and below\\n\\n'.",
+  "harvest": {
+    "viewport": {
+      "width": 480,
+      "height": 200
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;width:200px;white-space:pre\">\n\n  blank lines above and below\n\n</div></body></html>",
+    "measureText": [
+      {
+        "text": "  blank lines above and below",
+        "font": "14px 'Noto Sans'"
+      }
+    ],
+    "rects": [
+      "c"
+    ],
+    "computedStyle": [
+      {
+        "id": "c",
+        "props": [
+          "white-space"
+        ]
+      }
+    ],
+    "textElements": [
+      "c"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

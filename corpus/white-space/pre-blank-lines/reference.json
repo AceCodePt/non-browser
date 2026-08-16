@@ -1,0 +1,52 @@
+{
+  "measureText": {
+    "14px 'Noto Sans' |   blank lines above and below": 192.61123657226562
+  },
+  "computedStyle": {
+    "c": {
+      "white-space": "pre"
+    }
+  },
+  "rect": {
+    "c": {
+      "x": 0,
+      "y": 0,
+      "width": 200,
+      "height": 88
+    }
+  },
+  "fragments": {
+    "c": [
+      {
+        "x": 0,
+        "y": 1,
+        "width": 0,
+        "height": 19
+      },
+      {
+        "x": 0,
+        "y": 23,
+        "width": 0,
+        "height": 19
+      },
+      {
+        "x": 0,
+        "y": 45,
+        "width": 192.625,
+        "height": 19
+      },
+      {
+        "x": 192.625,
+        "y": 45,
+        "width": 0,
+        "height": 19
+      },
+      {
+        "x": 0,
+        "y": 67,
+        "width": 0,
+        "height": 19
+      }
+    ]
+  }
+}

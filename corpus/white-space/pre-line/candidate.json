@@ -1,0 +1,42 @@
+{
+  "measureText": {
+    "14px 'Noto Sans' | alpha beta gamma delta epsilon": 211.63999938964844,
+    "14px 'Noto Sans' | alpha beta gamma delta": 160.44000244140625,
+    "14px 'Noto Sans' | zeta eta": 51.83000183105469
+  },
+  "computedStyle": {
+    "c": {
+      "white-space": "pre-line"
+    }
+  },
+  "rect": {
+    "c": {
+      "x": 0,
+      "y": 0,
+      "width": 200,
+      "height": 66
+    }
+  },
+  "fragments": {
+    "c": [
+      {
+        "x": 0,
+        "y": 1,
+        "width": 160.44000244140625,
+        "height": 19
+      },
+      {
+        "x": 0,
+        "y": 23,
+        "width": 47.560001373291016,
+        "height": 19
+      },
+      {
+        "x": 0,
+        "y": 45,
+        "width": 51.83000183105469,
+        "height": 19
+      }
+    ]
+  }
+}

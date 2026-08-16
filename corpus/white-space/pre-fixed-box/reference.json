@@ -1,0 +1,41 @@
+{
+  "measureText": {
+    "14px 'Noto Sans' | abc   ": 34.10386657714844,
+    "14px 'Noto Sans' | def": 21.321914672851562
+  },
+  "computedStyle": {
+    "c": {
+      "white-space": "pre"
+    }
+  },
+  "rect": {
+    "c": {
+      "x": 0,
+      "y": 0,
+      "width": 120,
+      "height": 44
+    }
+  },
+  "fragments": {
+    "c": [
+      {
+        "x": 0,
+        "y": 1,
+        "width": 34.109375,
+        "height": 19
+      },
+      {
+        "x": 34.109375,
+        "y": 1,
+        "width": 0,
+        "height": 19
+      },
+      {
+        "x": 0,
+        "y": 23,
+        "width": 21.328125,
+        "height": 19
+      }
+    ]
+  }
+}

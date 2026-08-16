@@ -1,0 +1,119 @@
+{
+  "measureText": {
+    "14px 'Noto Sans' | x": 7.405975341796875
+  },
+  "computedStyle": {
+    "n": {
+      "white-space": "normal"
+    },
+    "w": {
+      "white-space": "nowrap"
+    },
+    "p": {
+      "white-space": "pre"
+    },
+    "pw": {
+      "white-space": "pre-wrap"
+    },
+    "pl": {
+      "white-space": "pre-line"
+    },
+    "inh": {
+      "white-space": "pre"
+    }
+  },
+  "rect": {
+    "n": {
+      "x": 0,
+      "y": 0,
+      "width": 60,
+      "height": 22
+    },
+    "w": {
+      "x": 0,
+      "y": 22,
+      "width": 60,
+      "height": 22
+    },
+    "p": {
+      "x": 0,
+      "y": 44,
+      "width": 60,
+      "height": 22
+    },
+    "pw": {
+      "x": 0,
+      "y": 66,
+      "width": 60,
+      "height": 22
+    },
+    "pl": {
+      "x": 0,
+      "y": 88,
+      "width": 60,
+      "height": 22
+    },
+    "wrap": {
+      "x": 0,
+      "y": 110,
+      "width": 60,
+      "height": 22
+    }
+  },
+  "fragments": {
+    "n": [
+      {
+        "x": 0,
+        "y": 1,
+        "width": 7.40625,
+        "height": 19
+      }
+    ],
+    "w": [
+      {
+        "x": 0,
+        "y": 23,
+        "width": 7.40625,
+        "height": 19
+      }
+    ],
+    "p": [
+      {
+        "x": 0,
+        "y": 45,
+        "width": 7.40625,
+        "height": 19
+      }
+    ],
+    "pw": [
+      {
+        "x": 0,
+        "y": 67,
+        "width": 7.40625,
+        "height": 19
+      }
+    ],
+    "pl": [
+      {
+        "x": 0,
+        "y": 89,
+        "width": 7.40625,
+        "height": 19
+      }
+    ],
+    "wrap": [
+      {
+        "x": 0,
+        "y": 111,
+        "width": 7.40625,
+        "height": 19
+      },
+      {
+        "x": 0,
+        "y": 111,
+        "width": 7.40625,
+        "height": 19
+      }
+    ]
+  }
+}
