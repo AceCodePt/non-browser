@@ -12,41 +12,41 @@ Programmatic breadth for the charter §11 coverage matrix: `scripts/generate-swe
 
 ## Latest Run
 
-- Generated: 2026-08-16T07:41:40.082Z
+- Generated: 2026-08-16T08:18:53.561Z
 - Fixtures swept: 110
-- Passing: 74
-- Documented divergences (typed gaps, still diverging): 36
+- Passing: 80
+- Documented divergences (typed gaps, still diverging): 30
 
 ## Swept Fixtures
 
 | Fixture | Feature | Expected | Gap layers | Rect max Δ px | Screenshot exceed % | Result |
 |---|---|---|---|---|---|---|
-| flex-nowrap-center-baseline | flexbox | gap | rect, screenshot | 30.000 | 21.7857 | PASS |
+| flex-nowrap-center-baseline | flexbox | pass | - | 0.007 | 0.6027 | PASS |
 | flex-nowrap-center-center | flexbox | pass | - | 0.007 | 0.6027 | PASS |
 | flex-nowrap-center-flex-end | flexbox | pass | - | 0.007 | 0.6027 | PASS |
 | flex-nowrap-center-flex-start | flexbox | pass | - | 0.007 | 0.6027 | PASS |
 | flex-nowrap-center-stretch | flexbox | pass | - | 0.007 | 0.6027 | PASS |
-| flex-nowrap-flex-end-baseline | flexbox | gap | rect, screenshot | 30.000 | 21.7857 | PASS |
+| flex-nowrap-flex-end-baseline | flexbox | pass | - | 0.007 | 0.6027 | PASS |
 | flex-nowrap-flex-end-center | flexbox | pass | - | 0.007 | 0.6027 | PASS |
 | flex-nowrap-flex-end-flex-end | flexbox | pass | - | 0.007 | 0.6027 | PASS |
 | flex-nowrap-flex-end-flex-start | flexbox | pass | - | 0.007 | 0.6027 | PASS |
 | flex-nowrap-flex-end-stretch | flexbox | pass | - | 0.007 | 0.6027 | PASS |
-| flex-nowrap-flex-start-baseline | flexbox | gap | rect, screenshot | 30.000 | 21.7857 | PASS |
+| flex-nowrap-flex-start-baseline | flexbox | pass | - | 0.007 | 0.6027 | PASS |
 | flex-nowrap-flex-start-center | flexbox | pass | - | 0.007 | 0.6027 | PASS |
 | flex-nowrap-flex-start-flex-end | flexbox | pass | - | 0.007 | 0.6027 | PASS |
 | flex-nowrap-flex-start-flex-start | flexbox | pass | - | 0.007 | 0.6027 | PASS |
 | flex-nowrap-flex-start-stretch | flexbox | pass | - | 0.007 | 0.6027 | PASS |
-| flex-nowrap-space-around-baseline | flexbox | gap | rect, screenshot | 30.000 | 21.7857 | PASS |
+| flex-nowrap-space-around-baseline | flexbox | pass | - | 0.007 | 0.6027 | PASS |
 | flex-nowrap-space-around-center | flexbox | pass | - | 0.007 | 0.6027 | PASS |
 | flex-nowrap-space-around-flex-end | flexbox | pass | - | 0.007 | 0.6027 | PASS |
 | flex-nowrap-space-around-flex-start | flexbox | pass | - | 0.007 | 0.6027 | PASS |
 | flex-nowrap-space-around-stretch | flexbox | pass | - | 0.007 | 0.6027 | PASS |
-| flex-nowrap-space-between-baseline | flexbox | gap | rect, screenshot | 30.000 | 21.7857 | PASS |
+| flex-nowrap-space-between-baseline | flexbox | pass | - | 0.007 | 0.6027 | PASS |
 | flex-nowrap-space-between-center | flexbox | pass | - | 0.007 | 0.6027 | PASS |
 | flex-nowrap-space-between-flex-end | flexbox | pass | - | 0.007 | 0.6027 | PASS |
 | flex-nowrap-space-between-flex-start | flexbox | pass | - | 0.007 | 0.6027 | PASS |
 | flex-nowrap-space-between-stretch | flexbox | pass | - | 0.007 | 0.6027 | PASS |
-| flex-nowrap-space-evenly-baseline | flexbox | gap | rect, screenshot | 30.000 | 21.7857 | PASS |
+| flex-nowrap-space-evenly-baseline | flexbox | pass | - | 0.007 | 0.6027 | PASS |
 | flex-nowrap-space-evenly-center | flexbox | pass | - | 0.007 | 0.6027 | PASS |
 | flex-nowrap-space-evenly-flex-end | flexbox | pass | - | 0.007 | 0.6027 | PASS |
 | flex-nowrap-space-evenly-flex-start | flexbox | pass | - | 0.007 | 0.6027 | PASS |
@@ -136,12 +136,6 @@ Programmatic breadth for the charter §11 coverage matrix: `scripts/generate-swe
 
 Fixtures whose generator run recorded a divergence carry a typed gap on the diverging layer(s) (`expected.<layer>: { result:"fail", reason, sunset }`) and are listed here. The verify script asserts each still diverges, so a divergence that closes fails the run and must be reclassified into the pass corpus.
 
-- **flex-nowrap-center-baseline** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 21.7857% exceeding.
-- **flex-nowrap-flex-end-baseline** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 21.7857% exceeding.
-- **flex-nowrap-flex-start-baseline** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 21.7857% exceeding.
-- **flex-nowrap-space-around-baseline** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 21.7857% exceeding.
-- **flex-nowrap-space-between-baseline** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 21.7857% exceeding.
-- **flex-nowrap-space-evenly-baseline** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 21.7857% exceeding.
 - **flex-wrap-center-center** — gap on screenshot; rect max Δ 0.500px, screenshot 1.4732% exceeding.
 - **flex-wrap-center-flex-end** — gap on rect, screenshot; rect max Δ 1.000px, screenshot 1.4732% exceeding.
 - **flex-wrap-flex-end-center** — gap on screenshot; rect max Δ 0.500px, screenshot 1.4732% exceeding.

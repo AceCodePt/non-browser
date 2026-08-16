@@ -67,7 +67,7 @@ declarations (7 entry-level known-gap strings inside `known-gaps`).
 
 Gap count over runs: 3 (as of 2026-08-14) before the coverage-matrix-sweep
 task added the sweep corpus. The sweep (`corpus/sweep-*`) deliberately records
-its engine divergences as typed gap fixtures (36 of 110 swept combos) — see
+its engine divergences as typed gap fixtures (30 of 110 swept combos) — see
 `docs/ledgers/sweep.md` for the full list and per-combo deltas. Each reduction
 requires closing the divergence the declaration documents; the fixtures assert
 the divergence still exists, so a stale or removed declaration fails
@@ -120,13 +120,20 @@ fallback (Noto Sans emoji/smiley, mixed-script runs, Thai, proportional tabs,
 Arabic letter-spacing). Documented in `text-measure.md`; worst Δ 146.0px. All
 single-script, single-face strings agree to ≤ 0.0050px.
 
-### 5. Flexbox baselines are hard-coded, and the Firefox zeros are tautological
+### 5. Flexbox baselines are hard-coded, and the Firefox zeros are tautological — resolved
 
-Three baseline formulas exist (block-inline, flexbox's hard-coded Noto
-fractions `1069/1000`/`293/1000`, paint via fontmetrics). Flexbox ignores the
-active browser config, so under `firefoxConfig` its baselines are wrong by
-construction. The Firefox seam reporting Δ 0.0000px is expected: it compares
-the engine against its own constants, not a browser-derived measurement.
+Three baseline formulas existed (block-inline, flexbox's hard-coded Noto
+fractions `1069/1000`/`293/1000`, paint via fontmetrics). Flexbox ignored the
+active browser config, so under `firefoxConfig` its baselines were wrong by
+construction; the Firefox seam's Δ 0.0000px compared the engine against its own
+constants, not a browser-derived measurement. That is fixed: one baseline
+authority lives in `fontmetrics.ts` (`roundedAscent`/`roundedDescent`/
+`lineAscentContribution` from the active face's parsed metrics — TTF and OTF),
+and flexbox, block-inline and paint all resolve through it. Flexbox
+`align-items:baseline`/line-baseline now derives from the active
+browser-config's registered face, so under `firefoxConfig` it measures Source
+Code Pro's real ascent/descent rather than Noto constants. The six
+`flex-nowrap-*-baseline` sweep fixtures flipped 36 → 30 gap count.
 
 ### 6. The hardening task was archived without being executed
 

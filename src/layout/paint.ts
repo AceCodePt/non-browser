@@ -79,8 +79,8 @@ function paintTextRun(
 
 /** Vertical content metrics Blink derives from the font (rounded to int). */
 function contentMetrics(fontSize: number, vm: FontVerticalMetrics): { ascent: number; descent: number; contentHeight: number } {
-  const ascent = Math.round((vm.ascent / vm.unitsPerEm) * fontSize);
-  const descent = Math.round((vm.descent / vm.unitsPerEm) * fontSize);
+  const ascent = roundedAscent(vm, fontSize);
+  const descent = roundedDescent(vm, fontSize);
   return { ascent, descent, contentHeight: ascent + descent };
 }
 

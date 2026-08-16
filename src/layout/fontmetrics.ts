@@ -1,9 +1,10 @@
 /**
- * Vertical metrics parsed from a TTF font file (hhea ascender/descender and
- * post underline metrics), used for text-decoration geometry. Blink derives its
- * underline/strikethrough/overline positions from the font's own vertical
- * metrics (see SimpleFontData::PlatformInit), so the paint module needs the
- * same numbers the oracle browser uses. Results are cached per file path.
+ * Vertical metrics parsed from a font file (TTF or OTF; hhea ascender/descender
+ * and post underline metrics), used for baseline and text-decoration geometry.
+ * Blink derives line boxes and underline/strikethrough/overline positions from
+ * the font's own vertical metrics (see SimpleFontData::PlatformInit), so layout
+ * and paint need the same numbers the oracle browser uses. Results are cached
+ * per file path.
  */
 
 import { readFileSync } from 'node:fs';
@@ -26,16 +27,6 @@ export interface FontVerticalMetrics {
 
 const cache = new Map<string, FontVerticalMetrics>();
 
-/** Noto Sans fallback, matching /usr/share/fonts/google-noto/NotoSans-*.ttf. */
-const FALLBACK: FontVerticalMetrics = {
-  unitsPerEm: 1000,
-  ascent: 1069,
-  descent: 293,
-  sxHeight: 536,
-  underlinePosition: 100,
-  underlineThickness: 50,
-};
-
 function u16(buf: Buffer, off: number): number {
   return buf.readUInt16BE(off);
 }
@@ -44,12 +35,12 @@ function s16(buf: Buffer, off: number): number {
   return buf.readInt16BE(off);
 }
 
-/** Locate a table's offset in a TTF (or first font of a TTC). */
+/** Locate a table's offset in a TTF/OTF (or first font of a TTC). */
 function tableOffset(buf: Buffer, tag: string): number | null {
   const sfnt = buf.readUInt32BE(0);
   let numTables: number;
   let recordOffset: number;
-  if (sfnt === 0x00010000 || sfnt === 0x74727565) {
+  if (sfnt === 0x00010000 || sfnt === 0x74727565 || sfnt === 0x4f54544f) {
     numTables = u16(buf, 4);
     recordOffset = 12;
   } else if (sfnt === 0x74746366) {
@@ -68,32 +59,30 @@ function tableOffset(buf: Buffer, tag: string): number | null {
 }
 
 /**
- * Parse vertical metrics for a font file. Falls back to the Noto Sans metrics
- * when the file cannot be parsed (should not happen with registered fonts).
+ * Parse vertical metrics for a font file. Every registered face (see
+ * src/config) carries the head/hhea/OS/2/post tables, so a font that cannot be
+ * parsed is a hard error — there is deliberately no hard-coded fallback, so a
+ * face's metrics always come from its own file.
  */
 export function fontVerticalMetrics(filePath: string): FontVerticalMetrics {
   const hit = cache.get(filePath);
   if (hit) return hit;
-  let metrics = FALLBACK;
-  try {
-    const buf = readFileSync(filePath);
-    const head = tableOffset(buf, 'head');
-    const hhea = tableOffset(buf, 'hhea');
-    const os2 = tableOffset(buf, 'OS/2');
-    const post = tableOffset(buf, 'post');
-    if (head !== null && hhea !== null && os2 !== null && post !== null) {
-      metrics = {
-        unitsPerEm: Math.max(u16(buf, head + 18), 1),
-        ascent: s16(buf, hhea + 4),
-        descent: Math.abs(s16(buf, hhea + 6)),
-        sxHeight: Math.max(s16(buf, os2 + 86), 1),
-        underlinePosition: -s16(buf, post + 8),
-        underlineThickness: s16(buf, post + 10),
-      };
-    }
-  } catch {
-    // fall back to defaults
+  const buf = readFileSync(filePath);
+  const head = tableOffset(buf, 'head');
+  const hhea = tableOffset(buf, 'hhea');
+  const os2 = tableOffset(buf, 'OS/2');
+  const post = tableOffset(buf, 'post');
+  if (head === null || hhea === null || os2 === null || post === null) {
+    throw new Error(`fontVerticalMetrics: font file missing required tables (head/hhea/OS/2/post): ${filePath}`);
   }
+  const metrics = {
+    unitsPerEm: Math.max(u16(buf, head + 18), 1),
+    ascent: s16(buf, hhea + 4),
+    descent: Math.abs(s16(buf, hhea + 6)),
+    sxHeight: Math.max(s16(buf, os2 + 86), 1),
+    underlinePosition: -s16(buf, post + 8),
+    underlineThickness: s16(buf, post + 10),
+  };
   cache.set(filePath, metrics);
   return metrics;
 }
