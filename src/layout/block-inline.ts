@@ -13,14 +13,14 @@
  * swap in a different FormattingContext and the same block/inline layout runs.
  */
 
-import { parseStyleAttribute, pxLength, resolveLength, makeStyle, type BorderRadius, type ComputedStyle, type Color, type Declaration, type DecorationLine, type DisplayValue, type ListStyleType, type PseudoBox, type TextAlign, type VerticalAlign, type Viewport, type WhiteSpaceValue } from './css.js';
+import { borderPaddingBlock, borderPaddingInline, parseStyleAttribute, pxLength, resolveLength, makeStyle, type BorderRadius, type ComputedStyle, type Color, type Declaration, type DecorationLine, type DisplayValue, type ListStyleType, type PseudoBox, type TextAlign, type VerticalAlign, type Viewport, type WhiteSpaceValue } from './css.js';
 import { layoutTextLines, measureTextWidth, type LineBox } from './measure.js';
 import { FloatManager, type FormattingContext } from './floats.js';
 import { layoutGridChildren } from './grid.js';
 import { layoutFlexChildren } from './flexbox.js';
 import { layoutPositionedChild, initialContainingBlock, type ContainingBlock } from './positioning.js';
 import { hasNonZeroRadius, type RoundedClip } from './radius.js';
-import { activeFontMetrics, halfXHeight, lineAscentContribution, lineDescentContribution, roundedAscent, roundedDescent, type FontVerticalMetrics } from './fontmetrics.js';
+import { activeFontMetrics, fallbackAscent, halfXHeight, lineAscentContribution, lineDescentContribution, roundedAscent, roundedDescent, type FontVerticalMetrics } from './fontmetrics.js';
 import type { P5Element, P5Text } from './types.js';
 import type { Box } from '../harness/fixtures.js';
 import type { PseudoDecls } from '../cascade/phases/media-queries.js';
@@ -613,8 +613,8 @@ export function layoutElementBox(
   const padB = resolveLength(style.padding.bottom, contentWidth, viewport) ?? 0;
   const padL = resolveLength(style.padding.left, contentWidth, viewport) ?? 0;
   const padR = resolveLength(style.padding.right, contentWidth, viewport) ?? 0;
-  const padBorderV = padT + padB + bT + bB;
-  const padBorderH = padL + padR + bL + bR;
+  const padBorderV = borderPaddingBlock(style, contentWidth, viewport);
+  const padBorderH = borderPaddingInline(style, contentWidth, viewport);
 
   // Positioned boxes push their paint key and containing block for the whole
   // subtree; their own background/border is keyed to the pushed level.
@@ -1315,7 +1315,7 @@ function counterText(listStyleType: ListStyleType, counter: number): string {
  * is the layout anchor.
  */
 function markerShape(metrics: FontVerticalMetrics | null, fontSize: number): { ascent: number; offset: number; bulletWidth: number; symbolWidth: number } {
-  const ascent = metrics ? roundedAscent(metrics, fontSize) : Math.round(fontSize * 0.75);
+  const ascent = metrics ? roundedAscent(metrics, fontSize) : fallbackAscent(fontSize);
   const offset = Math.floor((ascent * 2) / 3);
   const bulletWidth = Math.floor((offset + 1) / 2);
   return { ascent, offset, bulletWidth, symbolWidth: bulletWidth + 2 };

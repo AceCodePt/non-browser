@@ -104,6 +104,7 @@ sides must resolve the same glyphs for layers 1–4 to agree.
 
 ## Divergences
 
-None recorded for the registered single family. Fallback-table resolution
-(multi-family stacks, missing-glyph substitution, per-browser tables) is owned
-by the text-font-fallback task and records its decisions here.
+None recorded for the registered single family. Per-browser fallback-table
+resolution (multi-family stacks, missing-glyph substitution) is owned by the
+browser-configs in `src/config/` (one `resolveFontFamily` authority) and
+records its decisions here.

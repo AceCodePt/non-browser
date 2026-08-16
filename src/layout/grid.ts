@@ -17,59 +17,32 @@
 
 import {
   AUTO,
+  borderPaddingBlock,
+  borderPaddingInline,
+  clamp,
   resolveLength,
   type ComputedStyle,
   type ContentAlign,
   type GridLineSpec,
   type GridTemplate,
-  type Length,
   type SelfAlign,
   type TrackDef,
   type TrackFunction,
 } from './css.js';
 import { layoutTextLines, measureTextWidth } from './measure.js';
 import { FloatManager, layoutElementBox, type LayoutNode, type PaintOp } from './block-inline.js';
-import type { P5Element, P5Text } from './types.js';
+import { isCommentNode, isElementNode, isTextNode, type P5Element, type P5Text } from './types.js';
 
 const EPS = 0.001;
 
 const DEFAULT_AUTO: TrackDef = { min: { type: 'auto' }, max: { type: 'auto' }, names: [] };
 
-function clamp(v: number, lo: number, hi: number): number {
-  return Math.max(lo, Math.min(hi, v));
-}
-
-function lenPx(l: Length, ref: number): number {
-  if (l.auto) return 0;
-  if (l.px !== null) return l.px;
-  if (l.pct !== null) return (l.pct / 100) * ref;
-  return 0;
-}
-
-function padBorderInline(style: ComputedStyle, ref: number): number {
-  return (
-    lenPx(style.padding.left, ref) +
-    lenPx(style.padding.right, ref) +
-    style.borderWidth.left +
-    style.borderWidth.right
-  );
-}
-
-function padBorderBlock(style: ComputedStyle, ref: number): number {
-  return (
-    lenPx(style.padding.top, ref) +
-    lenPx(style.padding.bottom, ref) +
-    style.borderWidth.top +
-    style.borderWidth.bottom
-  );
-}
-
 function marginsInline(style: ComputedStyle, ref: number): { left: number; right: number } {
-  return { left: lenPx(style.margin.left, ref), right: lenPx(style.margin.right, ref) };
+  return { left: resolveLength(style.margin.left, ref) ?? 0, right: resolveLength(style.margin.right, ref) ?? 0 };
 }
 
 function marginsBlock(style: ComputedStyle, ref: number): { top: number; bottom: number } {
-  return { top: lenPx(style.margin.top, ref), bottom: lenPx(style.margin.bottom, ref) };
+  return { top: resolveLength(style.margin.top, ref) ?? 0, bottom: resolveLength(style.margin.bottom, ref) ?? 0 };
 }
 
 function resolveTrackFn(fn: TrackFunction, containerSize: number | null): number | null {
@@ -81,24 +54,6 @@ function resolveTrackFn(fn: TrackFunction, containerSize: number | null): number
     default:
       return null;
   }
-}
-
-function isTextNode(n: unknown): n is P5Text {
-  return typeof n === 'object' && n !== null && (n as { nodeName: string }).nodeName === '#text';
-}
-
-function isCommentNode(n: unknown): boolean {
-  return typeof n === 'object' && n !== null && (n as { nodeName: string }).nodeName === '#comment';
-}
-
-function isElementNode(n: unknown): n is P5Element {
-  return typeof n === 'object' && n !== null && (n as { nodeName: string }).nodeName !== '#text' && (n as { nodeName: string }).nodeName !== '#comment';
-}
-
-function idOf(el: P5Element | null): string | null {
-  if (!el) return null;
-  const a = el.attrs.find((x) => x.name === 'id');
-  return a ? a.value : null;
 }
 
 function hasInlineText(el: P5Element, styles: Map<P5Element, ComputedStyle>): boolean {
@@ -160,7 +115,7 @@ function inlineContributions(
   style: ComputedStyle,
   styles: Map<P5Element, ComputedStyle>,
 ): { min: number; max: number; minimum: number } {
-  const pb = padBorderInline(style, 0);
+  const pb = borderPaddingInline(style, 0);
   const specW = style.width.px;
   const minW = style.minWidth.px ?? 0;
   const maxW = style.maxWidth.px ?? Infinity;
@@ -211,13 +166,13 @@ function measureChildHeight(
   styles: Map<P5Element, ComputedStyle>,
   parentContentW: number,
 ): number {
-  const mT = lenPx(cs.margin.top, parentContentW);
-  const mB = lenPx(cs.margin.bottom, parentContentW);
-  const mL = lenPx(cs.margin.left, parentContentW);
-  const mR = lenPx(cs.margin.right, parentContentW);
+  const mT = resolveLength(cs.margin.top, parentContentW) ?? 0;
+  const mB = resolveLength(cs.margin.bottom, parentContentW) ?? 0;
+  const mL = resolveLength(cs.margin.left, parentContentW) ?? 0;
+  const mR = resolveLength(cs.margin.right, parentContentW) ?? 0;
   const borderW = Math.max(0, parentContentW - mL - mR);
-  const innerW = Math.max(0, borderW - padBorderInline(cs, borderW));
-  const pb = padBorderBlock(cs, borderW);
+  const innerW = Math.max(0, borderW - borderPaddingInline(cs, borderW));
+  const pb = borderPaddingBlock(cs, borderW);
   const specH = cs.height.px;
   let h: number;
   if (specH !== null) {
@@ -240,13 +195,13 @@ function blockContribution(
   styles: Map<P5Element, ComputedStyle>,
   width: number,
 ): number {
-  const mT = lenPx(style.margin.top, width);
-  const mB = lenPx(style.margin.bottom, width);
-  const mL = lenPx(style.margin.left, width);
-  const mR = lenPx(style.margin.right, width);
+  const mT = resolveLength(style.margin.top, width) ?? 0;
+  const mB = resolveLength(style.margin.bottom, width) ?? 0;
+  const mL = resolveLength(style.margin.left, width) ?? 0;
+  const mR = resolveLength(style.margin.right, width) ?? 0;
   const borderW = Math.max(0, width - mL - mR);
-  const innerW = Math.max(0, borderW - padBorderInline(style, borderW));
-  const pb = padBorderBlock(style, borderW);
+  const innerW = Math.max(0, borderW - borderPaddingInline(style, borderW));
+  const pb = borderPaddingBlock(style, borderW);
   const specH = style.height.px;
   let h: number;
   if (specH !== null) {
@@ -1125,8 +1080,8 @@ export function layoutGridChildren(input: GridLayoutInput): { children: LayoutNo
   const rowDefs: TrackDef[] = [];
   for (let i = 0; i < numRows; i++) rowDefs.push(rowTrackDef(i));
 
-  const colGap = styleRef.columnGap.auto ? 0 : styleRef.columnGap.px !== null ? styleRef.columnGap.px : (styleRef.columnGap.pct ?? 0) / 100 * contentWidth;
-  const rowGap = styleRef.rowGap.auto ? 0 : styleRef.rowGap.px !== null ? styleRef.rowGap.px : (styleRef.rowGap.pct ?? 0) / 100 * (availableHeight ?? 0);
+  const colGap = resolveLength(styleRef.columnGap, contentWidth) ?? 0;
+  const rowGap = resolveLength(styleRef.rowGap, availableHeight ?? 0) ?? 0;
 
   const colItems: SizingItem[] = [];
   for (const item of placed) {
@@ -1188,10 +1143,10 @@ export function layoutGridChildren(input: GridLayoutInput): { children: LayoutNo
     const js = effectiveJustify(item.style, styleRef);
     const as = effectiveAlign(item.style, styleRef);
 
-    const mL = lenPx(item.style.margin.left, areaW);
-    const mR = lenPx(item.style.margin.right, areaW);
-    const mT = lenPx(item.style.margin.top, areaW);
-    const mB = lenPx(item.style.margin.bottom, areaW);
+    const mL = resolveLength(item.style.margin.left, areaW) ?? 0;
+    const mR = resolveLength(item.style.margin.right, areaW) ?? 0;
+    const mT = resolveLength(item.style.margin.top, areaW) ?? 0;
+    const mB = resolveLength(item.style.margin.bottom, areaW) ?? 0;
     const innerW = Math.max(0, areaW - mL - mR);
     const innerH = Math.max(0, areaH - mT - mB);
 
@@ -1199,7 +1154,7 @@ export function layoutGridChildren(input: GridLayoutInput): { children: LayoutNo
     const ic = inlineContributions(item.el, item.style, styles);
     let borderW: number;
     if (specW !== null) {
-      borderW = item.style.boxSizing === 'border-box' ? specW : specW + padBorderInline(item.style, innerW);
+      borderW = item.style.boxSizing === 'border-box' ? specW : specW + borderPaddingInline(item.style, innerW);
     } else if (js === 'stretch' && !item.style.margin.left.auto && !item.style.margin.right.auto) {
       borderW = innerW;
     } else {
@@ -1228,11 +1183,11 @@ export function layoutGridChildren(input: GridLayoutInput): { children: LayoutNo
     const specH = item.style.height.px !== null ? item.style.height.px : null;
     let borderH: number;
     if (specH !== null) {
-      borderH = item.style.boxSizing === 'border-box' ? specH : specH + padBorderBlock(item.style, borderW);
+      borderH = item.style.boxSizing === 'border-box' ? specH : specH + borderPaddingBlock(item.style, borderW);
     } else if (as === 'stretch' && !item.style.margin.top.auto && !item.style.margin.bottom.auto) {
       borderH = innerH;
     } else {
-      const mBInner = { top: lenPx(item.style.margin.top, areaW), bottom: lenPx(item.style.margin.bottom, areaW) };
+      const mBInner = { top: resolveLength(item.style.margin.top, areaW) ?? 0, bottom: resolveLength(item.style.margin.bottom, areaW) ?? 0 };
       const bc = blockContribution(item.el, item.style, styles, borderW);
       borderH = Math.max(0, bc - mBInner.top - mBInner.bottom);
     }
@@ -1257,8 +1212,8 @@ export function layoutGridChildren(input: GridLayoutInput): { children: LayoutNo
 
     const bL = item.style.borderWidth.left;
     const bT = item.style.borderWidth.top;
-    const padL = lenPx(item.style.padding.left, borderW);
-    const padT = lenPx(item.style.padding.top, borderW);
+    const padL = resolveLength(item.style.padding.left, borderW) ?? 0;
+    const padT = resolveLength(item.style.padding.top, borderW) ?? 0;
     const fm = new FloatManager(contentX, contentWidth);
     const node = layoutElementBox(
       item.el,
@@ -1269,7 +1224,7 @@ export function layoutGridChildren(input: GridLayoutInput): { children: LayoutNo
       borderW,
       x + bL + padL,
       y + bT + padT,
-      Math.max(0, borderW - padBorderInline(item.style, borderW)),
+      Math.max(0, borderW - borderPaddingInline(item.style, borderW)),
       styles,
       paints,
       nextOrder,
