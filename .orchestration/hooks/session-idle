@@ -39,6 +39,7 @@ case "${TASK_NAME:-}" in
   *rtl*)               npm run verify:layout-positioning && npm run verify:layout-floats && npm run verify:layout-grid && npm run verify:layout-flexbox ;;
   *text-tier*)         npm run verify:paint-text && npm run verify:layout-floats && npm run verify:layout-grid && npm run verify:layout-flexbox && npm run verify:layout-positioning && npm run verify:firefox ;;
   *mean-gate*|*layer1*) npm run verify:four-layer && npm run verify:text-measure ;;
+  *layers*|*output-selection*) npm run build && node scripts/verify-layers.mjs && npm run verify:four-layer ;;
   *spine*)            npm run verify:four-layer ;;
   *harness-tolerance*) npm run verify:report ;;
   *)                  npm run verify ;;
