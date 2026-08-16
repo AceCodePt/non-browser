@@ -12,105 +12,105 @@ Programmatic breadth for the charter §11 coverage matrix: `scripts/generate-swe
 
 ## Latest Run
 
-- Generated: 2026-08-16T07:41:40.082Z
+- Generated: 2026-08-16T08:34:11.261Z
 - Fixtures swept: 110
-- Passing: 74
-- Documented divergences (typed gaps, still diverging): 36
+- Passing: 104
+- Documented divergences (typed gaps, still diverging): 6
 
 ## Swept Fixtures
 
 | Fixture | Feature | Expected | Gap layers | Rect max Δ px | Screenshot exceed % | Result |
 |---|---|---|---|---|---|---|
-| flex-nowrap-center-baseline | flexbox | gap | rect, screenshot | 30.000 | 21.7857 | PASS |
-| flex-nowrap-center-center | flexbox | pass | - | 0.007 | 0.6027 | PASS |
-| flex-nowrap-center-flex-end | flexbox | pass | - | 0.007 | 0.6027 | PASS |
-| flex-nowrap-center-flex-start | flexbox | pass | - | 0.007 | 0.6027 | PASS |
-| flex-nowrap-center-stretch | flexbox | pass | - | 0.007 | 0.6027 | PASS |
-| flex-nowrap-flex-end-baseline | flexbox | gap | rect, screenshot | 30.000 | 21.7857 | PASS |
-| flex-nowrap-flex-end-center | flexbox | pass | - | 0.007 | 0.6027 | PASS |
-| flex-nowrap-flex-end-flex-end | flexbox | pass | - | 0.007 | 0.6027 | PASS |
-| flex-nowrap-flex-end-flex-start | flexbox | pass | - | 0.007 | 0.6027 | PASS |
-| flex-nowrap-flex-end-stretch | flexbox | pass | - | 0.007 | 0.6027 | PASS |
-| flex-nowrap-flex-start-baseline | flexbox | gap | rect, screenshot | 30.000 | 21.7857 | PASS |
-| flex-nowrap-flex-start-center | flexbox | pass | - | 0.007 | 0.6027 | PASS |
-| flex-nowrap-flex-start-flex-end | flexbox | pass | - | 0.007 | 0.6027 | PASS |
-| flex-nowrap-flex-start-flex-start | flexbox | pass | - | 0.007 | 0.6027 | PASS |
-| flex-nowrap-flex-start-stretch | flexbox | pass | - | 0.007 | 0.6027 | PASS |
-| flex-nowrap-space-around-baseline | flexbox | gap | rect, screenshot | 30.000 | 21.7857 | PASS |
-| flex-nowrap-space-around-center | flexbox | pass | - | 0.007 | 0.6027 | PASS |
-| flex-nowrap-space-around-flex-end | flexbox | pass | - | 0.007 | 0.6027 | PASS |
-| flex-nowrap-space-around-flex-start | flexbox | pass | - | 0.007 | 0.6027 | PASS |
-| flex-nowrap-space-around-stretch | flexbox | pass | - | 0.007 | 0.6027 | PASS |
-| flex-nowrap-space-between-baseline | flexbox | gap | rect, screenshot | 30.000 | 21.7857 | PASS |
-| flex-nowrap-space-between-center | flexbox | pass | - | 0.007 | 0.6027 | PASS |
-| flex-nowrap-space-between-flex-end | flexbox | pass | - | 0.007 | 0.6027 | PASS |
-| flex-nowrap-space-between-flex-start | flexbox | pass | - | 0.007 | 0.6027 | PASS |
-| flex-nowrap-space-between-stretch | flexbox | pass | - | 0.007 | 0.6027 | PASS |
-| flex-nowrap-space-evenly-baseline | flexbox | gap | rect, screenshot | 30.000 | 21.7857 | PASS |
-| flex-nowrap-space-evenly-center | flexbox | pass | - | 0.007 | 0.6027 | PASS |
-| flex-nowrap-space-evenly-flex-end | flexbox | pass | - | 0.007 | 0.6027 | PASS |
-| flex-nowrap-space-evenly-flex-start | flexbox | pass | - | 0.007 | 0.6027 | PASS |
-| flex-nowrap-space-evenly-stretch | flexbox | pass | - | 0.007 | 0.6027 | PASS |
+| flex-nowrap-center-baseline | flexbox | gap | rect, screenshot | 30.000 | 21.2500 | PASS |
+| flex-nowrap-center-center | flexbox | pass | - | 0.007 | 0.0000 | PASS |
+| flex-nowrap-center-flex-end | flexbox | pass | - | 0.007 | 0.0000 | PASS |
+| flex-nowrap-center-flex-start | flexbox | pass | - | 0.007 | 0.0000 | PASS |
+| flex-nowrap-center-stretch | flexbox | pass | - | 0.007 | 0.0000 | PASS |
+| flex-nowrap-flex-end-baseline | flexbox | gap | rect, screenshot | 30.000 | 21.2500 | PASS |
+| flex-nowrap-flex-end-center | flexbox | pass | - | 0.007 | 0.0000 | PASS |
+| flex-nowrap-flex-end-flex-end | flexbox | pass | - | 0.007 | 0.0000 | PASS |
+| flex-nowrap-flex-end-flex-start | flexbox | pass | - | 0.007 | 0.0000 | PASS |
+| flex-nowrap-flex-end-stretch | flexbox | pass | - | 0.007 | 0.0000 | PASS |
+| flex-nowrap-flex-start-baseline | flexbox | gap | rect, screenshot | 30.000 | 21.2500 | PASS |
+| flex-nowrap-flex-start-center | flexbox | pass | - | 0.007 | 0.0000 | PASS |
+| flex-nowrap-flex-start-flex-end | flexbox | pass | - | 0.007 | 0.0000 | PASS |
+| flex-nowrap-flex-start-flex-start | flexbox | pass | - | 0.007 | 0.0000 | PASS |
+| flex-nowrap-flex-start-stretch | flexbox | pass | - | 0.007 | 0.0000 | PASS |
+| flex-nowrap-space-around-baseline | flexbox | gap | rect, screenshot | 30.000 | 21.2500 | PASS |
+| flex-nowrap-space-around-center | flexbox | pass | - | 0.007 | 0.0000 | PASS |
+| flex-nowrap-space-around-flex-end | flexbox | pass | - | 0.007 | 0.0000 | PASS |
+| flex-nowrap-space-around-flex-start | flexbox | pass | - | 0.007 | 0.0000 | PASS |
+| flex-nowrap-space-around-stretch | flexbox | pass | - | 0.007 | 0.0000 | PASS |
+| flex-nowrap-space-between-baseline | flexbox | gap | rect, screenshot | 30.000 | 21.2500 | PASS |
+| flex-nowrap-space-between-center | flexbox | pass | - | 0.007 | 0.0000 | PASS |
+| flex-nowrap-space-between-flex-end | flexbox | pass | - | 0.007 | 0.0000 | PASS |
+| flex-nowrap-space-between-flex-start | flexbox | pass | - | 0.007 | 0.0000 | PASS |
+| flex-nowrap-space-between-stretch | flexbox | pass | - | 0.007 | 0.0000 | PASS |
+| flex-nowrap-space-evenly-baseline | flexbox | gap | rect, screenshot | 30.000 | 21.2500 | PASS |
+| flex-nowrap-space-evenly-center | flexbox | pass | - | 0.007 | 0.0000 | PASS |
+| flex-nowrap-space-evenly-flex-end | flexbox | pass | - | 0.007 | 0.0000 | PASS |
+| flex-nowrap-space-evenly-flex-start | flexbox | pass | - | 0.007 | 0.0000 | PASS |
+| flex-nowrap-space-evenly-stretch | flexbox | pass | - | 0.007 | 0.0000 | PASS |
 | flex-wrap-center-baseline | flexbox | pass | - | 0.000 | 0.0000 | PASS |
-| flex-wrap-center-center | flexbox | gap | screenshot | 0.500 | 1.4732 | PASS |
-| flex-wrap-center-flex-end | flexbox | gap | rect, screenshot | 1.000 | 1.4732 | PASS |
+| flex-wrap-center-center | flexbox | pass | - | 0.000 | 0.0000 | PASS |
+| flex-wrap-center-flex-end | flexbox | pass | - | 0.000 | 0.0000 | PASS |
 | flex-wrap-center-flex-start | flexbox | pass | - | 0.000 | 0.0000 | PASS |
 | flex-wrap-center-stretch | flexbox | pass | - | 0.000 | 0.0000 | PASS |
 | flex-wrap-flex-end-baseline | flexbox | pass | - | 0.000 | 0.0000 | PASS |
-| flex-wrap-flex-end-center | flexbox | gap | screenshot | 0.500 | 1.4732 | PASS |
-| flex-wrap-flex-end-flex-end | flexbox | gap | rect, screenshot | 1.000 | 1.4732 | PASS |
+| flex-wrap-flex-end-center | flexbox | pass | - | 0.000 | 0.0000 | PASS |
+| flex-wrap-flex-end-flex-end | flexbox | pass | - | 0.000 | 0.0000 | PASS |
 | flex-wrap-flex-end-flex-start | flexbox | pass | - | 0.000 | 0.0000 | PASS |
 | flex-wrap-flex-end-stretch | flexbox | pass | - | 0.000 | 0.0000 | PASS |
 | flex-wrap-flex-start-baseline | flexbox | pass | - | 0.000 | 0.0000 | PASS |
-| flex-wrap-flex-start-center | flexbox | gap | screenshot | 0.500 | 1.4732 | PASS |
-| flex-wrap-flex-start-flex-end | flexbox | gap | rect, screenshot | 1.000 | 1.4732 | PASS |
+| flex-wrap-flex-start-center | flexbox | pass | - | 0.000 | 0.0000 | PASS |
+| flex-wrap-flex-start-flex-end | flexbox | pass | - | 0.000 | 0.0000 | PASS |
 | flex-wrap-flex-start-flex-start | flexbox | pass | - | 0.000 | 0.0000 | PASS |
 | flex-wrap-flex-start-stretch | flexbox | pass | - | 0.000 | 0.0000 | PASS |
 | flex-wrap-reverse-center-baseline | flexbox | pass | - | 0.000 | 0.0000 | PASS |
-| flex-wrap-reverse-center-center | flexbox | pass | - | 0.500 | 0.0000 | PASS |
-| flex-wrap-reverse-center-flex-end | flexbox | gap | rect, screenshot | 31.000 | 23.7500 | PASS |
-| flex-wrap-reverse-center-flex-start | flexbox | gap | rect, screenshot | 30.000 | 22.7679 | PASS |
-| flex-wrap-reverse-center-stretch | flexbox | gap | rect, screenshot | 30.000 | 22.7679 | PASS |
+| flex-wrap-reverse-center-center | flexbox | pass | - | 0.000 | 0.0000 | PASS |
+| flex-wrap-reverse-center-flex-end | flexbox | pass | - | 0.000 | 0.0000 | PASS |
+| flex-wrap-reverse-center-flex-start | flexbox | pass | - | 0.000 | 0.0000 | PASS |
+| flex-wrap-reverse-center-stretch | flexbox | pass | - | 0.000 | 0.0000 | PASS |
 | flex-wrap-reverse-flex-end-baseline | flexbox | pass | - | 0.000 | 0.0000 | PASS |
-| flex-wrap-reverse-flex-end-center | flexbox | pass | - | 0.500 | 0.0000 | PASS |
-| flex-wrap-reverse-flex-end-flex-end | flexbox | gap | rect, screenshot | 31.000 | 23.7500 | PASS |
-| flex-wrap-reverse-flex-end-flex-start | flexbox | gap | rect, screenshot | 30.000 | 22.7679 | PASS |
-| flex-wrap-reverse-flex-end-stretch | flexbox | gap | rect, screenshot | 30.000 | 22.7679 | PASS |
+| flex-wrap-reverse-flex-end-center | flexbox | pass | - | 0.000 | 0.0000 | PASS |
+| flex-wrap-reverse-flex-end-flex-end | flexbox | pass | - | 0.000 | 0.0000 | PASS |
+| flex-wrap-reverse-flex-end-flex-start | flexbox | pass | - | 0.000 | 0.0000 | PASS |
+| flex-wrap-reverse-flex-end-stretch | flexbox | pass | - | 0.000 | 0.0000 | PASS |
 | flex-wrap-reverse-flex-start-baseline | flexbox | pass | - | 0.000 | 0.0000 | PASS |
-| flex-wrap-reverse-flex-start-center | flexbox | pass | - | 0.500 | 0.0000 | PASS |
-| flex-wrap-reverse-flex-start-flex-end | flexbox | gap | rect, screenshot | 31.000 | 23.7500 | PASS |
-| flex-wrap-reverse-flex-start-flex-start | flexbox | gap | rect, screenshot | 30.000 | 22.7679 | PASS |
-| flex-wrap-reverse-flex-start-stretch | flexbox | gap | rect, screenshot | 30.000 | 22.7679 | PASS |
-| flex-wrap-reverse-space-around-baseline | flexbox | pass | - | 0.010 | 0.3125 | PASS |
-| flex-wrap-reverse-space-around-center | flexbox | pass | - | 0.500 | 0.3125 | PASS |
-| flex-wrap-reverse-space-around-flex-end | flexbox | gap | rect, screenshot | 31.000 | 23.9487 | PASS |
-| flex-wrap-reverse-space-around-flex-start | flexbox | gap | rect, screenshot | 30.000 | 22.9688 | PASS |
-| flex-wrap-reverse-space-around-stretch | flexbox | gap | rect, screenshot | 30.000 | 22.9688 | PASS |
+| flex-wrap-reverse-flex-start-center | flexbox | pass | - | 0.000 | 0.0000 | PASS |
+| flex-wrap-reverse-flex-start-flex-end | flexbox | pass | - | 0.000 | 0.0000 | PASS |
+| flex-wrap-reverse-flex-start-flex-start | flexbox | pass | - | 0.000 | 0.0000 | PASS |
+| flex-wrap-reverse-flex-start-stretch | flexbox | pass | - | 0.000 | 0.0000 | PASS |
+| flex-wrap-reverse-space-around-baseline | flexbox | pass | - | 0.010 | 0.0000 | PASS |
+| flex-wrap-reverse-space-around-center | flexbox | pass | - | 0.010 | 0.0000 | PASS |
+| flex-wrap-reverse-space-around-flex-end | flexbox | pass | - | 0.010 | 0.0000 | PASS |
+| flex-wrap-reverse-space-around-flex-start | flexbox | pass | - | 0.010 | 0.0000 | PASS |
+| flex-wrap-reverse-space-around-stretch | flexbox | pass | - | 0.010 | 0.0000 | PASS |
 | flex-wrap-reverse-space-between-baseline | flexbox | pass | - | 0.000 | 0.0000 | PASS |
-| flex-wrap-reverse-space-between-center | flexbox | pass | - | 0.500 | 0.0000 | PASS |
-| flex-wrap-reverse-space-between-flex-end | flexbox | gap | rect, screenshot | 31.000 | 23.7500 | PASS |
-| flex-wrap-reverse-space-between-flex-start | flexbox | gap | rect, screenshot | 30.000 | 22.7679 | PASS |
-| flex-wrap-reverse-space-between-stretch | flexbox | gap | rect, screenshot | 30.000 | 22.7679 | PASS |
-| flex-wrap-reverse-space-evenly-baseline | flexbox | pass | - | 0.000 | 0.3125 | PASS |
-| flex-wrap-reverse-space-evenly-center | flexbox | pass | - | 0.500 | 0.3125 | PASS |
-| flex-wrap-reverse-space-evenly-flex-end | flexbox | gap | rect, screenshot | 31.000 | 23.9487 | PASS |
-| flex-wrap-reverse-space-evenly-flex-start | flexbox | gap | rect, screenshot | 30.000 | 22.9688 | PASS |
-| flex-wrap-reverse-space-evenly-stretch | flexbox | gap | rect, screenshot | 30.000 | 22.9688 | PASS |
-| flex-wrap-space-around-baseline | flexbox | pass | - | 0.010 | 0.3125 | PASS |
-| flex-wrap-space-around-center | flexbox | gap | screenshot | 0.500 | 1.7812 | PASS |
-| flex-wrap-space-around-flex-end | flexbox | gap | rect, screenshot | 1.000 | 1.7812 | PASS |
-| flex-wrap-space-around-flex-start | flexbox | pass | - | 0.010 | 0.3125 | PASS |
-| flex-wrap-space-around-stretch | flexbox | pass | - | 0.010 | 0.3125 | PASS |
+| flex-wrap-reverse-space-between-center | flexbox | pass | - | 0.000 | 0.0000 | PASS |
+| flex-wrap-reverse-space-between-flex-end | flexbox | pass | - | 0.000 | 0.0000 | PASS |
+| flex-wrap-reverse-space-between-flex-start | flexbox | pass | - | 0.000 | 0.0000 | PASS |
+| flex-wrap-reverse-space-between-stretch | flexbox | pass | - | 0.000 | 0.0000 | PASS |
+| flex-wrap-reverse-space-evenly-baseline | flexbox | pass | - | 0.000 | 0.0000 | PASS |
+| flex-wrap-reverse-space-evenly-center | flexbox | pass | - | 0.000 | 0.0000 | PASS |
+| flex-wrap-reverse-space-evenly-flex-end | flexbox | pass | - | 0.000 | 0.0000 | PASS |
+| flex-wrap-reverse-space-evenly-flex-start | flexbox | pass | - | 0.000 | 0.0000 | PASS |
+| flex-wrap-reverse-space-evenly-stretch | flexbox | pass | - | 0.000 | 0.0000 | PASS |
+| flex-wrap-space-around-baseline | flexbox | pass | - | 0.010 | 0.0000 | PASS |
+| flex-wrap-space-around-center | flexbox | pass | - | 0.010 | 0.0000 | PASS |
+| flex-wrap-space-around-flex-end | flexbox | pass | - | 0.010 | 0.0000 | PASS |
+| flex-wrap-space-around-flex-start | flexbox | pass | - | 0.010 | 0.0000 | PASS |
+| flex-wrap-space-around-stretch | flexbox | pass | - | 0.010 | 0.0000 | PASS |
 | flex-wrap-space-between-baseline | flexbox | pass | - | 0.000 | 0.0000 | PASS |
-| flex-wrap-space-between-center | flexbox | gap | screenshot | 0.500 | 1.4732 | PASS |
-| flex-wrap-space-between-flex-end | flexbox | gap | rect, screenshot | 1.000 | 1.4732 | PASS |
+| flex-wrap-space-between-center | flexbox | pass | - | 0.000 | 0.0000 | PASS |
+| flex-wrap-space-between-flex-end | flexbox | pass | - | 0.000 | 0.0000 | PASS |
 | flex-wrap-space-between-flex-start | flexbox | pass | - | 0.000 | 0.0000 | PASS |
 | flex-wrap-space-between-stretch | flexbox | pass | - | 0.000 | 0.0000 | PASS |
-| flex-wrap-space-evenly-baseline | flexbox | pass | - | 0.000 | 0.3125 | PASS |
-| flex-wrap-space-evenly-center | flexbox | gap | screenshot | 0.500 | 1.7812 | PASS |
-| flex-wrap-space-evenly-flex-end | flexbox | gap | rect, screenshot | 1.000 | 1.7812 | PASS |
-| flex-wrap-space-evenly-flex-start | flexbox | pass | - | 0.000 | 0.3125 | PASS |
-| flex-wrap-space-evenly-stretch | flexbox | pass | - | 0.000 | 0.3125 | PASS |
+| flex-wrap-space-evenly-baseline | flexbox | pass | - | 0.000 | 0.0000 | PASS |
+| flex-wrap-space-evenly-center | flexbox | pass | - | 0.000 | 0.0000 | PASS |
+| flex-wrap-space-evenly-flex-end | flexbox | pass | - | 0.000 | 0.0000 | PASS |
+| flex-wrap-space-evenly-flex-start | flexbox | pass | - | 0.000 | 0.0000 | PASS |
+| flex-wrap-space-evenly-stretch | flexbox | pass | - | 0.000 | 0.0000 | PASS |
 | grid-0-100px1fr2fr | grid | pass | - | 0.005 | 0.0000 | PASS |
 | grid-0-1fr1fr | grid | pass | - | 0.000 | 0.0000 | PASS |
 | grid-0-minmax60px1fr1fr | grid | pass | - | 0.000 | 0.0000 | PASS |
@@ -136,40 +136,10 @@ Programmatic breadth for the charter §11 coverage matrix: `scripts/generate-swe
 
 Fixtures whose generator run recorded a divergence carry a typed gap on the diverging layer(s) (`expected.<layer>: { result:"fail", reason, sunset }`) and are listed here. The verify script asserts each still diverges, so a divergence that closes fails the run and must be reclassified into the pass corpus.
 
-- **flex-nowrap-center-baseline** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 21.7857% exceeding.
-- **flex-nowrap-flex-end-baseline** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 21.7857% exceeding.
-- **flex-nowrap-flex-start-baseline** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 21.7857% exceeding.
-- **flex-nowrap-space-around-baseline** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 21.7857% exceeding.
-- **flex-nowrap-space-between-baseline** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 21.7857% exceeding.
-- **flex-nowrap-space-evenly-baseline** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 21.7857% exceeding.
-- **flex-wrap-center-center** — gap on screenshot; rect max Δ 0.500px, screenshot 1.4732% exceeding.
-- **flex-wrap-center-flex-end** — gap on rect, screenshot; rect max Δ 1.000px, screenshot 1.4732% exceeding.
-- **flex-wrap-flex-end-center** — gap on screenshot; rect max Δ 0.500px, screenshot 1.4732% exceeding.
-- **flex-wrap-flex-end-flex-end** — gap on rect, screenshot; rect max Δ 1.000px, screenshot 1.4732% exceeding.
-- **flex-wrap-flex-start-center** — gap on screenshot; rect max Δ 0.500px, screenshot 1.4732% exceeding.
-- **flex-wrap-flex-start-flex-end** — gap on rect, screenshot; rect max Δ 1.000px, screenshot 1.4732% exceeding.
-- **flex-wrap-reverse-center-flex-end** — gap on rect, screenshot; rect max Δ 31.000px, screenshot 23.7500% exceeding.
-- **flex-wrap-reverse-center-flex-start** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 22.7679% exceeding.
-- **flex-wrap-reverse-center-stretch** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 22.7679% exceeding.
-- **flex-wrap-reverse-flex-end-flex-end** — gap on rect, screenshot; rect max Δ 31.000px, screenshot 23.7500% exceeding.
-- **flex-wrap-reverse-flex-end-flex-start** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 22.7679% exceeding.
-- **flex-wrap-reverse-flex-end-stretch** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 22.7679% exceeding.
-- **flex-wrap-reverse-flex-start-flex-end** — gap on rect, screenshot; rect max Δ 31.000px, screenshot 23.7500% exceeding.
-- **flex-wrap-reverse-flex-start-flex-start** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 22.7679% exceeding.
-- **flex-wrap-reverse-flex-start-stretch** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 22.7679% exceeding.
-- **flex-wrap-reverse-space-around-flex-end** — gap on rect, screenshot; rect max Δ 31.000px, screenshot 23.9487% exceeding.
-- **flex-wrap-reverse-space-around-flex-start** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 22.9688% exceeding.
-- **flex-wrap-reverse-space-around-stretch** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 22.9688% exceeding.
-- **flex-wrap-reverse-space-between-flex-end** — gap on rect, screenshot; rect max Δ 31.000px, screenshot 23.7500% exceeding.
-- **flex-wrap-reverse-space-between-flex-start** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 22.7679% exceeding.
-- **flex-wrap-reverse-space-between-stretch** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 22.7679% exceeding.
-- **flex-wrap-reverse-space-evenly-flex-end** — gap on rect, screenshot; rect max Δ 31.000px, screenshot 23.9487% exceeding.
-- **flex-wrap-reverse-space-evenly-flex-start** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 22.9688% exceeding.
-- **flex-wrap-reverse-space-evenly-stretch** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 22.9688% exceeding.
-- **flex-wrap-space-around-center** — gap on screenshot; rect max Δ 0.500px, screenshot 1.7812% exceeding.
-- **flex-wrap-space-around-flex-end** — gap on rect, screenshot; rect max Δ 1.000px, screenshot 1.7812% exceeding.
-- **flex-wrap-space-between-center** — gap on screenshot; rect max Δ 0.500px, screenshot 1.4732% exceeding.
-- **flex-wrap-space-between-flex-end** — gap on rect, screenshot; rect max Δ 1.000px, screenshot 1.4732% exceeding.
-- **flex-wrap-space-evenly-center** — gap on screenshot; rect max Δ 0.500px, screenshot 1.7812% exceeding.
-- **flex-wrap-space-evenly-flex-end** — gap on rect, screenshot; rect max Δ 1.000px, screenshot 1.7812% exceeding.
+- **flex-nowrap-center-baseline** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 21.2500% exceeding.
+- **flex-nowrap-flex-end-baseline** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 21.2500% exceeding.
+- **flex-nowrap-flex-start-baseline** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 21.2500% exceeding.
+- **flex-nowrap-space-around-baseline** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 21.2500% exceeding.
+- **flex-nowrap-space-between-baseline** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 21.2500% exceeding.
+- **flex-nowrap-space-evenly-baseline** — gap on rect, screenshot; rect max Δ 30.000px, screenshot 21.2500% exceeding.
 

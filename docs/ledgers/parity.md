@@ -67,7 +67,8 @@ declarations (7 entry-level known-gap strings inside `known-gaps`).
 
 Gap count over runs: 3 (as of 2026-08-14) before the coverage-matrix-sweep
 task added the sweep corpus. The sweep (`corpus/sweep-*`) deliberately records
-its engine divergences as typed gap fixtures (36 of 110 swept combos) — see
+its engine divergences as typed gap fixtures (6 of 110 swept combos, all
+flex-nowrap/.../baseline) — see
 `docs/ledgers/sweep.md` for the full list and per-combo deltas. Each reduction
 requires closing the divergence the declaration documents; the fixtures assert
 the divergence still exists, so a stale or removed declaration fails
