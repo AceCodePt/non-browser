@@ -1,7 +1,7 @@
 ---
 wait_human_start: false
 wait_human_merge: false
-dependencies: [font-registration-gaps, flexbox-baseline-authority, flexbox-wrap-reverse, strip-what-comments]
+dependencies: [font-registration-faces, flexbox-baseline-authority, flexbox-wrap-reverse, strip-what-comments]
 ---
 
 # Task: Generalize the single-authority patterns and standardize cross-module coherence
