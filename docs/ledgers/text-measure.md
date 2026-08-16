@@ -8,14 +8,14 @@ Per-string shaped advances resolved against the registered font set: the engine 
 
 ## Latest Run
 
-- Generated: 2026-08-16T09:03:34.544Z
-- Strings measured: 89 (82 pass corpus + 7 documented known gaps)
-- Pass rate (pass corpus): 100.0% (82/82 within tolerance)
-- Mean delta (pass corpus): 0.0016px
-- Worst delta (pass corpus): 0.0050px
-- Worst delta (all strings, incl. gaps): 146.0025px
+- Generated: 2026-08-16T13:16:40.903Z
+- Strings measured: 92 (87 pass corpus + 5 documented known gaps)
+- Pass rate (pass corpus): 100.0% (87/87 within tolerance)
+- Mean delta (pass corpus): 0.0021px
+- Worst delta (pass corpus): 0.0300px
+- Worst delta (all strings, incl. gaps): 143.1250px
 - Tolerance: mean ≤ 0.01px, no string > 0.5px (charter §2, tolerances.json v2)
-- Categories: 8, all PASS
+- Categories: 9, all PASS
 
 ## Categories
 
@@ -23,12 +23,13 @@ Per-string shaped advances resolved against the registered font set: the engine 
 |---|---|---|---|---|---|
 | cjk | 10 | pass | 0.0005 | 0.0050 | PASS |
 | combining-marks | 8 | pass | 0.0019 | 0.0050 | PASS |
-| emoji | 15 | pass | 0.0011 | 0.0039 | PASS |
-| known-gaps | 7 | fail | 51.3759 | 146.0025 | PASS |
+| emoji | 16 | pass | 0.0035 | 0.0300 | PASS |
+| known-gaps | 5 | fail | 38.8857 | 143.1250 | PASS |
 | latin | 21 | pass | 0.0019 | 0.0050 | PASS |
 | letter-spacing | 8 | pass | 0.0026 | 0.0039 | PASS |
 | rtl | 11 | pass | 0.0024 | 0.0041 | PASS |
 | tabs | 9 | pass | 0.0008 | 0.0047 | PASS |
+| thai | 4 | pass | 0.0027 | 0.0037 | PASS |
 
 ## Per-String Results
 
@@ -52,27 +53,26 @@ Per-string shaped advances resolved against the registered font set: the engine 
 | combining-marks | का की कु कू के कै को कौ | 16px 'Droid Sans Devanagari' | 143.2200 | 143.2188 | 0.0013 | PASS |
 | combining-marks | संख्याएँ १२३४५६७८९० | 16px 'Droid Sans Devanagari' | 134.6500 | 134.6484 | 0.0016 | PASS |
 | combining-marks | १२३४५६७८९० | 16px 'Droid Sans Devanagari' | 88.1300 | 88.1250 | 0.0050 | PASS |
-| emoji | 👨‍👩‍👧‍👦 | 16px 'Noto Sans' | 38.4000 | 38.4001 | 0.0001 | PASS |
-| emoji | 👨‍👩‍👧‍👦 | 32px 'Noto Sans' | 76.8000 | 76.8002 | 0.0002 | PASS |
-| emoji | 👨‍👩‍👧‍👦👨‍👩‍👧‍👦 | 16px 'Noto Sans' | 76.8000 | 76.8002 | 0.0002 | PASS |
-| emoji | 👩‍👧 | 16px 'Noto Sans' | 19.2000 | 19.2000 | 0.0000 | PASS |
-| emoji | 👩‍❤️‍💋‍👨 | 16px 'Noto Sans' | 38.4000 | 38.4001 | 0.0001 | PASS |
-| emoji | 🇺🇸 | 16px 'Noto Sans' | 19.2000 | 19.2000 | 0.0000 | PASS |
-| emoji | 🇺🇸 🇨🇳 🇯🇵 | 16px 'Noto Sans' | 65.9200 | 65.9201 | 0.0001 | PASS |
-| emoji | 1️⃣ 2️⃣ 3️⃣ | 16px 'Noto Sans' | 64.5800 | 64.5761 | 0.0039 | PASS |
-| emoji | 👍🏻 👍🏼 👍🏽 | 16px 'Noto Sans' | 65.9200 | 65.9201 | 0.0001 | PASS |
 | emoji | 😀 | 16px 'DejaVu Sans' | 16.6800 | 16.6797 | 0.0003 | PASS |
-| emoji | ✈️ ☕ ⚽ | 16px 'DejaVu Sans' | 47.5200 | 47.5234 | 0.0034 | PASS |
+| emoji | 😀 😃 😄 | 16px 'DejaVu Sans' | 60.2100 | 60.2109 | 0.0009 | PASS |
+| emoji | ☺ | 16px 'DejaVu Sans' | 16.6800 | 16.6797 | 0.0003 | PASS |
 | emoji | → ⇒ ↗ ⬇ | 16px 'DejaVu Sans' | 68.8800 | 68.8828 | 0.0028 | PASS |
+| emoji | → ← ↑ ↓ ↔ ↕ | 16px 'DejaVu Sans' | 105.8700 | 105.8672 | 0.0028 | PASS |
+| emoji | ♠ ♣ ♥ ♦ | 16px 'DejaVu Sans' | 72.6300 | 72.6328 | 0.0028 | PASS |
+| emoji | ∑ ≠ ≈ ∞ | 16px 'DejaVu Sans' | 66.1800 | 66.1797 | 0.0003 | PASS |
+| emoji | § ¶ † ‡ | 16px 'DejaVu Sans' | 49.4400 | 49.4375 | 0.0025 | PASS |
+| emoji | ✓ ☑ ✗ | 16px 'DejaVu Sans' | 51.3300 | 51.3281 | 0.0019 | PASS |
+| emoji | ☀ ☁ ❄ | 16px 'DejaVu Sans' | 53.9200 | 53.9219 | 0.0019 | PASS |
+| emoji | ✿ ❀ ❁ | 16px 'DejaVu Sans' | 50.3900 | 50.3906 | 0.0006 | PASS |
 | emoji | © ® ™ € £ ¥ § ¶ | 16px 'DejaVu Sans' | 132.3200 | 132.3203 | 0.0003 | PASS |
-| emoji | ❤️ 💙 💚 | 16px 'DejaVu Sans' | 42.7800 | 42.7813 | 0.0013 | PASS |
-| emoji | ⭐ 🌟 ✨ | 16px 'DejaVu Sans' | 38.9800 | 38.9766 | 0.0034 | PASS |
-| known-gaps | 😀 😃 😄 | 16px 'Noto Sans' | 37.1200 | 59.3200 | 22.2000 | GAP |
+| emoji | © ® ™ € £ ¥ § ¶ | 16px 'Noto Sans' | 114.2600 | 114.2562 | 0.0038 | PASS |
+| emoji | ™ | 16px 'Noto Sans' | 12.3700 | 12.3680 | 0.0020 | PASS |
+| emoji | § ¶ † ‡ | 16px 'Noto Sans' | 47.5500 | 47.5521 | 0.0021 | PASS |
+| emoji | 😀 | 16px 'Noto Color Emoji' | 19.9700 | 20.0000 | 0.0300 | PASS |
 | known-gaps | "\t\t\t" | 16px 'Noto Sans' | 28.8000 | 12.4800 | 16.3200 | GAP |
-| known-gaps | abc 中文 😀 def | 16px 'Noto Sans' | 92.1400 | 112.3441 | 20.2041 | GAP |
+| known-gaps | abc 中文 😀 def | 16px 'Noto Sans' | 92.1400 | 115.3441 | 23.2041 | GAP |
 | known-gaps | English 中文 mixed text テスト | 16px 'Droid Sans Fallback' | 352.7500 | 209.6250 | 143.1250 | GAP |
 | known-gaps | مرحبا! هل أنت بخير؟ | 16px 'Droid Arabic Kufi' | 140.4500 | 136.1719 | 4.2781 | GAP |
-| known-gaps | สวัสดีชาวโลก ภาษาไทย | 16px 'Droid Sans Fallback' | 308.1900 | 162.1875 | 146.0025 | GAP |
 | known-gaps | مرحبا | 16px 'Droid Arabic Kufi' ls=1.5 | 42.2200 | 34.7188 | 7.5013 | GAP |
 | latin | Pack my box with five dozen liquor jugs | 10px 'Noto Sans' | 184.7000 | 184.6998 | 0.0002 | PASS |
 | latin | The quick brown fox jumps over the lazy dog | 16px 'Noto Sans' | 334.8800 | 334.8806 | 0.0006 | PASS |
@@ -123,6 +123,10 @@ Per-string shaped advances resolved against the registered font set: the engine 
 | tabs | "\t\t\t" | 16px 'Liberation Mono' | 28.8000 | 28.8047 | 0.0047 | PASS |
 | tabs | "a\tbb\tccc\tdddd" | 16px 'Liberation Mono' | 124.8200 | 124.8203 | 0.0003 | PASS |
 | tabs | "a\tb\tc" | 24px 'Source Code Pro' | 72.0000 | 71.9998 | 0.0002 | PASS |
+| thai | สวัสดีชาวโลก ภาษาไทย | 16px 'Noto Sans Thai' | 143.8600 | 143.8563 | 0.0037 | PASS |
+| thai | สวัสดีชาวโลก ภาษาไทย | 32px 'Noto Sans Thai' | 287.7100 | 287.7126 | 0.0026 | PASS |
+| thai | ภาษาไทย ประเทศไทย | 16px 'Noto Sans Thai' | 132.6700 | 132.6723 | 0.0023 | PASS |
+| thai | แมวน้อยน่ารัก | 16px 'Noto Sans Thai' | 88.9900 | 88.9922 | 0.0022 | PASS |
 
 ## Failing Fonts
 
@@ -134,12 +138,10 @@ All of them are covered by documented known gaps (see below); an unexpected fail
 
 Failures are permitted only for the following documented divergences; the verify script asserts each still diverges so a closed gap must be reclassified into the pass corpus.
 
-- **😀 😃 😄** @ 16px 'Noto Sans' — Δ 22.2000px: No emoji font is installed system-wide; Chrome falls back to an emoji-capable face for U+1F600-range smileys while skia's GlobalFonts keeps the missing glyph in Noto Sans. ZWJ sequences, flags, and keycaps measure identically (see emoji/), but plain smileys diverge.
 - **"\t\t\t"** @ 16px 'Noto Sans' — Δ 16.3200px: Proportional-font tabs: Chrome's canvas applies tab-stop semantics (a tab advances to the next tab stop) while skia returns the font's raw U+0009 advance. Monospace tabs agree (see tabs/); this is the proportional-font tab case.
-- **abc 中文 😀 def** @ 16px 'Noto Sans' — Δ 20.2041px: Mixed-script string: Chrome resolves each missing glyph through its per-glyph fallback (CJK and emoji faces), while skia keeps the whole run in Noto Sans. Single-script strings in one font agree (see cjk/, rtl/); mixed runs diverge.
+- **abc 中文 😀 def** @ 16px 'Noto Sans' — Δ 23.2041px: Mixed-script string: Chrome resolves each missing glyph through its per-glyph fallback (CJK and emoji faces), while skia keeps the whole run in Noto Sans. Single-script strings in one font agree (see cjk/, rtl/); mixed runs diverge.
 - **English 中文 mixed text テスト** @ 16px 'Droid Sans Fallback' — Δ 143.1250px: Mixed-script fallback: Chrome shapes Latin and Japanese through fallback faces rather than the registered CJK face; skia keeps the run in Droid Sans Fallback.
 - **مرحبا! هل أنت بخير؟** @ 16px 'Droid Arabic Kufi' — Δ 4.2781px: Latin punctuation (!) in an Arabic run: Chrome falls the ASCII glyph back to a Latin face while skia keeps it in Droid Arabic Kufi. Pure-script Arabic and Arabic-Indic digits agree (see rtl/).
-- **สวัสดีชาวโลก ภาษาไทย** @ 16px 'Droid Sans Fallback' — Δ 146.0025px: Thai glyphs: the registered set has no Thai face, so skia's fallback and Chrome's fontconfig fallback resolve the run to different fonts and widths.
 - **مرحبا** @ 16px 'Droid Arabic Kufi', ls 1.5 — Δ 7.5013px: Letter-spacing on a joining script: Chrome does not apply ctx.letterSpacing to Arabic, while the engine's letter-spacing model adds spacing after every codepoint. Latin and CJK letter-spacing agree (see letter-spacing/).
 
 ## Coverage
@@ -147,7 +149,8 @@ Failures are permitted only for the following documented divergences; the verify
 - **Latin** (`latin/`): Noto Sans at 10–48px, uppercase/lowercase, digits, ligatures, kerning, punctuation, nbsp; bold/semibold/italic via font shorthand; Liberation Sans/Serif/Mono, DejaVu Sans, Source Code Pro.
 - **CJK** (`cjk/`): Simplified Chinese and Japanese (kanji/kana) on Droid Sans Fallback / Droid Sans Japanese, incl. CJK punctuation.
 - **RTL** (`rtl/`): Arabic (harakat, Arabic-Indic digits) on Droid Arabic Kufi; Hebrew (niqqud) on Droid Sans Hebrew.
-- **Emoji** (`emoji/`): ZWJ family/kiss, flags, keycaps, skin tones on Noto Sans; dingbats, arrows, symbols on DejaVu Sans.
+- **Emoji** (`emoji/`): plain smileys on DejaVu Sans (the reclassified known-gap string) and one glyph on the registered emoji face (Noto Color Emoji); arrows, suits, math/editorial marks, weather pictographs, currency on DejaVu Sans and Noto Sans. ZWJ family/flags/keycaps/skin-tone/VS16 sequences were dropped: they reroute to the color face at a 1.25em cell once an emoji face is installed and no longer match the engine.
+- **Thai** (`thai/`): Thai runs (tone marks, sara-am, country-name phrases) on the registered Noto Sans Thai face.
 - **Combining marks** (`combining-marks/`): decomposed/precomposed/double Latin diacritics on Noto Sans; Devanagari conjuncts, matras, digits on Droid Sans Devanagari.
 - **Tab runs** (`tabs/`): tabs on monospace faces (Source Code Pro, Liberation Mono).
 - **Letter-spaced** (`letter-spacing/`): positive, fractional, negative spacing on Latin and CJK.

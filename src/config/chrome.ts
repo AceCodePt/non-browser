@@ -1,4 +1,6 @@
 import { existsSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { BrowserConfig, FontRegistration } from './browser-config.js';
 
 /**
@@ -15,7 +17,34 @@ import type { BrowserConfig, FontRegistration } from './browser-config.js';
  * registered face reproduces to sub-pixel. Chrome on Linux/fontconfig resolves
  * the metric-compatible families below to the Liberation faces installed on
  * disk, so the engine measures/paints those stacks with the same glyphs.
+ *
+ * Registration resolution: paths never hard-code a user's home directory. Each
+ * machine-calibrated face resolves via an env var override when set, and falls
+ * back to the repo-vendored copy under fonts/ (byte-identical to the
+ * user-level install used by Chrome's fontconfig). A face whose file is absent
+ * on disk is simply not registered — the fallback table then resolves its
+ * generic (e.g. `monospace` -> Liberation Mono) — so the set reproduces on
+ * another machine with the same vendored fonts.
  */
+
+const repoFontsDir = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'fonts');
+
+/**
+ * Resolve a face's registration path without hard-coding a home directory.
+ * Env override first (absolute); absent/unreadable it falls back to the
+ * repo-vendored copy, registered RELATIVE to the repo root (`fonts/<file>`) so
+ * the registered set carries no machine-specific absolute path and reproduces
+ * on another machine checked out anywhere. Null when neither exists — callers
+ * then omit the face and the fallback table handles its generic.
+ */
+function fontPath(envVar: string | undefined, repoFile: string): string | null {
+  if (envVar) {
+    const p = resolve(envVar);
+    if (existsSync(p)) return p;
+    console.warn(`chrome-config: ${envVar} set but missing (${p}); falling back to repo copy`);
+  }
+  return existsSync(join(repoFontsDir, repoFile)) ? `fonts/${repoFile}` : null;
+}
 
 const fontFile = process.env.FONT_FILE ?? '/usr/share/fonts/google-noto/NotoSans-Regular.ttf';
 const fontFamily = process.env.FONT_FAMILY ?? 'Noto Sans';
@@ -30,14 +59,22 @@ const italicPath = `${dir}/${base}-Italic.ttf`;
 // The generic `monospace` family resolves via fontconfig to this machine's
 // fixed-pitch face; register it so pre/code measure and paint with the same
 // glyphs Chrome uses. Falls back to Liberation Mono when absent.
-const HACK_MONO = '/home/sagi/.local/share/fonts/HackNerdFont-Regular.ttf';
-const hasHackMono = existsSync(HACK_MONO);
+const hackPath = fontPath(process.env.HACK_FONT_PATH, 'HackNerdFont-Regular.ttf');
+
+// Thai- and emoji-capable faces. Noto Sans Thai reproduces Chrome's Thai
+// resolution to sub-pixel (see corpus/measure-corpus/thai/); Noto Color Emoji
+// is the engine-side registration of the face Chrome's fontconfig resolves
+// emoji strings to. Both resolve via env override or the vendored repo copy.
+const thaiPath = fontPath(process.env.NOTO_SANS_THAI_PATH, 'NotoSansThai-Regular.ttf');
+const emojiPath = fontPath(process.env.NOTO_COLOR_EMOJI_PATH, 'NotoColorEmoji.ttf');
 
 const fonts: FontRegistration[] = [
   { family: fontFamily, filePath: fontFile },
   ...(existsSync(boldPath) ? [{ family: fontFamily, filePath: boldPath }] : []),
   ...(existsSync(italicPath) ? [{ family: fontFamily, filePath: italicPath }] : []),
-  ...(hasHackMono ? [{ family: 'Hack Nerd Font', filePath: HACK_MONO }] : []),
+  ...(hackPath ? [{ family: 'Hack Nerd Font', filePath: hackPath }] : []),
+  ...(thaiPath ? [{ family: 'Noto Sans Thai', filePath: thaiPath }] : []),
+  ...(emojiPath ? [{ family: 'Noto Color Emoji', filePath: emojiPath }] : []),
   { family: 'Liberation Serif', filePath: '/usr/share/fonts/liberation-serif/LiberationSerif-Regular.ttf' },
   { family: 'Liberation Sans', filePath: '/usr/share/fonts/liberation-sans/LiberationSans-Regular.ttf' },
   { family: 'Liberation Mono', filePath: '/usr/share/fonts/liberation-mono/LiberationMono-Regular.ttf' },
@@ -56,7 +93,12 @@ export const chromeConfig: BrowserConfig = {
     Arial: 'Liberation Sans',
     'sans-serif': 'Liberation Sans',
     'Courier New': 'Liberation Mono',
-    monospace: hasHackMono ? 'Hack Nerd Font' : 'Liberation Mono',
+    monospace: hackPath ? 'Hack Nerd Font' : 'Liberation Mono',
+    // Chrome/fontconfig resolves these families deterministically to the same
+    // installed faces the engine registers above, so a CSS stack naming them
+    // lands on identical glyphs (register-first, table second per §4).
+    'Noto Sans Thai': 'Noto Sans Thai',
+    'Noto Color Emoji': 'Noto Color Emoji',
   },
   defaultFamily: fontFamily,
   defaultFile: fontFile,

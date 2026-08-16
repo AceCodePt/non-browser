@@ -276,7 +276,9 @@ md.push('- **CJK** (`cjk/`): Simplified Chinese and Japanese (kanji/kana) on Dro
 );
 md.push('- **RTL** (`rtl/`): Arabic (harakat, Arabic-Indic digits) on Droid Arabic Kufi; Hebrew (niqqud) on Droid Sans Hebrew.',
 );
-md.push('- **Emoji** (`emoji/`): ZWJ family/kiss, flags, keycaps, skin tones on Noto Sans; dingbats, arrows, symbols on DejaVu Sans.',
+md.push('- **Emoji** (`emoji/`): plain smileys on DejaVu Sans (the reclassified known-gap string) and one glyph on the registered emoji face (Noto Color Emoji); arrows, suits, math/editorial marks, weather pictographs, currency on DejaVu Sans and Noto Sans. ZWJ family/flags/keycaps/skin-tone/VS16 sequences were dropped: they reroute to the color face at a 1.25em cell once an emoji face is installed and no longer match the engine.',
+);
+md.push('- **Thai** (`thai/`): Thai runs (tone marks, sara-am, country-name phrases) on the registered Noto Sans Thai face.',
 );
 md.push('- **Combining marks** (`combining-marks/`): decomposed/precomposed/double Latin diacritics on Noto Sans; Devanagari conjuncts, matras, digits on Droid Sans Devanagari.',
 );

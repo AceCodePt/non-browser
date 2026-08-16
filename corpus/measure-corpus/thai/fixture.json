@@ -1,0 +1,13 @@
+{
+  "name": "thai",
+  "note": "Thai runs measured on Noto Sans Thai, the Thai-capable face registered at user level (~/.local/share/fonts, fc-cache) and mirrored by the engine's registration (fonts/NotoSansThai-Regular.ttf). Chrome's fontconfig resolves 'Noto Sans Thai' to the installed file and the engine shapes the same file, so advances agree to sub-pixel. Reclassified out of known-gaps (the registered set previously had no Thai face, so skia's fallback and Chrome's fontconfig fallback resolved the run to different fonts).",
+  "fonts": [
+    { "family": "Noto Sans Thai", "file": "fonts/NotoSansThai-Regular.ttf" }
+  ],
+  "entries": [
+    { "text": "สวัสดีชาวโลก ภาษาไทย", "font": "16px 'Noto Sans Thai'", "note": "the gap string, measured on the registered Thai face" },
+    { "text": "สวัสดีชาวโลก ภาษาไทย", "font": "32px 'Noto Sans Thai'", "note": "the gap string at large size" },
+    { "text": "ภาษาไทย ประเทศไทย", "font": "16px 'Noto Sans Thai'", "note": "country-name phrase" },
+    { "text": "แมวน้อยน่ารัก", "font": "16px 'Noto Sans Thai'", "note": "clusters with tone marks and sara-am" }
+  ]
+}
