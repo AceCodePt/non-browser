@@ -13,7 +13,7 @@
  * swap in a different FormattingContext and the same block/inline layout runs.
  */
 
-import { parseStyleAttribute, pxLength, resolveLength, makeStyle, type BorderRadius, type ComputedStyle, type Color, type Declaration, type DecorationLine, type DisplayValue, type PseudoBox, type TextAlign, type VerticalAlign, type Viewport, type WhiteSpaceValue } from './css.js';
+import { parseStyleAttribute, pxLength, resolveLength, makeStyle, type BorderRadius, type ComputedStyle, type Color, type Declaration, type DecorationLine, type DisplayValue, type ListStyleType, type PseudoBox, type TextAlign, type VerticalAlign, type Viewport, type WhiteSpaceValue } from './css.js';
 import { layoutTextLines, measureTextWidth, type LineBox } from './measure.js';
 import { FloatManager, type FormattingContext } from './floats.js';
 import { layoutGridChildren } from './grid.js';
@@ -24,6 +24,7 @@ import { activeFontMetrics, halfXHeight, lineAscentContribution, lineDescentCont
 import type { P5Element, P5Text } from './types.js';
 import type { Box } from '../harness/fixtures.js';
 import type { PseudoDecls } from '../cascade/phases/media-queries.js';
+import { resolveUaDecls } from '../cascade/ua.js';
 
 export { FloatManager };
 export type { FormattingContext };
@@ -32,13 +33,20 @@ export { layoutPositionedChild, initialContainingBlock } from './positioning.js'
 export interface StyleDefaults {
   fontFamily: string;
   fontSize: number;
-  lineHeight: number;
+  /** line-height: a px value or `normal` (resolved per-font against the element's family). */
+  lineHeight: number | 'normal';
   color: Color;
   letterSpacing: number;
   textDecorationLines: DecorationLine[];
   textDecorationColor: Color | null;
   textDecorationThickness: 'auto' | 'from-font' | { px: number };
   textUnderlineOffset: number;
+  /** inherited font-weight. */
+  fontWeight?: number;
+  /** inherited font-style. */
+  fontStyle?: 'normal' | 'italic';
+  /** inherited list-style-type. */
+  listStyleType?: ListStyleType;
   /** UA-level default padding (e.g. td/th get 1px). */
   padding?: import('./css.js').Length;
   /** UA-level default vertical-align (e.g. table cells get 'middle'). */
@@ -117,14 +125,21 @@ export function resolveStyles(
   pseudoDecls?: Map<P5Element, PseudoDecls>,
 ): Map<P5Element, ComputedStyle> {
   const map = new Map<P5Element, ComputedStyle>();
+  const uaDecls = resolveUaDecls(root);
   const walk = (el: P5Element, d: StyleDefaults): void => {
     const inline = parseStyleAttribute(el.attrs.find((a) => a.name === 'style')?.value);
     const cascade = stylesheetDecls?.get(el);
+    const ua = uaDecls.get(el);
     // makeStyle reads the FIRST declaration of each property, so to get CSS
-    // "last wins" semantics across the cascade (stylesheet rules in ascending
-    // specificity/source order, then inline styles) feed the merged list in
-    // reverse — the winner appears first.
-    const decls = cascade && cascade.length > 0 ? [...cascade, ...inline].reverse() : inline;
+    // "last wins" semantics across the cascade feed the merged list in
+    // reverse — the winner appears first. Origins layer: inline style > author
+    // stylesheet > UA stylesheet (each list already in ascending cascade order
+    // internally, so reversing yields descending with inline on top).
+    const base = [];
+    if (ua && ua.length > 0) base.push(...ua);
+    if (cascade && cascade.length > 0) base.push(...cascade);
+    if (inline.length > 0) base.push(...inline);
+    const decls = base.reverse();
     const tagDefaults = tableDefaultsFor(el.nodeName);
     const style = makeStyle(decls, {
       ...d,
@@ -138,6 +153,9 @@ export function resolveStyles(
       borderCollapseDefault: tagDefaults.borderCollapse,
       borderSpacingDefault: tagDefaults.borderSpacing,
       borderSpacingVDefault: tagDefaults.borderSpacingV,
+      fontWeightDefault: d.fontWeight,
+      fontStyleDefault: d.fontStyle,
+      listStyleTypeDefault: d.listStyleType,
     });
     style.before = computePseudoBox(el, style, pseudoDecls, 'before');
     style.after = computePseudoBox(el, style, pseudoDecls, 'after');
@@ -146,7 +164,7 @@ export function resolveStyles(
     const childDefaults: StyleDefaults = {
       fontFamily: style.fontFamily,
       fontSize: style.fontSize,
-      lineHeight: style.lineHeight,
+      lineHeight: style.lineHeightNormal ? 'normal' : style.lineHeight,
       color: style.color,
       letterSpacing: style.letterSpacing,
       textDecorationLines: style.textDecorationLines,
@@ -155,6 +173,9 @@ export function resolveStyles(
       textUnderlineOffset: style.textUnderlineOffset,
       textAlignInherited: style.textAlign,
       textAlignComputedInherited: style.textAlignComputed,
+      fontWeight: style.fontWeight,
+      fontStyle: style.fontStyle,
+      listStyleType: style.listStyleType,
       whiteSpace: style.whiteSpace,
     };
     for (const child of el.childNodes) {
@@ -240,6 +261,25 @@ export interface LayoutNode {
   flowY: number;
   children: LayoutNode[];
   lines: LineBox[];
+  /** list marker to paint (disc/decimal/etc.) for a list-item element. */
+  marker?: ListMarker;
+}
+
+/** The rendered list marker for one list-item (positioned in the gutter). */
+export interface ListMarker {
+  kind: 'disc' | 'circle' | 'square' | 'decimal';
+  /** decimal marker text (e.g. "3."); absent for geometric markers. */
+  text?: string;
+  /** marker box right edge (decimal) / center x (geometric markers). */
+  rightX?: number;
+  centerX: number;
+  /** center y (geometric markers) or baseline (decimal text). */
+  centerY: number;
+  fontSize: number;
+  family: string;
+  color: Color;
+  /** decimal markers: the li's first-line baseline to align the counter text. */
+  baseline?: number;
 }
 
 export interface TextDecorationPaint {
@@ -254,11 +294,15 @@ export interface PaintOp {
   /** stacking key: the paint-order path (CSS 2.1 Appendix E, linearized). */
   key: number[];
   order: number;
-  kind: 'bg' | 'border' | 'text';
+  kind: 'bg' | 'border' | 'text' | 'marker';
   box: Box;
   color?: Color;
   borderWidths?: Record<'top' | 'right' | 'bottom' | 'left', number>;
   borderColors?: Record<'top' | 'right' | 'bottom' | 'left', Color>;
+  /** per-side border styles (inset/outset lighten per-side colors at paint). */
+  borderStyles?: Record<'top' | 'right' | 'bottom' | 'left', 'none' | 'solid' | 'inset' | 'outset'>;
+  /** list marker to paint (kind === 'marker'). */
+  marker?: ListMarker;
   /** rounded-corner radii for this box's background/border paint. */
   borderRadius?: BorderRadius;
   /** rounded-rect clip from a rounded overflow:hidden ancestor (border box). */
@@ -275,6 +319,10 @@ export interface PaintOp {
       family?: string;
       color?: Color;
       letterSpacing?: number;
+      fontWeight?: number;
+      fontStyle?: 'normal' | 'italic';
+      /** per-run decoration; overrides the op-level decoration when set. */
+      decorationLines?: TextDecorationPaint | null;
     }[];
     fontSize: number;
     family: string;
@@ -465,6 +513,26 @@ export function layoutRoot(
 
   paints.sort((a, b) => comparePaintKeys(a.key, b.key) || a.order - b.order);
 
+  // List markers paint in the inline phase (they sit in the list gutter
+  // beside each item's first line). Their key places them with text ops; the
+  // disc/text never overlap, so order within the key is irrelevant.
+  const markerOps: PaintOp[] = [];
+  const collectMarkers = (n: LayoutNode): void => {
+    if (n.marker) {
+      markerOps.push({
+        key: inFlowPaintKey(STEP_INLINE),
+        order: 0,
+        kind: 'marker',
+        box: { x: n.marker.centerX - 8, y: n.marker.centerY - 8, width: 16, height: 16 },
+        marker: n.marker,
+      });
+    }
+    for (const c of n.children) collectMarkers(c);
+  };
+  collectMarkers(bodyNode);
+  paints.push(...markerOps);
+  paints.sort((a, b) => comparePaintKeys(a.key, b.key) || a.order - b.order);
+
   return {
     root: bodyNode,
     bodyHeight: bodyNode.borderHeight,
@@ -485,7 +553,20 @@ function hasInlineContent(el: P5Element, styles: Map<P5Element, ComputedStyle>):
       if (/\S/.test((child as P5Text).value)) return true;
     } else if (child.nodeName !== '#comment') {
       const s = styles.get(child as P5Element);
-      if (s && (s.display === 'block' || s.display === 'grid' || s.display === 'flex' || s.float !== 'none')) continue;
+      if (s && (s.display === 'block' || s.display === 'list-item' || s.display === 'grid' || s.display === 'flex' || s.float !== 'none')) continue;
+      return true;
+    }
+  }
+  return false;
+}
+
+/** Does this element have any block-level (or float/positioned) children? */
+function hasBlockLevelChild(el: P5Element, styles: Map<P5Element, ComputedStyle>): boolean {
+  for (const child of el.childNodes) {
+    if (child.nodeName === '#text' || child.nodeName === '#comment') continue;
+    const s = styles.get(child as P5Element);
+    if (!s || s.display === 'none') continue;
+    if (s.display === 'block' || s.display === 'list-item' || s.display === 'grid' || s.display === 'flex' || s.float !== 'none' || s.position !== 'static') {
       return true;
     }
   }
@@ -501,7 +582,7 @@ export function collectInlineText(el: P5Element, styles: Map<P5Element, Computed
       out += (child as P5Text).value;
     } else if (child.nodeName !== '#comment') {
       const s = styles.get(child as P5Element);
-      if (s && (s.display === 'block' || s.display === 'grid' || s.display === 'flex')) continue;
+      if (s && (s.display === 'block' || s.display === 'list-item' || s.display === 'grid' || s.display === 'flex')) continue;
       out += collectInlineText(child as P5Element, styles);
     }
   }
@@ -516,6 +597,12 @@ interface LayoutBlockInput {
   /** content box top (absolute) — the current flow position. */
   y: number;
   prevBottomMargin: number;
+  /**
+   * When set, the child is the first in-flow block of a parent with no top
+   * border/padding: its top margin collapses into the parent's top margin, so
+   * the child sits flush with the parent's content top (CSS 2.1 §8.3.1).
+   */
+  collapseTop?: boolean;
 }
 
 /** Lay out an element's border box and inline/block content. */
@@ -664,7 +751,7 @@ export function layoutElementBox(
     });
     children.push(...res.children);
     contentHeight = res.height;
-  } else if (hasInlineContent(el, styles)) {
+  } else if (hasInlineContent(el, styles) && !hasBlockLevelChild(el, styles)) {
     const inlineRes = layoutInlineContent(el, style, styles, fm, contentX, contentY, contentWidth, paints, nextOrder, viewport);
     lines = inlineRes.lines;
     children.push(...inlineRes.children);
@@ -733,6 +820,9 @@ export function layoutElementBox(
           family: l.family,
           color: l.color,
           letterSpacing: l.letterSpacing,
+          fontWeight: l.fontWeight,
+          fontStyle: l.fontStyle,
+          decorationLines: l.decorationLines ?? null,
         })),
         fontSize: style.fontSize,
         family: style.fontFamily,
@@ -804,9 +894,13 @@ function layoutBlock(
         : specW + padBorderH
       : autoWidth;
 
-  // Vertical: margin collapsing with the previous sibling, then clearance.
-  const collapsed = collapseMargins(prevBottomMargin, marginT);
-  let borderTop = y + collapsed - prevBottomMargin;
+  // Vertical: margin collapsing with the previous sibling, then clearance. A
+  // first-child whose top margin collapses into the parent sits flush with the
+  // parent's content top (its margin extends above the parent's box instead of
+  // offsetting it).
+  const prev = ctx.collapseTop ? marginT : prevBottomMargin;
+  const collapsed = collapseMargins(prev, marginT);
+  let borderTop = y + collapsed - prev;
   if (style.clear !== 'none') {
     const fb = fm.lowestFloatBottom(style.clear);
     if (Number.isFinite(fb)) borderTop = Math.max(borderTop, fb);
@@ -888,10 +982,10 @@ function layoutFloat(
     // shrink-to-fit: min(max-content, max(min-content, available))
     const text = collectInlineText(el, styles).trim();
     const ls = style.letterSpacing;
-    const fullWidth = measureTextWidth(text, style.fontSize, style.fontFamily, ls);
+    const fullWidth = measureTextWidth(text, style.fontSize, style.fontFamily, ls, style.fontWeight, style.fontStyle);
     const widest = Math.max(
       0,
-      ...text.split(/\s+/).map((w) => measureTextWidth(w, style.fontSize, style.fontFamily, ls)),
+      ...text.split(/\s+/).map((w) => measureTextWidth(w, style.fontSize, style.fontFamily, ls, style.fontWeight, style.fontStyle)),
     );
     const available = contentWidth - marginL - marginR;
     borderBoxWidth = Math.min(fullWidth, Math.max(widest, available));
@@ -988,6 +1082,13 @@ function layoutFloat(
           width: l.width,
           height: l.height,
           baseline: placed.borderY + (l.baseline ?? l.y + lineAscentContribution(style.fontSize, style.lineHeight, activeFontMetrics())),
+          fontSize: l.fontSize,
+          family: l.family,
+          color: l.color,
+          letterSpacing: l.letterSpacing,
+          fontWeight: l.fontWeight,
+          fontStyle: l.fontStyle,
+          decorationLines: l.decorationLines ?? null,
         })),
         fontSize: style.fontSize,
         family: style.fontFamily,
@@ -1011,14 +1112,67 @@ function layoutBlockChildren(
   const nodes: LayoutNode[] = [];
   let y = ctx.y;
   let prevBottomMargin = 0;
+  const parentTag = parent.nodeName;
+  const isOrderedList = parentTag === 'ol';
+  let listIndex = 0;
+
+  // The parent's top margin collapses with its first in-flow block child only
+  // when the parent has no top border/padding to stop it.
+  const parentStyle = styles.get(parent);
+  const allowTopCollapse =
+    parentStyle !== undefined &&
+    parentStyle.borderWidth.top === 0 &&
+    (resolveLength(parentStyle.padding.top, ctx.contentWidth, viewport) ?? 0) === 0;
+  let firstInFlow = true;
+
+  // A block's children may mix inline-level items (text, inline elements) with
+  // block-level boxes (CSS 2.1 §9.2.1.1): consecutive inline items form an
+  // anonymous block box laid out as inline content, and block boxes stack
+  // between/around them.
+  let inlineRun: P5Element[] = [];
+  const flushInlineRun = (): void => {
+    if (inlineRun.length === 0) return;
+    const anon: P5Element = { nodeName: '#anon', tagName: '#anon', attrs: [], childNodes: inlineRun } as unknown as P5Element;
+    const anonStyle = styles.get(parent)!;
+    const anonFm = new FloatManager(ctx.contentX, ctx.contentWidth);
+    const inlineRes = layoutInlineContent(anon, anonStyle, styles, anonFm, ctx.contentX, y, ctx.contentWidth, paints, nextOrder, viewport);
+    nodes.push({
+      element: anon,
+      style: anonStyle,
+      borderX: ctx.contentX,
+      borderY: y,
+      borderWidth: ctx.contentWidth,
+      borderHeight: inlineRes.contentHeight,
+      contentX: ctx.contentX,
+      contentY: y,
+      contentWidth: ctx.contentWidth,
+      contentHeight: inlineRes.contentHeight,
+      isFloat: false,
+      marginTop: 0,
+      marginBottom: 0,
+      flowY: y,
+      children: inlineRes.children,
+      lines: inlineRes.lines,
+    });
+    y += inlineRes.contentHeight;
+    prevBottomMargin = 0;
+    firstInFlow = false;
+    inlineRun = [];
+  };
+
   for (const child of parent.childNodes) {
-    if (child.nodeName === '#text' || child.nodeName === '#comment') continue;
+    if (child.nodeName === '#comment') continue;
+    if (child.nodeName === '#text') {
+      if (/\S/.test((child as P5Text).value)) inlineRun.push(child as unknown as P5Element);
+      continue;
+    }
     const el = child as P5Element;
     const style = styles.get(el);
     if (!style || style.display === 'none') continue;
     if (style.position === 'absolute' || style.position === 'fixed') {
       // Out of flow: recorded with its static position, laid out by the
       // nearest positioned ancestor once that box's height is final.
+      flushInlineRun();
       cbStack[cbStack.length - 1].pending.push({
         el,
         style,
@@ -1029,19 +1183,43 @@ function layoutBlockChildren(
       continue;
     }
     if (style.float !== 'none') {
+      flushInlineRun();
       nodes.push(layoutFloat(el, style, { ...ctx, y }, styles, paints, nextOrder, viewport));
       continue;
     }
     if (style.display === 'inline' || style.display === 'inline-block') {
-      // Inline-level children belong to the inline formatting context, which is
-      // handled by the parent's inline branch; never lay them out as blocks.
+      inlineRun.push(el);
       continue;
     }
-    const node = layoutBlock(el, style, { ...ctx, y, prevBottomMargin }, styles, paints, nextOrder, viewport);
+    flushInlineRun();
+    const node = layoutBlock(
+      el,
+      style,
+      {
+        ...ctx,
+        y,
+        prevBottomMargin,
+        // A UA "quirky" margin-block-start collapses through its parent (Blink's
+        // `__qem`): the first in-flow child sits flush with the parent's content
+        // top and its margin extends above the parent's box. Author margins do
+        // not collapse into the parent this way.
+        collapseTop: firstInFlow && allowTopCollapse && style.margin.top.quirk === true,
+      },
+      styles,
+      paints,
+      nextOrder,
+      viewport,
+    );
+    firstInFlow = false;
+    if (el.nodeName === 'li' && (isOrderedList || style.listStyleType !== 'none')) {
+      if (isOrderedList) listIndex++;
+      node.marker = listMarkerFor(node, listIndex) ?? undefined;
+    }
     nodes.push(node);
     y = node.flowY + node.borderHeight + node.marginBottom;
     prevBottomMargin = node.marginBottom;
   }
+  flushInlineRun();
   return { nodes, height: y - ctx.y };
 }
 
@@ -1054,6 +1232,79 @@ function decorationPaint(style: ComputedStyle): TextDecorationPaint | null {
     thickness: style.textDecorationThickness,
     underlineOffset: style.textUnderlineOffset,
   };
+}
+
+/**
+ * Per-run decoration for inline elements that carry their own text-decoration
+ * (e.g. an inline `<a>` with the UA underline): the decoration of the run's
+ * owning element, null when it has none (the block's own decoration is applied
+ * at the op level).
+ */
+function decorationPaintForRun(owner: P5Element | null, styles: Map<P5Element, ComputedStyle>): TextDecorationPaint | null {
+  if (!owner) return null;
+  const s = styles.get(owner);
+  if (!s || s.textDecorationLines.length === 0) return null;
+  return {
+    lines: s.textDecorationLines,
+    color: s.textDecorationColor ?? s.color,
+    thickness: s.textDecorationThickness,
+    underlineOffset: s.textUnderlineOffset,
+  };
+}
+
+/**
+ * The first line box of a node's content, descending into anonymous-block
+ * children (a list-item whose text lives in an anonymous box still aligns its
+ * marker to that text's first line).
+ */
+function firstLineOf(node: LayoutNode): LineBox | null {
+  if (node.lines.length > 0) return node.lines[0];
+  for (const c of node.children) {
+    const f = firstLineOf(c);
+    if (f) return f;
+  }
+  return null;
+}
+
+/**
+ * Build the list marker for a list-item's first line. Geometry matches
+ * Chrome's list markers at the default font size: a 5x5 disc/circle/square
+ * centered at (li.borderLeft − 14, first-line center), and decimal counters
+ * right-aligned 6px before the li's content with the li's font.
+ */
+function listMarkerFor(node: LayoutNode, counter: number): ListMarker | null {
+  const style = node.style;
+  if (style.display !== 'list-item' || style.listStyleType === 'none') return null;
+  const first = firstLineOf(node);
+  if (!first) return null;
+  const metrics = activeFontMetrics();
+  const baseline = first.baseline ?? first.y + lineAscentContribution(style.fontSize, style.lineHeight, metrics);
+  const centerY = first.y + first.height / 2;
+  if (style.listStyleType === 'disc' || style.listStyleType === 'circle' || style.listStyleType === 'square') {
+    return {
+      kind: style.listStyleType,
+      centerX: node.borderX - 14,
+      centerY,
+      fontSize: style.fontSize,
+      family: style.fontFamily,
+      color: style.color,
+    };
+  }
+  if (style.listStyleType === 'decimal' || style.listStyleType === 'decimal-leading-zero') {
+    const text = `${counter}.`;
+    return {
+      kind: 'decimal',
+      text,
+      rightX: node.borderX - 6,
+      centerX: 0,
+      centerY,
+      fontSize: style.fontSize,
+      family: style.fontFamily,
+      color: style.color,
+      baseline,
+    };
+  }
+  return null;
 }
 
 function pushBorders(
@@ -1085,6 +1336,12 @@ function pushBorders(
       bottom: style.borderColor.bottom,
       left: style.borderColor.left,
     },
+    borderStyles: {
+      top: style.borderStyle.top,
+      right: style.borderStyle.right,
+      bottom: style.borderStyle.bottom,
+      left: style.borderStyle.left,
+    },
     borderRadius: style.borderRadius,
   };
   pushPaintOp(paints, op);
@@ -1111,6 +1368,10 @@ interface TextRunStyle {
   color: Color;
   letterSpacing: number;
   lineHeight: number;
+  /** font-weight of the run (bold runs measure/paint with the bold face). */
+  fontWeight: number;
+  /** font-style of the run. */
+  fontStyle: 'normal' | 'italic';
 }
 
 interface AtomicPiece {
@@ -1145,6 +1406,8 @@ function runStyleOf(style: ComputedStyle): TextRunStyle {
     color: style.color,
     letterSpacing: style.letterSpacing,
     lineHeight: style.lineHeight,
+    fontWeight: style.fontWeight,
+    fontStyle: style.fontStyle,
   };
 }
 
@@ -1286,7 +1549,7 @@ function piecesContentSizes(pieces: InlinePiece[], style: ComputedStyle, ws: Whi
     }
     const w =
       p.kind === 'word'
-        ? measureTextWidth(p.text, p.style.fontSize, p.style.family, p.style.letterSpacing)
+        ? measureTextWidth(p.text, p.style.fontSize, p.style.family, p.style.letterSpacing, p.style.fontWeight, p.style.fontStyle)
         : p.marginLeft + p.borderWidth + p.marginRight;
     min = Math.max(min, w);
     if (prevWasSpace && !preserve) max += measureTextWidth(' ', style.fontSize, style.fontFamily, style.letterSpacing);
@@ -1337,7 +1600,7 @@ function buildPieces(
     const childEl = child as P5Element;
     const s = styles.get(childEl);
     if (!s || s.display === 'none') continue;
-    if (s.display === 'block' || s.display === 'grid' || s.display === 'flex' || s.float !== 'none' || s.position !== 'static') {
+    if (s.display === 'block' || s.display === 'list-item' || s.display === 'grid' || s.display === 'flex' || s.float !== 'none' || s.position !== 'static') {
       continue;
     }
     if (isInlineBoxStyle(s)) {
@@ -1399,13 +1662,13 @@ function walkLine(pieces: InlinePiece[], style: ComputedStyle, stretch = 0, ws: 
   const flush = (): void => {
     if (!runText) return;
     const spaces = (runText.match(/ /g) ?? []).length;
-    const w = measureTextWidth(runText, runStyle!.fontSize, runStyle!.family, runStyle!.letterSpacing) + stretch * spaces;
+    const w = measureTextWidth(runText, runStyle!.fontSize, runStyle!.family, runStyle!.letterSpacing, runStyle!.fontWeight, runStyle!.fontStyle) + stretch * spaces;
     runs.push({ text: runText, x: runX, width: w, style: runStyle!, owner: runOwner });
     runText = '';
     runStyle = null;
     runOwner = null;
   };
-  const spaceW = (s: TextRunStyle): number => measureTextWidth(' ', s.fontSize, s.family, s.letterSpacing) + stretch;
+  const spaceW = (s: TextRunStyle): number => measureTextWidth(' ', s.fontSize, s.family, s.letterSpacing, s.fontWeight, s.fontStyle) + stretch;
   for (const p of pieces) {
     if (p.kind === 'space') {
       prevWasSpace = true;
@@ -1420,7 +1683,7 @@ function walkLine(pieces: InlinePiece[], style: ComputedStyle, stretch = 0, ws: 
           runX = x;
         }
         runText += p.text;
-        x += measureTextWidth(p.text, runStyle.fontSize, runStyle.family, runStyle.letterSpacing) + stretch * p.text.length;
+        x += measureTextWidth(p.text, runStyle.fontSize, runStyle.family, runStyle.letterSpacing, runStyle.fontWeight, runStyle.fontStyle) + stretch * p.text.length;
       }
       continue;
     }
@@ -1442,7 +1705,7 @@ function walkLine(pieces: InlinePiece[], style: ComputedStyle, stretch = 0, ws: 
         x += spaceW(p.style);
       }
       runText += p.text;
-      x += measureTextWidth(p.text, p.style.fontSize, p.style.family, p.style.letterSpacing);
+      x += measureTextWidth(p.text, p.style.fontSize, p.style.family, p.style.letterSpacing, p.style.fontWeight, p.style.fontStyle);
       hasContent = true;
       prevWasSpace = false;
     } else if (p.kind === 'break') {
@@ -1721,7 +1984,7 @@ function layoutInlineContent(
                 bottom: baseline + roundedDescent(metrics, r.style.fontSize),
               }
             : { top: runBox.y, bottom: runBox.y + runBox.height };
-          const spanW = measureTextWidth(spanText, r.style.fontSize, r.style.family, r.style.letterSpacing);
+          const spanW = measureTextWidth(spanText, r.style.fontSize, r.style.family, r.style.letterSpacing, r.style.fontWeight, r.style.fontStyle);
           let b = spanBounds.get(r.owner);
           if (!b) {
             b = { minX: runBox.x, minY: cb.top, maxX: runBox.x + spanW, maxY: cb.bottom };

@@ -9,6 +9,8 @@
  * `auto` is represented as null.
  */
 
+import { fontMetricsForFamily, roundedAscent, roundedDescent } from './fontmetrics.js';
+
 export interface Color {
   r: number;
   g: number;
@@ -34,14 +36,20 @@ export interface Length {
   vmin: number | null;
   /** viewport-max units (1vmax = 1% of the larger viewport dimension). */
   vmax: number | null;
+  /** em units (relative to the element's own font-size). */
+  em: number | null;
+  /** true when this is a UA "quirky" margin (Blink's `__qem`): a quirky
+   * margin-block-start collapses through its parent, so the first in-flow
+   * child sits flush with the parent's content top. */
+  quirk?: boolean;
   /** true for `auto`. */
   auto: boolean;
 }
 
-export const AUTO: Length = { px: null, pct: null, vw: null, vh: null, vmin: null, vmax: null, auto: true };
+export const AUTO: Length = { px: null, pct: null, vw: null, vh: null, vmin: null, vmax: null, em: null, auto: true };
 
 export function pxLength(v: number): Length {
-  return { px: v, pct: null, vw: null, vh: null, vmin: null, vmax: null, auto: false };
+  return { px: v, pct: null, vw: null, vh: null, vmin: null, vmax: null, em: null, auto: false };
 }
 
 export interface Viewport {
@@ -68,6 +76,18 @@ export function resolveLength(l: Length, ref: number, viewport?: Viewport | null
     if (l.vmax !== null) return l.vmax * Math.max(vw, vh);
   }
   return null;
+}
+
+/**
+ * Resolve the em component of a length against an element's font-size (CSS
+ * Values §5.2: em lengths resolve against the element's own font-size).
+ * Returns a copy with the em component folded into px when present. The
+ * product is rounded to 4 decimals so binary-float products serialize like
+ * Chrome's computed values (0.83 × 24px → "19.92px").
+ */
+export function resolveEmLength(l: Length, fontSize: number): Length {
+  if (l.em === null) return l;
+  return { px: Math.round(l.em * fontSize * 1e4) / 1e4, pct: l.pct, vw: l.vw, vh: l.vh, vmin: l.vmin, vmax: l.vmax, em: null, quirk: l.quirk, auto: false };
 }
 
 export type Side = 'top' | 'right' | 'bottom' | 'left';
@@ -165,6 +185,7 @@ export type DisplayValue =
   | 'flex'
   | 'inline-block'
   | 'inline'
+  | 'list-item'
   // --- table display values (CSS 2.1 §17.2.1) ---
   | 'table'
   | 'inline-table'
@@ -193,6 +214,16 @@ export type TextAlign = 'left' | 'center' | 'right' | 'justify';
  * nowrap / pre) is a strict subset.
  */
 export type WhiteSpaceValue = 'normal' | 'nowrap' | 'pre' | 'pre-wrap' | 'pre-line';
+
+/** list-style-type values the engine renders (markers). */
+export type ListStyleType =
+  | 'none'
+  | 'disc'
+  | 'circle'
+  | 'square'
+  | 'decimal'
+  | 'decimal-leading-zero'
+  | string;
 
 /** The parsed `content` value of a ::before/::after pseudo-element. */
 export type ContentValue = { kind: 'none' } | { kind: 'text'; text: string };
@@ -249,14 +280,25 @@ export interface ComputedStyle {
   padding: Record<Side, Length>;
   borderWidth: Record<Side, number>;
   borderColor: Record<Side, Color>;
-  borderStyle: Record<Side, 'none' | 'solid'>;
+  borderStyle: Record<Side, 'none' | 'solid' | 'inset' | 'outset'>;
   /** per-corner border radii (px/%/viewport lengths, pre-resolution). */
   borderRadius: BorderRadius;
   backgroundColor: Color;
   color: Color;
   fontFamily: string;
   fontSize: number;
+  /** resolved font-weight (400/700/...); inherited. */
+  fontWeight: number;
+  /** resolved font-style; inherited. */
+  fontStyle: 'normal' | 'italic';
+  /** list-style-type; inherited (initial 'disc'). */
+  listStyleType: ListStyleType;
+  /** line-height in px (used layout value); when `lineHeightNormal` is set the
+   * computed value was the `normal` keyword (serialized as 'normal'). */
   lineHeight: number;
+  /** true when line-height computed to the `normal` keyword (CSSOM reports it
+   * as 'normal', while layout uses the font-metric-derived px value). */
+  lineHeightNormal: boolean;
   whiteSpace: WhiteSpaceValue;
 
   // --- text paint properties ---
@@ -368,29 +410,31 @@ function clamp255(v: number): number {
   return Math.max(0, Math.min(255, v));
 }
 
-/** Parse a single length value: px, %, viewport unit, auto, 0. */
+/** Parse a single length value: px, em, %, viewport unit, auto, 0. */
 export function parseLength(raw: string): Length {
   const s = raw.trim();
   if (s === 'auto') return AUTO;
-  const m = s.match(/^(-?[\d.]+)(px|%|vw|vh|vmin|vmax)?$/);
+  const m = s.match(/^(-?[\d.]+)(px|em|%|vw|vh|vmin|vmax)?$/);
   if (m) {
     const v = parseFloat(m[1]);
     switch (m[2] ?? 'px') {
+      case 'em':
+        return { px: null, pct: null, vw: null, vh: null, vmin: null, vmax: null, em: v, auto: false };
       case '%':
-        return { px: null, pct: v, vw: null, vh: null, vmin: null, vmax: null, auto: false };
+        return { px: null, pct: v, vw: null, vh: null, vmin: null, vmax: null, em: null, auto: false };
       case 'vw':
-        return { px: null, pct: null, vw: v, vh: null, vmin: null, vmax: null, auto: false };
+        return { px: null, pct: null, vw: v, vh: null, vmin: null, vmax: null, em: null, auto: false };
       case 'vh':
-        return { px: null, pct: null, vw: null, vh: v, vmin: null, vmax: null, auto: false };
+        return { px: null, pct: null, vw: null, vh: v, vmin: null, vmax: null, em: null, auto: false };
       case 'vmin':
-        return { px: null, pct: null, vw: null, vh: null, vmin: v, vmax: null, auto: false };
+        return { px: null, pct: null, vw: null, vh: null, vmin: v, vmax: null, em: null, auto: false };
       case 'vmax':
-        return { px: null, pct: null, vw: null, vh: null, vmin: null, vmax: v, auto: false };
+        return { px: null, pct: null, vw: null, vh: null, vmin: null, vmax: v, em: null, auto: false };
       default:
-        return { px: v, pct: null, vw: null, vh: null, vmin: null, vmax: null, auto: false };
+        return { px: v, pct: null, vw: null, vh: null, vmin: null, vmax: null, em: null, auto: false };
     }
   }
-  if (s === '0') return { px: 0, pct: null, vw: null, vh: null, vmin: null, vmax: null, auto: false };
+  if (s === '0') return { px: 0, pct: null, vw: null, vh: null, vmin: null, vmax: null, em: null, auto: false };
   return AUTO;
 }
 
@@ -786,6 +830,24 @@ function parseBoxShorthand(raw: string): Record<Side, Length> {
   return { top: t, right: r, bottom: b, left: l };
 }
 
+type BorderStyleKeyword = 'none' | 'solid' | 'inset' | 'outset';
+
+/** Parse a `border-style` shorthand (1-4 keywords) into per-side styles. */
+function parseBorderStyleShorthand(raw: string): Record<Side, BorderStyleKeyword> {
+  const kw = (v: string): BorderStyleKeyword =>
+    v === 'inset' ? 'inset' : v === 'outset' ? 'outset' : v === 'solid' ? 'solid' : 'none';
+  const parts = raw.trim().split(/\s+/).map(kw);
+  const [t = 'none', r = t, b = t, l = r] = parts;
+  return { top: t, right: r, bottom: b, left: l };
+}
+
+/** Parse a `border-color` shorthand (1-4 colors) into per-side colors. */
+function parseBorderColorShorthand(raw: string): Record<Side, Color> {
+  const parts = raw.trim().split(/\s+/).map(parseColor);
+  const [t = parseColor('black'), r = t, b = t, l = r] = parts;
+  return { top: t, right: r, bottom: b, left: l };
+}
+
 /** Parse `flex-basis`; `auto` and `content` both resolve to AUTO (content-based). */
 function parseFlexBasis(value: string | undefined): Length {
   if (!value) return AUTO;
@@ -850,6 +912,8 @@ function splitDeclarations(block: string): string[] {
 export interface Declaration {
   property: string;
   value: string;
+  /** UA "quirky" margin marker (Blink's `__qem` on margin-block-start). */
+  quirk?: boolean;
 }
 
 /** Parse the contents of a declaration block (no braces) into declarations. */
@@ -877,6 +941,15 @@ const FONT_WEIGHT: Record<string, number> = {
   bolder: 700,
   lighter: 300,
 };
+
+/** `line-height: normal` resolves to the font's natural line height (rounded
+ * hhea ascender + descender at the element's font size), matching Blink's
+ * FontMetrics for the element's family. */
+function normalLineHeight(fontFamily: string, fontSize: number): number {
+  const m = fontMetricsForFamily(fontFamily);
+  if (!m) return fontSize * 1.2;
+  return roundedAscent(m, fontSize) + roundedDescent(m, fontSize);
+}
 
 function parseLineHeight(value: string, fontSize: number): number {
   const s = value.trim();
@@ -965,15 +1038,23 @@ function parseDecorationShorthand(value: string): {
 
 interface Defaults {
   fontFamily: string;
+  /** the inherited (parent) font-size; a UA `font-size` multiplier resolves against it. */
   fontSize: number;
   color: Color;
-  lineHeight: number;
+  /** inherited line-height: a px value or the `normal` keyword (resolved per-font). */
+  lineHeight: number | 'normal';
   display: DisplayValue;
   letterSpacing?: number;
   textDecorationLines?: DecorationLine[];
   textDecorationColor?: Color | null;
   textDecorationThickness?: 'auto' | 'from-font' | { px: number };
   textUnderlineOffset?: number;
+  /** inherited font-weight (default 400). */
+  fontWeightDefault?: number;
+  /** inherited font-style (default normal). */
+  fontStyleDefault?: 'normal' | 'italic';
+  /** inherited list-style-type (default disc, matching the CSS initial). */
+  listStyleTypeDefault?: ListStyleType;
   /** UA-level default padding (e.g. td/th get 1px). */
   paddingDefault?: Length;
   /** UA-level default vertical-align (e.g. table cells get 'middle'). */
@@ -1004,19 +1085,22 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   };
 
   const bgDecl = decls.find((d) => d.property === 'background-color') ?? decls.find((d) => d.property === 'background');
+  const elementColor = color('color', defaults.color);
 
+  // --- font-family (needed before line-height/font-size-margin resolution) ---
   let fontFamily = defaults.fontFamily;
-  let fontSize = defaults.fontSize;
-  let lineHeight = defaults.lineHeight;
-  const weight = (w: number): number => {
-    const d = decls.find((x) => x.property === 'font-weight');
-    if (!d) return w;
-    const v = d.value.trim();
-    if (/^\d+$/.test(v)) return parseInt(v, 10);
-    return FONT_WEIGHT[v] ?? w;
-  };
+  const ffDecl = decls.find((d) => d.property === 'font-family');
+  if (ffDecl) {
+    fontFamily =
+      ffDecl.value
+        .split(',')
+        .map((f) => f.trim().replace(/^["']|["']$/g, ''))
+        .find(Boolean) ?? fontFamily;
+  }
 
-  // `font` shorthand: font: [style] [weight] size[/line-height] family
+  // --- font-size: declaration (px or em-of-parent), else UA multiplier, else
+  // the inherited size. `font` shorthand also carries a px size. ---
+  let fontSize = defaults.fontSize;
   const fontDecl = decls.find((d) => d.property === 'font');
   if (fontDecl) {
     const m = fontDecl.value.match(
@@ -1024,30 +1108,78 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     );
     if (m) {
       fontSize = parseFloat(m[1]);
-      if (m[2]) lineHeight = parseFloat(m[2]);
-      fontFamily = m[3].trim().replace(/,$/, '').trim();
+      if (m[3]) fontFamily = m[3].trim().replace(/,$/, '').trim();
     }
   }
   const fsDecl = decls.find((d) => d.property === 'font-size');
   if (fsDecl) {
-    const m = fsDecl.value.trim().match(/^([\d.]+)px$/);
-    if (m) fontSize = parseFloat(m[1]);
+    const m = fsDecl.value.trim().match(/^(-?[\d.]+)(px|em)?$/);
+    if (m) {
+      if (m[2] === 'em') fontSize = defaults.fontSize * parseFloat(m[1]);
+      else fontSize = parseFloat(m[1]);
+    }
   }
-  const fw = weight(400);
-  void fw;
-  const ffDecl = decls.find((d) => d.property === 'font-family');
-  if (ffDecl) {
-    fontFamily = ffDecl.value
-      .split(',')
-      .map((f) => f.trim().replace(/^["']|["']$/g, ''))
-      .find(Boolean) ?? fontFamily;
-  }
+
+  // --- line-height: `normal` recomputes per-font; a px/number keeps its value;
+  // `inherit` inherits the parent's (a px value or the normal keyword). ---
+  let lineHeight: number;
+  let lineHeightNormal = false;
   const lhDecl = decls.find((d) => d.property === 'line-height');
-  if (lhDecl) lineHeight = parseLineHeight(lhDecl.value, fontSize);
+  const lhValue = lhDecl ? lhDecl.value.trim() : defaults.lineHeight;
+  if (lhValue === 'normal') {
+    lineHeightNormal = true;
+    lineHeight = normalLineHeight(fontFamily, fontSize);
+  } else if (lhValue === 'inherit') {
+    if (typeof defaults.lineHeight === 'number') {
+      lineHeight = defaults.lineHeight;
+    } else {
+      lineHeightNormal = true;
+      lineHeight = normalLineHeight(fontFamily, fontSize);
+    }
+  } else if (typeof lhValue === 'number') {
+    lineHeight = lhValue;
+  } else {
+    lineHeight = parseLineHeight(lhValue, fontSize);
+  }
+
+  // --- font-weight / font-style (inherited, UA `bolder` maps 400→700, 700→900) ---
+  const fontWeight = (() => {
+    const d = decls.find((x) => x.property === 'font-weight');
+    if (!d) return defaults.fontWeightDefault ?? 400;
+    const v = d.value.trim();
+    if (/^-?\d+$/.test(v)) return parseInt(v, 10);
+    if (v === 'bolder') return (defaults.fontWeightDefault ?? 400) <= 400 ? 700 : 900;
+    if (v === 'lighter') return (defaults.fontWeightDefault ?? 400) >= 700 ? 400 : 300;
+    return FONT_WEIGHT[v] ?? defaults.fontWeightDefault ?? 400;
+  })();
+  const fontStyle = (() => {
+    const d = decls.find((x) => x.property === 'font-style');
+    if (!d) return defaults.fontStyleDefault ?? 'normal';
+    const v = d.value.trim();
+    return v === 'italic' || v === 'oblique' ? 'italic' : 'normal';
+  })();
+
+  // --- list-style-type (inherited; initial is disc) ---
+  const listStyleType = (() => {
+    const d = decls.find((x) => x.property === 'list-style-type');
+    if (!d) return defaults.listStyleTypeDefault ?? 'disc';
+    const v = d.value.trim().toLowerCase();
+    return v === 'none' || v === 'disc' || v === 'circle' || v === 'square' || v === 'decimal' || v === 'decimal-leading-zero' ? v : 'disc';
+  })();
 
   const len = (name: string, dflt: Length = AUTO): Length => {
     const d = decls.find((x) => x.property === name);
     return d ? parseLength(d.value) : dflt;
+  };
+
+  const marginLonghand = (name: string, dflt: Length, quirkDecls: string[]): Length => {
+    const d = decls.find((x) => x.property === name);
+    if (d) {
+      const l = parseLength(d.value);
+      if (quirkDecls.includes(name) && d.quirk) l.quirk = true;
+      return l;
+    }
+    return dflt;
   };
 
   const sideLens = (shorthand: string): Record<Side, Length> => {
@@ -1061,37 +1193,86 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     return { top, right, bottom, left };
   };
 
-  const margin = sideLens('margin');
-  const padding = sideLens('padding');
+  // --- margins: the logical longhands (margin-block-start/end,
+  // margin-inline-start/end) feed the physical sides, and the `margin`
+  // shorthand wins over everything (CSS logical/physical is resolved in source
+  // order in Blink; for the UA fixtures these never coexist). The UA
+  // margin-block-start carries the quirky-margin marker (Blink `__qem`). ---
+  const margin = (() => {
+    const sh = decls.find((d) => d.property === 'margin');
+    const top = marginLonghand('margin-block-start', len('margin-top', pxLength(0)), ['margin-block-start']);
+    const bottom = marginLonghand('margin-block-end', len('margin-bottom', pxLength(0)), ['margin-block-end']);
+    const left = marginLonghand('margin-inline-start', len('margin-left', pxLength(0)), []);
+    const right = marginLonghand('margin-inline-end', len('margin-right', pxLength(0)), []);
+    if (sh) return parseBoxShorthand(sh.value);
+    return { top, right, bottom, left };
+  })();
+
+  // --- padding: padding-inline-start feeds the left side (list gutters). ---
+  const padding = (() => {
+    const sh = decls.find((d) => d.property === 'padding');
+    const dflt = defaults.paddingDefault ?? pxLength(0);
+    const top = len('padding-top', dflt);
+    const right = len('padding-inline-end', len('padding-right', dflt));
+    const bottom = len('padding-bottom', dflt);
+    const left = len('padding-inline-start', len('padding-left', dflt));
+    if (sh) return parseBoxShorthand(sh.value);
+    return { top, right, bottom, left };
+  })();
+
+  // Resolve em lengths (margins/paddings) against the element's own font-size.
+  const resolveEm = (sides: Record<Side, Length>): Record<Side, Length> => ({
+    top: resolveEmLength(sides.top, fontSize),
+    right: resolveEmLength(sides.right, fontSize),
+    bottom: resolveEmLength(sides.bottom, fontSize),
+    left: resolveEmLength(sides.left, fontSize),
+  });
+  const marginResolved = resolveEm(margin);
+  const paddingResolved = resolveEm(padding);
 
   const borderWidth: Record<Side, number> = { top: 0, right: 0, bottom: 0, left: 0 };
-  const borderColor: Record<Side, Color> = { top: parseColor('black'), right: parseColor('black'), bottom: parseColor('black'), left: parseColor('black') };
-  const borderStyle: Record<Side, 'none' | 'solid'> = { top: 'none', right: 'none', bottom: 'none', left: 'none' };
+  // Default border color is currentColor (the element's color), like Blink.
+  const borderColor: Record<Side, Color> = { top: elementColor, right: elementColor, bottom: elementColor, left: elementColor };
+  const borderStyle: Record<Side, 'none' | 'solid' | 'inset' | 'outset'> = { top: 'none', right: 'none', bottom: 'none', left: 'none' };
   const borderRadius = parseBorderRadius(decls);
   const borderDecl = decls.find((d) => d.property === 'border');
+  const bwShort = decls.find((d) => d.property === 'border-width');
+  const bsShort = decls.find((d) => d.property === 'border-style');
+  const bcShort = decls.find((d) => d.property === 'border-color');
   if (borderDecl) {
     const parts = borderDecl.value.trim().split(/\s+/);
     let width = 0;
-    let style: 'none' | 'solid' = 'solid';
+    let style: 'none' | 'solid' | 'inset' | 'outset' = 'solid';
     let col = parseColor('black');
     for (const p of parts) {
-      if (p === 'solid' || p === 'none') style = p === 'solid' ? 'solid' : 'none';
+      if (p === 'solid' || p === 'none' || p === 'inset' || p === 'outset') style = p as 'none' | 'solid' | 'inset' | 'outset';
       else if (/^-?[\d.]+px$/.test(p)) width = parseFloat(p);
       else col = parseColor(p);
     }
-    if (style === 'solid') {
+    if (style !== 'none') {
       for (const s of SIDES) {
         borderWidth[s] = width;
         borderColor[s] = col;
-        borderStyle[s] = 'solid';
+        borderStyle[s] = style;
       }
     }
   } else {
+    const bw = bwShort ? parseBoxShorthand(bwShort.value) : null;
+    const bs = bsShort ? parseBorderStyleShorthand(bsShort.value) : null;
+    const bc = bcShort ? parseBorderColorShorthand(bcShort.value) : null;
     for (const s of SIDES) {
-      const w = len(`border-${s}-width`, pxLength(0));
+      const w = bw ? bw[s] : len(`border-${s}-width`, pxLength(0));
       borderWidth[s] = w.px ?? 0;
-      const c = color(`border-${s}-color`, parseColor('black'));
+      const c = bc ? bc[s] : color(`border-${s}-color`, parseColor('black'));
       borderColor[s] = c;
+      borderStyle[s] = bs ? bs[s] : (() => {
+        const d = decls.find((x) => x.property === `border-${s}-style`);
+        const v = d ? d.value.trim() : '';
+        if (v === 'inset') return 'inset';
+        if (v === 'outset') return 'outset';
+        if (v === 'solid') return 'solid';
+        return 'none';
+      })();
     }
   }
 
@@ -1105,6 +1286,7 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     if (v === 'flex' || v === 'inline-flex') return 'flex';
     if (v === 'inline-block') return 'inline-block';
     if (v === 'inline') return 'inline';
+    if (v === 'list-item') return 'list-item';
     if (v === 'table') return 'table';
     if (v === 'inline-table') return 'inline-table';
     if (v === 'table-row') return 'table-row';
@@ -1162,6 +1344,7 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
       if (v === 'center') return 'center';
       if (v === 'right' || v === 'end') return 'right';
       if (v === 'justify') return 'justify';
+      if (v === 'match-parent') return defaults.textAlignInherited ?? 'left';
       return 'left';
     }
     return defaults.textAlignDefault ?? textAlignInheritedUsed;
@@ -1393,17 +1576,21 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     maxWidth: len('max-width'),
     minHeight: len('min-height'),
     maxHeight: len('max-height'),
-    margin,
-    padding,
+    margin: marginResolved,
+    padding: paddingResolved,
     borderWidth,
     borderColor,
     borderStyle,
     borderRadius,
     backgroundColor: bgDecl ? parseColor(bgDecl.value) : { r: 0, g: 0, b: 0, a: 0 },
-    color: color('color', defaults.color),
+    color: elementColor,
     fontFamily,
     fontSize,
+    fontWeight,
+    fontStyle,
+    listStyleType,
     lineHeight,
+    lineHeightNormal,
     whiteSpace,
 
     letterSpacing,

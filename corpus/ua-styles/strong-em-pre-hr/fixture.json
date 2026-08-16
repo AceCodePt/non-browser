@@ -1,0 +1,28 @@
+{
+  "name": "strong-em-pre-hr",
+  "note": "strong/b weight, em/i style, pre (monospace face, white-space:pre, 13px fixed-pitch default), and hr's inset border — the hr gets an explicit border-color so the engine's inset lighting (Blink Light/Dark/BlendWithWhite) is diffed against Chrome's exact raster. Part of the corpus/ua-styles UA stylesheet feature.",
+  "harvest": {
+    "viewport": { "width": 460, "height": 200 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'}</style></head><body><p id=\"p\">Text with <strong id=\"str\">strong</strong>, <em id=\"em\">emphasis</em>, and <a id=\"a\" href=\"#\">a link</a> here.</p><pre id=\"pre\">preformatted text</pre><hr id=\"hr\" style=\"border-color:#808080\"></body></html>",
+    "measureText": [
+      { "text": "Text with strong, emphasis, and a link here.", "font": "16px 'Noto Sans'" },
+      { "text": "preformatted text", "font": "13px 'Noto Sans'" }
+    ],
+    "computedStyle": [
+      { "id": "p", "props": ["display", "font-size", "font-weight", "line-height", "margin-top", "margin-bottom"] },
+      { "id": "str", "props": ["display", "font-weight", "font-style", "font-size"] },
+      { "id": "em", "props": ["display", "font-weight", "font-style", "font-size"] },
+      { "id": "a", "props": ["display", "color", "text-decoration-line", "font-weight", "font-style"] },
+      { "id": "pre", "props": ["display", "font-size", "font-family", "white-space", "line-height", "margin-top", "margin-bottom"] },
+      { "id": "hr", "props": ["display", "margin-top", "margin-bottom", "border-top-width", "border-top-style", "border-color", "color"] }
+    ],
+    "rects": ["p", "str", "em", "a", "pre", "hr"],
+    "textElements": ["p", "pre"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

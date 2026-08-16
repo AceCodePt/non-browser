@@ -1,0 +1,26 @@
+{
+  "name": "bare-paragraphs",
+  "note": "Bare paragraphs (corpus/ua-styles, UA stylesheet feature): the UA layer gives p block display and 1em block margins; consecutive p margins collapse to a single 1em gap, matching Chrome's rects.",
+  "harvest": {
+    "viewport": { "width": 480, "height": 200 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'}</style></head><body><p id=\"p1\">The quick brown fox jumps over the lazy dog.</p><p id=\"p2\">Pack my box with five dozen liquor jugs.</p><p id=\"p3\">How vexingly quick daft zebras jump.</p></body></html>",
+    "measureText": [
+      { "text": "The quick brown fox jumps over the lazy dog.", "font": "16px 'Noto Sans'" },
+      { "text": "Pack my box with five dozen liquor jugs.", "font": "16px 'Noto Sans'" },
+      { "text": "How vexingly quick daft zebras jump.", "font": "16px 'Noto Sans'" }
+    ],
+    "computedStyle": [
+      { "id": "p1", "props": ["display", "font-size", "font-weight", "line-height", "margin-top", "margin-bottom", "list-style-type"] },
+      { "id": "p2", "props": ["display", "font-size", "margin-top", "margin-bottom"] },
+      { "id": "p3", "props": ["display", "font-size", "margin-top", "margin-bottom"] }
+    ],
+    "rects": ["p1", "p2", "p3"],
+    "textElements": ["p1", "p2", "p3"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

@@ -140,3 +140,4 @@ the charter and the corpus cannot silently diverge:
 | text | letter-spacing | yes | corpus/paint-text, corpus/measure-corpus | letter-spacing |
 | text | text-decoration | yes | corpus/paint-text | text-decoration |
 | font | font-family (fallback tables) | yes | corpus/cross-family, corpus/firefox-track | font-family |
+| ua-stylesheet | UA defaults at lowest cascade priority | yes | corpus/ua-styles | UA stylesheet |

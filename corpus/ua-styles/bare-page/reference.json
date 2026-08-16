@@ -1,0 +1,40 @@
+{
+  "measureText": {
+    "32px 'Noto Sans' | Title": 63.90411376953125,
+    "16px 'Noto Sans' | body": 37.52009582519531
+  },
+  "computedStyle": {
+    "h1": {
+      "display": "block",
+      "font-size": "32px",
+      "font-weight": "700",
+      "font-style": "normal",
+      "line-height": "normal",
+      "margin-top": "21.44px",
+      "margin-bottom": "21.44px",
+      "list-style-type": "disc"
+    },
+    "p": {
+      "display": "block",
+      "font-size": "16px",
+      "font-weight": "400",
+      "line-height": "normal",
+      "margin-top": "16px",
+      "margin-bottom": "16px"
+    }
+  },
+  "rect": {
+    "h1": {
+      "x": 0,
+      "y": 0,
+      "width": 460,
+      "height": 43
+    },
+    "p": {
+      "x": 0,
+      "y": 64.4375,
+      "width": 460,
+      "height": 22
+    }
+  }
+}

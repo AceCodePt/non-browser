@@ -1,0 +1,30 @@
+{
+  "name": "nested-lists",
+  "note": "Nested lists (corpus/ua-styles, UA stylesheet feature): Blink's nested-list UA rules reset the inner list's block margins and step the marker type disc -> circle -> square by nesting depth. The screenshot diffs all three marker glyphs against Chrome.",
+  "harvest": {
+    "viewport": { "width": 460, "height": 220 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'}</style></head><body><ul id=\"outer\"><li id=\"l1\">outer one<ul id=\"mid\"><li id=\"m1\">mid a<ul id=\"inner\"><li id=\"i1\">inner x</li></ul></li><li id=\"m2\">mid b</li></ul></li><li id=\"l2\">outer two</li></ul></body></html>",
+    "measureText": [
+      { "text": "outer one", "font": "16px 'Noto Sans'" },
+      { "text": "inner x", "font": "16px 'Noto Sans'" },
+      { "text": "mid b", "font": "16px 'Noto Sans'" }
+    ],
+    "computedStyle": [
+      { "id": "outer", "props": ["display", "list-style-type", "padding-left", "margin-top"] },
+      { "id": "l1", "props": ["display", "list-style-type"] },
+      { "id": "mid", "props": ["display", "list-style-type", "margin-top", "margin-bottom", "padding-left"] },
+      { "id": "m1", "props": ["display", "list-style-type"] },
+      { "id": "inner", "props": ["display", "list-style-type", "margin-top", "margin-bottom", "padding-left"] },
+      { "id": "i1", "props": ["display", "list-style-type"] },
+      { "id": "l2", "props": ["display", "list-style-type"] }
+    ],
+    "rects": ["outer", "l1", "mid", "m1", "inner", "i1", "l2"],
+    "textElements": ["l1", "m1", "i1", "m2", "l2"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}
