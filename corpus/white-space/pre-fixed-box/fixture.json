@@ -1,0 +1,41 @@
+{
+  "name": "pre-fixed-box",
+  "note": "white-space:pre inside a fixed-width box: trailing spaces before a newline stay part of the line box (line 1 is 'abc   ' = 34.11px) and the newline forces the second line, so the box is exactly two lines tall.",
+  "harvest": {
+    "viewport": {
+      "width": 480,
+      "height": 200
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;width:120px;white-space:pre\">abc   \ndef</div></body></html>",
+    "measureText": [
+      {
+        "text": "abc   ",
+        "font": "14px 'Noto Sans'"
+      },
+      {
+        "text": "def",
+        "font": "14px 'Noto Sans'"
+      }
+    ],
+    "rects": [
+      "c"
+    ],
+    "computedStyle": [
+      {
+        "id": "c",
+        "props": [
+          "white-space"
+        ]
+      }
+    ],
+    "textElements": [
+      "c"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

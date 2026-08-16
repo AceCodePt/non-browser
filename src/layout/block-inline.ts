@@ -13,7 +13,7 @@
  * swap in a different FormattingContext and the same block/inline layout runs.
  */
 
-import { parseStyleAttribute, pxLength, resolveLength, makeStyle, type BorderRadius, type ComputedStyle, type Color, type Declaration, type DecorationLine, type DisplayValue, type PseudoBox, type TextAlign, type VerticalAlign, type Viewport } from './css.js';
+import { parseStyleAttribute, pxLength, resolveLength, makeStyle, type BorderRadius, type ComputedStyle, type Color, type Declaration, type DecorationLine, type DisplayValue, type PseudoBox, type TextAlign, type VerticalAlign, type Viewport, type WhiteSpaceValue } from './css.js';
 import { layoutTextLines, measureTextWidth, type LineBox } from './measure.js';
 import { FloatManager, type FormattingContext } from './floats.js';
 import { layoutGridChildren } from './grid.js';
@@ -49,6 +49,8 @@ export interface StyleDefaults {
   textAlignInherited?: TextAlign;
   /** inherited computed text-align string (start/end/justify/... preserved verbatim). */
   textAlignComputedInherited?: string;
+  /** inherited white-space (white-space inherits; used when no author value). */
+  whiteSpace?: WhiteSpaceValue;
   /** UA-level default border-collapse (table gets 'separate'). */
   borderCollapse?: 'separate' | 'collapse';
   /** UA-level default horizontal border-spacing (table gets 2px). */
@@ -132,6 +134,7 @@ export function resolveStyles(
       textAlignDefault: tagDefaults.textAlign,
       textAlignInherited: d.textAlignInherited ?? d.textAlign ?? 'left',
       textAlignComputedInherited: d.textAlignComputedInherited,
+      whiteSpaceDefault: d.whiteSpace ?? 'normal',
       borderCollapseDefault: tagDefaults.borderCollapse,
       borderSpacingDefault: tagDefaults.borderSpacing,
       borderSpacingVDefault: tagDefaults.borderSpacingV,
@@ -152,6 +155,7 @@ export function resolveStyles(
       textUnderlineOffset: style.textUnderlineOffset,
       textAlignInherited: style.textAlign,
       textAlignComputedInherited: style.textAlignComputed,
+      whiteSpace: style.whiteSpace,
     };
     for (const child of el.childNodes) {
       if (child.nodeName !== '#text') {
@@ -908,6 +912,7 @@ function layoutFloat(
       family: style.fontFamily,
       letterSpacing: style.letterSpacing,
       align: style.textAlign,
+      whiteSpace: style.whiteSpace,
       available: (top, bottom) => ({ x: 0, width: floatContentWidth }),
     });
     lines = lineRes.lines;
@@ -1121,7 +1126,11 @@ interface AtomicPiece {
   contentWidth: number;
 }
 
-type InlinePiece = { kind: 'word'; text: string; style: TextRunStyle; owner: P5Element | null } | { kind: 'space' } | AtomicPiece;
+type InlinePiece =
+  | { kind: 'word'; text: string; style: TextRunStyle; owner: P5Element | null }
+  | { kind: 'space'; text: string }
+  | { kind: 'break' }
+  | AtomicPiece;
 
 interface InlineLayoutResult {
   lines: LineBox[];
@@ -1139,22 +1148,84 @@ function runStyleOf(style: ComputedStyle): TextRunStyle {
   };
 }
 
-/** Split a text node's raw value into word/space pieces (whitespace collapsed). */
-function pushTextPieces(raw: string, style: TextRunStyle, owner: P5Element | null, out: InlinePiece[]): void {
-  const norm = raw.replace(/[ \t\r\n\f]+/g, ' ');
+/**
+ * Split a text node's raw value into word/space/break pieces under the
+ * element's used white-space:
+ *   - normal/nowrap: runs of white space (incl. newlines) collapse to one
+ *     space piece; no break pieces.
+ *   - pre-line: runs of spaces/tabs collapse to one space piece, but newlines
+ *     are preserved as break pieces.
+ *   - pre/pre-wrap: every space is preserved (space pieces carry their exact
+ *     run), newlines are preserved as break pieces.
+ */
+function pushTextPieces(raw: string, style: TextRunStyle, owner: P5Element | null, out: InlinePiece[], ws: WhiteSpaceValue): void {
   let run = '';
+  const flushWord = (): void => {
+    if (run) {
+      out.push({ kind: 'word', text: run, style, owner });
+      run = '';
+    }
+  };
+  if (ws === 'pre' || ws === 'pre-wrap') {
+    let spaceRun = '';
+    for (const ch of raw) {
+      if (ch === '\n') {
+        flushWord();
+        if (spaceRun) {
+          out.push({ kind: 'space', text: spaceRun });
+          spaceRun = '';
+        }
+        out.push({ kind: 'break' });
+      } else if (ch === ' ') {
+        flushWord();
+        spaceRun += ch;
+      } else {
+        if (spaceRun) {
+          out.push({ kind: 'space', text: spaceRun });
+          spaceRun = '';
+        }
+        run += ch;
+      }
+    }
+    flushWord();
+    if (spaceRun) out.push({ kind: 'space', text: spaceRun });
+    return;
+  }
+  if (ws === 'pre-line') {
+    let spacePending = false;
+    for (const ch of raw) {
+      if (ch === '\n') {
+        flushWord();
+        if (spacePending) {
+          out.push({ kind: 'space', text: ' ' });
+          spacePending = false;
+        }
+        out.push({ kind: 'break' });
+      } else if (ch === ' ' || ch === '\t' || ch === '\r' || ch === '\f') {
+        flushWord();
+        spacePending = true;
+      } else {
+        if (spacePending) {
+          out.push({ kind: 'space', text: ' ' });
+          spacePending = false;
+        }
+        run += ch;
+      }
+    }
+    flushWord();
+    if (spacePending) out.push({ kind: 'space', text: ' ' });
+    return;
+  }
+  const norm = raw.replace(/[ \t\r\n\f]+/g, ' ');
   for (let i = 0; i < norm.length; i++) {
     if (norm[i] === ' ') {
-      if (run) {
-        out.push({ kind: 'word', text: run, style, owner });
-        run = '';
-      }
-      out.push({ kind: 'space' });
+      flushWord();
+      out.push({ kind: 'space', text: ' ' });
     } else {
       run += norm[i];
     }
   }
-  if (run) out.push({ kind: 'word', text: run, style, owner });
+  flushWord();
 }
 
 /** An element that participates in inline layout as a box (not flattened text). */
@@ -1183,8 +1254,8 @@ function atomicBoxSize(
   if (specW !== null) {
     borderWidth = style.boxSizing === 'border-box' ? specW : specW + padBorderH;
   } else {
-    const pieces = buildPieces(el, style, styles, refWidth, viewport);
-    const sizes = piecesContentSizes(pieces, style);
+    const pieces = buildPieces(el, style, styles, refWidth, viewport, style.whiteSpace);
+    const sizes = piecesContentSizes(pieces, style, style.whiteSpace);
     const mL = resolveLength(style.margin.left, refWidth, viewport) ?? 0;
     const mR = resolveLength(style.margin.right, refWidth, viewport) ?? 0;
     const available = Math.max(0, refWidth - mL - mR - padBorderH);
@@ -1199,12 +1270,17 @@ function atomicBoxSize(
 }
 
 /** min/max-content widths of a piece sequence (content-box, incl. spaces). */
-function piecesContentSizes(pieces: InlinePiece[], style: ComputedStyle): { min: number; max: number } {
+function piecesContentSizes(pieces: InlinePiece[], style: ComputedStyle, ws: WhiteSpaceValue): { min: number; max: number } {
+  const preserve = ws === 'pre' || ws === 'pre-wrap';
   let min = 0;
   let max = 0;
   let prevWasSpace = false;
   for (const p of pieces) {
+    if (p.kind === 'break') continue;
     if (p.kind === 'space') {
+      if (preserve) {
+        max += measureTextWidth(p.text, style.fontSize, style.fontFamily, style.letterSpacing);
+      }
       prevWasSpace = true;
       continue;
     }
@@ -1213,7 +1289,7 @@ function piecesContentSizes(pieces: InlinePiece[], style: ComputedStyle): { min:
         ? measureTextWidth(p.text, p.style.fontSize, p.style.family, p.style.letterSpacing)
         : p.marginLeft + p.borderWidth + p.marginRight;
     min = Math.max(min, w);
-    if (prevWasSpace) max += measureTextWidth(' ', style.fontSize, style.fontFamily, style.letterSpacing);
+    if (prevWasSpace && !preserve) max += measureTextWidth(' ', style.fontSize, style.fontFamily, style.letterSpacing);
     max += w;
     prevWasSpace = false;
   }
@@ -1225,13 +1301,13 @@ function piecesContentSizes(pieces: InlinePiece[], style: ComputedStyle): { min:
  * pieces styled with the pseudo's computed style. An empty content string still
  * produces a box (a zero-width piece) so it is not conflated with none/normal.
  */
-function pushPseudoPieces(box: PseudoBox, owner: P5Element, out: InlinePiece[]): void {
+function pushPseudoPieces(box: PseudoBox, owner: P5Element, out: InlinePiece[], ws: WhiteSpaceValue): void {
   if (box.text === null) return;
   if (box.text === '') {
     out.push({ kind: 'word', text: '', style: runStyleOf(box.style), owner });
     return;
   }
-  pushTextPieces(box.text, runStyleOf(box.style), owner, out);
+  pushTextPieces(box.text, runStyleOf(box.style), owner, out, ws);
 }
 
 /**
@@ -1248,12 +1324,13 @@ function buildPieces(
   styles: Map<P5Element, ComputedStyle>,
   refWidth: number,
   viewport: Viewport | undefined,
+  ws: WhiteSpaceValue = style.whiteSpace,
 ): InlinePiece[] {
   const out: InlinePiece[] = [];
-  if (style.before) pushPseudoPieces(style.before, el, out);
+  if (style.before) pushPseudoPieces(style.before, el, out, ws);
   for (const child of el.childNodes) {
     if (child.nodeName === '#text') {
-      pushTextPieces((child as P5Text).value, runStyleOf(style), el, out);
+      pushTextPieces((child as P5Text).value, runStyleOf(style), el, out, ws);
       continue;
     }
     if (child.nodeName === '#comment') continue;
@@ -1282,9 +1359,9 @@ function buildPieces(
       });
       continue;
     }
-    for (const p of buildPieces(childEl, s, styles, refWidth, viewport)) out.push(p);
+    for (const p of buildPieces(childEl, s, styles, refWidth, viewport, s.whiteSpace)) out.push(p);
   }
-  if (style.after) pushPseudoPieces(style.after, el, out);
+  if (style.after) pushPseudoPieces(style.after, el, out, ws);
   return out;
 }
 
@@ -1297,16 +1374,19 @@ interface WalkedLine {
 /**
  * Walk a line's pieces left-to-right, producing text runs (with their start x
  * and measured width) and atomic placements (border-box x, line-relative).
- * Leading/trailing spaces are dropped; internal spaces are part of their run.
- * `width` is the used (painted) line width. This mirrors the line-breaking
- * measurement so a line's wrap decision equals its final rendering width.
+ * Under collapsing white-space, leading/trailing spaces are dropped and one
+ * space separates words; under preserved white-space every space piece
+ * contributes its own width (and run text). `width` is the used (painted)
+ * line width. This mirrors the line-breaking measurement so a line's wrap
+ * decision equals its final rendering width.
  *
  * `stretch` (px added to every inter-word space) implements `text-align:
  * justify`: with a uniform stretch the run x/width and the line's total width
  * grow by exactly `stretch × spaceCount`, so the line fills the available
  * width the same way Chrome distributes the surplus across spaces.
  */
-function walkLine(pieces: InlinePiece[], style: ComputedStyle, stretch = 0): WalkedLine {
+function walkLine(pieces: InlinePiece[], style: ComputedStyle, stretch = 0, ws: WhiteSpaceValue = 'normal'): WalkedLine {
+  const preserve = ws === 'pre' || ws === 'pre-wrap';
   const runs: WalkedLine['runs'] = [];
   const atomics: WalkedLine['atomics'] = [];
   let x = 0;
@@ -1329,19 +1409,35 @@ function walkLine(pieces: InlinePiece[], style: ComputedStyle, stretch = 0): Wal
   for (const p of pieces) {
     if (p.kind === 'space') {
       prevWasSpace = true;
+      if (preserve) {
+        // Preserved space run: attach to the current run (or start one) and
+        // advance x by its full width. Spaces carry no ink, so attaching them
+        // to a run keeps the painted text identical while the width/geometry
+        // (line box, span rects) accounts for the preserved run.
+        if (runStyle === null) {
+          runStyle = runStyleOf(style);
+          runOwner = null;
+          runX = x;
+        }
+        runText += p.text;
+        x += measureTextWidth(p.text, runStyle.fontSize, runStyle.family, runStyle.letterSpacing) + stretch * p.text.length;
+      }
       continue;
     }
     if (p.kind === 'word') {
       if (runStyle !== null && (runStyle !== p.style || runOwner !== p.owner)) flush();
       if (!runText) {
-        if (prevWasSpace && hasContent) {
-          runText = ' ';
+        if (prevWasSpace && hasContent && !preserve) {
+          // The whitespace separating inline elements belongs to the line's
+          // advance (an anonymous inline box): advance x by the space but do
+          // not fold it into the run's text, so run boxes never double-count
+          // it (matching Chrome's per-box fragments).
           x += spaceW(p.style);
         }
         runX = x;
         runStyle = p.style;
         runOwner = p.owner;
-      } else {
+      } else if (!preserve) {
         runText += ' ';
         x += spaceW(p.style);
       }
@@ -1349,9 +1445,13 @@ function walkLine(pieces: InlinePiece[], style: ComputedStyle, stretch = 0): Wal
       x += measureTextWidth(p.text, p.style.fontSize, p.style.family, p.style.letterSpacing);
       hasContent = true;
       prevWasSpace = false;
+    } else if (p.kind === 'break') {
+      // Forced breaks are split out into segments before walkLine runs; a
+      // stray break piece contributes nothing to a line.
+      continue;
     } else {
       flush();
-      if (prevWasSpace && hasContent) x += spaceW(runStyleOf(style));
+      if (prevWasSpace && hasContent && !preserve) x += spaceW(runStyleOf(style));
       atomics.push({ piece: p, x: x + p.marginLeft });
       x += p.marginLeft + p.borderWidth + p.marginRight;
       hasContent = true;
@@ -1431,199 +1531,264 @@ function layoutInlineContent(
   viewport: Viewport | undefined,
 ): InlineLayoutResult {
   const metrics = activeFontMetrics();
-  const pieces = buildPieces(el, style, styles, contentWidth, viewport);
+  const ws = style.whiteSpace;
+  const pieces = buildPieces(el, style, styles, contentWidth, viewport, ws);
   if (pieces.length === 0) return { lines: [], children: [], contentHeight: 0 };
+
+  // Forced breaks (newlines under pre/pre-wrap/pre-line) split the piece
+  // stream into segments. A trailing newline's empty final segment does not
+  // produce a line box (Chrome drops it); empty interior segments do.
+  const segments: InlinePiece[][] = [];
+  let hasBreak = false;
+  let cur: InlinePiece[] = [];
+  for (const p of pieces) {
+    if (p.kind === 'break') {
+      hasBreak = true;
+      segments.push(cur);
+      cur = [];
+    } else {
+      cur.push(p);
+    }
+  }
+  segments.push(cur);
+  if (hasBreak && segments[segments.length - 1].length === 0) segments.pop();
+
+  const collapseTrim = ws === 'normal' || ws === 'nowrap' || ws === 'pre-line';
+  const noWrap = ws === 'pre' || ws === 'nowrap';
+  const justifyAllowed = ws === 'normal' || ws === 'pre-line';
 
   const lines: LineBox[] = [];
   const children: LayoutNode[] = [];
   const spanBounds = new Map<P5Element, { minX: number; minY: number; maxX: number; maxY: number }>();
   let y = contentY;
-  let idx = 0;
-  while (idx < pieces.length) {
-    const av = fm.floatIntrusion(y, y + style.lineHeight);
-    const lineX = contentX + av.left;
-    const availWidth = Math.max(0, contentWidth - av.left - av.right);
 
-    // ---- fill the line (greedy, breaking at the last space opportunity) ----
-    const onLine: InlinePiece[] = [];
-    let lastBreak = -1;
-    let lineHasContent = false;
-    let i = idx;
-    for (; i < pieces.length; i++) {
-      const p = pieces[i];
-      if (p.kind === 'space') {
-        onLine.push(p);
-        lastBreak = onLine.length - 1;
-        continue;
-      }
-      const trial = walkLine([...onLine, p], style).width;
-      if (lineHasContent && trial > availWidth) {
-        if (lastBreak >= 0) onLine.length = lastBreak;
-        break;
-      }
-      onLine.push(p);
-      lineHasContent = true;
-    }
-    while (onLine.length > 0 && onLine[0].kind === 'space') onLine.shift();
-    if (onLine.length > 0 && onLine[onLine.length - 1].kind === 'space') onLine.pop();
-
-    // ---- alignment (text-align): shift the line within its available width;
-    // justify stretches inter-word spaces so non-last lines fill the width ----
-    const natural = walkLine(onLine, style);
-    const isLastLine = i >= pieces.length;
-    const align = style.textAlign;
-    let alignOffset = 0;
-    let stretch = 0;
-    if (align === 'center') {
-      // An overflowing line (single word wider than the box) stays at the start
-      // edge under every alignment, matching Chrome.
-      alignOffset = natural.width <= availWidth ? (availWidth - natural.width) / 2 : 0;
-    } else if (align === 'right') {
-      alignOffset = natural.width <= availWidth ? availWidth - natural.width : 0;
-    } else if (align === 'justify' && !isLastLine) {
-      const spaceCount = onLine.filter((p) => p.kind === 'space').length;
-      if (spaceCount > 0 && natural.width < availWidth) stretch = (availWidth - natural.width) / spaceCount;
-    }
-    const walked = stretch !== 0 ? walkLine(onLine, style, stretch) : natural;
-
-    // ---- measure atomics: height + baseline ----
-    const measured = new Map<AtomicPiece, MeasuredAtomic>();
-    for (const a of walked.atomics) measured.set(a.piece, measureAtomic(a.piece, styles, paints, nextOrder, viewport));
-
-    // ---- line box from the strut (if glyphs/whitespace), runs, and baseline atomics ----
-    const hasText = onLine.some((p) => p.kind === 'word' || p.kind === 'space');
-    let maxAscent = 0;
-    let maxDescent = 0;
-    if (hasText) {
-      maxAscent = lineAscentContribution(style.fontSize, style.lineHeight, metrics);
-      maxDescent = lineDescentContribution(style.fontSize, style.lineHeight, metrics);
-    }
-    for (const r of walked.runs) {
-      const a = lineAscentContribution(r.style.fontSize, r.style.lineHeight, metrics);
-      const d = lineDescentContribution(r.style.fontSize, r.style.lineHeight, metrics);
-      if (a > maxAscent) maxAscent = a;
-      if (d > maxDescent) maxDescent = d;
-    }
-    for (const a of walked.atomics) {
-      const m = measured.get(a.piece)!;
-      if (a.piece.style.verticalAlign !== 'baseline') continue;
-      if (m.baselineOffset !== null) {
-        maxAscent = Math.max(maxAscent, a.piece.marginTop + m.baselineOffset);
-        maxDescent = Math.max(maxDescent, a.piece.marginBottom + m.borderHeight - m.baselineOffset);
-      } else {
-        // No inline baseline: the bottom margin edge sits on the line baseline,
-        // so the whole margin box contributes above it.
-        maxAscent = Math.max(maxAscent, a.piece.marginTop + m.borderHeight + a.piece.marginBottom);
-      }
-    }
-
-    const B0 = y + maxAscent;
-    const xh2 = metrics ? halfXHeight(metrics, style.fontSize) : 0;
-    let lineTop = y;
-    let lineBottom = B0 + maxDescent;
-    for (const a of walked.atomics) {
-      const m = measured.get(a.piece)!;
-      const marginH = a.piece.marginTop + m.borderHeight + a.piece.marginBottom;
-      const va = a.piece.style.verticalAlign;
-      if (va === 'top') {
-        lineBottom = Math.max(lineBottom, y + marginH);
-      } else if (va === 'middle') {
-        const top = B0 - xh2 - marginH / 2;
-        lineTop = Math.min(lineTop, top);
-        lineBottom = Math.max(lineBottom, top + marginH);
-      } else if (va === 'bottom') {
-        lineTop = Math.min(lineTop, B0 + maxDescent - marginH);
-      }
-    }
-    const shift = y - lineTop;
-    const baseline = B0 + shift;
-    const lineHeight = lineBottom + shift - y;
-
-    // ---- place text runs and atomics ----
-    for (const r of walked.runs) {
-      // The run may start with the whitespace separating inline elements; that
-      // space belongs to the line (an anonymous inline box), so a span's rect
-      // starts after it and its width excludes it. (runX already sits after the
-      // space, so the span x is the run x and its width is the space-stripped
-      // text width.)
-      const spanText = r.text.replace(/^ /, '');
-      const runBox = { x: lineX + alignOffset + r.x, y, width: r.width, height: lineHeight };
-      if (r.owner && r.owner !== el) {
-        // A span's getBoundingClientRect is the union of its inline boxes'
-        // content boxes (baseline ± rounded font metrics), not the line boxes.
-        const cb = metrics
-          ? {
-              top: baseline - roundedAscent(metrics, r.style.fontSize),
-              bottom: baseline + roundedDescent(metrics, r.style.fontSize),
-            }
-          : { top: runBox.y, bottom: runBox.y + runBox.height };
-        const spanW = measureTextWidth(spanText, r.style.fontSize, r.style.family, r.style.letterSpacing);
-        let b = spanBounds.get(r.owner);
-        if (!b) {
-          b = { minX: runBox.x, minY: cb.top, maxX: runBox.x + spanW, maxY: cb.bottom };
-          spanBounds.set(r.owner, b);
-        } else {
-          b.minX = Math.min(b.minX, runBox.x);
-          b.minY = Math.min(b.minY, cb.top);
-          b.maxX = Math.max(b.maxX, runBox.x + spanW);
-          b.maxY = Math.max(b.maxY, cb.bottom);
-        }
-      }
+  for (const seg of segments) {
+    if (seg.length === 0) {
+      // An empty segment is an empty line box (same height as a content line).
+      const av = fm.floatIntrusion(y, y + style.lineHeight);
       lines.push({
-        x: runBox.x,
-        y: runBox.y,
-        width: runBox.width,
-        height: runBox.height,
-        text: r.text,
+        x: contentX + av.left,
+        y,
+        width: 0,
+        height: style.lineHeight,
+        text: '',
         startWord: 0,
         endWord: 1,
-        baseline,
-        fontSize: r.style.fontSize,
-        family: r.style.family,
-        color: r.style.color,
-        letterSpacing: r.style.letterSpacing,
+        baseline: y + lineAscentContribution(style.fontSize, style.lineHeight, metrics),
       });
+      y += style.lineHeight;
+      continue;
     }
-    for (const a of walked.atomics) {
-      const m = measured.get(a.piece)!;
-      const borderX = lineX + alignOffset + a.x;
-      const va = a.piece.style.verticalAlign;
-      let borderY: number;
-      if (va === 'baseline') {
-        borderY =
-          m.baselineOffset !== null
-            ? // The margin-box top sits at baseline − ascent; the border box is
-              // marginTop below it.
-              baseline - m.baselineOffset
-            : baseline - a.piece.marginBottom - m.borderHeight;
-      } else if (va === 'top') {
-        borderY = y + a.piece.marginTop;
-      } else if (va === 'middle') {
-        const marginH = a.piece.marginTop + m.borderHeight + a.piece.marginBottom;
-        borderY = baseline - xh2 - marginH / 2 + a.piece.marginTop;
-      } else {
-        borderY = y + lineHeight - a.piece.marginBottom - m.borderHeight;
-      }
-      const node = layoutElementBox(
-        a.piece.el,
-        a.piece.style,
-        new FloatManager(0, a.piece.contentWidth),
-        borderX,
-        borderY,
-        a.piece.borderWidth,
-        borderX + a.piece.style.borderWidth.left + (resolveLength(a.piece.style.padding.left, a.piece.contentWidth, viewport) ?? 0),
-        borderY + a.piece.style.borderWidth.top + (resolveLength(a.piece.style.padding.top, a.piece.contentWidth, viewport) ?? 0),
-        a.piece.contentWidth,
-        styles,
-        paints,
-        nextOrder,
-        viewport,
-      );
-      children.push(node);
-    }
+    let idx = 0;
+    while (idx < seg.length) {
+      const av = fm.floatIntrusion(y, y + style.lineHeight);
+      const lineX = contentX + av.left;
+      const availWidth = Math.max(0, contentWidth - av.left - av.right);
 
-    y += lineHeight;
-    idx = i;
+      // ---- fill the line (greedy, breaking at the last space opportunity) ----
+      const onLine: InlinePiece[] = [];
+      let lastBreak = -1;
+      let lineHasContent = false;
+      let i = idx;
+      if (noWrap) {
+        // pre / nowrap: every piece of the segment lands on one line (a line
+        // wider than the box overflows rather than wraps, matching Chrome).
+        onLine.push(...seg);
+        i = seg.length;
+      } else {
+        for (; i < seg.length; i++) {
+          const p = seg[i];
+          if (p.kind === 'space') {
+            onLine.push(p);
+            lastBreak = onLine.length - 1;
+            continue;
+          }
+          const trial = walkLine([...onLine, p], style, 0, ws).width;
+          if (lineHasContent && trial > availWidth) {
+            if (lastBreak >= 0) {
+              if (ws === 'pre-wrap') {
+                // A preserved space run at the wrap point collapses to one hung
+                // space on the line (Chrome keeps a single space, no ink).
+                onLine.length = lastBreak;
+                onLine.push({ kind: 'space', text: ' ' });
+              } else {
+                onLine.length = lastBreak;
+              }
+            }
+            break;
+          }
+          onLine.push(p);
+          lineHasContent = true;
+        }
+      }
+      if (collapseTrim) {
+        while (onLine.length > 0 && onLine[0].kind === 'space') onLine.shift();
+        if (onLine.length > 0 && onLine[onLine.length - 1].kind === 'space') onLine.pop();
+      }
+
+      // ---- alignment (text-align): shift the line within its available width;
+      // justify stretches inter-word spaces so non-last lines fill the width ----
+      const natural = walkLine(onLine, style, 0, ws);
+      const isLastLine = i >= seg.length;
+      const align = style.textAlign;
+      let alignOffset = 0;
+      let stretch = 0;
+      if (align === 'center') {
+        // An overflowing line (single word wider than the box) stays at the start
+        // edge under every alignment, matching Chrome.
+        alignOffset = natural.width <= availWidth ? (availWidth - natural.width) / 2 : 0;
+      } else if (align === 'right') {
+        alignOffset = natural.width <= availWidth ? availWidth - natural.width : 0;
+      } else if (align === 'justify' && justifyAllowed && !isLastLine) {
+        const spaceCount = onLine.filter((p) => p.kind === 'space').length;
+        if (spaceCount > 0 && natural.width < availWidth) stretch = (availWidth - natural.width) / spaceCount;
+      }
+      const walked = stretch !== 0 ? walkLine(onLine, style, stretch, ws) : natural;
+
+      // ---- measure atomics: height + baseline ----
+      const measured = new Map<AtomicPiece, MeasuredAtomic>();
+      for (const a of walked.atomics) measured.set(a.piece, measureAtomic(a.piece, styles, paints, nextOrder, viewport));
+
+      // ---- line box from the strut (if glyphs/whitespace), runs, and baseline atomics ----
+      const hasText = onLine.some((p) => p.kind === 'word' || p.kind === 'space');
+      let maxAscent = 0;
+      let maxDescent = 0;
+      if (hasText) {
+        maxAscent = lineAscentContribution(style.fontSize, style.lineHeight, metrics);
+        maxDescent = lineDescentContribution(style.fontSize, style.lineHeight, metrics);
+      }
+      for (const r of walked.runs) {
+        const a = lineAscentContribution(r.style.fontSize, r.style.lineHeight, metrics);
+        const d = lineDescentContribution(r.style.fontSize, r.style.lineHeight, metrics);
+        if (a > maxAscent) maxAscent = a;
+        if (d > maxDescent) maxDescent = d;
+      }
+      for (const a of walked.atomics) {
+        const m = measured.get(a.piece)!;
+        if (a.piece.style.verticalAlign !== 'baseline') continue;
+        if (m.baselineOffset !== null) {
+          maxAscent = Math.max(maxAscent, a.piece.marginTop + m.baselineOffset);
+          maxDescent = Math.max(maxDescent, a.piece.marginBottom + m.borderHeight - m.baselineOffset);
+        } else {
+          // No inline baseline: the bottom margin edge sits on the line baseline,
+          // so the whole margin box contributes above it.
+          maxAscent = Math.max(maxAscent, a.piece.marginTop + m.borderHeight + a.piece.marginBottom);
+        }
+      }
+
+      const B0 = y + maxAscent;
+      const xh2 = metrics ? halfXHeight(metrics, style.fontSize) : 0;
+      let lineTop = y;
+      let lineBottom = B0 + maxDescent;
+      for (const a of walked.atomics) {
+        const m = measured.get(a.piece)!;
+        const marginH = a.piece.marginTop + m.borderHeight + a.piece.marginBottom;
+        const va = a.piece.style.verticalAlign;
+        if (va === 'top') {
+          lineBottom = Math.max(lineBottom, y + marginH);
+        } else if (va === 'middle') {
+          const top = B0 - xh2 - marginH / 2;
+          lineTop = Math.min(lineTop, top);
+          lineBottom = Math.max(lineBottom, top + marginH);
+        } else if (va === 'bottom') {
+          lineTop = Math.min(lineTop, B0 + maxDescent - marginH);
+        }
+      }
+      const shift = y - lineTop;
+      const baseline = B0 + shift;
+      let lineHeight = lineBottom + shift - y;
+      if (lineHeight <= 0) {
+        // An empty interior line (pre/pre-wrap/pre-line blank segment): the
+        // box still occupies a full line-height, matching Chrome.
+        lineHeight = style.lineHeight;
+      }
+
+      // ---- place text runs and atomics ----
+      for (const r of walked.runs) {
+        // The run may start with the whitespace separating inline elements; that
+        // space belongs to the line (an anonymous inline box), so a span's rect
+        // starts after it and its width excludes it. (runX already sits after the
+        // space, so the span x is the run x and its width is the space-stripped
+        // text width.)
+        const spanText = r.text.replace(/^ /, '');
+        const runBox = { x: lineX + alignOffset + r.x, y, width: r.width, height: lineHeight };
+        if (r.owner && r.owner !== el) {
+          // A span's getBoundingClientRect is the union of its inline boxes'
+          // content boxes (baseline ± rounded font metrics), not the line boxes.
+          const cb = metrics
+            ? {
+                top: baseline - roundedAscent(metrics, r.style.fontSize),
+                bottom: baseline + roundedDescent(metrics, r.style.fontSize),
+              }
+            : { top: runBox.y, bottom: runBox.y + runBox.height };
+          const spanW = measureTextWidth(spanText, r.style.fontSize, r.style.family, r.style.letterSpacing);
+          let b = spanBounds.get(r.owner);
+          if (!b) {
+            b = { minX: runBox.x, minY: cb.top, maxX: runBox.x + spanW, maxY: cb.bottom };
+            spanBounds.set(r.owner, b);
+          } else {
+            b.minX = Math.min(b.minX, runBox.x);
+            b.minY = Math.min(b.minY, cb.top);
+            b.maxX = Math.max(b.maxX, runBox.x + spanW);
+            b.maxY = Math.max(b.maxY, cb.bottom);
+          }
+        }
+        lines.push({
+          x: runBox.x,
+          y: runBox.y,
+          width: runBox.width,
+          height: runBox.height,
+          text: r.text,
+          startWord: 0,
+          endWord: 1,
+          baseline,
+          fontSize: r.style.fontSize,
+          family: r.style.family,
+          color: r.style.color,
+          letterSpacing: r.style.letterSpacing,
+        });
+      }
+      for (const a of walked.atomics) {
+        const m = measured.get(a.piece)!;
+        const borderX = lineX + alignOffset + a.x;
+        const va = a.piece.style.verticalAlign;
+        let borderY: number;
+        if (va === 'baseline') {
+          borderY =
+            m.baselineOffset !== null
+              ? // The margin-box top sits at baseline − ascent; the border box is
+                // marginTop below it.
+                baseline - m.baselineOffset
+              : baseline - a.piece.marginBottom - m.borderHeight;
+        } else if (va === 'top') {
+          borderY = y + a.piece.marginTop;
+        } else if (va === 'middle') {
+          const marginH = a.piece.marginTop + m.borderHeight + a.piece.marginBottom;
+          borderY = baseline - xh2 - marginH / 2 + a.piece.marginTop;
+        } else {
+          borderY = y + lineHeight - a.piece.marginBottom - m.borderHeight;
+        }
+        const node = layoutElementBox(
+          a.piece.el,
+          a.piece.style,
+          new FloatManager(0, a.piece.contentWidth),
+          borderX,
+          borderY,
+          a.piece.borderWidth,
+          borderX + a.piece.style.borderWidth.left + (resolveLength(a.piece.style.padding.left, a.piece.contentWidth, viewport) ?? 0),
+          borderY + a.piece.style.borderWidth.top + (resolveLength(a.piece.style.padding.top, a.piece.contentWidth, viewport) ?? 0),
+          a.piece.contentWidth,
+          styles,
+          paints,
+          nextOrder,
+          viewport,
+        );
+        children.push(node);
+      }
+
+      y += lineHeight;
+      idx = i;
+    }
   }
 
   // Inline elements (spans) have no box of their own, but getBoundingClientRect

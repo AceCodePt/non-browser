@@ -266,6 +266,7 @@ function contentBlockHeight(
       lineHeight: style.lineHeight,
       fontSize: style.fontSize,
       family: style.fontFamily,
+      whiteSpace: style.whiteSpace,
       available: () => ({ x: 0, width: w }),
     });
     return res.height;

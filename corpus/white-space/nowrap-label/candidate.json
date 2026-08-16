@@ -1,0 +1,28 @@
+{
+  "measureText": {
+    "14px 'Noto Sans' | a very long single line label that overflows the box": 328.05999755859375
+  },
+  "computedStyle": {
+    "c": {
+      "white-space": "nowrap"
+    }
+  },
+  "rect": {
+    "c": {
+      "x": 0,
+      "y": 0,
+      "width": 120,
+      "height": 22
+    }
+  },
+  "fragments": {
+    "c": [
+      {
+        "x": 0,
+        "y": 1,
+        "width": 328.05999755859375,
+        "height": 19
+      }
+    ]
+  }
+}
