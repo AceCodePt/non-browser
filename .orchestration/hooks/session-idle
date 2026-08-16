@@ -16,6 +16,7 @@ set -euo pipefail
 cd "${WORKTREE_PATH:-$(git rev-parse --show-toplevel)}" || exit 1
 
 case "${TASK_NAME:-}" in
+  *sweep*|*coverage-matrix*|*cross-family*) npm run verify:sweep && npm run verify:cross-family && node scripts/check-charter.mjs ;;
   *flexbox*)          npm run verify:layout-flexbox ;;
   *float*)            npm run verify:layout-floats ;;
   *grid*)             npm run verify:layout-grid ;;

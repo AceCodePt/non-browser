@@ -1,0 +1,36 @@
+{
+  "measureText": {
+    "16px 'Droid Sans Fallback' | 青花瓷 明日的太阳 日本語の文字": 232.375,
+    "22px 'Droid Sans Fallback' | 石室詩士施氏嗜獅誓食十獅": 264
+  },
+  "computedStyle": {
+    "c1": {
+      "display": "block",
+      "font-size": "16px",
+      "line-height": "24px",
+      "width": "300px",
+      "box-sizing": "content-box"
+    },
+    "c2": {
+      "display": "block",
+      "font-size": "22px",
+      "line-height": "32px",
+      "width": "360px",
+      "box-sizing": "content-box"
+    }
+  },
+  "rect": {
+    "c1": {
+      "x": 0,
+      "y": 0,
+      "width": 300,
+      "height": 24
+    },
+    "c2": {
+      "x": 0,
+      "y": 24,
+      "width": 360,
+      "height": 32
+    }
+  }
+}

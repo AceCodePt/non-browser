@@ -19,6 +19,8 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { LAYER_NAMES, isGapExpectation } from './lib/expected.mjs';
 
+const SRC_DIR = resolve('src');
+
 let failed = false;
 const fail = (msg) => {
   console.error(`check-charter: FAIL - ${msg}`);
@@ -134,6 +136,95 @@ if (!statSync(corpusRoot, { throwIfNoEntry: false })?.isDirectory()) {
     console.log(
       `check-charter: corpus gap schema clean — ${gapCount} typed gap declaration(s), all with reason+sunset`,
     );
+  }
+}
+
+// --- coverage matrix (charter §11) ---
+// Enforce the coverage matrix's presence and consistency so the charter and the
+// corpus cannot drift apart silently:
+//   - the matrix table must exist (heading + header row) and every data row
+//     must have exactly the columns Feature | Property | Implemented | Tested | Token;
+//   - `Implemented: yes` requires the Token to appear in the engine source
+//     (src/**/*.ts) — you cannot claim a property the engine does not reference;
+//   - every corpus dir listed under Tested must exist under corpus/ and contain
+//     at least one fixture whose harvest.html exercises the Token — so removing
+//     a fixture that covered a claimed property (or renaming the corpus) fails
+//     here rather than silently narrowing the corpus.
+function* walkTsFiles(dir) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const p = join(dir, entry.name);
+    if (entry.isDirectory()) yield* walkTsFiles(p);
+    else if (entry.isFile() && entry.name.endsWith('.ts')) yield p;
+  }
+}
+
+function tokenInSource(token) {
+  for (const p of walkTsFiles(SRC_DIR)) {
+    if (readFileSync(p, 'utf8').includes(token)) return true;
+  }
+  return false;
+}
+
+function tokenInCorpusDir(corpusDir, token) {
+  const root = resolve(corpusDir);
+  if (!statSync(root, { throwIfNoEntry: false })?.isDirectory()) return null;
+  for (const fpath of walkFixtureFiles(root)) {
+    if (readFileSync(fpath, 'utf8').includes(token)) return true;
+  }
+  return false;
+}
+
+const matrixMarker = /^##\s+11\.\s+Coverage Matrix/m;
+const matrixLines = [];
+{
+  const lines = charter.split('\n');
+  const start = lines.findIndex((l) => matrixMarker.test(l));
+  if (start === -1) {
+    fail('charter.md missing: coverage matrix (§11)');
+  } else {
+    let i = start + 1;
+    // header row begins the table; keep rows until the next heading.
+    while (i < lines.length && !/^##\s/.test(lines[i])) {
+      const t = lines[i].trim();
+      if (t.startsWith('|')) matrixLines.push(lines[i]);
+      i++;
+    }
+    const headerIdx = matrixLines.findIndex((l) => /^\|\s*Feature\s*\|\s*Property\s*\|\s*Implemented\s*\|\s*Tested/m.test(l));
+    if (headerIdx === -1) {
+      fail('coverage matrix (§11) missing its Feature|Property|Implemented|Tested|Token header row');
+    } else {
+      const rows = matrixLines.slice(headerIdx + 1).filter((l) => !/^\|\s*:?-{2,}/.test(l.trim()));
+      if (rows.length === 0) {
+        fail('coverage matrix (§11) has no data rows');
+      }
+      for (const row of rows) {
+        const cells = row
+          .split('|')
+          .map((c) => c.trim())
+          .filter((c, idx) => !(idx === 0 && c === '') && !(idx === row.split('|').length - 1 && c === ''));
+        const [feature, property, implemented, tested, token] = cells;
+        if (cells.length !== 5) {
+          fail(`coverage matrix row malformed (${cells.length} cells, want 5): ${row.trim()}`);
+          continue;
+        }
+        if (implemented !== 'yes' && implemented !== 'no') {
+          fail(`coverage matrix row '${feature} ${property}': Implemented must be yes/no (got '${implemented}')`);
+        }
+        if (implemented === 'yes' && !tokenInSource(token)) {
+          fail(`coverage matrix row '${feature} ${property}': Implemented=yes but token '${token}' not found in src/**/*.ts`);
+        }
+        if (tested !== '-' && tested !== '') {
+          for (const dir of tested.split(',').map((d) => d.trim()).filter(Boolean)) {
+            const covered = tokenInCorpusDir(dir, token);
+            if (covered === null) {
+              fail(`coverage matrix row '${feature} ${property}': tested corpus dir '${dir}' does not exist under corpus/`);
+            } else if (!covered) {
+              fail(`coverage matrix row '${feature} ${property}': tested corpus dir '${dir}' has no fixture whose harvest.html exercises token '${token}'`);
+            }
+          }
+        }
+      }
+    }
   }
 }
 

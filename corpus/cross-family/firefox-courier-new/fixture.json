@@ -1,0 +1,25 @@
+{
+  "name": "firefox-courier-new",
+  "browser": "firefox",
+  "note": "Non-trivial fallback through the FIREFOX fallback table at layout time: the stack 'Courier New' resolves to the registered Source Code Pro face (firefox.ts fallback 'Courier New' -> 'Source Code Pro'), and the block text wraps/paints with that face — exactly matching Firefox's Gecko resolution of 'Courier New' on this system. This is the cross-family LAYOUT fixture that lands on Source Code Pro via the firefox table.",
+  "harvest": {
+    "viewport": { "width": 480, "height": 200 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"m1\" style=\"font-family:'Courier New';font-size:16px;line-height:24px;width:320px\">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.</div><div id=\"m2\" style=\"font-family:'Courier New';font-size:20px;line-height:30px;width:280px\">How vexingly quick daft zebras jump!</div></body></html>",
+    "measureText": [
+      { "text": "The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.", "font": "16px 'Courier New'" },
+      { "text": "How vexingly quick daft zebras jump!", "font": "20px 'Courier New'" }
+    ],
+    "computedStyle": [
+      { "id": "m1", "props": ["display", "font-size", "line-height", "width", "box-sizing", "white-space"] },
+      { "id": "m2", "props": ["display", "font-size", "line-height", "width", "box-sizing", "white-space"] }
+    ],
+    "rects": ["m1", "m2"],
+    "textElements": ["m1", "m2"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

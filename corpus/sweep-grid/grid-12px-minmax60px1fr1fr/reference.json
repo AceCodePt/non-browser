@@ -1,0 +1,48 @@
+{
+  "measureText": {},
+  "computedStyle": {},
+  "rect": {
+    "g": {
+      "x": 0,
+      "y": 0,
+      "width": 320,
+      "height": 24
+    },
+    "a": {
+      "x": 0,
+      "y": 0,
+      "width": 154,
+      "height": 0
+    },
+    "b": {
+      "x": 166,
+      "y": 0,
+      "width": 154,
+      "height": 0
+    },
+    "e": {
+      "x": 0,
+      "y": 12,
+      "width": 154,
+      "height": 0
+    },
+    "d": {
+      "x": 166,
+      "y": 12,
+      "width": 154,
+      "height": 0
+    },
+    "f": {
+      "x": 0,
+      "y": 24,
+      "width": 154,
+      "height": 0
+    },
+    "z": {
+      "x": 166,
+      "y": 24,
+      "width": 154,
+      "height": 0
+    }
+  }
+}

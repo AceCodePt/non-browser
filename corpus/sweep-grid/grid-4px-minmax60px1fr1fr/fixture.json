@@ -1,0 +1,28 @@
+{
+  "name": "grid-4px-minmax60px1fr1fr",
+  "note": "Value-sweep fixture (grid): minmax(60px, 1fr) 1fr/4px. Generated programmatically by scripts/generate-sweep.mjs from the grid axis tables.",
+  "harvest": {
+    "viewport": {
+      "width": 340,
+      "height": 220
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"g\" style=\"display:grid;grid-template-columns:minmax(60px, 1fr) 1fr;gap:4px;width:320px;background:#f0f0f0\"><div id=\"a\" style=\"background:#4a90d9\"></div><div id=\"b\" style=\"background:#d9534f\"></div><div id=\"e\" style=\"background:#90b04f\"></div><div id=\"d\" style=\"background:#d0a0a0\"></div><div id=\"f\" style=\"background:#a0d0d0\"></div><div id=\"z\" style=\"background:#e0c0a0\"></div></div></body></html>",
+    "measureText": [],
+    "rects": [
+      "g",
+      "a",
+      "b",
+      "e",
+      "d",
+      "f",
+      "z"
+    ],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

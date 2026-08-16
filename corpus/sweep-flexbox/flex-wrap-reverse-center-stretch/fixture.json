@@ -1,0 +1,34 @@
+{
+  "name": "flex-wrap-reverse-center-stretch",
+  "note": "Value-sweep fixture (flex): wrap-reverse/center/stretch. Generated programmatically by scripts/generate-sweep.mjs from the flex axis tables. KNOWN DIVERGENCE — documented in docs/ledgers/sweep.md (rect max Δ 30.000px).",
+  "harvest": {
+    "viewport": {
+      "width": 320,
+      "height": 140
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c\" style=\"display:flex;flex-wrap:wrap-reverse;justify-content:center;align-items:stretch;width:300px;height:120px;gap:8px;background:#f0f0f0\"><div id=\"a\" style=\"width:90px;height:40px;background:#4a90d9\"></div><div id=\"b\" style=\"width:70px;height:60px;background:#d9534f\"></div><div id=\"e\" style=\"width:110px;height:30px;background:#90b04f\"></div><div id=\"d\" style=\"width:60px;height:50px;background:#d0a0a0\"></div></div></body></html>",
+    "measureText": [],
+    "rects": [
+      "c",
+      "a",
+      "b",
+      "e",
+      "d"
+    ],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": {
+      "result": "fail",
+      "reason": "value-sweep combo 'wrap-reverse/center/stretch': the engine does not reproduce Chrome's geometry for this combination (rect delta exceeds the 0.5px tolerance) — measured in the generate:sweep run; documented here and in docs/ledgers/sweep.md rather than silently excluded.",
+      "sunset": "reclassify to pass (remove this gap) when the engine matches Chrome on this property/value combination."
+    },
+    "screenshot": {
+      "result": "fail",
+      "reason": "value-sweep combo 'wrap-reverse/center/stretch': the engine does not reproduce Chrome's geometry for this combination (rect delta exceeds the 0.5px tolerance) — measured in the generate:sweep run; documented here and in docs/ledgers/sweep.md rather than silently excluded.",
+      "sunset": "reclassify to pass (remove this gap) when the engine matches Chrome on this property/value combination."
+    }
+  }
+}

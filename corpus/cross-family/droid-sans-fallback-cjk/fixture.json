@@ -1,0 +1,25 @@
+{
+  "name": "droid-sans-fallback-cjk",
+  "browser": "chrome",
+  "note": "Cross-family LAYOUT on a non-Latin face: 'Droid Sans Fallback' (registered directly in the chrome config) lays out and wraps CJK text with that face's metrics at layout time, matching Chrome's fontconfig resolution of 'Droid Sans Fallback' on this system. Exercises a registered cross-family face in the block text path, not just per-string measurement.",
+  "harvest": {
+    "viewport": { "width": 480, "height": 200 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c1\" style=\"font-family:'Droid Sans Fallback';font-size:16px;line-height:24px;width:300px\">青花瓷 明日的太阳 日本語の文字</div><div id=\"c2\" style=\"font-family:'Droid Sans Fallback';font-size:22px;line-height:32px;width:360px\">石室詩士施氏嗜獅誓食十獅</div></body></html>",
+    "measureText": [
+      { "text": "青花瓷 明日的太阳 日本語の文字", "font": "16px 'Droid Sans Fallback'" },
+      { "text": "石室詩士施氏嗜獅誓食十獅", "font": "22px 'Droid Sans Fallback'" }
+    ],
+    "computedStyle": [
+      { "id": "c1", "props": ["display", "font-size", "line-height", "width", "box-sizing"] },
+      { "id": "c2", "props": ["display", "font-size", "line-height", "width", "box-sizing"] }
+    ],
+    "rects": ["c1", "c2"],
+    "textElements": ["c1", "c2"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

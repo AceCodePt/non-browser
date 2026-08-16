@@ -1,0 +1,36 @@
+{
+  "measureText": {
+    "15px 'Arial' | The quick brown fox jumps over the lazy dog. Grumpy wizards make toxic brew for the evil queen and jack.": 709.48974609375,
+    "12px 'Arial' | Sphinx of black quartz, judge my vow.": 200.771484375
+  },
+  "computedStyle": {
+    "a1": {
+      "display": "block",
+      "font-size": "15px",
+      "line-height": "23px",
+      "width": "300px",
+      "box-sizing": "content-box"
+    },
+    "a2": {
+      "display": "block",
+      "font-size": "12px",
+      "line-height": "18px",
+      "width": "240px",
+      "box-sizing": "content-box"
+    }
+  },
+  "rect": {
+    "a1": {
+      "x": 0,
+      "y": 0,
+      "width": 300,
+      "height": 69
+    },
+    "a2": {
+      "x": 0,
+      "y": 69,
+      "width": 240,
+      "height": 18
+    }
+  }
+}

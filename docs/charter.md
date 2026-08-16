@@ -91,3 +91,52 @@ Operational results, decisions, and divergences are recorded under `docs/ledgers
 
 - Layout and metrics (layers 1–3) must be **exact** within the §2 tolerances.
 - Rasterization (layer 4) targets the same Skia-vs-Skia band: delta-E <=2, with <=1% of pixels exceeding, for **non-text pixels** — the aggregate report tracks the pixel-parity percentage against the 95–99% target. The two Skia instances (Chrome's compositor vs `@napi-rs/canvas`) apply different font hinting/AA, so **text pixels are compared under a documented tiered text-region tolerance** (`tolerances.json` `layers.screenshot.text`, justified by `scripts/probe-text-mask.mjs` → `docs/ledgers/text-mask.md`) instead of being masked. Text pixels are therefore compared and reported (per-fixture text-region ΔE and text-pixel mask share) rather than silently excluded; their per-pixel ΔE threshold is unchanged at <=2, only the within-region exceed allowance is tiered.
+
+## 11. Coverage Matrix
+
+The coverage matrix is the machine-checked contract between the charter's
+implemented/tested claims and the code+corpus. `scripts/check-charter.mjs`
+parses this table and fails when a row drifts from the engine or the corpus, so
+the charter and the corpus cannot silently diverge:
+
+- `Implemented` must be `yes`/`no`; `yes` requires the **Token** to appear in
+  the engine source (`src/**/*.ts`).
+- `Tested (corpus)` lists corpus directories (relative to `corpus/`, comma-
+  separated) whose fixtures must exercise the **Token** (the token appears in at
+  least one `fixture.json` under the directory); `-` means implemented but not
+  corpus-covered yet. A new corpus or a fixture that stops exercising a claimed
+  property fails the check rather than being silently dropped.
+
+| Feature | Property | Implemented | Tested (corpus) | Token |
+| --- | --- | --- | --- | --- |
+| flex | flex-grow | yes | corpus/flexbox | flex-grow |
+| flex | flex-shrink | yes | corpus/flexbox | flex-shrink |
+| flex | flex-basis | yes | corpus/flexbox | flex-basis |
+| flex | flex-direction | yes | corpus/flexbox | flex-direction |
+| flex | flex-wrap | yes | corpus/flexbox, corpus/sweep-flexbox | flex-wrap |
+| flex | justify-content | yes | corpus/flexbox, corpus/sweep-flexbox | justify-content |
+| flex | align-items | yes | corpus/flexbox, corpus/sweep-flexbox | align-items |
+| flex | align-content | yes | corpus/flexbox | align-content |
+| flex | align-self | yes | corpus/flexbox | align-self |
+| flex | order | yes | corpus/flexbox | order |
+| flex | gap | yes | corpus/flexbox, corpus/sweep-flexbox, corpus/sweep-grid | gap |
+| grid | grid-template-columns | yes | corpus/grid, corpus/sweep-grid | grid-template-columns |
+| grid | grid-template-rows | yes | corpus/grid | grid-template-rows |
+| grid | fr tracks | yes | corpus/grid, corpus/sweep-grid | fr |
+| grid | minmax() | yes | corpus/grid, corpus/sweep-grid | minmax |
+| grid | repeat() | yes | corpus/grid, corpus/sweep-grid | repeat |
+| grid | grid-auto-flow | yes | corpus/grid | grid-auto-flow |
+| grid | dense | yes | corpus/grid | dense |
+| grid | alignment | yes | corpus/grid | justify-items |
+| block/inline | width | yes | corpus/spine, corpus/floats, corpus/positioning | width |
+| block/inline | height | yes | corpus/spine, corpus/positioning | height |
+| block/inline | margin | yes | corpus/spine, corpus/floats, corpus/positioning | margin |
+| block/inline | padding | yes | corpus/spine, corpus/positioning | padding |
+| block/inline | float | yes | corpus/floats | float |
+| block/inline | position | yes | corpus/positioning | position |
+| block/inline | z-index | yes | corpus/positioning | z-index |
+| block/inline | box-sizing | yes | corpus/spine | box-sizing |
+| text | white-space | yes | corpus/spine | white-space |
+| text | letter-spacing | yes | corpus/paint-text, corpus/measure-corpus | letter-spacing |
+| text | text-decoration | yes | corpus/paint-text | text-decoration |
+| font | font-family (fallback tables) | yes | corpus/cross-family, corpus/firefox-track | font-family |

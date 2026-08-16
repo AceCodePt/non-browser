@@ -1,0 +1,25 @@
+{
+  "name": "arial-sans-stack",
+  "browser": "chrome",
+  "note": "Multi-family stack in layout landing on a sans face via the chrome fallback table: 'Arial', 'Liberation Sans', sans-serif resolves Arial -> Liberation Sans and lays out/wraps with the resolved face, matching Chrome's fontconfig resolution on this system. Exercises a third chrome fallback entry (sans branch) at layout time.",
+  "harvest": {
+    "viewport": { "width": 480, "height": 160 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"a1\" style=\"font-family:Arial, 'Liberation Sans', sans-serif;font-size:15px;line-height:23px;width:300px\">The quick brown fox jumps over the lazy dog. Grumpy wizards make toxic brew for the evil queen and jack.</div><div id=\"a2\" style=\"font-family:Arial, 'Liberation Sans', sans-serif;font-size:12px;line-height:18px;width:240px\">Sphinx of black quartz, judge my vow.</div></body></html>",
+    "measureText": [
+      { "text": "The quick brown fox jumps over the lazy dog. Grumpy wizards make toxic brew for the evil queen and jack.", "font": "15px 'Arial'" },
+      { "text": "Sphinx of black quartz, judge my vow.", "font": "12px 'Arial'" }
+    ],
+    "computedStyle": [
+      { "id": "a1", "props": ["display", "font-size", "line-height", "width", "box-sizing"] },
+      { "id": "a2", "props": ["display", "font-size", "line-height", "width", "box-sizing"] }
+    ],
+    "rects": ["a1", "a2"],
+    "textElements": ["a1", "a2"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

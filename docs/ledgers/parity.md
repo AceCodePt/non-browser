@@ -65,9 +65,13 @@ declarations (7 entry-level known-gap strings inside `known-gaps`).
 | `media-queries/container-gap` | computedStyle | engine parses `@container` but layout never applies it (no container sizing); Chrome resolves the 400px container and paints `#child` red (see `media-queries.md`) | when layout resolves container sizes (`container-type`/`container-name` plumbing lands) |
 | `harness-tolerances/regression-divergence` | screenshot | deliberate 48x24px divergence proving the screenshot gate fails as designed (regression self-test, not an engine gap) | permanent — retire only when the screenshot layer gains a fixture-free divergence-injection check |
 
-Gap count over runs: 3 (as of 2026-08-14). Each reduction requires closing the
-divergence the declaration documents; the fixtures assert the divergence still
-exists, so a stale or removed declaration fails `npm run verify`.
+Gap count over runs: 3 (as of 2026-08-14) before the coverage-matrix-sweep
+task added the sweep corpus. The sweep (`corpus/sweep-*`) deliberately records
+its engine divergences as typed gap fixtures (36 of 110 swept combos) — see
+`docs/ledgers/sweep.md` for the full list and per-combo deltas. Each reduction
+requires closing the divergence the declaration documents; the fixtures assert
+the divergence still exists, so a stale or removed declaration fails
+`npm run verify`.
 
 ## Honest Reading (what the green run does and does not prove)
 
