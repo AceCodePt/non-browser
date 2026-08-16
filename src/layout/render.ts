@@ -115,7 +115,7 @@ export function renderHtml(html: string, opts: RenderOptions): RenderHtmlOutput 
     {
       fontFamily: opts.fontFamily,
       fontSize: opts.fontSize ?? 16,
-      lineHeight: opts.lineHeight ?? 19,
+      lineHeight: opts.lineHeight ?? 'normal',
       color: { r: 0, g: 0, b: 0, a: 1 },
       letterSpacing: 0,
       textDecorationLines: [],

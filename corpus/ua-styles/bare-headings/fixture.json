@@ -1,0 +1,29 @@
+{
+  "name": "bare-headings",
+  "note": "All six heading levels bare (corpus/ua-styles, UA stylesheet feature): the UA layer maps h1..h6 to 2em/1.5em/1.17em/1em/0.83em/0.67em font sizes and their margin-block em values, with bold weight — matching Chrome's computedStyle exactly and rects within 0.5px.",
+  "harvest": {
+    "viewport": { "width": 640, "height": 320 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'}</style></head><body><h1 id=\"h1\">Heading One</h1><h2 id=\"h2\">Heading Two</h2><h3 id=\"h3\">Heading Three</h3><h4 id=\"h4\">Heading Four</h4><h5 id=\"h5\">Heading Five</h5><h6 id=\"h6\">Heading Six</h6></body></html>",
+    "measureText": [
+      { "text": "Heading One", "font": "32px 'Noto Sans'" },
+      { "text": "Heading Two", "font": "24px 'Noto Sans'" },
+      { "text": "Heading Six", "font": "10.72px 'Noto Sans'" }
+    ],
+    "computedStyle": [
+      { "id": "h1", "props": ["display", "font-size", "font-weight", "margin-top", "margin-bottom"] },
+      { "id": "h2", "props": ["font-size", "font-weight", "margin-top", "margin-bottom"] },
+      { "id": "h3", "props": ["font-size", "margin-top", "margin-bottom"] },
+      { "id": "h4", "props": ["font-size", "margin-top", "margin-bottom"] },
+      { "id": "h5", "props": ["font-size", "margin-top", "margin-bottom"] },
+      { "id": "h6", "props": ["font-size", "font-weight", "margin-top", "margin-bottom"] }
+    ],
+    "rects": ["h1", "h2", "h3", "h4", "h5", "h6"],
+    "textElements": ["h1", "h2", "h3", "h4", "h5", "h6"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

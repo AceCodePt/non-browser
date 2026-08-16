@@ -1,0 +1,91 @@
+{
+  "measureText": {
+    "16px 'Noto Sans' | Text with strong, emphasis, and a link here.": 324.94000244140625,
+    "13px 'Noto Sans' | preformatted text": 109.0199966430664
+  },
+  "computedStyle": {
+    "p": {
+      "display": "block",
+      "font-size": "16px",
+      "font-weight": "400",
+      "line-height": "normal",
+      "margin-top": "16px",
+      "margin-bottom": "16px"
+    },
+    "str": {
+      "display": "inline",
+      "font-weight": "700",
+      "font-style": "normal",
+      "font-size": "16px"
+    },
+    "em": {
+      "display": "inline",
+      "font-weight": "400",
+      "font-style": "italic",
+      "font-size": "16px"
+    },
+    "a": {
+      "display": "inline",
+      "color": "rgb(0, 0, 238)",
+      "text-decoration-line": "underline",
+      "font-weight": "400",
+      "font-style": "normal"
+    },
+    "pre": {
+      "display": "block",
+      "font-size": "13px",
+      "font-family": "monospace",
+      "white-space": "pre",
+      "line-height": "normal",
+      "margin-top": "13px",
+      "margin-bottom": "13px"
+    },
+    "hr": {
+      "display": "block",
+      "margin-top": "8px",
+      "margin-bottom": "8px",
+      "border-top-width": "1px",
+      "border-top-style": "inset",
+      "border-color": "rgb(128, 128, 128)",
+      "color": "rgb(128, 128, 128)"
+    }
+  },
+  "rect": {
+    "p": {
+      "x": 0,
+      "y": 0,
+      "width": 460,
+      "height": 22
+    },
+    "str": {
+      "x": 71.40999794006348,
+      "y": 0,
+      "width": 52.380001068115234,
+      "height": 22
+    },
+    "em": {
+      "x": 132.23999881744385,
+      "y": 0,
+      "width": 67.55000305175781,
+      "height": 22
+    },
+    "a": {
+      "x": 241.10000228881836,
+      "y": 0,
+      "width": 39.81999969482422,
+      "height": 22
+    },
+    "pre": {
+      "x": 0,
+      "y": 38,
+      "width": 460,
+      "height": 15
+    },
+    "hr": {
+      "x": 0,
+      "y": 66,
+      "width": 460,
+      "height": 2
+    }
+  }
+}

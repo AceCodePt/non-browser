@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import type { BrowserConfig, FontRegistration } from './browser-config.js';
 
 /**
@@ -19,8 +20,24 @@ import type { BrowserConfig, FontRegistration } from './browser-config.js';
 const fontFile = process.env.FONT_FILE ?? '/usr/share/fonts/google-noto/NotoSans-Regular.ttf';
 const fontFamily = process.env.FONT_FAMILY ?? 'Noto Sans';
 
+// Bold/italic faces of the default family (e.g. NotoSans-Bold.ttf) so strong/b
+// and em/i measure and paint with the same faces Chrome's fontconfig resolves.
+const dir = fontFile.includes('/') ? fontFile.slice(0, fontFile.lastIndexOf('/')) : '';
+const base = fontFile.slice(fontFile.lastIndexOf('/') + 1).replace(/\.ttf$/i, '').replace(/-Regular$/i, '');
+const boldPath = `${dir}/${base}-Bold.ttf`;
+const italicPath = `${dir}/${base}-Italic.ttf`;
+
+// The generic `monospace` family resolves via fontconfig to this machine's
+// fixed-pitch face; register it so pre/code measure and paint with the same
+// glyphs Chrome uses. Falls back to Liberation Mono when absent.
+const HACK_MONO = '/home/sagi/.local/share/fonts/HackNerdFont-Regular.ttf';
+const hasHackMono = existsSync(HACK_MONO);
+
 const fonts: FontRegistration[] = [
   { family: fontFamily, filePath: fontFile },
+  ...(existsSync(boldPath) ? [{ family: fontFamily, filePath: boldPath }] : []),
+  ...(existsSync(italicPath) ? [{ family: fontFamily, filePath: italicPath }] : []),
+  ...(hasHackMono ? [{ family: 'Hack Nerd Font', filePath: HACK_MONO }] : []),
   { family: 'Liberation Serif', filePath: '/usr/share/fonts/liberation-serif/LiberationSerif-Regular.ttf' },
   { family: 'Liberation Sans', filePath: '/usr/share/fonts/liberation-sans/LiberationSans-Regular.ttf' },
   { family: 'Liberation Mono', filePath: '/usr/share/fonts/liberation-mono/LiberationMono-Regular.ttf' },
@@ -39,6 +56,7 @@ export const chromeConfig: BrowserConfig = {
     Arial: 'Liberation Sans',
     'sans-serif': 'Liberation Sans',
     'Courier New': 'Liberation Mono',
+    monospace: hasHackMono ? 'Hack Nerd Font' : 'Liberation Mono',
   },
   defaultFamily: fontFamily,
   defaultFile: fontFile,

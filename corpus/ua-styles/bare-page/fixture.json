@@ -1,0 +1,24 @@
+{
+  "name": "bare-page",
+  "note": "The verification's bare '<h1>Title</h1><p>body</p>' page: with no author styles, the UA stylesheet (corpus/ua-styles, UA stylesheet feature) gives h1 font-size 2em (32px), 0.67em margins (21.44px) and bold weight exactly as Chrome reports. Body margins are reset like every other corpus fixture; the h1/p computed styles and rects come entirely from the UA layer.",
+  "harvest": {
+    "viewport": { "width": 460, "height": 160 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'}</style></head><body><h1 id=\"h1\">Title</h1><p id=\"p\">body</p></body></html>",
+    "measureText": [
+      { "text": "Title", "font": "32px 'Noto Sans'" },
+      { "text": "body", "font": "16px 'Noto Sans'" }
+    ],
+    "computedStyle": [
+      { "id": "h1", "props": ["display", "font-size", "font-weight", "font-style", "line-height", "margin-top", "margin-bottom", "list-style-type"] },
+      { "id": "p", "props": ["display", "font-size", "font-weight", "line-height", "margin-top", "margin-bottom"] }
+    ],
+    "rects": ["h1", "p"],
+    "textElements": ["h1", "p"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

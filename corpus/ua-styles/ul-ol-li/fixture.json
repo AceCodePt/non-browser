@@ -1,0 +1,30 @@
+{
+  "name": "ul-ol-li",
+  "note": "Bare unordered and ordered lists (corpus/ua-styles, UA stylesheet feature): ul/ol get 40px padding-inline-start, 1em block margins, and disc/decimal markers inherited by each li (display:list-item). The screenshot diffs the disc and decimal marker raster against Chrome.",
+  "harvest": {
+    "viewport": { "width": 460, "height": 200 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'}</style></head><body><ul id=\"ul\"><li id=\"li1\">alpha item</li><li id=\"li2\">beta gamma delta</li></ul><ol id=\"ol\"><li id=\"o1\">one</li><li id=\"o2\">two</li><li id=\"o3\">three</li></ol></body></html>",
+    "measureText": [
+      { "text": "alpha item", "font": "16px 'Noto Sans'" },
+      { "text": "beta gamma delta", "font": "16px 'Noto Sans'" },
+      { "text": "one", "font": "16px 'Noto Sans'" }
+    ],
+    "computedStyle": [
+      { "id": "ul", "props": ["display", "list-style-type", "padding-left", "margin-top", "margin-bottom", "font-size"] },
+      { "id": "li1", "props": ["display", "list-style-type", "padding-left", "margin-top", "font-size"] },
+      { "id": "li2", "props": ["display", "list-style-type"] },
+      { "id": "ol", "props": ["display", "list-style-type", "padding-left", "margin-top"] },
+      { "id": "o1", "props": ["display", "list-style-type", "font-size"] },
+      { "id": "o2", "props": ["display", "list-style-type"] },
+      { "id": "o3", "props": ["display", "list-style-type"] }
+    ],
+    "rects": ["ul", "li1", "li2", "ol", "o1", "o2", "o3"],
+    "textElements": ["li1", "li2", "o1", "o2", "o3"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

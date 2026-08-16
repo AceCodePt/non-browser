@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "verify": "npm run build && node scripts/check-charter.mjs && node scripts/verify-four-layer.mjs && node scripts/generate-sweep.mjs && node scripts/verify-sweep.mjs && node scripts/verify-cross-family.mjs",
+    "verify": "npm run build && node scripts/check-charter.mjs && node scripts/verify-four-layer.mjs && node scripts/generate-sweep.mjs && node scripts/verify-sweep.mjs && node scripts/verify-cross-family.mjs && node scripts/verify-ua-styles.mjs",
     "verify:four-layer": "npm run build && node scripts/verify-four-layer.mjs",
     "verify:border-radius": "npm run build && node scripts/verify-border-radius.mjs",
     "harvest:oracle": "node scripts/harvest-oracle.mjs",
@@ -26,6 +26,7 @@
     "verify:firefox": "npm run build && node scripts/verify-firefox.mjs",
     "verify:segmenter": "npm run build && node scripts/verify-segmenter.mjs",
     "verify:cross-family": "npm run build && node scripts/verify-cross-family.mjs",
+    "verify:ua-styles": "npm run build && node scripts/verify-ua-styles.mjs",
     "generate:sweep": "npm run build && node scripts/generate-sweep.mjs",
     "verify:sweep": "npm run build && node scripts/generate-sweep.mjs && node scripts/verify-sweep.mjs",
     "probe:browser-gap": "npm run build && node probes/probe-browser-gap.mjs",

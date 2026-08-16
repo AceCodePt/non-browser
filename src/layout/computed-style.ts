@@ -83,6 +83,12 @@ export function computedStyleString(style: ComputedStyle, prop: string, refWidth
       const d = style.display;
       return d === 'inline-grid' ? 'grid' : d;
     }
+    case 'font-weight':
+      return String(style.fontWeight);
+    case 'font-style':
+      return style.fontStyle;
+    case 'list-style-type':
+      return style.listStyleType;
     case 'position':
       return style.position;
     case 'z-index':
@@ -114,7 +120,7 @@ export function computedStyleString(style: ComputedStyle, prop: string, refWidth
     case 'font-family':
       return fontFamilyString(style.fontFamily);
     case 'line-height':
-      return `${style.lineHeight}px`;
+      return style.lineHeightNormal ? 'normal' : `${style.lineHeight}px`;
     case 'color':
       return colorString(style.color);
     case 'background-color':
@@ -155,6 +161,14 @@ export function computedStyleString(style: ComputedStyle, prop: string, refWidth
       return style.borderStyle.bottom;
     case 'border-left-style':
       return style.borderStyle.left;
+    case 'border-color': {
+      const { top, right, bottom, left } = style.borderColor;
+      const s = (c: Color) => colorString(c);
+      if (s(top) === s(right) && s(top) === s(bottom) && s(top) === s(left)) return s(top);
+      if (s(top) === s(bottom) && s(right) === s(left)) return `${s(top)} ${s(right)}`;
+      if (s(right) === s(left)) return `${s(top)} ${s(right)} ${s(bottom)}`;
+      return `${s(top)} ${s(right)} ${s(bottom)} ${s(left)}`;
+    }
     case 'border-radius':
       return borderRadiusString(style, refWidth, viewport);
     case 'border-top-left-radius':

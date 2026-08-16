@@ -8,6 +8,7 @@
 
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { getActiveBrowserConfig, resolveFontFamily } from '../config/browser-config.js';
 
 export interface FontVerticalMetrics {
   unitsPerEm: number;
@@ -99,6 +100,20 @@ export function fontVerticalMetrics(filePath: string): FontVerticalMetrics {
 
 export function fontMetricsKey(filePath: string): string {
   return createHash('sha1').update(filePath).digest('hex').slice(0, 12);
+}
+
+/**
+ * Vertical metrics for a CSS family, resolved through the active browser
+ * config's registrations (so `monospace` → the registered mono face gets the
+ * same ascender/descender the oracle browser uses). Falls back to the active
+ * default-font metrics when the family is not registered.
+ */
+export function fontMetricsForFamily(family: string): FontVerticalMetrics | null {
+  const config = getActiveBrowserConfig();
+  const resolved = resolveFontFamily(config, family);
+  const reg = config.fonts.find((f) => f.family === resolved);
+  if (reg) return fontVerticalMetrics(reg.filePath);
+  return activeFontMetrics();
 }
 
 // ===== line-box vertical metrics =====

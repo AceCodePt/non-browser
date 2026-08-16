@@ -42,9 +42,23 @@ export function getMeasurementCanvas(): CanvasLike {
   return measurementCanvas;
 }
 
-export function measureTextWidth(text: string, fontSize: number, family: string, letterSpacing = 0): number {
+/**
+ * Build the CSS `font` shorthand string used by measurement and paint. The
+ * weight/style prefix is omitted at the defaults (400/normal) so existing
+ * callers keep producing `16px 'Noto Sans'` exactly.
+ */
+export function cssFontString(fontSize: number, family: string, fontWeight?: number, fontStyle?: 'normal' | 'italic'): string {
   const resolved = resolveFontFamily(getActiveBrowserConfig(), family);
-  const m = getMeasurementCanvas().measureText(text, `${fontSize}px '${resolved}'`);
+  let prefix = '';
+  if (fontStyle === 'italic') prefix += 'italic ';
+  if (fontWeight !== undefined && fontWeight !== 400) {
+    prefix += fontWeight === 700 ? 'bold ' : `${fontWeight} `;
+  }
+  return `${prefix}${fontSize}px '${resolved}'`;
+}
+
+export function measureTextWidth(text: string, fontSize: number, family: string, letterSpacing = 0, fontWeight?: number, fontStyle?: 'normal' | 'italic'): number {
+  const m = getMeasurementCanvas().measureText(text, cssFontString(fontSize, family, fontWeight, fontStyle));
   // letter-spacing is added after every character (Blink applies it to the
   // trailing character too, so the used width grows by ls * length).
   return m.width + letterSpacing * text.length;
@@ -74,6 +88,12 @@ export interface LineBox {
   family?: string;
   color?: Color;
   letterSpacing?: number;
+  /** per-run font-weight override (e.g. bold runs inside a paragraph). */
+  fontWeight?: number;
+  /** per-run font-style override. */
+  fontStyle?: 'normal' | 'italic';
+  /** per-run text-decoration lines (e.g. an underline on an inline <a>). */
+  decorationLines?: import('./block-inline.js').TextDecorationPaint | null;
 }
 
 /**
