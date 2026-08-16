@@ -6,8 +6,10 @@
  * measured twice against the same registered font files — once with the engine's
  * Canvas interface `measureText` (skia), once with a real Chrome canvas
  * `ctx.measureText` via Playwright (the oracle). Letter-spaced entries use the
- * engine's documented Blink semantics (base advance from the interface +
- * letterSpacing × codepoint count) against Chrome's `ctx.letterSpacing`.
+ * engine's Chrome-matching model (base advance from the interface +
+ * letterSpacing × the positions Blink actually spaces — every codepoint for
+ * Latin/CJK, suppressed inside cursive/joining runs) against Chrome's
+ * `ctx.letterSpacing`.
  *
  * The sub-pixel tolerance (mean <= 0.01px, no string > 0.5px, per charter §2 /
  * tolerances.json) is applied by the harness layer-1 runner
@@ -28,6 +30,7 @@ import { join, resolve } from 'node:path';
 import { loadTolerances } from '../dist/harness/tolerances.js';
 import { evaluateMeasureText } from '../dist/harness/evaluate.js';
 import { skiaCanvasFactory } from '../dist/canvas/index.js';
+import { letterSpacingPositions } from '../dist/layout/letter-spacing.js';
 import { gapLayers, expectedLabel } from './lib/expected.mjs';
 
 const corpus = resolve('corpus/measure-corpus');
@@ -73,7 +76,7 @@ const browser = await chromium.launch();
 const page = await browser.newPage();
 await page.setContent('<html><body></body></html>');
 
-/** Chrome oracle width: ctx.letterSpacing mirrors the engine's ls×len model. */
+/** Chrome oracle width: ctx.letterSpacing mirrors the engine's spacing model. */
 async function chromeMeasure(text, font, letterSpacing) {
   return page.evaluate(
     ({ text, font, ls }) => {
@@ -88,7 +91,7 @@ async function chromeMeasure(text, font, letterSpacing) {
 
 function engineMeasure(text, font, letterSpacing) {
   const base = canvas.measureText(text, font).width;
-  return base + (letterSpacing ?? 0) * text.length;
+  return base + (letterSpacing ?? 0) * letterSpacingPositions(text);
 }
 
 const keyOf = (text, font, ls) => (ls && ls !== 0 ? `${font} | ls=${ls}px | ${text}` : `${font} | ${text}`);
@@ -280,9 +283,9 @@ md.push(
 );
 md.push('- **Combining marks** (`combining-marks/`): decomposed/precomposed/double Latin diacritics on Noto Sans; Devanagari conjuncts, matras, digits on Droid Sans Devanagari.',
 );
-md.push('- **Tab runs** (`tabs/`): tabs on monospace faces (Source Code Pro, Liberation Mono).',
+md.push('- **Tab runs** (`tabs/`): tabs on monospace faces (Source Code Pro, Liberation Mono) and the proportional-font case (Noto Sans), whose tab advances now mirror Chrome\'s canvas tab handling (`src/canvas/tabs.ts`).',
 );
-md.push('- **Letter-spaced** (`letter-spacing/`): positive, fractional, negative spacing on Latin and CJK.',
+md.push('- **Letter-spaced** (`letter-spacing/`): positive, fractional, negative spacing on Latin and CJK; joining-script suppression on Arabic lives in `rtl/`.',
 );
 
 writeFileSync(ledgerPath, md.join('\n') + '\n');

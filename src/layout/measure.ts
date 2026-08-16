@@ -14,6 +14,7 @@ import type { CanvasFactory, CanvasLike } from '../canvas/interface.js';
 import { skiaCanvasFactory } from '../canvas/skia.js';
 import { getActiveBrowserConfig, resolveFontFamily } from '../config/browser-config.js';
 import type { Color, TextAlign, WhiteSpaceValue } from './css.js';
+import { letterSpacingPositions } from './letter-spacing.js';
 
 export interface FontConfig {
   /** CSS family name as Chrome/fontconfig resolves it (e.g. 'Noto Sans'). */
@@ -59,9 +60,9 @@ export function cssFontString(fontSize: number, family: string, fontWeight?: num
 
 export function measureTextWidth(text: string, fontSize: number, family: string, letterSpacing = 0, fontWeight?: number, fontStyle?: 'normal' | 'italic'): number {
   const m = getMeasurementCanvas().measureText(text, cssFontString(fontSize, family, fontWeight, fontStyle));
-  // letter-spacing is added after every character (Blink applies it to the
-  // trailing character too, so the used width grows by ls * length).
-  return m.width + letterSpacing * text.length;
+  // letter-spacing grows the used width by ls per position Blink actually
+  // spaces (every codepoint for Latin/CJK, suppressed inside cursive runs).
+  return m.width + letterSpacing * letterSpacingPositions(text);
 }
 
 export interface LineBox {
