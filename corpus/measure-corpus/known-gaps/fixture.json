@@ -1,28 +1,4 @@
 {
   "name": "known-gaps",
-  "note": "Documented known gaps: strings where the engine and Chrome resolve glyphs differently and the layer-1 delta exceeds tolerance. Each entry records the divergence mechanism; the ledger carries the observed per-string numbers. The verify script asserts each of these still diverges (so a closed gap surfaces for reclassification), and the corpus stays green only because each has a documented reason.",
-  "expected": {
-    "measureText": {
-      "result": "fail",
-      "reason": "Two font-fallback divergences where skia resolves glyphs differently than Chrome's fontconfig fallback: proportional-font tabs, and letter-spacing on the Arabic joining script. The three mixed-script/script-run entries (mixed-script x2 and Arabic-punctuation) were reclassified into the pass corpus (mixed-script/, rtl/) once the engine gained Chrome's per-glyph script-run fallback at the measurement seam (src/canvas/script-fallback.ts), and the Thai and emoji-smiley entries were reclassified earlier once Thai- and emoji-capable faces were registered. Each remaining entry carries its divergence mechanism; docs/ledgers/text-measure.md records the observed per-string deltas, and the fixture note is the owner of record.",
-      "sunset": "Reclassify each entry into the pass corpus when skia's font fallback matches Chrome's per-glyph fallback and tab-stop semantics (e.g. an emoji-capable face registered system-wide or engine-side fontconfig-style fallback). No entry may be removed without its divergence first closing."
-    }
-  },
-  "fonts": [
-    { "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" },
-    { "family": "Droid Arabic Kufi", "file": "/usr/share/fonts/google-droid-sans-fonts/DroidKufi-Regular.ttf" }
-  ],
-  "entries": [
-    {
-      "text": "\t\t\t",
-      "font": "16px 'Noto Sans'",
-      "reason": "Proportional-font tabs: Chrome's canvas applies tab-stop semantics (a tab advances to the next tab stop) while skia returns the font's raw U+0009 advance. Monospace tabs agree (see tabs/); this is the proportional-font tab case."
-    },
-    {
-      "text": "مرحبا",
-      "font": "16px 'Droid Arabic Kufi'",
-      "letterSpacing": 1.5,
-      "reason": "Letter-spacing on a joining script: Chrome does not apply ctx.letterSpacing to Arabic, while the engine's letter-spacing model adds spacing after every codepoint. Latin and CJK letter-spacing agree (see letter-spacing/)."
-    }
-  ]
+  "note": "Retired: all documented layer-1 divergences have closed. The last two entries — proportional-font tabs (src/canvas/tabs.ts, now in tabs/) and letter-spacing on the Arabic joining script (src/layout/letter-spacing.ts, now in rtl/) — were reclassified into the pass corpus once each mechanism matched Chrome. This fixture stays present so scripts that read it (verify-font-registration) keep working; a fresh divergence should be documented here with the typed expected.<layer> gap form before any entry may declare expected:fail."
 }

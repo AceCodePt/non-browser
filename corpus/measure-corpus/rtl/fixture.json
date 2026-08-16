@@ -1,6 +1,6 @@
 {
   "name": "rtl",
-  "note": "Right-to-left scripts on Droid Arabic Kufi (Arabic with harakat/vowel marks and Arabic-Indic digits) and Droid Sans Hebrew (incl. niqqud vowel points). The reclassified known-gap string with ASCII punctuation in an Arabic run ('مرحبا! هل أنت بخير؟') measures through the engine's per-glyph script-run fallback, which resolves the missing '!' to the Latin fallback face the way Chrome's fontconfig does.",
+  "note": "Right-to-left scripts on Droid Arabic Kufi (Arabic with harakat/vowel marks and Arabic-Indic digits) and Droid Sans Hebrew (incl. niqqud vowel points). The reclassified known-gap string with ASCII punctuation in an Arabic run ('مرحبا! هل أنت بخير؟') measures through the engine's per-glyph script-run fallback, which resolves the missing '!' to the Latin fallback face the way Chrome's fontconfig does. Letter-spaced Arabic entries exercise the joining-script suppression (src/layout/letter-spacing.ts): spacing is applied only at non-joining breaks, matching Chrome.",
   "fonts": [
     { "family": "Droid Arabic Kufi", "file": "/usr/share/fonts/google-droid-sans-fonts/DroidKufi-Regular.ttf" },
     { "family": "Droid Sans Hebrew", "file": "/usr/share/fonts/google-droid-sans-fonts/DroidSansHebrew-Regular.ttf" }
@@ -14,6 +14,8 @@
     { "text": "رقم ٥ ورقم ٧", "font": "16px 'Droid Arabic Kufi'", "note": "Arabic-Indic digits in prose" },
     { "text": "شَدَّة تَشْكِيل", "font": "16px 'Droid Arabic Kufi'", "note": "shadda/diacritics" },
     { "text": "مرحبا! هل أنت بخير؟", "font": "16px 'Droid Arabic Kufi'", "note": "reclassified from known-gaps: ASCII '!' in an Arabic run falls back per-glyph to the Latin face (Liberation Serif) via the script-run shim, matching Chrome's fontconfig resolution" },
+    { "text": "مرحبا", "font": "16px 'Droid Arabic Kufi'", "letterSpacing": 1.5, "note": "reclassified from known-gaps: letter-spacing is suppressed on the Arabic joining run, so the used width stays at the base advance" },
+    { "text": "السلام عليكم", "font": "16px 'Droid Arabic Kufi'", "letterSpacing": 1.5, "note": "letter-spacing applies only at the space between the two Arabic words" },
     { "text": "שלום עולם טקסט בעברית", "font": "16px 'Droid Sans Hebrew'", "note": "Hebrew greeting" },
     { "text": "זהו טקסט עברי לבדיקת רוחב טקסט בדפדפן", "font": "16px 'Droid Sans Hebrew'", "note": "long Hebrew sentence" },
     { "text": "אבגדהוזחטיכלמנסעפצקרשת", "font": "16px 'Droid Sans Hebrew'", "note": "full Hebrew alphabet" },

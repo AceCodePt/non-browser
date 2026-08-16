@@ -93,8 +93,9 @@ Decisions:
 - **Measurement.** Contiguous same-face clusters are measured as one segment
   so kerning and script joining survive; widths sum across segments. The
   reclassified mixed-script strings (mixed-script/, rtl/) close the layer-1
-  deltas to ≤ 0.5px (see text-measure.md; known-gaps 5 → 2: proportional-font
-  tabs and Arabic letter-spacing remain).
+  deltas to ≤ 0.5px (see text-measure.md; the last two known gaps —
+  proportional-font tabs and Arabic joining-script letter-spacing — closed at
+  2 → 0).
 
 ## Method
 
