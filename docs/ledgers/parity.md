@@ -67,11 +67,13 @@ declarations (7 entry-level known-gap strings inside `known-gaps`).
 
 Gap count over runs: 3 (as of 2026-08-14) before the coverage-matrix-sweep
 task added the sweep corpus. The sweep (`corpus/sweep-*`) deliberately records
-its engine divergences as typed gap fixtures (30 of 110 swept combos) — see
-`docs/ledgers/sweep.md` for the full list and per-combo deltas. Each reduction
-requires closing the divergence the declaration documents; the fixtures assert
-the divergence still exists, so a stale or removed declaration fails
-`npm run verify`.
+its engine divergences as typed gap fixtures; the two flexbox fixes —
+fontmetrics baseline authority and wrap-reverse cross-axis ordering/stretch —
+were complementary and together closed every sweep gap: **0 of 110 swept
+combos still diverge** (see `docs/ledgers/sweep.md` for the per-combo deltas).
+Each reduction requires closing the divergence the declaration documents; the
+fixtures assert the divergence still exists, so a stale or removed declaration
+fails `npm run verify`.
 
 ## Honest Reading (what the green run does and does not prove)
 

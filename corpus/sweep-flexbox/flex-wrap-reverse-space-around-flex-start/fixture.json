@@ -1,6 +1,6 @@
 {
   "name": "flex-wrap-reverse-space-around-flex-start",
-  "note": "Value-sweep fixture (flex): wrap-reverse/space-around/flex-start. Generated programmatically by scripts/generate-sweep.mjs from the flex axis tables. KNOWN DIVERGENCE — documented in docs/ledgers/sweep.md (rect max Δ 30.000px).",
+  "note": "Value-sweep fixture (flex): wrap-reverse/space-around/flex-start. Generated programmatically by scripts/generate-sweep.mjs from the flex axis tables.",
   "harvest": {
     "viewport": {
       "width": 320,
@@ -20,15 +20,7 @@
   "expected": {
     "measureText": "pass",
     "computedStyle": "pass",
-    "rect": {
-      "result": "fail",
-      "reason": "value-sweep combo 'wrap-reverse/space-around/flex-start': the engine does not reproduce Chrome's geometry for this combination (rect delta exceeds the 0.5px tolerance) — measured in the generate:sweep run; documented here and in docs/ledgers/sweep.md rather than silently excluded.",
-      "sunset": "reclassify to pass (remove this gap) when the engine matches Chrome on this property/value combination."
-    },
-    "screenshot": {
-      "result": "fail",
-      "reason": "value-sweep combo 'wrap-reverse/space-around/flex-start': the engine does not reproduce Chrome's geometry for this combination (rect delta exceeds the 0.5px tolerance) — measured in the generate:sweep run; documented here and in docs/ledgers/sweep.md rather than silently excluded.",
-      "sunset": "reclassify to pass (remove this gap) when the engine matches Chrome on this property/value combination."
-    }
+    "rect": "pass",
+    "screenshot": "pass"
   }
 }

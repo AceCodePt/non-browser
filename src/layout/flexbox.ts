@@ -100,6 +100,8 @@ interface FlexLine {
   crossSize: number;
   crossStart: number;
   baseline: number;
+  /** true when any item in the line is align-self/align-items: baseline. */
+  hasBaseline: boolean;
 }
 
 function isTextNode(n: unknown): n is P5Text {
@@ -457,14 +459,14 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
   // --- 2. collect items into flex lines ---
   const lines: FlexLine[] = [];
   if (!wrapEnabled) {
-    lines.push({ items, crossSize: 0, crossStart: 0, baseline: 0 });
+    lines.push({ items, crossSize: 0, crossStart: 0, baseline: 0, hasBaseline: false });
   } else {
     let cur: FlexItem[] = [];
     let used = 0;
     for (const item of items) {
       const outer = item.hypotheticalMainSize + item.mainStart + item.mainEnd;
       if (cur.length > 0 && used + mainGap + outer > availableMain + EPS) {
-        lines.push({ items: cur, crossSize: 0, crossStart: 0, baseline: 0 });
+        lines.push({ items: cur, crossSize: 0, crossStart: 0, baseline: 0, hasBaseline: false });
         cur = [item];
         used = outer;
       } else {
@@ -472,7 +474,7 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
         cur.push(item);
       }
     }
-    if (cur.length > 0) lines.push({ items: cur, crossSize: 0, crossStart: 0, baseline: 0 });
+    if (cur.length > 0) lines.push({ items: cur, crossSize: 0, crossStart: 0, baseline: 0, hasBaseline: false });
   }
 
   // --- 3. resolve flexible lengths per line ---
@@ -543,6 +545,7 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
         }
       }
       line.baseline = anyBaseline ? lineBaseline : 0;
+      line.hasBaseline = anyBaseline;
     }
   }
   const alignContent = style.alignContent === 'normal' || style.alignContent === 'stretch' ? 'stretch' : style.alignContent;
@@ -556,7 +559,7 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
       for (const item of line.items) {
         max = Math.max(max, item.hypotheticalCrossSize);
       }
-      if (line.baseline > 0) {
+      if (line.hasBaseline) {
         for (const item of line.items) {
           const bi = baselinePerItem.get(item);
           const extent = bi !== undefined ? line.baseline - bi + item.hypotheticalCrossSize : item.hypotheticalCrossSize;
@@ -600,7 +603,15 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
         let y = leading;
         for (const line of lines) {
           line.crossStart = y;
-          y += line.crossSize + extra + gutter;
+          // align-content: stretch grows line cross sizes (baseline-aligned
+          // lines are exempt — Blink keeps their size and lands the leftover
+          // in the inter-line gap instead).
+          if (alignContent === 'stretch' && !line.hasBaseline) {
+            line.crossSize += extra;
+            y += line.crossSize + gutter;
+          } else {
+            y += line.crossSize + extra + gutter;
+          }
         }
       } else {
         placeLines(lines, crossGap);
@@ -701,7 +712,9 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
         : mainStartOrigin + rel + item.mainStart;
       rel += item.mainStart + item.usedMainSize + item.mainEnd + gapAdj;
     }
-    // cross-axis alignment per item
+    // cross-axis alignment per item. With wrap-reverse the line's cross-start
+    // edge sits at crossStart + crossSize (the physical bottom for row
+    // direction), so start/end placement is mirrored inside the line.
     for (const item of line.items) {
       const align = effectiveAlign(item, style, containerCross);
       const freeCross = line.crossSize - item.usedCrossSize - item.crossStart - item.crossEnd;
@@ -709,15 +722,23 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
       if (item.crossStartAuto || item.crossEndAuto) {
         const count = (item.crossStartAuto ? 1 : 0) + (item.crossEndAuto ? 1 : 0);
         const share = freeCross > EPS ? freeCross / count : 0;
-        crossPos = line.crossStart + item.crossStart + (item.crossStartAuto ? share : 0);
+        crossPos = wrapReverse
+          ? item.crossStartAuto
+            ? line.crossStart + line.crossSize - item.crossStart - item.usedCrossSize - share
+            : line.crossStart + item.crossEnd + share
+          : line.crossStart + item.crossStart + (item.crossStartAuto ? share : 0);
       } else if (align === 'baseline' && isRow && line.baseline > 0) {
         crossPos = line.crossStart + line.baseline - (baselinePerItem.get(item) ?? 0) + item.crossStart;
       } else if (align === 'center') {
         crossPos = line.crossStart + item.crossStart + freeCross / 2;
       } else if (align === 'end') {
-        crossPos = lineCrossEnd - item.crossStart - item.crossEnd - item.usedCrossSize + item.crossStart;
+        crossPos = wrapReverse
+          ? line.crossStart + item.crossEnd
+          : lineCrossEnd - item.crossEnd - item.usedCrossSize;
       } else {
-        crossPos = line.crossStart + item.crossStart;
+        crossPos = wrapReverse
+          ? line.crossStart + line.crossSize - item.crossStart - item.usedCrossSize
+          : line.crossStart + item.crossStart;
       }
       if (isRow) {
         item.borderX = item.mainPos;

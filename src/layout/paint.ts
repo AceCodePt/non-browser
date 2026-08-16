@@ -343,6 +343,18 @@ function applyRoundedClip(canvas: CanvasLike, clip: RoundedClip, viewport?: View
 }
 
 /**
+ * Blink paints a box background on the pixel-snapped border box:
+ * IntRect(round(x0), round(y0), round(x1)-round(x0), round(y1)-round(y0)), so a
+ * background at a fractional layout position never produces anti-aliased edges.
+ */
+function snapBox(b: Box): Box {
+  const x0 = Math.round(b.x);
+  const y0 = Math.round(b.y);
+  const x1 = Math.round(b.x + b.width);
+  const y1 = Math.round(b.y + b.height);
+  return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
+}
+/**
  * Paint the layout through a CanvasFactory and produce the pixel buffer +
  * per-id rects.
  */
@@ -372,7 +384,8 @@ export function paint(
       if (op.borderRadius && hasNonZeroRadius(op.borderRadius)) {
         paintRoundedBackground(canvas, op, viewport);
       } else {
-        canvas.fillRect(op.box.x, op.box.y, op.box.width, op.box.height, op.color!);
+        const b = snapBox(op.box);
+        canvas.fillRect(b.x, b.y, b.width, b.height, op.color!);
       }
     } else if (op.kind === 'border') {
       if (op.borderRadius && hasNonZeroRadius(op.borderRadius)) {
