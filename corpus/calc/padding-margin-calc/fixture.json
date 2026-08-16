@@ -1,0 +1,24 @@
+{
+  "name": "padding-margin-calc",
+  "note": "calc() lengths in the box-model shorthands: margins mixing % and px (resolving against the containing block), px-only padding calc, and a margin-left calc alongside.",
+  "harvest": {
+    "viewport": {
+      "width": 320,
+      "height": 140
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"par\" style=\"width:280px;background:#f0f0f0;overflow:hidden\"><div id=\"a\" style=\"width:200px;height:40px;margin:calc(5% + 4px) calc(3% + 2px);padding:calc(8px + 6px);background:#4a90d9\"></div><div id=\"b\" style=\"width:calc(40% - 10px);height:calc(30px + 10px);margin-left:calc(10px + 5%);padding-left:calc(4px + 2px);background:#d9534f\"></div></div></body></html>",
+    "measureText": [],
+    "rects": [
+      "par",
+      "a",
+      "b"
+    ],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

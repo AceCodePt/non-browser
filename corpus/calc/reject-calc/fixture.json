@@ -1,0 +1,26 @@
+{
+  "name": "reject-calc",
+  "note": "calc() forms Chrome rejects drop the declaration and fall back to auto (the box fills the containing block): dimension×dimension, length÷length, and a sign glued to its operand (missing whitespace around -).",
+  "harvest": {
+    "viewport": {
+      "width": 320,
+      "height": 120
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"par\" style=\"width:280px;background:#f0f0f0;overflow:hidden\"><div id=\"a\" style=\"height:30px;width:calc(50% * 50%);background:#4a90d9\"></div><div id=\"b\" style=\"height:30px;width:calc(20px / 2px);background:#d9534f\"></div><div id=\"c\" style=\"height:30px;width:calc(50% -20px);background:#90b04f\"></div><div id=\"d\" style=\"height:30px;width:calc(1 + 2px);background:#4a90d9\"></div></div></body></html>",
+    "measureText": [],
+    "rects": [
+      "par",
+      "a",
+      "b",
+      "c",
+      "d"
+    ],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

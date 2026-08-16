@@ -128,6 +128,9 @@ the charter and the corpus cannot silently diverge:
 | grid | grid-auto-flow | yes | corpus/grid | grid-auto-flow |
 | grid | dense | yes | corpus/grid | dense |
 | grid | alignment | yes | corpus/grid | justify-items |
+| value functions | calc() | yes | corpus/calc | calc |
+| value functions | min()/max() | yes | corpus/calc | min |
+| value functions | clamp() | yes | corpus/calc | clamp |
 | block/inline | width | yes | corpus/spine, corpus/floats, corpus/positioning | width |
 | block/inline | height | yes | corpus/spine, corpus/positioning | height |
 | block/inline | margin | yes | corpus/spine, corpus/floats, corpus/positioning | margin |

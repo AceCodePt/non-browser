@@ -10,6 +10,7 @@
  */
 
 import { fontMetricsForFamily, roundedAscent, roundedDescent } from './fontmetrics.js';
+import { foldEmExpr, parseMathValue, resolveMathExpr, type MathExpr } from './calc.js';
 
 export interface Color {
   r: number;
@@ -31,6 +32,10 @@ export interface Length {
   vmin: number | null;
   vmax: number | null;
   em: number | null;
+  /** value-function expression (calc()/min()/max()/clamp(), css-values-4
+   * §10); when present the unit slots are null and resolveLength evaluates it.
+   * em coefficients are folded into px by resolveEmLength before resolution. */
+  calc?: MathExpr | null;
   /** true when this is a UA "quirky" margin (Blink's `__qem`): a quirky
    * margin-block-start collapses through its parent, so the first in-flow
    * child sits flush with the parent's content top. */
@@ -57,6 +62,7 @@ export interface Viewport {
  */
 export function resolveLength(l: Length, ref: number, viewport?: Viewport | null): number | null {
   if (l.auto) return null;
+  if (l.calc) return resolveMathExpr(l.calc, ref, viewport ?? null);
   if (l.px !== null) return l.px;
   if (l.pct !== null) return (l.pct / 100) * ref;
   if (viewport) {
@@ -73,13 +79,29 @@ export function resolveLength(l: Length, ref: number, viewport?: Viewport | null
 /**
  * Resolve the em component of a length against an element's font-size (CSS
  * Values §5.2: em lengths resolve against the element's own font-size).
- * Returns a copy with the em component folded into px when present. The
- * product is rounded to 4 decimals so binary-float products serialize like
- * Chrome's computed values (0.83 × 24px → "19.92px").
+ * Returns a copy with the em component folded into px when present. A calc()
+ * expression's em coefficients fold the same way. The product is rounded to 4
+ * decimals so binary-float products serialize like Chrome's computed values
+ * (0.83 × 24px → "19.92px"); the plain-length path keeps that rounding, and
+ * calc() expressions fold em without it (used-value geometry needs the float).
  */
 export function resolveEmLength(l: Length, fontSize: number): Length {
-  if (l.em === null) return l;
-  return { px: Math.round(l.em * fontSize * 1e4) / 1e4, pct: l.pct, vw: l.vw, vh: l.vh, vmin: l.vmin, vmax: l.vmax, em: null, quirk: l.quirk, auto: false };
+  if (l.em === null && !l.calc) return l;
+  if (l.calc) {
+    return {
+      px: null,
+      pct: null,
+      vw: null,
+      vh: null,
+      vmin: null,
+      vmax: null,
+      em: null,
+      calc: foldEmExpr(l.calc, fontSize),
+      quirk: l.quirk,
+      auto: false,
+    };
+  }
+  return { px: Math.round((l.em ?? 0) * fontSize * 1e4) / 1e4, pct: l.pct, vw: l.vw, vh: l.vh, vmin: l.vmin, vmax: l.vmax, em: null, quirk: l.quirk, auto: false };
 }
 
 /** Clamp a value to [lo, hi] — the shared clamp for every sizing pass. */
@@ -97,7 +119,8 @@ export type TrackFunction =
   | { type: 'auto' }
   | { type: 'min-content' }
   | { type: 'max-content' }
-  | { type: 'fit-content'; limit: { px: number | null; pct: number | null } };
+  | { type: 'calc'; len: Length }
+  | { type: 'fit-content'; limit: Length };
 
 export interface TrackDef {
   min: TrackFunction;
@@ -386,6 +409,17 @@ function clamp255(v: number): number {
 export function parseLength(raw: string): Length {
   const s = raw.trim();
   if (s === 'auto') return AUTO;
+  // Value functions parse through the single math resolver; an invalid or
+  // dimensionless result (e.g. calc(2*3)) drops like Chrome's declaration.
+  // rem (the root font-size constant) routes the same way so it composes with
+  // calc()'s unit mixing.
+  if (/^(?:calc|min|max|clamp)\(/i.test(s) || /^-?[\d.]+rem$/.test(s)) {
+    const expr = parseMathValue(s);
+    if (expr && !expr.pure) {
+      return { px: null, pct: null, vw: null, vh: null, vmin: null, vmax: null, em: null, calc: expr, auto: false };
+    }
+    return AUTO;
+  }
   const m = s.match(/^(-?[\d.]+)(px|em|%|vw|vh|vmin|vmax)?$/);
   if (m) {
     const v = parseFloat(m[1]);
@@ -411,7 +445,7 @@ export function parseLength(raw: string): Length {
 }
 
 function parseRadiusPair(value: string): CornerRadii {
-  const parts = value.trim().split(/\s+/).filter(Boolean);
+  const parts = splitTopLevel(value.trim());
   const rx = parts[0] !== undefined ? parseLength(parts[0]) : pxLength(0);
   const ry = parts[1] !== undefined ? parseLength(parts[1]) : rx;
   return { rx, ry };
@@ -430,12 +464,30 @@ function expandRadiusList(list: Length[]): [Length, Length, Length, Length] {
   return [v0, v1, v2, v3];
 }
 
+function splitTopLevelBy(value: string, sep: string): string[] {
+  const out: string[] = [];
+  let depth = 0;
+  let cur = '';
+  for (const c of value) {
+    if (c === '(') depth++;
+    else if (c === ')') depth--;
+    if (c === sep && depth === 0) {
+      out.push(cur);
+      cur = '';
+    } else {
+      cur += c;
+    }
+  }
+  if (cur.trim()) out.push(cur);
+  return out;
+}
+
 function parseRadiusShorthand(value: string): { rx: Length[]; ry: Length[] } {
-  const parts = value.split('/');
+  const parts = splitTopLevelBy(value, '/');
   const horizRaw = parts[0] ?? '';
   const vertRaw = parts[1] ?? '';
-  const rx = horizRaw.trim().split(/\s+/).filter(Boolean).map(parseLength);
-  const ry = vertRaw.trim() === '' ? rx : vertRaw.trim().split(/\s+/).filter(Boolean).map(parseLength);
+  const rx = splitTopLevel(horizRaw).map(parseLength);
+  const ry = vertRaw.trim() === '' ? rx : splitTopLevel(vertRaw).map(parseLength);
   return { rx, ry };
 }
 
@@ -490,18 +542,23 @@ function splitTopLevel(value: string): string[] {
   return out;
 }
 
-function parseFixedOrPct(raw: string): { px: number | null; pct: number | null } | null {
+function parseFixedOrPct(raw: string): Length | null {
   const s = raw.trim();
-  if (/^-?[\d.]+px$/.test(s)) return { px: parseFloat(s), pct: null };
-  if (/^-?[\d.]+%$/.test(s)) return { px: null, pct: parseFloat(s) };
+  if (/^-?[\d.]+px$/.test(s)) return { px: parseFloat(s), pct: null, vw: null, vh: null, vmin: null, vmax: null, em: null, auto: false };
+  if (/^-?[\d.]+%$/.test(s)) return { px: null, pct: parseFloat(s), vw: null, vh: null, vmin: null, vmax: null, em: null, auto: false };
   return null;
 }
 
 function parseTrackFunction(raw: string): TrackFunction {
   const s = raw.trim();
   if (s.startsWith('fit-content(') && s.endsWith(')')) {
-    const limit = parseFixedOrPct(s.slice('fit-content('.length, -1));
-    return { type: 'fit-content', limit: limit ?? { px: null, pct: null } };
+    const limit = parseFixedOrPct(s.slice('fit-content('.length, -1)) ?? parseLength(s.slice('fit-content('.length, -1));
+    return { type: 'fit-content', limit };
+  }
+  if (/^(?:calc|min|max|clamp)\(/.test(s)) {
+    const len = parseLength(s);
+    if (len.calc) return { type: 'calc', len };
+    return { type: 'auto' };
   }
   if (/^-?[\d.]+fr$/.test(s)) return { type: 'flex', flex: parseFloat(s) };
   if (/^-?[\d.]+px$/.test(s)) return { type: 'fixed', px: parseFloat(s) };
@@ -517,6 +574,7 @@ function bareTrackDef(t: TrackFunction): TrackDef {
   switch (t.type) {
     case 'fixed':
     case 'pct':
+    case 'calc':
       return { min: t, max: t, names: [] };
     case 'flex':
       return { min: { type: 'auto' }, max: t, names: [] };
@@ -774,7 +832,7 @@ function parseContentAlign(value: string): ContentAlign {
 }
 
 function parseBoxShorthand(raw: string): Record<Side, Length> {
-  const parts = raw.trim().split(/\s+/).map(parseLength);
+  const parts = splitTopLevel(raw).map(parseLength);
   const [t = AUTO, r = t, b = t, l = r] = parts;
   return { top: t, right: r, bottom: b, left: l };
 }
@@ -807,9 +865,9 @@ function parseFlexBasis(value: string | undefined): Length {
  * flex-grow with flex-shrink 1 and flex-basis 0%.
  */
 function parseFlexShorthand(value: string): { grow: number; shrink: number; basis: Length } {
-  const parts = value.trim().split(/\s+/);
+  const parts = splitTopLevel(value.trim());
   const isNum = (s: string): boolean => /^[\d.]+$/.test(s);
-  const isLen = (s: string): boolean => /^[\d.]+(?:px|%)$/.test(s) || s === 'auto' || s === 'content';
+  const isLen = (s: string): boolean => /^[\d.]+(?:px|%|em|rem)$/.test(s) || /^(?:calc|min|max|clamp)\(/.test(s) || s === 'auto' || s === 'content';
   const auto = AUTO;
   const zero = pxLength(0);
   const basisOf = (s: string): Length => (s === 'auto' || s === 'content' ? auto : parseLength(s));
@@ -1095,7 +1153,7 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
 
   const len = (name: string, dflt: Length = AUTO): Length => {
     const d = decls.find((x) => x.property === name);
-    return d ? parseLength(d.value) : dflt;
+    return d ? resolveEmLength(parseLength(d.value), fontSize) : dflt;
   };
 
   const marginLonghand = (name: string, dflt: Length, quirkDecls: string[]): Length => {
@@ -1159,7 +1217,14 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   // Default border color is currentColor (the element's color), like Blink.
   const borderColor: Record<Side, Color> = { top: elementColor, right: elementColor, bottom: elementColor, left: elementColor };
   const borderStyle: Record<Side, 'none' | 'solid' | 'inset' | 'outset'> = { top: 'none', right: 'none', bottom: 'none', left: 'none' };
-  const borderRadius = parseBorderRadius(decls);
+  const borderRadius = (() => {
+    const r = parseBorderRadius(decls);
+    for (const corner of [r.topLeft, r.topRight, r.bottomRight, r.bottomLeft]) {
+      corner.rx = resolveEmLength(corner.rx, fontSize);
+      corner.ry = resolveEmLength(corner.ry, fontSize);
+    }
+    return r;
+  })();
   const borderDecl = decls.find((d) => d.property === 'border');
   const bwShort = decls.find((d) => d.property === 'border-width');
   const bsShort = decls.find((d) => d.property === 'border-style');
@@ -1359,6 +1424,19 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
 
   const decl = (name: string) => decls.find((d) => d.property === name)?.value;
 
+  // em inside a track-size Length (calc() or fit-content()) folds against the
+  // track list owner's font-size, like every other em length.
+  const foldFn = (fn: TrackFunction): TrackFunction => {
+    if (fn.type === 'calc') return { type: 'calc', len: resolveEmLength(fn.len, fontSize) };
+    if (fn.type === 'fit-content') return { type: 'fit-content', limit: resolveEmLength(fn.limit, fontSize) };
+    return fn;
+  };
+  const foldTrackDef = (td: TrackDef): TrackDef => ({ min: foldFn(td.min), max: foldFn(td.max), names: td.names });
+  const foldTrackList = (t: GridTemplate | null): GridTemplate | null => {
+    if (!t) return t;
+    return { ...t, tracks: t.tracks.map(foldTrackDef) };
+  };
+
   const gridTemplateColumns = parseTrackList(decl('grid-template-columns') ?? '');
   const gridTemplateRows = parseTrackList(decl('grid-template-rows') ?? '');
   const areasRaw = parseTemplateAreas(decl('grid-template-areas') ?? '');
@@ -1389,20 +1467,33 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   if (gridTemplateRows) {
     gridTemplateRows.lineNames = mergeLineNames(gridTemplateRows, areasRaw.areasByName, 'row');
   }
-  const templateCols = gridTemplateColumns ? { ...gridTemplateColumns, areas: areasRaw.areas, areasByName: areasRaw.areasByName } : null;
-  const templateRows = gridTemplateRows ? { ...gridTemplateRows, areas: areasRaw.areas, areasByName: areasRaw.areasByName } : null;
+  const templateCols = foldTrackList(gridTemplateColumns ? { ...gridTemplateColumns, areas: areasRaw.areas, areasByName: areasRaw.areasByName } : null);
+  const templateRows = foldTrackList(gridTemplateRows ? { ...gridTemplateRows, areas: areasRaw.areas, areasByName: areasRaw.areasByName } : null);
 
   const autoTracks = (v: string | undefined): TrackDef | null =>
     v ? parseTrackList(v)?.tracks[0] ?? null : null;
+
+  const gridAutoColumns = autoTracks(decl('grid-auto-columns'));
+  const gridAutoRows = autoTracks(decl('grid-auto-rows'));
+  if (gridAutoColumns) {
+    const td = foldTrackDef(gridAutoColumns);
+    gridAutoColumns.min = td.min;
+    gridAutoColumns.max = td.max;
+  }
+  if (gridAutoRows) {
+    const td = foldTrackDef(gridAutoRows);
+    gridAutoRows.min = td.min;
+    gridAutoRows.max = td.max;
+  }
 
   const gapDecl = decl('gap') ?? decl('grid-gap');
   const colGapDecl = decl('column-gap') ?? decl('grid-column-gap');
   const rowGapDecl = decl('row-gap') ?? decl('grid-row-gap');
   const parseGap = (v: string | undefined, first: boolean, fallback: Length): Length => {
     if (!v) return fallback;
-    const parts = v.trim().split(/\s+/);
+    const parts = splitTopLevel(v.trim());
     const part = first ? parts[0] : parts[1] ?? parts[0];
-    return parseLength(part);
+    return resolveEmLength(parseLength(part), fontSize);
   };
 
   const gridAutoFlow = decl('grid-auto-flow')?.trim() ?? 'row';
@@ -1465,6 +1556,7 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     flexShrink = f.shrink;
     flexBasis = f.basis;
   }
+  flexBasis = resolveEmLength(flexBasis, fontSize);
 
   const orderDecl = decl('order');
   const order = orderDecl && /^-?\d+$/.test(orderDecl.trim()) ? parseInt(orderDecl, 10) : 0;
@@ -1522,8 +1614,8 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
 
     gridTemplateColumns: templateCols,
     gridTemplateRows: templateRows,
-    gridAutoColumns: autoTracks(decl('grid-auto-columns')),
-    gridAutoRows: autoTracks(decl('grid-auto-rows')),
+    gridAutoColumns,
+    gridAutoRows,
     gridAutoFlowColumn,
     gridAutoFlowDense,
     rowGap: parseGap(gapDecl, true, parseLength(rowGapDecl ?? '')),

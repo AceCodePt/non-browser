@@ -704,6 +704,7 @@ export function layoutElementBox(
       availableHeight,
       paints,
       nextOrder,
+      viewport,
     });
     children.push(...res.children);
     contentHeight = res.height;
