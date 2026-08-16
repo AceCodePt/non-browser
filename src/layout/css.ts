@@ -82,6 +82,11 @@ export function resolveEmLength(l: Length, fontSize: number): Length {
   return { px: Math.round(l.em * fontSize * 1e4) / 1e4, pct: l.pct, vw: l.vw, vh: l.vh, vmin: l.vmin, vmax: l.vmax, em: null, quirk: l.quirk, auto: false };
 }
 
+/** Clamp a value to [lo, hi] — the shared clamp for every sizing pass. */
+export function clamp(v: number, lo: number, hi: number): number {
+  return Math.max(lo, Math.min(hi, v));
+}
+
 export type Side = 'top' | 'right' | 'bottom' | 'left';
 export const SIDES: Side[] = ['top', 'right', 'bottom', 'left'];
 
@@ -303,6 +308,29 @@ export interface ComputedStyle {
   content: ContentValue;
   before: PseudoBox | null;
   after: PseudoBox | null;
+}
+
+/**
+ * The box's padding + border extent along one axis (CSS 2.1 §8) — the single
+ * authority every formatting algorithm (block, float, flex, grid, positioned)
+ * uses to subtract non-content space from a box's border-box dimension.
+ */
+export function borderPaddingInline(style: ComputedStyle, ref: number, viewport?: Viewport | null): number {
+  return (
+    (resolveLength(style.padding.left, ref, viewport) ?? 0) +
+    (resolveLength(style.padding.right, ref, viewport) ?? 0) +
+    style.borderWidth.left +
+    style.borderWidth.right
+  );
+}
+
+export function borderPaddingBlock(style: ComputedStyle, ref: number, viewport?: Viewport | null): number {
+  return (
+    (resolveLength(style.padding.top, ref, viewport) ?? 0) +
+    (resolveLength(style.padding.bottom, ref, viewport) ?? 0) +
+    style.borderWidth.top +
+    style.borderWidth.bottom
+  );
 }
 
 const NAMED_COLORS: Record<string, Color> = {

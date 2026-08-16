@@ -30,6 +30,9 @@
 
 import {
   AUTO,
+  borderPaddingBlock,
+  borderPaddingInline,
+  clamp,
   pxLength,
   resolveLength,
   type ComputedStyle,
@@ -39,7 +42,7 @@ import {
 import { layoutTextLines, measureTextWidth } from './measure.js';
 import { FloatManager, layoutElementBox, type LayoutNode, type PaintOp } from './block-inline.js';
 import { activeFontMetrics, lineAscentContribution } from './fontmetrics.js';
-import type { P5Element, P5Text } from './types.js';
+import { isCommentNode, isElementNode, isTextNode, type P5Element, type P5Text } from './types.js';
 
 const EPS = 0.001;
 
@@ -97,52 +100,6 @@ interface FlexLine {
   crossStart: number;
   baseline: number;
   hasBaseline: boolean;
-}
-
-function isTextNode(n: unknown): n is P5Text {
-  return typeof n === 'object' && n !== null && (n as { nodeName: string }).nodeName === '#text';
-}
-
-function isCommentNode(n: unknown): boolean {
-  return typeof n === 'object' && n !== null && (n as { nodeName: string }).nodeName === '#comment';
-}
-
-function isElementNode(n: unknown): n is P5Element {
-  return (
-    typeof n === 'object' &&
-    n !== null &&
-    (n as { nodeName: string }).nodeName !== '#text' &&
-    (n as { nodeName: string }).nodeName !== '#comment'
-  );
-}
-
-function clamp(v: number, lo: number, hi: number): number {
-  return Math.max(lo, Math.min(hi, v));
-}
-
-function lenPx(l: Length, ref: number): number {
-  if (l.auto) return 0;
-  if (l.px !== null) return l.px;
-  if (l.pct !== null) return (l.pct / 100) * ref;
-  return 0;
-}
-
-function padInline(style: ComputedStyle, ref: number): number {
-  return (
-    (resolveLength(style.padding.left, ref) ?? 0) +
-    (resolveLength(style.padding.right, ref) ?? 0) +
-    style.borderWidth.left +
-    style.borderWidth.right
-  );
-}
-
-function padBlock(style: ComputedStyle, ref: number): number {
-  return (
-    (resolveLength(style.padding.top, ref) ?? 0) +
-    (resolveLength(style.padding.bottom, ref) ?? 0) +
-    style.borderWidth.top +
-    style.borderWidth.bottom
-  );
 }
 
 function hasInlineText(el: P5Element, styles: Map<P5Element, ComputedStyle>): boolean {
@@ -204,7 +161,7 @@ function inlineContribution(
   style: ComputedStyle,
   styles: Map<P5Element, ComputedStyle>,
 ): { min: number; max: number } {
-  const pb = padInline(style, 0);
+  const pb = borderPaddingInline(style, 0);
   const specW = style.width;
   const minW = style.minWidth;
   const maxW = style.maxWidth;
@@ -261,13 +218,13 @@ function measureChildBlockHeight(
   styles: Map<P5Element, ComputedStyle>,
   parentContentW: number,
 ): number {
-  const mT = lenPx(cs.margin.top, parentContentW);
-  const mB = lenPx(cs.margin.bottom, parentContentW);
-  const mL = lenPx(cs.margin.left, parentContentW);
-  const mR = lenPx(cs.margin.right, parentContentW);
+  const mT = resolveLength(cs.margin.top, parentContentW) ?? 0;
+  const mB = resolveLength(cs.margin.bottom, parentContentW) ?? 0;
+  const mL = resolveLength(cs.margin.left, parentContentW) ?? 0;
+  const mR = resolveLength(cs.margin.right, parentContentW) ?? 0;
   const borderW = Math.max(0, parentContentW - mL - mR);
-  const innerW = Math.max(0, borderW - padInline(cs, borderW));
-  const pb = padBlock(cs, borderW);
+  const innerW = Math.max(0, borderW - borderPaddingInline(cs, borderW));
+  const pb = borderPaddingBlock(cs, borderW);
   const specH = cs.height;
   let h: number;
   if (specH.px !== null) {
@@ -380,8 +337,8 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
     const mainMinLen = isRow ? s.minWidth : s.minHeight;
     const mainMaxLen = isRow ? s.maxWidth : s.maxHeight;
 
-    item.padBorderMain = isRow ? padInline(s, contentWidth) : padBlock(s, contentWidth);
-    item.padBorderCross = isRow ? padBlock(s, contentWidth) : padInline(s, contentWidth);
+    item.padBorderMain = isRow ? borderPaddingInline(s, contentWidth) : borderPaddingBlock(s, contentWidth);
+    item.padBorderCross = isRow ? borderPaddingBlock(s, contentWidth) : borderPaddingInline(s, contentWidth);
 
     const margin = s.margin;
     const mLeft = resolveLength(margin.left, contentWidth, viewport) ?? 0;
@@ -400,10 +357,8 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
     const basis = s.flexBasis;
     let base: number | null = null;
     if (!basis.auto) {
-      if (basis.px !== null) {
-        base = s.boxSizing === 'border-box' ? basis.px : basis.px + item.padBorderMain;
-      } else if (basis.pct !== null && Number.isFinite(availableMain)) {
-        const v = (basis.pct / 100) * availableMain;
+      const v = resolveMainLen(basis, availableMain);
+      if (v !== null) {
         base = s.boxSizing === 'border-box' ? v : v + item.padBorderMain;
       }
     }
@@ -769,10 +724,8 @@ function gapLen(l: Length, ref: number, viewport?: Viewport): number {
 }
 
 function resolveMainLen(l: Length, availableMain: number): number | null {
-  if (l.auto) return null;
-  if (l.px !== null) return l.px;
-  if (l.pct !== null && Number.isFinite(availableMain)) return (l.pct / 100) * availableMain;
-  return null;
+  if (l.pct !== null && !Number.isFinite(availableMain)) return null;
+  return resolveLength(l, availableMain);
 }
 
 function lengthToBorderBox(l: Length, ref: number, s: ComputedStyle, padBorder: number): number | null {
@@ -789,9 +742,7 @@ function crossDefiniteOf(l: Length, containerCross: number | null): boolean {
 }
 
 function crossBorderBox(l: Length, containerCross: number, s: ComputedStyle, padBorder: number): number | null {
-  let v: number | null = null;
-  if (l.px !== null) v = l.px;
-  else if (l.pct !== null) v = (l.pct / 100) * containerCross;
+  const v = resolveLength(l, containerCross);
   if (v === null) return null;
   return s.boxSizing === 'border-box' ? v : v + padBorder;
 }

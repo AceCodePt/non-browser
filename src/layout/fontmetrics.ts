@@ -113,6 +113,14 @@ export function fontMetricsForFamily(family: string): FontVerticalMetrics | null
 
 let activeMetrics: FontVerticalMetrics | null = null;
 
+/** Legacy ascent ratio (0.75em) used when a face's metrics are unknown. */
+const FALLBACK_ASCENT_RATIO = 0.75;
+
+/** The legacy 0.75em rounded-ascent fallback, owned here so no module carries it. */
+export function fallbackAscent(fontSize: number): number {
+  return Math.round(fontSize * FALLBACK_ASCENT_RATIO);
+}
+
 export function setActiveFontMetrics(m: FontVerticalMetrics | null): void {
   activeMetrics = m;
 }
@@ -136,7 +144,7 @@ export function roundedDescent(metrics: FontVerticalMetrics, fontSize: number): 
  * (falls back to the legacy 0.75em heuristic) when the font file is unknown.
  */
 export function lineAscentContribution(fontSize: number, lineHeight: number, metrics: FontVerticalMetrics | null): number {
-  if (!metrics) return (lineHeight + fontSize * 0.75) / 2;
+  if (!metrics) return (lineHeight + fontSize * FALLBACK_ASCENT_RATIO) / 2;
   const a = roundedAscent(metrics, fontSize);
   const d = roundedDescent(metrics, fontSize);
   return Math.floor(a + (lineHeight - a - d) / 2);

@@ -13,9 +13,10 @@
  */
 
 import { collectInlineText, layoutElementBox, type LayoutNode, type PaintOp } from './block-inline.js';
-import { resolveLength, type ComputedStyle, type Length, type Viewport } from './css.js';
+import { borderPaddingBlock, borderPaddingInline, resolveLength, type ComputedStyle, type Length, type Viewport } from './css.js';
 import type { Box } from '../harness/fixtures.js';
 import { measureTextWidth } from './measure.js';
+import { getActiveBrowserConfig } from '../config/browser-config.js';
 import { FloatManager } from './floats.js';
 import type { P5Element } from './types.js';
 
@@ -183,7 +184,7 @@ function maxContentOf(el: P5Element, styles: Map<P5Element, ComputedStyle>, refW
   const text = collectInlineText(el, styles).trim();
   if (text) {
     const fontSize = styles.get(el)?.fontSize ?? 16;
-    const family = styles.get(el)?.fontFamily ?? 'Noto Sans';
+    const family = styles.get(el)?.fontFamily ?? getActiveBrowserConfig().defaultFamily;
     const ls = styles.get(el)?.letterSpacing ?? 0;
     max = measureTextWidth(text, fontSize, family, ls);
     min = Math.max(0, ...text.split(/\s+/).map((w) => measureTextWidth(w, fontSize, family, ls)));
@@ -233,16 +234,12 @@ export function layoutPositionedChild(
   const mR = resolve(style.margin.right, cbW, viewport);
   const mT = resolve(style.margin.top, cbW, viewport);
   const mB = resolve(style.margin.bottom, cbW, viewport);
-  const pL = resolve(style.padding.left, cbW, viewport) ?? 0;
-  const pR = resolve(style.padding.right, cbW, viewport) ?? 0;
-  const pT = resolve(style.padding.top, cbW, viewport) ?? 0;
-  const pB = resolve(style.padding.bottom, cbW, viewport) ?? 0;
+  const borderPadH = borderPaddingInline(style, cbW, viewport);
+  const borderPadV = borderPaddingBlock(style, cbW, viewport);
   const bL = style.borderWidth.left;
-  const bR = style.borderWidth.right;
   const bT = style.borderWidth.top;
-  const bB = style.borderWidth.bottom;
-  const borderPadH = bL + bR + pL + pR;
-  const borderPadV = bT + bB + pT + pB;
+  const pL = resolve(style.padding.left, cbW, viewport) ?? 0;
+  const pT = resolve(style.padding.top, cbW, viewport) ?? 0;
 
   // Static positions are absolute; the offset equations work in containing
   // block coordinates, so rebase them.

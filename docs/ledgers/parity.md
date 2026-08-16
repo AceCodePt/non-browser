@@ -110,10 +110,16 @@ mean 0.0016px without failing on a per-category mean breach.
 
 ### 3. Pretext is a test seam, not the engine's text layout
 
-The engine's actual line/word wrapping is a hand-rolled greedy wrapper in
-`src/layout/measure.ts`; `@chenglou/pretext` prepare/layout runs only inside
-the verify harness over the Canvas interface. Break-point parity with Chrome
-is proven **for the seam**, not for the shipped layout path.
+The engine's shipped line/word wrapping is hand-rolled: the greedy space-break
+wrapper in `src/layout/measure.ts` (`layoutTextLines`/`wrapWords`) serves
+pure-text blocks and floats, and the inline-piece walker in
+`src/layout/block-inline.ts` (`layoutInlineContent`/`walkLine`) handles inline
+content that mixes text runs with inline-level boxes. `@chenglou/pretext`
+prepare/layout runs only inside the verify harness over the Canvas interface.
+Break-point parity with Chrome is proven **for the seam**, not for the shipped
+layout path — this seam-vs-shipped split is the documented divergence
+(coherence-generalize requirement: a single line-breaking authority lands with
+the text-breaker-parity task).
 
 ### 4. Seven text-measure gaps remain, all diverging
 
@@ -141,8 +147,14 @@ Code Pro's real ascent/descent rather than Noto constants. The six
 
 `archive/hardening-core/` was created (priority high) to close findings 1, 2,
 3, 5 and the cross-module duplication, but was archived with no code changes —
-all ten requirements remain open. This ledger is the live record of the state
-that task was meant to fix.
+all ten requirements remain open. Its successor is `coherence-generalize`,
+which closed the cross-module duplication piece of that scope (single `clamp`
+and `borderPaddingInline`/`borderPaddingBlock` authorities in `src/layout/css.ts`,
+percentage lengths routed exclusively through `resolveLength`, parse5 node-type
+guards shared from `src/layout/types.ts`, the 0.75em ascent fallback owned by
+`fontmetrics.ts` via `fallbackAscent`, and the positioned-layout family
+fallback routed through the active config). Findings 1–3 remain live as items
+1–3 above; finding 5 is resolved (item 5).
 
 ## Cross-Browser Probe (Chrome vs Firefox, no engine)
 

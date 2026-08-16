@@ -24,7 +24,7 @@ The four layers are independent and each fixture records expectations for all fo
 The following are **in scope** for v1:
 
 - Full CSS layout, landed in a defined order: block/inline → positioning → floats → flexbox → grid **last**.
-- Text: `@chenglou/pretext` layout over a generic Canvas interface (`measureText` + paint primitives). Skia is the first implementation; CoreText/HarfBuzz may follow behind the same interface.
+- Text: layout over a generic Canvas interface (`measureText` + paint primitives). The engine's own line/word wrapper (`block-inline.ts`/`measure.ts`) is the shipped breaking path; `@chenglou/pretext` prepare/layout is the break-parity test seam over the same interface (see `docs/ledgers/parity.md`, Honest Reading #3). Skia is the first implementation; CoreText/HarfBuzz may follow behind the same interface.
 - Replaced boxes at layout size for `<canvas>` and `<img>`.
 
 The following are **out of scope** for v1 and must not appear as scope commitments in any task:
@@ -46,7 +46,7 @@ The renderer takes a **`browser`-config parameter** (a `browser-config`) that se
 
 The `browser-config` selects:
 
-- **Fallback tables**: per-browser font-fallback tables (JSON, keyed by browser target) that define resolution order for common families and missing-glyph cases. The engine resolves a CSS font stack deterministically: explicit registrations first, then the selected browser's fallback table.
+- **Fallback tables**: per-browser font-fallback tables (keyed by browser target in `src/config/`) that define resolution order for common families and missing-glyph cases. The engine resolves a CSS font stack deterministically: explicit registrations first, then the selected browser's fallback table.
 - **Golden corpora**: `corpus/<feature>/` fixtures are tagged with the target browser(s) they apply to; a browser config runs the corpus subset for that target.
 
 ## 5. Input Contract
