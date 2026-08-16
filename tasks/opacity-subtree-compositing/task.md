@@ -1,5 +1,5 @@
 ---
-wait_human_start: true
+wait_human_start: false
 wait_human_merge: false
 dependencies: [shadow-paint]
 ---
