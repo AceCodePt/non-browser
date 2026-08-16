@@ -30,7 +30,15 @@ case "${TASK_NAME:-}" in
   *text-align*)        npm run verify:text-align ;;
   *pseudo-elements*|*pseudo-element*) npm run verify:pseudo-elements ;;
   *firefox*|*font-fallback*) npm run verify:firefox ;;
+  *pretext-breaker*)   npm run build && node scripts/verify-breaker.mjs && npm run verify:segmenter ;;
   *segmenter*|*text-breaker*) npm run verify:segmenter ;;
+  *calc*)              npm run build && node scripts/verify-calc.mjs && npm run verify:sweep ;;
+  *shadow*)            npm run build && node scripts/verify-shadow.mjs && npm run verify:paint-text ;;
+  *opacity*)           npm run build && node scripts/verify-opacity.mjs && npm run verify:paint-text ;;
+  *overflow*)          npm run build && node scripts/verify-overflow.mjs && npm run verify:paint-text ;;
+  *rtl*)               npm run verify:layout-positioning && npm run verify:layout-floats && npm run verify:layout-grid && npm run verify:layout-flexbox ;;
+  *text-tier*)         npm run verify:paint-text && npm run verify:layout-floats && npm run verify:layout-grid && npm run verify:layout-flexbox && npm run verify:layout-positioning && npm run verify:firefox ;;
+  *mean-gate*|*layer1*) npm run verify:four-layer && npm run verify:text-measure ;;
   *spine*)            npm run verify:four-layer ;;
   *harness-tolerance*) npm run verify:report ;;
   *)                  npm run verify ;;

@@ -41,7 +41,7 @@ Pretext seam (break-point parity vs Chrome line fragments): PASS, means
 
 | Verifier | Result | Detail |
 | --- | --- | --- |
-| `verify:text-measure` | PASS 100.0% (82/82) | pass-corpus mean Δ 0.0016px, worst 0.0050px; 7 documented gaps |
+| `verify:text-measure` | PASS 100.0% (96/96) | pass-corpus mean Δ 0.0025px, worst 0.0300px; 0 documented gaps (7 → 0) |
 | `verify:segmenter` | PASS 72/72 | grapheme + Pretext layout parity, node icu 78.3 vs chrome |
 | `verify:media-queries` | PASS | reduced-motion 2/2, resolution 2/4, viewport-units 2/14, width-breakpoint 3/9 |
 | `verify:firefox` | PASS | screenshot 0 exceeding; Pretext seam Δ 0.0000px |
@@ -52,7 +52,7 @@ Pretext seam (break-point parity vs Chrome line fragments): PASS, means
 
 ## Known Gaps (typed, trend toward zero)
 
-Three fixtures currently declare a typed `expected.<layer>: { result:'fail',
+Two fixtures currently declare a typed `expected.<layer>: { result:'fail',
 reason, sunset }` gap (single per-layer form per improvement-plan §4). Every gap
 carries its owner (reason) and expiry (sunset) as data in the fixture; the
 verify scripts assert each still diverges, so a declaration can only move toward
@@ -107,7 +107,7 @@ is scoped to non-text pixels; the text tier's within-region exceed allowance
 charter's `< 0.01px` mean is computed and reported but never checked. Example
 of why this matters: `basic-text`'s seam mean is 0.0117px — over the 0.01px
 band — yet the run is green. `verify:text-measure` likewise reports pass-corpus
-mean 0.0016px without failing on a per-category mean breach.
+mean 0.0025px without failing on a per-category mean breach.
 
 ### 3. Pretext is a test seam, not the engine's text layout
 
@@ -122,12 +122,19 @@ layout path — this seam-vs-shipped split is the documented divergence
 (coherence-generalize requirement: a single line-breaking authority lands with
 the text-breaker-parity task).
 
-### 4. Seven text-measure gaps remain, all diverging
+### 4. Seven text-measure gaps remain, all diverging — resolved (7 → 0)
 
-Font-fallback cases where skia's resolution disagrees with Chrome's fontconfig
+Font-fallback cases where skia's resolution disagreed with Chrome's fontconfig
 fallback (Noto Sans emoji/smiley, mixed-script runs, Thai, proportional tabs,
-Arabic letter-spacing). Documented in `text-measure.md`; worst Δ 146.0px. All
-single-script, single-face strings agree to ≤ 0.0050px.
+Arabic punctuation/letter-spacing; worst Δ 146.0px). Closed through three
+tasks: `font-registration-faces` (Thai + emoji faces registered),
+`per-glyph-fallback` (script-run splitting at the measurement seam,
+`src/canvas/script-fallback.ts`), and `text-measure-remaining-gaps`
+(proportional-tab advance math in `src/canvas/tabs.ts`; joining-script
+letter-spacing suppression in `src/layout/letter-spacing.ts`). All seven
+entries were reclassified into the pass corpus; `corpus/measure-corpus/known-gaps`
+is retired with 0 documented gaps (see `text-measure.md`; worst Δ now 0.0300px
+across 96 pass strings).
 
 ### 5. Flexbox baselines are hard-coded, and the Firefox zeros are tautological — resolved
 
@@ -310,11 +317,11 @@ setup and screenshot against the engine's pure render.
 
 - Spine: `corpus/spine/` — basic-text, boxes, inline-styles, replaced-boxes,
   wrapping (all four-layer).
-- Measure: `corpus/measure-corpus/` — 89 strings across 8 categories.
+- Measure: `corpus/measure-corpus/` — 96 strings across 10 categories.
 - Segmentation: `corpus/segmenter/` — 72 strings, 5 categories.
 
 ## Divergences
 
-The substantive divergences are items 1–6 above and the seven gaps in
-`text-measure.md`. The one tolerance change is the text-region tier
+The substantive divergences are items 1–6 above; the seven text-measure gaps
+are closed (7 → 0, item 4). The one tolerance change is the text-region tier
 (`tolerances.json` v2), recorded in `tolerances.md` and `text-mask.md`.
