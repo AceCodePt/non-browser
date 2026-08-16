@@ -1,7 +1,7 @@
 ---
 wait_human_start: false
 wait_human_merge: false
-dependencies: [font-registration-gaps]
+dependencies: [font-registration-faces]
 ---
 
 # Task: Per-glyph script-run font fallback through the measurement seam
