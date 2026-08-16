@@ -14,7 +14,7 @@ dependencies: [font-registration-faces]
 
 ## Context
 
-Root cause #1 of the hard layer-1 deltas: the engine resolves one CSS family to one registered face (resolveFontFamily, browser-config.ts:42) and shapes the whole string in that face, while Chrome splits mixed-script strings into script runs and resolves each run to a different face through fontconfig. That is exactly the mechanism behind the mixed-script gaps (Δ143px, Δ20px) and the Arabic-punctuation gap (Δ4.3px) in corpus/measure-corpus/known-gaps. Neither @napi-rs/canvas (no per-glyph fallback API — GlobalFonts is register/has/setAlias only) nor Pretext (measures through the same single-face seam) provides this today. The fix is a run-splitting shim at the single measurement choke point, SkiaCanvas.measureText (src/canvas/skia.ts:36), which both the engine's measureTextWidth (measure.ts:60) and the Pretext seam (pretext/index.ts:54) funnel through, so both inherit it. Depends on font-registration-gaps so the Thai/emoji faces are added to the fallback pool first (that task already closes Thai 7→5).
+Root cause #1 of the hard layer-1 deltas: the engine resolves one CSS family to one registered face (resolveFontFamily, browser-config.ts:42) and shapes the whole string in that face, while Chrome splits mixed-script strings into script runs and resolves each run to a different face through fontconfig. That is exactly the mechanism behind the mixed-script gaps (Δ143px, Δ20px) and the Arabic-punctuation gap (Δ4.3px) in corpus/measure-corpus/known-gaps. Neither @napi-rs/canvas (no per-glyph fallback API — GlobalFonts is register/has/setAlias only) nor Pretext (measures through the same single-face seam) provides this today. The fix is a run-splitting shim at the single measurement choke point, SkiaCanvas.measureText (src/canvas/skia.ts:36), which both the engine's measureTextWidth (measure.ts:60) and the Pretext seam (pretext/index.ts:54) funnel through, so both inherit it. Depends on font-registration-faces so the Thai/emoji faces are added to the fallback pool first (that task closes Thai+emoji from 7 to 5).
 
 ## Requirements
 
@@ -26,7 +26,7 @@ Root cause #1 of the hard layer-1 deltas: the engine resolves one CSS family to 
 
 ## Verification
 
-npm run build passes. npm run verify:text-measure green with known-gaps count 5 → 2 (mixed-script ×2 and Arabic-punctuation closed; Thai+emoji closed by font-registration-gaps; tabs and Arabic letter-spacing remain typed gaps). The three reclassified strings report deltas ≤ 0.5px. npm run test:probe and the four-layer verifiers stay green — the engine and the Pretext seam measure the same per-run faces on multi-script strings.
+npm run build passes. npm run verify:text-measure green with known-gaps count 5 → 2 (mixed-script ×2 and Arabic-punctuation closed; Thai+emoji closed by font-registration-faces; tabs and Arabic letter-spacing remain typed gaps). The three reclassified strings report deltas ≤ 0.5px. npm run test:probe and the four-layer verifiers stay green — the engine and the Pretext seam measure the same per-run faces on multi-script strings.
 
 ## Prohibited Patterns
 
