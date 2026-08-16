@@ -24,6 +24,7 @@ case "${TASK_NAME:-}" in
   *position*)         npm run verify:layout-positioning ;;
   *media*)            npm run verify:media-queries ;;
   *paint-text*)       npm run verify:paint-text ;;
+  *paint-run-fallback*) npm run build && node scripts/verify-paint-fallback.mjs && npm run verify:paint-text ;;
   *border-radius*)    npm run verify:border-radius ;;
   *text-measure*|*measure-corpus*) npm run verify:text-measure ;;
   *text-align*)        npm run verify:text-align ;;
