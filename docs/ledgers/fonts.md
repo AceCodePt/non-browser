@@ -60,10 +60,11 @@ and the engine measure the same per-browser faces for any fixture family.
 Chrome splits mixed-script strings into script runs and resolves each run's
 missing glyphs through fontconfig, so a single CSS family can land on several
 faces (Latin + Droid Sans Fallback + Noto Color Emoji for `"abc 中文 😀 def"`).
-The engine reproduces that at the single measurement choke point,
-`SkiaCanvas.measureText` (src/canvas/skia.ts), via a run-splitting shim
-(`src/canvas/script-fallback.ts`) that both the engine's `measureTextWidth`
-and the Pretext seam funnel through, so both measure the same per-run faces.
+The engine reproduces that at the Canvas seam (`src/canvas/`): the
+run-splitting authority `resolveFallbackRuns` (`src/canvas/script-fallback.ts`)
+is shared by the measurement shim (`SkiaCanvas.measureText`) and the paint
+path (`SkiaCanvas.drawText`), so the engine's `measureTextWidth`, the Pretext
+seam, and the painted glyphs all resolve the same per-run faces.
 
 Decisions:
 
@@ -96,6 +97,16 @@ Decisions:
   deltas to ≤ 0.5px (see text-measure.md; the last two known gaps —
   proportional-font tabs and Arabic joining-script letter-spacing — closed at
   2 → 0).
+- **Paint.** The paint path resolves runs through the same authority
+  (`resolveFallbackRuns`, shared with the measurement shim) and paints each
+  run at its accumulated advance with its resolved face, so a mixed-script
+  string's painted glyphs land in the same faces — and at the same positions —
+  the measurement seam measured (paint-run-fallback). The
+  `corpus/paint-text/mixed-script/` fixture records its per-run painted
+  advance positions (`candidate.json` `paintRuns`, summing to the shimmed
+  width; gate `scripts/verify-paint-fallback.mjs`) and compares its screenshot
+  under the text tier instead of being blanket-masked. Single-face strings
+  still take the plain single-run paint path unchanged.
 
 ## Method
 

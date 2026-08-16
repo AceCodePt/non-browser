@@ -1,0 +1,52 @@
+{
+  "name": "mixed-script",
+  "note": "Mixed-script strings painted per-run through the shared run-resolution authority (src/canvas/script-fallback.ts), the same per-run faces the measurement shim resolves. 'abc 中文 😀 def' splits into Latin (Noto Sans), Han (Droid Sans Fallback), emoji (Noto Color Emoji) runs; 'مرحبا! هل أنت بخير؟' splits Arabic (Droid Arabic Kufi) with the ASCII '!' falling back per-glyph to Liberation Serif, matching Chrome's fontconfig. Each run is painted at its accumulated advance (recorded in candidate.json paintRuns), and the painted total equals the shimmed measureText width. Its screenshot is compared under the text tier (text-mask.png) rather than blanket-masked, so the fixture reports text-region pixel numbers.",
+  "browser": "chrome",
+  "fonts": [
+    { "family": "Droid Arabic Kufi", "file": "/usr/share/fonts/google-droid-sans-fonts/DroidKufi-Regular.ttf" }
+  ],
+  "harvest": {
+    "viewport": {
+      "width": 460,
+      "height": 160
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"m1\" style=\"font-family:'Noto Sans';font-size:16px;line-height:24px\">abc 中文 😀 def</div><div id=\"m2\" style=\"font-family:'Droid Arabic Kufi';font-size:16px;line-height:24px\">مرحبا! هل أنت بخير؟</div></body></html>",
+    "measureText": [
+      {
+        "text": "abc 中文 😀 def",
+        "font": "16px 'Noto Sans'"
+      },
+      {
+        "text": "hello 世界",
+        "font": "16px 'Noto Sans'"
+      },
+      {
+        "text": "abc 中文 def",
+        "font": "16px 'Noto Sans'"
+      },
+      {
+        "text": "مرحبا! هل أنت بخير؟",
+        "font": "16px 'Droid Arabic Kufi'"
+      },
+      {
+        "text": "中文 English 中文",
+        "font": "16px 'Droid Sans Fallback'"
+      }
+    ],
+    "rects": [
+      "m1",
+      "m2"
+    ],
+    "textElements": [
+      "m1",
+      "m2"
+    ],
+    "textTier": true
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

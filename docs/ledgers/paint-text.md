@@ -31,7 +31,7 @@ Out of scope (unchanged): decoration styles other than solid (double/dotted/
 dashed/wavy), `text-decoration-skip-ink`, the element-level `opacity` property
 (compositing), and background-image/effects.
 
-## Corpus (9 fixtures)
+## Corpus (10 fixtures)
 
 | Fixture | Covers |
 | --- | --- |
@@ -44,6 +44,7 @@ dashed/wavy), `text-decoration-skip-ink`, the element-level `opacity` property
 | `colors` | named/hex/rgba fill colors, decoration color = currentColor |
 | `sizes` | underline geometry across 12/16/24/32px |
 | `multiline` | wrapping underlined paragraph, one decoration per line |
+| `mixed-script` | per-run script-run paint fallback (Latin+CJK+emoji; Arabic+Latin punctuation) under the text tier |
 
 ## Paint-layer masking (known divergence)
 
@@ -55,15 +56,22 @@ those same line fragments, so they are masked too. Everything else — line boxe
 backgrounds, borders, and the letterspaced layout extents — is compared strictly:
 every fixture's screenshot row reports 0 exceeding pixels.
 
+The `mixed-script` fixture opts into the text tier instead
+(`harvest.textTier`, `text-mask.png`): its text pixels are compared under
+`tolerances.json layers.screenshot.text` (docs/ledgers/text-mask.md) and its
+per-run painted advance positions are recorded in `candidate.json`
+(`paintRuns`), summing to the shimmed measureText width (see fonts.md).
+
 Decoration geometry was additionally verified pixel-for-pixel against headless
 Chrome across font sizes 14/20/28/40 and line-heights 21/30/50 before the corpus
 was committed (underline/strike/overline row positions match exactly).
 
 ## Results
 
-`npm run verify:paint-text` exits 0. All 9 fixtures pass all four layers:
+`npm run verify:paint-text` exits 0. All 10 fixtures pass all four layers:
 layer-3 rects match Chrome to <= 0.01px max Δ, layer-4 worst ΔE 0.0000 with 0
-exceeding pixels in every fixture (masked text aside). The reference
+exceeding pixels in every fixture (masked text aside; the mixed-script fixture's
+text pixels are compared under the text tier and reported). The reference
 `reference.json`/`reference.png`/`mask.png` are harvested live from Chrome by the
 verify script and committed as golden data; `candidate.*` is the engine's output.
 `npm run verify:layout-grid` (13/13) and `npm run verify:layout-floats` (10/10)
