@@ -12,8 +12,9 @@
 import type { CanvasFactory, CanvasLike } from '../canvas/interface.js';
 import { skiaCanvasFactory } from '../canvas/skia.js';
 import type { Color, Side, Viewport } from './css.js';
+import { resolveEmLength, resolveLength } from './css.js';
 import { hasNonZeroRadius, innerRadii, resolveBorderRadius, traceRoundedRect, type RoundedClip, type ResolvedRadii } from './radius.js';
-import type { PaintOp, RootLayout, TextDecorationPaint, ListMarker } from './block-inline.js';
+import type { PaintOp, RootLayout, ShadowPaint, TextDecorationPaint, ListMarker } from './block-inline.js';
 import type { Box } from '../harness/fixtures.js';
 import { cssFontString, measureTextWidth } from './measure.js';
 import { fontVerticalMetrics, lineAscentContribution, roundedAscent, roundedDescent, type FontVerticalMetrics } from './fontmetrics.js';
@@ -46,6 +47,36 @@ export interface RenderOutput {
    * marker). Compared against Chrome's `::marker` text to verify ol numbering.
    */
   listMarkers: Record<string, string | null>;
+}
+
+/**
+ * Paint a run's text-shadows behind its glyphs. Only the shadow is painted
+ * here (blurred via the canvas shadow primitive, hard via offset draws); the
+ * run's own glyphs, drawn afterwards at the same position, cover the shadow
+ * primitive's shape fill. Shadows paint in reverse (last on top of the stack
+ * first) so the first shadow in the list stays topmost.
+ */
+function paintTextShadows(
+  canvas: { shadowText(text: string, x: number, baseline: number, font: string, ox: number, oy: number, blur: number, color: Color): void; drawText(text: string, x: number, baseline: number, font: string, color: Color): void },
+  run: { text: string; x: number; baseline: number; fontWeight?: number; fontStyle?: 'normal' | 'italic' },
+  fontSize: number,
+  family: string,
+  shadows: import('./css.js').Shadow[],
+  viewport?: Viewport | null,
+): void {
+  const font = cssFontString(fontSize, family, run.fontWeight, run.fontStyle);
+  const resolve = (l: import('./css.js').Length): number => resolveLength(resolveEmLength(l, fontSize), fontSize, viewport) ?? 0;
+  for (let i = shadows.length - 1; i >= 0; i--) {
+    const s = shadows[i];
+    const ox = resolve(s.x);
+    const oy = resolve(s.y);
+    const blur = Math.max(0, resolve(s.blur));
+    if (blur > 0) {
+      canvas.shadowText(run.text, run.x + ox, run.baseline + oy, font, 0, 0, blur, s.color);
+    } else {
+      canvas.drawText(run.text, run.x + ox, run.baseline + oy, font, s.color);
+    }
+  }
 }
 
 function paintTextRun(
@@ -331,6 +362,74 @@ function applyRoundedClip(canvas: CanvasLike, clip: RoundedClip, viewport?: View
 }
 
 /**
+ * Paint one box-shadow op. Solid shadows paint Chrome's sharp shape — the box
+ * (or its inner frame for inset) translated by offset and expanded by spread —
+ * matching Chrome at blur 0 exactly. Blurred shadows use the canvas shadow
+ * primitive (Chrome's kernel) over the box rect; their shape fill is covered
+ * by the box background painted after, which is why the blur primitive is only
+ * selected for opaque backgrounds with no spread.
+ */
+function paintShadow(canvas: CanvasLike, op: PaintOp, viewport?: Viewport | null): void {
+  const s = op.shadow!;
+  const { x, y, width, height } = op.box;
+  if (s.render === 'blurred') {
+    if (s.borderRadius && hasNonZeroRadius(s.borderRadius)) {
+      canvas.save();
+      canvas.beginPath();
+      traceRoundedRect(canvas, x, y, width, height, resolveBorderRadius(s.borderRadius, width, height, viewport));
+      canvas.shadowPath(s.ox, s.oy, s.blur, s.color);
+      canvas.restore();
+    } else {
+      canvas.shadowRect(x, y, width, height, s.ox, s.oy, s.blur, s.color);
+    }
+    return;
+  }
+  if (!s.inset) {
+    const sx = x + s.ox - s.spread;
+    const sy = y + s.oy - s.spread;
+    const sw = width + 2 * s.spread;
+    const sh = height + 2 * s.spread;
+    if (s.borderRadius && hasNonZeroRadius(s.borderRadius)) {
+      canvas.save();
+      canvas.beginPath();
+      traceRoundedRect(canvas, sx, sy, sw, sh, resolveBorderRadius(s.borderRadius, sw, sh, viewport));
+      canvas.fillPath(s.color);
+      canvas.restore();
+    } else {
+      canvas.fillRect(sx, sy, sw, sh, s.color);
+    }
+    return;
+  }
+  // Inset: the shadow is the box minus the hole rect
+  // (box translated by offset, shrunk by spread on every side), clipped to the
+  // border box — four band fills so fractional frame edges stay non-AA like
+  // Chrome's hard raster.
+  const hx = x + s.ox + s.spread;
+  const hy = y + s.oy + s.spread;
+  const hw = width - 2 * s.spread;
+  const hh = height - 2 * s.spread;
+  canvas.save();
+  if (s.borderRadius && hasNonZeroRadius(s.borderRadius)) {
+    canvas.beginPath();
+    traceRoundedRect(canvas, x, y, width, height, resolveBorderRadius(s.borderRadius, width, height, viewport));
+    canvas.clip();
+  }
+  const right = x + width;
+  const bottom = y + height;
+  const holeRight = hx + hw;
+  const holeBottom = hy + hh;
+  const topH = hy - y;
+  const bottomH = bottom - holeBottom;
+  const leftW = hx - x;
+  const rightW = right - holeRight;
+  if (topH > 0) canvas.fillRect(x, y, width, topH, s.color);
+  if (bottomH > 0) canvas.fillRect(x, holeBottom, width, bottomH, s.color);
+  if (leftW > 0) canvas.fillRect(x, Math.max(y, hy), Math.min(leftW, width), Math.max(0, Math.min(bottom, holeBottom) - Math.max(y, hy)), s.color);
+  if (rightW > 0) canvas.fillRect(Math.max(x, holeRight), Math.max(y, hy), Math.min(rightW, width), Math.max(0, Math.min(bottom, holeBottom) - Math.max(y, hy)), s.color);
+  canvas.restore();
+}
+
+/**
  * Blink paints a box background on the pixel-snapped border box:
  * IntRect(round(x0), round(y0), round(x1)-round(x0), round(y1)-round(y0)), so a
  * background at a fractional layout position never produces anti-aliased edges.
@@ -378,6 +477,8 @@ export function paint(
         const styles = op.borderStyles ?? { top: 'solid' as const, right: 'solid' as const, bottom: 'solid' as const, left: 'solid' as const };
         paintBorder(canvas, op.box, op.borderWidths!, op.borderColors!, styles);
       }
+    } else if (op.kind === 'shadow') {
+      paintShadow(canvas, op, viewport);
     } else if (op.kind === 'text') {
       const t = op.text!;
       for (const run of t.runs) {
@@ -385,6 +486,7 @@ export function paint(
         const family = run.family ?? t.family;
         const color = run.color ?? t.color;
         const letterSpacing = run.letterSpacing ?? t.letterSpacing;
+        if (t.textShadow.length > 0) paintTextShadows(canvas, run, fontSize, family, t.textShadow, viewport);
         paintTextRun(canvas, run, fontSize, family, color, letterSpacing);
       }
       if (fontMetrics) {

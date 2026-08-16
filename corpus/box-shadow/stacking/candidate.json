@@ -1,0 +1,16 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "s": {
+      "box-shadow": "rgba(255, 0, 0, 0.8) 0px 0px 2px 0px, rgba(0, 0, 255, 0.6) 0px 0px 18px 0px"
+    }
+  },
+  "rect": {
+    "s": {
+      "x": 40,
+      "y": 40,
+      "width": 120,
+      "height": 90
+    }
+  }
+}

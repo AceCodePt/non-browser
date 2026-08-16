@@ -156,6 +156,8 @@ the charter and the corpus cannot silently diverge:
 | text | text-decoration | yes | corpus/paint-text | text-decoration |
 | text | text-align | yes | corpus/text-align | text-align |
 | text | color (fill) | yes | corpus/paint-text, corpus/spine | color |
+| text | text-shadow | yes | corpus/box-shadow | text-shadow |
+| paint | box-shadow | yes | corpus/box-shadow | box-shadow |
 | font | font-family (fallback tables) | yes | corpus/cross-family, corpus/firefox-track | font-family |
 | font | font-size | yes | corpus/paint-text, corpus/spine | font-size |
 | font | font-weight / font-style | yes | corpus/ua-styles | font-weight |

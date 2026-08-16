@@ -65,6 +65,31 @@ export interface CanvasLike {
   fillPath(color: CanvasColor, fillRule?: 'nonzero' | 'evenodd'): void;
   strokePath(color: CanvasColor, lineWidth: number): void;
 
+  /**
+   * Paint the shadow of the current path (a closed shape) translated by
+   * (offsetX, offsetY), with CSS blur radius `blurRadius` (0 = hard edge) and
+   * `color`. The blur is the surface's native shadow kernel (Chrome's
+   * box-shadow kernel, one-sided — the interior of the shape stays solid).
+   * Only the shadow is painted, not the shape fill; callers paint the box
+   * background over the shape afterwards.
+   */
+  shadowPath(offsetX: number, offsetY: number, blurRadius: number, color: CanvasColor): void;
+
+  /**
+   * Paint the shadow of a rectangular box border-box (x, y, w, h), same
+   * semantics as shadowPath. For blurred shadows the shape must equal the box
+   * rect (spread folded into the rect is fine for hard shadows only), so the
+   * box background painted afterwards covers the shape fill.
+   */
+  shadowRect(x: number, y: number, w: number, h: number, offsetX: number, offsetY: number, blurRadius: number, color: CanvasColor): void;
+
+  /**
+   * Paint the shadow of `text`'s glyphs (a text-shadow run) translated by
+   * (offsetX, offsetY) with blur `blurRadius` and `color`. The glyphs
+   * themselves are drawn afterwards by drawText at the same position.
+   */
+  shadowText(text: string, x: number, baselineY: number, font: string, offsetX: number, offsetY: number, blurRadius: number, color: CanvasColor): void;
+
   toBuffer(): Buffer;
 }
 

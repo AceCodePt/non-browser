@@ -145,6 +145,40 @@ export class SkiaCanvas implements CanvasLike {
     this.ctx.stroke();
   }
 
+  shadowPath(offsetX: number, offsetY: number, blurRadius: number, color: CanvasColor): void {
+    this.ctx.save();
+    this.ctx.shadowColor = cssColor(color);
+    this.ctx.shadowOffsetX = offsetX;
+    this.ctx.shadowOffsetY = offsetY;
+    this.ctx.shadowBlur = blurRadius;
+    this.ctx.fillStyle = '#000';
+    this.ctx.fill();
+    this.ctx.restore();
+  }
+
+  shadowRect(x: number, y: number, w: number, h: number, offsetX: number, offsetY: number, blurRadius: number, color: CanvasColor): void {
+    this.ctx.save();
+    this.ctx.shadowColor = cssColor(color);
+    this.ctx.shadowOffsetX = offsetX;
+    this.ctx.shadowOffsetY = offsetY;
+    this.ctx.shadowBlur = blurRadius;
+    this.ctx.fillStyle = '#000';
+    this.ctx.fillRect(x, y, w, h);
+    this.ctx.restore();
+  }
+
+  shadowText(text: string, x: number, baselineY: number, font: string, offsetX: number, offsetY: number, blurRadius: number, color: CanvasColor): void {
+    this.ctx.save();
+    this.ctx.font = font;
+    this.ctx.shadowColor = cssColor(color);
+    this.ctx.shadowOffsetX = offsetX;
+    this.ctx.shadowOffsetY = offsetY;
+    this.ctx.shadowBlur = blurRadius;
+    this.ctx.fillStyle = '#000';
+    this.ctx.fillText(text, x, baselineY);
+    this.ctx.restore();
+  }
+
   toBuffer(): Buffer {
     return this.canvas.toBuffer('image/png');
   }

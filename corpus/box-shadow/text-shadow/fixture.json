@@ -1,0 +1,25 @@
+{
+  "name": "text-shadow",
+  "note": "A text-shadow over the text pipeline: the run's glyphs cast an offset blurred shadow behind them, painted per run through the canvas text-shadow primitive. Glyph ink is masked under the text tier (the two Skia rasterizers hint differently); the shadow blob around the glyphs is compared under the strict band.",
+  "harvest": {
+    "viewport": {
+      "width": 300,
+      "height": 120
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"t\" style=\"position:relative;left:40px;top:44px;font-family:'Noto Sans';font-size:36px;text-shadow:2px 3px 4px rgba(0,0,0,0.4)\">Shadowed</div></body></html>",
+    "computedStyle": [
+      {
+        "id": "t",
+        "props": ["text-shadow", "box-shadow", "color"]
+      }
+    ],
+    "rects": ["t"],
+    "textElements": ["t"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "negative-offset",
+  "note": "A negative vertical offset blurring upward (6px 4px with a -4px y offset): the shadow's sharp shape and blur are translated the other way, so placement parity for negative offsets is exercised end to end.",
+  "harvest": {
+    "viewport": {
+      "width": 280,
+      "height": 200
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"n\" style=\"position:relative;left:40px;top:60px;width:180px;height:90px;background:#ffffff;box-shadow:6px -4px 8px rgba(0,0,0,0.3)\"></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "n",
+        "props": ["box-shadow"]
+      }
+    ],
+    "rects": ["n"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

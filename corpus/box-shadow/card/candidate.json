@@ -1,0 +1,18 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "card": {
+      "box-shadow": "rgba(0, 0, 0, 0.2) 0px 2px 8px 0px",
+      "background-color": "rgb(255, 255, 255)",
+      "border-radius": "12px"
+    }
+  },
+  "rect": {
+    "card": {
+      "x": 30,
+      "y": 30,
+      "width": 200,
+      "height": 120
+    }
+  }
+}

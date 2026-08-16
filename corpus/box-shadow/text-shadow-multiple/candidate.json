@@ -1,0 +1,16 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "t": {
+      "text-shadow": "rgb(255, 0, 0) 0px 0px 5px, rgb(0, 170, 0) 2px 2px 0px"
+    }
+  },
+  "rect": {
+    "t": {
+      "x": 40,
+      "y": 44,
+      "width": 300,
+      "height": 49
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "name": "colored",
+  "note": "Non-black shadows: a violet blurred shadow and an amber hard spread ring (named color through the parser's hex path). The shadow color is used at its own alpha over the page — no black-multiply — so matching Chrome proves the color channel composites identically.",
+  "harvest": {
+    "viewport": {
+      "width": 280,
+      "height": 220
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c1\" style=\"position:relative;left:20px;top:20px;width:150px;height:80px;background:#f5f3ff;box-shadow:0px 6px 16px rgba(120,80,220,0.4)\"></div><div id=\"c2\" style=\"position:relative;left:20px;top:120px;width:150px;height:60px;background:#ffffff;box-shadow:0px 0px 0px 4px #d97706\"></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "c1",
+        "props": ["box-shadow", "background-color"]
+      },
+      {
+        "id": "c2",
+        "props": ["box-shadow"]
+      }
+    ],
+    "rects": ["c1", "c2"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

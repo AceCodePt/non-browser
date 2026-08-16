@@ -13,7 +13,7 @@
  * swap in a different FormattingContext and the same block/inline layout runs.
  */
 
-import { borderPaddingBlock, borderPaddingInline, parseStyleAttribute, pxLength, resolveLength, makeStyle, type BorderRadius, type ComputedStyle, type Color, type Declaration, type DecorationLine, type DisplayValue, type ListStyleType, type PseudoBox, type TextAlign, type VerticalAlign, type Viewport, type WhiteSpaceValue } from './css.js';
+import { borderPaddingBlock, borderPaddingInline, parseStyleAttribute, pxLength, resolveEmLength, resolveLength, makeStyle, type BorderRadius, type ComputedStyle, type Color, type Declaration, type DecorationLine, type DisplayValue, type ListStyleType, type PseudoBox, type Shadow, type TextAlign, type VerticalAlign, type Viewport, type WhiteSpaceValue } from './css.js';
 import { layoutTextLines, measureTextWidth, type LineBox } from './measure.js';
 import { FloatManager, type FormattingContext } from './floats.js';
 import { layoutGridChildren } from './grid.js';
@@ -40,6 +40,8 @@ export interface StyleDefaults {
   textDecorationColor: Color | null;
   textDecorationThickness: 'auto' | 'from-font' | { px: number };
   textUnderlineOffset: number;
+  /** inherited text-shadows (box-shadow does not inherit). */
+  textShadow?: Shadow[];
   fontWeight?: number;
   fontStyle?: 'normal' | 'italic';
   listStyleType?: ListStyleType;
@@ -159,6 +161,7 @@ export function resolveStyles(
       textDecorationColor: style.textDecorationColor,
       textDecorationThickness: style.textDecorationThickness,
       textUnderlineOffset: style.textUnderlineOffset,
+      textShadow: style.textShadow,
       textAlignInherited: style.textAlign,
       textAlignComputedInherited: style.textAlignComputed,
       fontWeight: style.fontWeight,
@@ -219,6 +222,7 @@ function computePseudoBox(
     textDecorationColor: style.textDecorationColor,
     textDecorationThickness: style.textDecorationThickness,
     textUnderlineOffset: style.textUnderlineOffset,
+    textShadow: style.textShadow,
     display: 'inline',
   });
   return { text: box.content.kind === 'text' ? box.content.text : null, style: box };
@@ -271,13 +275,34 @@ export interface TextDecorationPaint {
   underlineOffset: number;
 }
 
+/**
+ * A box-shadow ready for paint, resolved against the box's border-box width.
+ * `render` picks the painting strategy: `solid` fills the sharp shadow shape
+ * (Chrome's blur=0 raster), `blurred` uses the canvas shadow primitive (the
+ * exact kernel, but only valid when the sharp shape equals an opaque box so
+ * the background covers the primitive's shape fill). Combos neither strategy
+ * can reproduce (blurred inset, blurred+spread, blurred over a transparent
+ * background) never push an op — the property still parses and serializes.
+ */
+export interface ShadowPaint {
+  inset: boolean;
+  render: 'solid' | 'blurred';
+  color: Color;
+  ox: number;
+  oy: number;
+  blur: number;
+  spread: number;
+  borderRadius: BorderRadius | null;
+}
+
 export interface PaintOp {
   /** stacking key: the paint-order path (CSS 2.1 Appendix E, linearized). */
   key: number[];
   order: number;
-  kind: 'bg' | 'border' | 'text' | 'marker';
+  kind: 'bg' | 'border' | 'text' | 'marker' | 'shadow';
   box: Box;
   color?: Color;
+  shadow?: ShadowPaint;
   borderWidths?: Record<'top' | 'right' | 'bottom' | 'left', number>;
   borderColors?: Record<'top' | 'right' | 'bottom' | 'left', Color>;
   borderStyles?: Record<'top' | 'right' | 'bottom' | 'left', 'none' | 'solid' | 'inset' | 'outset'>;
@@ -305,6 +330,7 @@ export interface PaintOp {
     color: Color;
     letterSpacing: number;
     decoration: TextDecorationPaint | null;
+    textShadow: Shadow[];
   };
 }
 
@@ -657,7 +683,18 @@ export function layoutElementBox(
   // An element's own background/border paints before its contents (CSS
   // painting order: parent background first, then children in source order).
   // Placeholders (height 0) are pushed here and finalized after layout so the
-  // order counter keeps them ahead of every child op.
+  // order counter keeps them ahead of every child op. Outer shadows paint
+  // below the background, inset shadows above it and below the border.
+  const shadowOps = buildBoxShadowOps(style, borderX, borderY, borderWidth, contentWidth, viewport);
+  const shadowPlaceholders: PaintOp[] = [];
+  const pushShadow = (s: ShadowPaint): void => {
+    const op: PaintOp = { key: ownKey, order: nextOrder(), kind: 'shadow', box: { x: borderX, y: borderY, width: borderWidth, height: 0 }, shadow: s };
+    shadowPlaceholders.push(op);
+    pushPaintOp(paints, op);
+  };
+  // CSS paints a shadow list front-to-back (first on top); with source-over the
+  // last shadow must be painted first, so the list is traversed in reverse.
+  for (let i = shadowOps.length - 1; i >= 0; i--) if (!shadowOps[i].inset) pushShadow(shadowOps[i]);
   const ownBg = style.backgroundColor.a > 0
     ? {
         key: ownKey,
@@ -669,6 +706,7 @@ export function layoutElementBox(
       }
     : null;
   if (ownBg) pushPaintOp(paints, ownBg);
+  for (let i = shadowOps.length - 1; i >= 0; i--) if (shadowOps[i].inset) pushShadow(shadowOps[i]);
   const ownBorder = pushBorders(paints, nextOrder, ownKey, style, borderX, borderY, borderWidth, 0);
 
   // A rounded overflow:hidden box clips its whole subtree (own background and
@@ -781,6 +819,7 @@ export function layoutElementBox(
 
   if (ownBg) ownBg.box.height = resolvedHeight;
   if (ownBorder) ownBorder.box.height = resolvedHeight;
+  for (const s of shadowPlaceholders) s.box.height = resolvedHeight;
   if (clipEntry) clipEntry.height = resolvedHeight;
   if (lines.length > 0) {
     pushPaintOp(paints, {
@@ -809,6 +848,7 @@ export function layoutElementBox(
         color: style.color,
         letterSpacing: style.letterSpacing,
         decoration: decorationPaint(style),
+        textShadow: style.textShadow,
       },
     });
   }
@@ -1034,9 +1074,21 @@ function layoutFloat(
     lines,
   };
 
+  const floatKey = inFlowPaintKey(STEP_FLOAT);
+  const floatShadowOps = buildBoxShadowOps(style, placed.borderX, placed.borderY, borderBoxWidth, floatContentWidth, viewport);
+  for (let i = floatShadowOps.length - 1; i >= 0; i--) {
+    if (floatShadowOps[i].inset) continue;
+    pushPaintOp(paints, {
+      key: floatKey,
+      order: nextOrder(),
+      kind: 'shadow',
+      box: { x: placed.borderX, y: placed.borderY, width: borderBoxWidth, height: borderHeight },
+      shadow: floatShadowOps[i],
+    });
+  }
   if (style.backgroundColor.a > 0) {
     pushPaintOp(paints, {
-      key: inFlowPaintKey(STEP_FLOAT),
+      key: floatKey,
       order: nextOrder(),
       kind: 'bg',
       box: { x: placed.borderX, y: placed.borderY, width: borderBoxWidth, height: borderHeight },
@@ -1044,7 +1096,17 @@ function layoutFloat(
       borderRadius: style.borderRadius,
     });
   }
-  pushBorders(paints, nextOrder, inFlowPaintKey(STEP_FLOAT), style, placed.borderX, placed.borderY, borderBoxWidth, borderHeight);
+  for (let i = floatShadowOps.length - 1; i >= 0; i--) {
+    if (!floatShadowOps[i].inset) continue;
+    pushPaintOp(paints, {
+      key: floatKey,
+      order: nextOrder(),
+      kind: 'shadow',
+      box: { x: placed.borderX, y: placed.borderY, width: borderBoxWidth, height: borderHeight },
+      shadow: floatShadowOps[i],
+    });
+  }
+  pushBorders(paints, nextOrder, floatKey, style, placed.borderX, placed.borderY, borderBoxWidth, borderHeight);
   if (lines.length > 0) {
     pushPaintOp(paints, {
       key: inFlowPaintKey(STEP_INLINE),
@@ -1072,6 +1134,7 @@ function layoutFloat(
         color: style.color,
         letterSpacing: style.letterSpacing,
         decoration: decorationPaint(style),
+        textShadow: style.textShadow,
       },
     });
   }
@@ -1334,6 +1397,46 @@ function insideMarkerAdvanceFor(style: ComputedStyle, counter: number): number {
     return -1 + symbolWidth + style.fontSize;
   }
   return measureTextWidth(counterText(style.listStyleType, counter), style.fontSize, style.fontFamily);
+}
+
+/**
+ * Resolve a box's box-shadows into paint ops (outer shadows before the
+ * background, inset after it, both keyed with the box). Each shadow's
+ * offset/blur/spread resolve to px against the box's content width; em values
+ * fold against the element's font-size like every other length. A shadow
+ * render is `blurred` only when the canvas shadow primitive can reproduce
+ * Chrome exactly — unblurred outer shadow over an opaque background with no
+ * spread; everything else (blurred inset, blurred+spread, blurred over a
+ * transparent background) is skipped rather than approximated.
+ */
+function buildBoxShadowOps(
+  style: ComputedStyle,
+  x: number,
+  y: number,
+  w: number,
+  contentWidth: number,
+  viewport?: Viewport,
+): ShadowPaint[] {
+  if (style.boxShadow.length === 0) return [];
+  const opaqueBg = style.backgroundColor.a >= 1;
+  const resolve = (l: import('./css.js').Length): number =>
+    resolveLength(resolveEmLength(l, style.fontSize), contentWidth, viewport) ?? 0;
+  const out: ShadowPaint[] = [];
+  for (const s of style.boxShadow) {
+    const ox = resolve(s.x);
+    const oy = resolve(s.y);
+    const blur = Math.max(0, resolve(s.blur));
+    const spread = resolve(s.spread);
+    const render =
+      blur > 0 && !s.inset && spread === 0 && opaqueBg && w > 0
+        ? ('blurred' as const)
+        : blur === 0 && w > 0
+          ? ('solid' as const)
+          : null;
+    if (render === null) continue;
+    out.push({ inset: s.inset, render, color: s.color, ox, oy, blur, spread, borderRadius: style.borderRadius });
+  }
+  return out;
 }
 
 function pushBorders(
