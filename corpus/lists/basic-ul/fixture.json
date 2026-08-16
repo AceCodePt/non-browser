@@ -1,0 +1,126 @@
+{
+  "name": "basic-ul",
+  "note": "Basic unordered list (corpus/lists): ul gets 40px padding-inline-start, 1em block margins, and a disc marker per li (display:list-item, list-style-type inherited from the ul). Also covers author-set square/circle markers on ul and per-li list-style-type override. The screenshot diffs the disc/square/circle raster and the first-line text placement against Chrome.",
+  "harvest": {
+    "viewport": {
+      "width": 460,
+      "height": 160
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'}</style></head><body><ul id=\"ul\"><li id=\"a1\">alpha item</li><li id=\"a2\" style=\"list-style-type:square\">beta gamma</li><li id=\"a3\">epsilon</li></ul><ul id=\"sq\" style=\"list-style-type:square\"><li id=\"s1\">square marker</li></ul><ul id=\"ci\" style=\"list-style-type:circle\"><li id=\"c1\">circle marker</li></ul></body></html>",
+    "measureText": [
+      {
+        "text": "alpha item",
+        "font": "16px 'Noto Sans'"
+      },
+      {
+        "text": "beta gamma",
+        "font": "16px 'Noto Sans'"
+      },
+      {
+        "text": "epsilon",
+        "font": "16px 'Noto Sans'"
+      },
+      {
+        "text": "square marker",
+        "font": "16px 'Noto Sans'"
+      },
+      {
+        "text": "circle marker",
+        "font": "16px 'Noto Sans'"
+      }
+    ],
+    "computedStyle": [
+      {
+        "id": "ul",
+        "props": [
+          "display",
+          "list-style-type",
+          "list-style-position",
+          "padding-left",
+          "margin-top",
+          "margin-bottom"
+        ]
+      },
+      {
+        "id": "a1",
+        "props": [
+          "display",
+          "list-style-type",
+          "list-style-position",
+          "padding-left"
+        ]
+      },
+      {
+        "id": "a2",
+        "props": [
+          "display",
+          "list-style-type",
+          "list-style-position"
+        ]
+      },
+      {
+        "id": "a3",
+        "props": [
+          "display",
+          "list-style-type"
+        ]
+      },
+      {
+        "id": "sq",
+        "props": [
+          "list-style-type"
+        ]
+      },
+      {
+        "id": "s1",
+        "props": [
+          "display",
+          "list-style-type"
+        ]
+      },
+      {
+        "id": "ci",
+        "props": [
+          "list-style-type"
+        ]
+      },
+      {
+        "id": "c1",
+        "props": [
+          "display",
+          "list-style-type"
+        ]
+      }
+    ],
+    "rects": [
+      "ul",
+      "a1",
+      "a2",
+      "a3",
+      "sq",
+      "s1",
+      "ci",
+      "c1"
+    ],
+    "textElements": [
+      "a1",
+      "a2",
+      "a3",
+      "s1",
+      "c1"
+    ],
+    "markerElements": [
+      "a1",
+      "a2",
+      "a3",
+      "s1",
+      "c1"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

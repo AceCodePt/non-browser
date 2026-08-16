@@ -141,3 +141,5 @@ the charter and the corpus cannot silently diverge:
 | text | text-decoration | yes | corpus/paint-text | text-decoration |
 | font | font-family (fallback tables) | yes | corpus/cross-family, corpus/firefox-track | font-family |
 | ua-stylesheet | UA defaults at lowest cascade priority | yes | corpus/ua-styles | UA stylesheet |
+| lists | list-style-type markers | yes | corpus/lists, corpus/ua-styles | list-style-type |
+| lists | list-style-position | yes | corpus/lists | list-style-position |

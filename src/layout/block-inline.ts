@@ -47,6 +47,8 @@ export interface StyleDefaults {
   fontStyle?: 'normal' | 'italic';
   /** inherited list-style-type. */
   listStyleType?: ListStyleType;
+  /** inherited list-style-position. */
+  listStylePosition?: 'inside' | 'outside';
   /** UA-level default padding (e.g. td/th get 1px). */
   padding?: import('./css.js').Length;
   /** UA-level default vertical-align (e.g. table cells get 'middle'). */
@@ -156,6 +158,7 @@ export function resolveStyles(
       fontWeightDefault: d.fontWeight,
       fontStyleDefault: d.fontStyle,
       listStyleTypeDefault: d.listStyleType,
+      listStylePositionDefault: d.listStylePosition,
     });
     style.before = computePseudoBox(el, style, pseudoDecls, 'before');
     style.after = computePseudoBox(el, style, pseudoDecls, 'after');
@@ -176,6 +179,7 @@ export function resolveStyles(
       fontWeight: style.fontWeight,
       fontStyle: style.fontStyle,
       listStyleType: style.listStyleType,
+      listStylePosition: style.listStylePosition,
       whiteSpace: style.whiteSpace,
     };
     for (const child of el.childNodes) {
@@ -265,16 +269,29 @@ export interface LayoutNode {
   marker?: ListMarker;
 }
 
-/** The rendered list marker for one list-item (positioned in the gutter). */
+/** The rendered list marker for one list-item. Geometry mirrors Blink's
+ * list-marker layout (css-lists-3 §4): the marker box is placed in the gutter
+ * (outside) or at the start of the first line (inside), and the symbol markers
+ * are drawn from the font's rounded ascent — `WidthOfSymbol` and
+ * `RelativeSymbolMarkerRect` in list_marker.cc. */
 export interface ListMarker {
   kind: 'disc' | 'circle' | 'square' | 'decimal';
-  /** decimal marker text (e.g. "3."); absent for geometric markers. */
+  /** decimal marker text (e.g. "3. ", Chrome includes the suffix space). */
   text?: string;
-  /** marker box right edge (decimal) / center x (geometric markers). */
-  rightX?: number;
-  centerX: number;
-  /** center y (geometric markers) or baseline (decimal text). */
-  centerY: number;
+  /**
+   * Marker box inline size: the symbol width for geometric markers
+   * (ascent-based, `WidthOfSymbol`) or the decimal text advance.
+   */
+  size: number;
+  /** geometric markers: the shape's bounding-square side (Chrome's bullet width). */
+  shapeSize?: number;
+  /** geometric markers: the shape's center (decimal markers only use `x`). */
+  centerX?: number;
+  centerY?: number;
+  /** decimal markers: the text's left edge (right-aligned to the li border box
+   * outside, left-aligned to the content box inside). */
+  x?: number;
+  position: 'inside' | 'outside';
   fontSize: number;
   family: string;
   color: Color;
@@ -364,6 +381,16 @@ let cbStack: ContainingBlock[] = [];
  * border-box height is known, so ops reference the final rect).
  */
 let clipStack: RoundedClip[] = [];
+
+/**
+ * The staged inside-position marker of the list-item currently being laid out.
+ * Layout is a single-threaded recursive descent, so this is set in
+ * `layoutBlockChildren` immediately before a list-item's block layout and
+ * consumed (and cleared) by that item's inline layout, which shifts the first
+ * line right by the marker's advance.
+ */
+let insideMarkerAdvance: number | null = null;
+let insideMarkerOwner: P5Element | null = null;
 
 /** Push a paint op, tagging it with the innermost active rounded clip. */
 function pushPaintOp(paints: PaintOp[], op: PaintOp): void {
@@ -519,11 +546,13 @@ export function layoutRoot(
   const markerOps: PaintOp[] = [];
   const collectMarkers = (n: LayoutNode): void => {
     if (n.marker) {
+      const m = n.marker;
+      const s = m.size + 8;
       markerOps.push({
         key: inFlowPaintKey(STEP_INLINE),
         order: 0,
         kind: 'marker',
-        box: { x: n.marker.centerX - 8, y: n.marker.centerY - 8, width: 16, height: 16 },
+        box: { x: (m.centerX ?? m.x ?? 0) - s / 2, y: (m.centerY ?? m.baseline ?? 0) - s / 2, width: s, height: s },
         marker: n.marker,
       });
     }
@@ -1192,6 +1221,16 @@ function layoutBlockChildren(
       continue;
     }
     flushInlineRun();
+    const isListItem = style.display === 'list-item';
+    if (isListItem && isOrderedList) listIndex++;
+    // An inside-position marker is an inline box at the start of the li's first
+    // line: its advance (symbol box + 1em margin, or the counter text width)
+    // shifts the first line's text right. The advance depends only on the style
+    // and counter, so it is staged here and consumed by the li's inline layout.
+    const insideAdvance =
+      isListItem && style.listStylePosition === 'inside' ? insideMarkerAdvanceFor(style, listIndex) : null;
+    insideMarkerAdvance = insideAdvance;
+    insideMarkerOwner = insideAdvance !== null ? el : null;
     const node = layoutBlock(
       el,
       style,
@@ -1210,9 +1249,10 @@ function layoutBlockChildren(
       nextOrder,
       viewport,
     );
+    insideMarkerAdvance = null;
+    insideMarkerOwner = null;
     firstInFlow = false;
-    if (el.nodeName === 'li' && (isOrderedList || style.listStyleType !== 'none')) {
-      if (isOrderedList) listIndex++;
+    if (isListItem && style.listStyleType !== 'none') {
       node.marker = listMarkerFor(node, listIndex) ?? undefined;
     }
     nodes.push(node);
@@ -1267,10 +1307,12 @@ function firstLineOf(node: LayoutNode): LineBox | null {
 }
 
 /**
- * Build the list marker for a list-item's first line. Geometry matches
- * Chrome's list markers at the default font size: a 5x5 disc/circle/square
- * centered at (li.borderLeft − 14, first-line center), and decimal counters
- * right-aligned 6px before the li's content with the li's font.
+ * Build the list marker for a list-item's first line. Geometry mirrors Blink's
+ * list-marker layout (`list_marker.cc`): the symbol markers are sized from the
+ * font's rounded ascent (bullet width `(ascent*2/3 + 1) / 2`, box `+2`) and
+ * drawn at `RelativeSymbolMarkerRect` (x=1, y=3*(ascent−offset)/2), while the
+ * decimal counter text is right-aligned to the li's border box (outside) or
+ * left-aligned to the content box (inside) with Chrome's `. ` suffix.
  */
 function listMarkerFor(node: LayoutNode, counter: number): ListMarker | null {
   const style = node.style;
@@ -1279,25 +1321,32 @@ function listMarkerFor(node: LayoutNode, counter: number): ListMarker | null {
   if (!first) return null;
   const metrics = activeFontMetrics();
   const baseline = first.baseline ?? first.y + lineAscentContribution(style.fontSize, style.lineHeight, metrics);
-  const centerY = first.y + first.height / 2;
+  const inside = style.listStylePosition === 'inside';
   if (style.listStyleType === 'disc' || style.listStyleType === 'circle' || style.listStyleType === 'square') {
+    const { ascent, offset, bulletWidth } = markerShape(metrics, style.fontSize);
     return {
       kind: style.listStyleType,
-      centerX: node.borderX - 14,
-      centerY,
+      size: bulletWidth + 2,
+      shapeSize: bulletWidth,
+      // Outside: the marker box sits in the gutter, `offset + 7 + 1` from the
+      // li's border box, and the shape box starts 1px inside it. Inside: the
+      // box starts 1px before the content box and the shape box starts at it.
+      centerX: inside ? node.contentX + bulletWidth / 2 : node.borderX - offset - 7 + bulletWidth / 2,
+      centerY: first.y + (3 * (ascent - offset)) / 2 + bulletWidth / 2,
+      position: inside ? 'inside' : 'outside',
       fontSize: style.fontSize,
       family: style.fontFamily,
       color: style.color,
     };
   }
   if (style.listStyleType === 'decimal' || style.listStyleType === 'decimal-leading-zero') {
-    const text = `${counter}.`;
+    const text = counterText(style.listStyleType, counter);
     return {
       kind: 'decimal',
       text,
-      rightX: node.borderX - 6,
-      centerX: 0,
-      centerY,
+      size: measureTextWidth(text, style.fontSize, style.fontFamily),
+      x: inside ? node.contentX : node.borderX - measureTextWidth(text, style.fontSize, style.fontFamily),
+      position: inside ? 'inside' : 'outside',
       fontSize: style.fontSize,
       family: style.fontFamily,
       color: style.color,
@@ -1305,6 +1354,39 @@ function listMarkerFor(node: LayoutNode, counter: number): ListMarker | null {
     };
   }
   return null;
+}
+
+/** The rendered decimal counter text (Chrome's default `. ` suffix included). */
+function counterText(listStyleType: ListStyleType, counter: number): string {
+  if (listStyleType === 'decimal-leading-zero') return `${String(counter).padStart(2, '0')}. `;
+  return `${counter}. `;
+}
+
+/**
+ * Blink's symbol-marker shape metrics from the font's rounded ascent
+ * (`WidthOfSymbol` / `RelativeSymbolMarkerRect` in list_marker.cc, all integer
+ * arithmetic): the disc/circle/square sits in a `bulletWidth` box whose center
+ * is the layout anchor.
+ */
+function markerShape(metrics: FontVerticalMetrics | null, fontSize: number): { ascent: number; offset: number; bulletWidth: number; symbolWidth: number } {
+  const ascent = metrics ? roundedAscent(metrics, fontSize) : Math.round(fontSize * 0.75);
+  const offset = Math.floor((ascent * 2) / 3);
+  const bulletWidth = Math.floor((offset + 1) / 2);
+  return { ascent, offset, bulletWidth, symbolWidth: bulletWidth + 2 };
+}
+
+/**
+ * The inline advance an inside-position marker contributes to its first line:
+ * for symbol markers the box (`symbolWidth`) plus Blink's `-1`/`1em` margins;
+ * for decimal the counter text width (margins are 0).
+ */
+function insideMarkerAdvanceFor(style: ComputedStyle, counter: number): number {
+  const metrics = activeFontMetrics();
+  if (style.listStyleType === 'disc' || style.listStyleType === 'circle' || style.listStyleType === 'square') {
+    const { symbolWidth } = markerShape(metrics, style.fontSize);
+    return -1 + symbolWidth + style.fontSize;
+  }
+  return measureTextWidth(counterText(style.listStyleType, counter), style.fontSize, style.fontFamily);
 }
 
 function pushBorders(
@@ -1795,6 +1877,13 @@ function layoutInlineContent(
 ): InlineLayoutResult {
   const metrics = activeFontMetrics();
   const ws = style.whiteSpace;
+  // Snapshot the staged inside-marker advance before any nested layout (e.g.
+  // inline-block atomic measurement) runs, since that can clear the module
+  // state; the shift applies to the first line below.
+  const pendingAdvance =
+    insideMarkerAdvance !== null && insideMarkerOwner !== null && (el === insideMarkerOwner || el.nodeName === '#anon')
+      ? insideMarkerAdvance
+      : null;
   const pieces = buildPieces(el, style, styles, contentWidth, viewport, ws);
   if (pieces.length === 0) return { lines: [], children: [], contentHeight: 0 };
 
@@ -2078,6 +2167,16 @@ function layoutInlineContent(
       children: [],
       lines: [],
     });
+  }
+
+  // An inside-position list marker is an inline box at the start of the item's
+  // first line (this is either the list-item itself or the anonymous block
+  // carrying its leading inline content). Shift that line right by the staged
+  // marker advance so the text follows the marker box, matching Chrome.
+  if (pendingAdvance !== null && lines.length > 0) {
+    lines[0].x += pendingAdvance;
+    insideMarkerAdvance = null;
+    insideMarkerOwner = null;
   }
 
   return { lines, children, contentHeight: y - contentY };

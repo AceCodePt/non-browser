@@ -1,0 +1,178 @@
+{
+  "measureText": {
+    "16px 'Noto Sans' | first": 29.68000030517578,
+    "16px 'Noto Sans' | sub one": 60.13999938964844,
+    "16px 'Noto Sans' | sub two": 59.58000183105469,
+    "16px 'Noto Sans' | second": 53.779998779296875,
+    "16px 'Noto Sans' | alpha": 41.810001373291016,
+    "16px 'Noto Sans' | beta": 33.619998931884766,
+    "16px 'Noto Sans' | gamma": 57.709999084472656
+  },
+  "computedStyle": {
+    "o": {
+      "display": "block",
+      "list-style-type": "decimal"
+    },
+    "o1": {
+      "display": "list-item",
+      "list-style-type": "decimal",
+      "list-style-position": "outside"
+    },
+    "i": {
+      "display": "block",
+      "list-style-type": "decimal",
+      "margin-top": "0px",
+      "margin-bottom": "0px"
+    },
+    "i1": {
+      "display": "list-item",
+      "list-style-type": "decimal"
+    },
+    "i2": {
+      "display": "list-item",
+      "list-style-type": "decimal"
+    },
+    "o2": {
+      "display": "list-item",
+      "list-style-type": "decimal"
+    },
+    "u": {
+      "list-style-type": "disc"
+    },
+    "u1": {
+      "list-style-type": "disc"
+    },
+    "ui": {
+      "list-style-type": "circle",
+      "margin-top": "0px",
+      "margin-bottom": "0px"
+    },
+    "ui1": {
+      "display": "list-item",
+      "list-style-type": "circle"
+    },
+    "u2": {
+      "display": "list-item",
+      "list-style-type": "disc"
+    }
+  },
+  "rect": {
+    "o": {
+      "x": 0,
+      "y": 0,
+      "width": 460,
+      "height": 88
+    },
+    "o1": {
+      "x": 40,
+      "y": 0,
+      "width": 420,
+      "height": 66
+    },
+    "i": {
+      "x": 40,
+      "y": 22,
+      "width": 420,
+      "height": 44
+    },
+    "i1": {
+      "x": 80,
+      "y": 22,
+      "width": 380,
+      "height": 22
+    },
+    "i2": {
+      "x": 80,
+      "y": 44,
+      "width": 380,
+      "height": 22
+    },
+    "o2": {
+      "x": 40,
+      "y": 66,
+      "width": 420,
+      "height": 22
+    },
+    "u": {
+      "x": 0,
+      "y": 104,
+      "width": 460,
+      "height": 66
+    },
+    "u1": {
+      "x": 40,
+      "y": 104,
+      "width": 420,
+      "height": 44
+    },
+    "ui": {
+      "x": 40,
+      "y": 126,
+      "width": 420,
+      "height": 22
+    },
+    "ui1": {
+      "x": 80,
+      "y": 126,
+      "width": 380,
+      "height": 22
+    },
+    "u2": {
+      "x": 40,
+      "y": 148,
+      "width": 420,
+      "height": 22
+    }
+  },
+  "fragments": {
+    "i1": [
+      {
+        "x": 80,
+        "y": 22,
+        "width": 60.13999938964844,
+        "height": 22
+      }
+    ],
+    "i2": [
+      {
+        "x": 80,
+        "y": 44,
+        "width": 59.58000183105469,
+        "height": 22
+      }
+    ],
+    "o2": [
+      {
+        "x": 40,
+        "y": 66,
+        "width": 53.779998779296875,
+        "height": 22
+      }
+    ],
+    "ui1": [
+      {
+        "x": 80,
+        "y": 126,
+        "width": 33.619998931884766,
+        "height": 22
+      }
+    ],
+    "u2": [
+      {
+        "x": 40,
+        "y": 148,
+        "width": 57.709999084472656,
+        "height": 22
+      }
+    ]
+  },
+  "markerTexts": {
+    "o1": "1. ",
+    "i1": "1. ",
+    "i2": "2. ",
+    "o2": "2. ",
+    "u1": null,
+    "ui1": null,
+    "u2": null
+  }
+}

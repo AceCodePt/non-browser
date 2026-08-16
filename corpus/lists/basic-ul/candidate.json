@@ -1,0 +1,147 @@
+{
+  "measureText": {
+    "16px 'Noto Sans' | alpha item": 79.86000061035156,
+    "16px 'Noto Sans' | beta gamma": 95.48999786376953,
+    "16px 'Noto Sans' | epsilon": 54.349998474121094,
+    "16px 'Noto Sans' | square marker": 110.55999755859375,
+    "16px 'Noto Sans' | circle marker": 97.80999755859375
+  },
+  "computedStyle": {
+    "ul": {
+      "display": "block",
+      "list-style-type": "disc",
+      "list-style-position": "outside",
+      "padding-left": "40px",
+      "margin-top": "16px",
+      "margin-bottom": "16px"
+    },
+    "a1": {
+      "display": "list-item",
+      "list-style-type": "disc",
+      "list-style-position": "outside",
+      "padding-left": "0px"
+    },
+    "a2": {
+      "display": "list-item",
+      "list-style-type": "square",
+      "list-style-position": "outside"
+    },
+    "a3": {
+      "display": "list-item",
+      "list-style-type": "disc"
+    },
+    "sq": {
+      "list-style-type": "square"
+    },
+    "s1": {
+      "display": "list-item",
+      "list-style-type": "square"
+    },
+    "ci": {
+      "list-style-type": "circle"
+    },
+    "c1": {
+      "display": "list-item",
+      "list-style-type": "circle"
+    }
+  },
+  "rect": {
+    "ul": {
+      "x": 0,
+      "y": 0,
+      "width": 460,
+      "height": 66
+    },
+    "a1": {
+      "x": 40,
+      "y": 0,
+      "width": 420,
+      "height": 22
+    },
+    "a2": {
+      "x": 40,
+      "y": 22,
+      "width": 420,
+      "height": 22
+    },
+    "a3": {
+      "x": 40,
+      "y": 44,
+      "width": 420,
+      "height": 22
+    },
+    "sq": {
+      "x": 0,
+      "y": 82,
+      "width": 460,
+      "height": 22
+    },
+    "s1": {
+      "x": 40,
+      "y": 82,
+      "width": 420,
+      "height": 22
+    },
+    "ci": {
+      "x": 0,
+      "y": 120,
+      "width": 460,
+      "height": 22
+    },
+    "c1": {
+      "x": 40,
+      "y": 120,
+      "width": 420,
+      "height": 22
+    }
+  },
+  "fragments": {
+    "a1": [
+      {
+        "x": 40,
+        "y": 0,
+        "width": 79.86000061035156,
+        "height": 22
+      }
+    ],
+    "a2": [
+      {
+        "x": 40,
+        "y": 22,
+        "width": 95.48999786376953,
+        "height": 22
+      }
+    ],
+    "a3": [
+      {
+        "x": 40,
+        "y": 44,
+        "width": 54.349998474121094,
+        "height": 22
+      }
+    ],
+    "s1": [
+      {
+        "x": 40,
+        "y": 82,
+        "width": 110.55999755859375,
+        "height": 22
+      }
+    ],
+    "c1": [
+      {
+        "x": 40,
+        "y": 120,
+        "width": 97.80999755859375,
+        "height": 22
+      }
+    ]
+  },
+  "markerTexts": {
+    "a1": null,
+    "a2": null,
+    "a3": null,
+    "s1": null,
+    "c1": null
+  }
+}

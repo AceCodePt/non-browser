@@ -1,0 +1,87 @@
+{
+  "measureText": {
+    "16px 'Noto Sans' | one": 28.59000015258789,
+    "16px 'Noto Sans' | two": 28.030000686645508,
+    "16px 'Noto Sans' | three": 40
+  },
+  "computedStyle": {
+    "ol": {
+      "display": "block",
+      "list-style-type": "decimal",
+      "list-style-position": "outside",
+      "padding-left": "40px",
+      "margin-top": "16px",
+      "margin-bottom": "16px"
+    },
+    "b1": {
+      "display": "list-item",
+      "list-style-type": "decimal",
+      "list-style-position": "outside"
+    },
+    "b2": {
+      "display": "list-item",
+      "list-style-type": "decimal"
+    },
+    "b3": {
+      "display": "list-item",
+      "list-style-type": "decimal"
+    }
+  },
+  "rect": {
+    "ol": {
+      "x": 0,
+      "y": 0,
+      "width": 460,
+      "height": 66
+    },
+    "b1": {
+      "x": 40,
+      "y": 0,
+      "width": 420,
+      "height": 22
+    },
+    "b2": {
+      "x": 40,
+      "y": 22,
+      "width": 420,
+      "height": 22
+    },
+    "b3": {
+      "x": 40,
+      "y": 44,
+      "width": 420,
+      "height": 22
+    }
+  },
+  "fragments": {
+    "b1": [
+      {
+        "x": 40,
+        "y": 0,
+        "width": 28.59000015258789,
+        "height": 22
+      }
+    ],
+    "b2": [
+      {
+        "x": 40,
+        "y": 22,
+        "width": 28.030000686645508,
+        "height": 22
+      }
+    ],
+    "b3": [
+      {
+        "x": 40,
+        "y": 44,
+        "width": 40,
+        "height": 22
+      }
+    ]
+  },
+  "markerTexts": {
+    "b1": "1. ",
+    "b2": "2. ",
+    "b3": "3. "
+  }
+}

@@ -27,6 +27,7 @@
     "verify:segmenter": "npm run build && node scripts/verify-segmenter.mjs",
     "verify:cross-family": "npm run build && node scripts/verify-cross-family.mjs",
     "verify:ua-styles": "npm run build && node scripts/verify-ua-styles.mjs",
+    "verify:lists": "npm run build && node scripts/verify-lists.mjs",
     "generate:sweep": "npm run build && node scripts/generate-sweep.mjs",
     "verify:sweep": "npm run build && node scripts/generate-sweep.mjs && node scripts/verify-sweep.mjs",
     "verify:text-align": "npm run build && node scripts/verify-text-align.mjs",

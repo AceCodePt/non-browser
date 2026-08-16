@@ -43,6 +43,11 @@ export interface RenderOutput {
    * line placement (layer-3) independently of element border boxes.
    */
   textFragments: Record<string, Box[]>;
+  /**
+   * Rendered marker text per element id (null for geometric markers / no
+   * marker). Compared against Chrome's `::marker` text to verify ol numbering.
+   */
+  listMarkers: Record<string, string | null>;
 }
 
 /** Draw one layout line's text, applying letter-spacing when non-zero. */
@@ -241,28 +246,31 @@ function paintRoundedBackground(
   canvas.fillPath(op.color!);
 }
 
-/** Paint one list marker: a 5px disc/circle/square or the decimal counter text. */
+/** Paint one list marker. Geometric markers use Blink's bullet box: a filled
+ * disc / 1px-outline circle / filled square inscribed in a `shapeSize` box at
+ * the marker's center; decimal counters draw the suffix text at its x. */
 function paintListMarker(canvas: CanvasLike, op: PaintOp): void {
   const m = op.marker!;
-  if (m.kind === 'disc') {
-    const r = 2.5;
+  if (m.kind === 'disc' && m.centerX !== undefined && m.centerY !== undefined) {
+    const r = m.shapeSize! / 2;
     canvas.beginPath();
     canvas.moveTo(m.centerX + r, m.centerY);
     canvas.ellipse(m.centerX, m.centerY, r, r, 0, 0, Math.PI * 2, false);
     canvas.fillPath(m.color);
-  } else if (m.kind === 'circle') {
-    const r = 2.5;
+  } else if (m.kind === 'circle' && m.centerX !== undefined && m.centerY !== undefined) {
+    const r = m.shapeSize! / 2;
+    const hole = m.shapeSize! / 4;
     canvas.beginPath();
     canvas.moveTo(m.centerX + r, m.centerY);
     canvas.ellipse(m.centerX, m.centerY, r, r, 0, 0, Math.PI * 2, false);
-    canvas.moveTo(m.centerX + 1.5, m.centerY);
-    canvas.ellipse(m.centerX, m.centerY, 1.5, 1.5, 0, 0, Math.PI * 2, false);
+    canvas.moveTo(m.centerX + hole, m.centerY);
+    canvas.ellipse(m.centerX, m.centerY, hole, hole, 0, 0, Math.PI * 2, false);
     canvas.fillPath(m.color, 'evenodd');
-  } else if (m.kind === 'square') {
-    canvas.fillRect(m.centerX - 2.5, m.centerY - 2.5, 5, 5, m.color);
-  } else if (m.kind === 'decimal' && m.text !== undefined && m.baseline !== undefined && m.rightX !== undefined) {
-    const width = measureTextWidth(m.text, m.fontSize, m.family);
-    canvas.drawText(m.text, m.rightX - width, m.baseline, cssFontString(m.fontSize, m.family), m.color);
+  } else if (m.kind === 'square' && m.centerX !== undefined && m.centerY !== undefined) {
+    const s = m.shapeSize!;
+    canvas.fillRect(m.centerX - s / 2, m.centerY - s / 2, s, s, m.color);
+  } else if (m.kind === 'decimal' && m.text !== undefined && m.baseline !== undefined && m.x !== undefined) {
+    canvas.drawText(m.text, m.x, m.baseline, cssFontString(m.fontSize, m.family), m.color);
   }
 }
 
@@ -397,6 +405,8 @@ export function paint(
   collectGeneratedTextRects(root, generatedTextRects);
   const textFragments: Record<string, Box[]> = {};
   if (textElements && textElements.length > 0) collectTextFragments(root, textElements, textFragments, fontMetrics);
+  const listMarkers: Record<string, string | null> = {};
+  collectListMarkers(root, listMarkers);
   const missing: string[] = [];
   for (const id of ids) if (!rects[id]) missing.push(id);
   if (missing.length > 0) {
@@ -409,7 +419,22 @@ export function paint(
     rects,
     generatedTextRects,
     textFragments,
+    listMarkers,
   };
+}
+
+/**
+ * Collect the rendered marker text per list-item id (null for geometric
+ * markers and `list-style-type: none`). The verify harness compares these
+ * against Chrome's `::marker` text to prove ol renumbering matches.
+ */
+function collectListMarkers(root: RootLayout, out: Record<string, string | null>): void {
+  const walk = (node: RootLayout['root']): void => {
+    const id = idOf(node.element);
+    if (id && node.marker) out[id] = node.marker.text ?? null;
+    for (const child of node.children) walk(child);
+  };
+  walk(root.root);
 }
 
 function rectFor(node: RootLayout['root']): Box {

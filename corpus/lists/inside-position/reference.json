@@ -1,0 +1,141 @@
+{
+  "measureText": {
+    "16px 'Noto Sans' | alpha": 41.808074951171875,
+    "16px 'Noto Sans' | beta": 33.61607360839844,
+    "16px 'Noto Sans' | one": 28.592056274414062,
+    "16px 'Noto Sans' | two": 28.032058715820312,
+    "16px 'Noto Sans' | three": 40.00007629394531
+  },
+  "computedStyle": {
+    "u": {
+      "display": "block",
+      "list-style-type": "disc",
+      "list-style-position": "inside",
+      "padding-left": "40px"
+    },
+    "d1": {
+      "display": "list-item",
+      "list-style-type": "disc",
+      "list-style-position": "inside",
+      "padding-left": "0px"
+    },
+    "d2": {
+      "display": "list-item",
+      "list-style-type": "disc",
+      "list-style-position": "inside"
+    },
+    "o": {
+      "display": "block",
+      "list-style-type": "decimal",
+      "list-style-position": "inside"
+    },
+    "e1": {
+      "display": "list-item",
+      "list-style-type": "decimal",
+      "list-style-position": "inside"
+    },
+    "e2": {
+      "display": "list-item",
+      "list-style-type": "decimal",
+      "list-style-position": "inside"
+    },
+    "e3": {
+      "display": "list-item",
+      "list-style-type": "decimal",
+      "list-style-position": "inside"
+    }
+  },
+  "rect": {
+    "u": {
+      "x": 0,
+      "y": 0,
+      "width": 460,
+      "height": 44
+    },
+    "d1": {
+      "x": 40,
+      "y": 0,
+      "width": 420,
+      "height": 22
+    },
+    "d2": {
+      "x": 40,
+      "y": 22,
+      "width": 420,
+      "height": 22
+    },
+    "o": {
+      "x": 0,
+      "y": 60,
+      "width": 460,
+      "height": 66
+    },
+    "e1": {
+      "x": 40,
+      "y": 60,
+      "width": 420,
+      "height": 22
+    },
+    "e2": {
+      "x": 40,
+      "y": 82,
+      "width": 420,
+      "height": 22
+    },
+    "e3": {
+      "x": 40,
+      "y": 104,
+      "width": 420,
+      "height": 22
+    }
+  },
+  "fragments": {
+    "d1": [
+      {
+        "x": 63,
+        "y": 0,
+        "width": 41.8125,
+        "height": 22
+      }
+    ],
+    "d2": [
+      {
+        "x": 63,
+        "y": 22,
+        "width": 33.625,
+        "height": 22
+      }
+    ],
+    "e1": [
+      {
+        "x": 57.609375,
+        "y": 60,
+        "width": 28.59375,
+        "height": 22
+      }
+    ],
+    "e2": [
+      {
+        "x": 57.609375,
+        "y": 82,
+        "width": 28.046875,
+        "height": 22
+      }
+    ],
+    "e3": [
+      {
+        "x": 57.609375,
+        "y": 104,
+        "width": 40.015625,
+        "height": 22
+      }
+    ]
+  },
+  "markerTexts": {
+    "d1": "• ",
+    "d2": "• ",
+    "e1": "1. ",
+    "e2": "2. ",
+    "e3": "3. "
+  }
+}

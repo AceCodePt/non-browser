@@ -1,0 +1,103 @@
+{
+  "name": "none-marker",
+  "note": "list-style-type: none (corpus/lists): no marker box is generated — the li keeps display:list-item and its text starts at the content box with no gutter advance. The verify checks computed list-style-type none, that no ::marker text exists in Chrome (and none in the engine), and the raster (no marker pixels).",
+  "harvest": {
+    "viewport": {
+      "width": 460,
+      "height": 100
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'}</style></head><body><ul id=\"u\" style=\"list-style-type:none\"><li id=\"g1\">alpha</li><li id=\"g2\">beta</li></ul><ol id=\"o\" style=\"list-style-type:none\"><li id=\"h1\">one</li><li id=\"h2\">two</li></ol></body></html>",
+    "measureText": [
+      {
+        "text": "alpha",
+        "font": "16px 'Noto Sans'"
+      },
+      {
+        "text": "beta",
+        "font": "16px 'Noto Sans'"
+      },
+      {
+        "text": "one",
+        "font": "16px 'Noto Sans'"
+      },
+      {
+        "text": "two",
+        "font": "16px 'Noto Sans'"
+      }
+    ],
+    "computedStyle": [
+      {
+        "id": "u",
+        "props": [
+          "display",
+          "list-style-type",
+          "list-style-position",
+          "padding-left"
+        ]
+      },
+      {
+        "id": "g1",
+        "props": [
+          "display",
+          "list-style-type",
+          "list-style-position"
+        ]
+      },
+      {
+        "id": "g2",
+        "props": [
+          "display",
+          "list-style-type"
+        ]
+      },
+      {
+        "id": "o",
+        "props": [
+          "display",
+          "list-style-type"
+        ]
+      },
+      {
+        "id": "h1",
+        "props": [
+          "display",
+          "list-style-type",
+          "list-style-position"
+        ]
+      },
+      {
+        "id": "h2",
+        "props": [
+          "display",
+          "list-style-type"
+        ]
+      }
+    ],
+    "rects": [
+      "u",
+      "g1",
+      "g2",
+      "o",
+      "h1",
+      "h2"
+    ],
+    "textElements": [
+      "g1",
+      "g2",
+      "h1",
+      "h2"
+    ],
+    "markerElements": [
+      "g1",
+      "g2",
+      "h1",
+      "h2"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}
