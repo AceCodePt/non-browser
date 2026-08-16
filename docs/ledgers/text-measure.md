@@ -8,14 +8,14 @@ Per-string shaped advances resolved against the registered font set: the engine 
 
 ## Latest Run
 
-- Generated: 2026-08-16T13:16:40.903Z
-- Strings measured: 92 (87 pass corpus + 5 documented known gaps)
-- Pass rate (pass corpus): 100.0% (87/87 within tolerance)
-- Mean delta (pass corpus): 0.0021px
+- Generated: 2026-08-16T14:24:33.418Z
+- Strings measured: 95 (93 pass corpus + 2 documented known gaps)
+- Pass rate (pass corpus): 100.0% (93/93 within tolerance)
+- Mean delta (pass corpus): 0.0025px
 - Worst delta (pass corpus): 0.0300px
-- Worst delta (all strings, incl. gaps): 143.1250px
+- Worst delta (all strings, incl. gaps): 16.3200px
 - Tolerance: mean ≤ 0.01px, no string > 0.5px (charter §2, tolerances.json v2)
-- Categories: 9, all PASS
+- Categories: 10, all PASS
 
 ## Categories
 
@@ -24,10 +24,11 @@ Per-string shaped advances resolved against the registered font set: the engine 
 | cjk | 10 | pass | 0.0005 | 0.0050 | PASS |
 | combining-marks | 8 | pass | 0.0019 | 0.0050 | PASS |
 | emoji | 16 | pass | 0.0035 | 0.0300 | PASS |
-| known-gaps | 5 | fail | 38.8857 | 143.1250 | PASS |
+| known-gaps | 2 | fail | 11.9106 | 16.3200 | PASS |
 | latin | 21 | pass | 0.0019 | 0.0050 | PASS |
 | letter-spacing | 8 | pass | 0.0026 | 0.0039 | PASS |
-| rtl | 11 | pass | 0.0024 | 0.0041 | PASS |
+| mixed-script | 5 | pass | 0.0083 | 0.0241 | PASS |
+| rtl | 12 | pass | 0.0028 | 0.0081 | PASS |
 | tabs | 9 | pass | 0.0008 | 0.0047 | PASS |
 | thai | 4 | pass | 0.0027 | 0.0037 | PASS |
 
@@ -70,9 +71,6 @@ Per-string shaped advances resolved against the registered font set: the engine 
 | emoji | § ¶ † ‡ | 16px 'Noto Sans' | 47.5500 | 47.5521 | 0.0021 | PASS |
 | emoji | 😀 | 16px 'Noto Color Emoji' | 19.9700 | 20.0000 | 0.0300 | PASS |
 | known-gaps | "\t\t\t" | 16px 'Noto Sans' | 28.8000 | 12.4800 | 16.3200 | GAP |
-| known-gaps | abc 中文 😀 def | 16px 'Noto Sans' | 92.1400 | 115.3441 | 23.2041 | GAP |
-| known-gaps | English 中文 mixed text テスト | 16px 'Droid Sans Fallback' | 352.7500 | 209.6250 | 143.1250 | GAP |
-| known-gaps | مرحبا! هل أنت بخير؟ | 16px 'Droid Arabic Kufi' | 140.4500 | 136.1719 | 4.2781 | GAP |
 | known-gaps | مرحبا | 16px 'Droid Arabic Kufi' ls=1.5 | 42.2200 | 34.7188 | 7.5013 | GAP |
 | latin | Pack my box with five dozen liquor jugs | 10px 'Noto Sans' | 184.7000 | 184.6998 | 0.0002 | PASS |
 | latin | The quick brown fox jumps over the lazy dog | 16px 'Noto Sans' | 334.8800 | 334.8806 | 0.0006 | PASS |
@@ -103,6 +101,11 @@ Per-string shaped advances resolved against the registered font set: the engine 
 | letter-spacing | 中文测试 | 16px 'Droid Sans Fallback' ls=2 | 72.0000 | 72.0000 | 0.0000 | PASS |
 | letter-spacing | Short | 16px 'Noto Sans' ls=0.25 | 41.9900 | 41.9861 | 0.0039 | PASS |
 | letter-spacing | 中文 中文 | 16px 'Droid Sans Fallback' ls=0.5 | 70.6900 | 70.6875 | 0.0025 | PASS |
+| mixed-script | abc 中文 😀 def | 16px 'Noto Sans' | 115.3200 | 115.3441 | 0.0241 | PASS |
+| mixed-script | English 中文 mixed text テスト | 16px 'Droid Sans Fallback' | 209.6300 | 209.6250 | 0.0050 | PASS |
+| mixed-script | abc 中文 def | 16px 'Noto Sans' | 91.1900 | 91.1841 | 0.0059 | PASS |
+| mixed-script | hello 世界 | 16px 'Noto Sans' | 73.0100 | 73.0081 | 0.0019 | PASS |
+| mixed-script | 中文 English 中文 | 16px 'Droid Sans Fallback' | 121.2700 | 121.2656 | 0.0044 | PASS |
 | rtl | مرحبا بالعالم هذا نص عربي | 16px 'Droid Arabic Kufi' | 186.6300 | 186.6328 | 0.0028 | PASS |
 | rtl | هذا نص عربي طويل لاختبار قياس عرض النص في متصفح كروم | 16px 'Droid Arabic Kufi' | 434.6600 | 434.6563 | 0.0038 | PASS |
 | rtl | السلام عليكم ورحمة الله وبركاته | 16px 'Droid Arabic Kufi' | 225.9900 | 225.9922 | 0.0022 | PASS |
@@ -110,6 +113,7 @@ Per-string shaped advances resolved against the registered font set: the engine 
 | rtl | الأرقام العربية ٠١٢٣٤٥٦٧٨٩ | 16px 'Droid Arabic Kufi' | 179.6900 | 179.6875 | 0.0025 | PASS |
 | rtl | رقم ٥ ورقم ٧ | 16px 'Droid Arabic Kufi' | 94.2100 | 94.2109 | 0.0009 | PASS |
 | rtl | شَدَّة تَشْكِيل | 16px 'Droid Arabic Kufi' | 86.2200 | 86.2188 | 0.0013 | PASS |
+| rtl | مرحبا! هل أنت بخير؟ | 16px 'Droid Arabic Kufi' | 136.1800 | 136.1719 | 0.0081 | PASS |
 | rtl | שלום עולם טקסט בעברית | 16px 'Droid Sans Hebrew' | 173.3700 | 173.3672 | 0.0028 | PASS |
 | rtl | זהו טקסט עברי לבדיקת רוחב טקסט בדפדפן | 16px 'Droid Sans Hebrew' | 293.1200 | 293.1172 | 0.0028 | PASS |
 | rtl | אבגדהוזחטיכלמנסעפצקרשת | 16px 'Droid Sans Hebrew' | 191.1900 | 191.1875 | 0.0025 | PASS |
@@ -130,7 +134,7 @@ Per-string shaped advances resolved against the registered font set: the engine 
 
 ## Failing Fonts
 
-Fonts whose strings exceeded tolerance this run: Noto Sans, Droid Sans Fallback, Droid Arabic Kufi.
+Fonts whose strings exceeded tolerance this run: Noto Sans, Droid Arabic Kufi.
 
 All of them are covered by documented known gaps (see below); an unexpected failure here fails the run.
 
@@ -139,9 +143,6 @@ All of them are covered by documented known gaps (see below); an unexpected fail
 Failures are permitted only for the following documented divergences; the verify script asserts each still diverges so a closed gap must be reclassified into the pass corpus.
 
 - **"\t\t\t"** @ 16px 'Noto Sans' — Δ 16.3200px: Proportional-font tabs: Chrome's canvas applies tab-stop semantics (a tab advances to the next tab stop) while skia returns the font's raw U+0009 advance. Monospace tabs agree (see tabs/); this is the proportional-font tab case.
-- **abc 中文 😀 def** @ 16px 'Noto Sans' — Δ 23.2041px: Mixed-script string: Chrome resolves each missing glyph through its per-glyph fallback (CJK and emoji faces), while skia keeps the whole run in Noto Sans. Single-script strings in one font agree (see cjk/, rtl/); mixed runs diverge.
-- **English 中文 mixed text テスト** @ 16px 'Droid Sans Fallback' — Δ 143.1250px: Mixed-script fallback: Chrome shapes Latin and Japanese through fallback faces rather than the registered CJK face; skia keeps the run in Droid Sans Fallback.
-- **مرحبا! هل أنت بخير؟** @ 16px 'Droid Arabic Kufi' — Δ 4.2781px: Latin punctuation (!) in an Arabic run: Chrome falls the ASCII glyph back to a Latin face while skia keeps it in Droid Arabic Kufi. Pure-script Arabic and Arabic-Indic digits agree (see rtl/).
 - **مرحبا** @ 16px 'Droid Arabic Kufi', ls 1.5 — Δ 7.5013px: Letter-spacing on a joining script: Chrome does not apply ctx.letterSpacing to Arabic, while the engine's letter-spacing model adds spacing after every codepoint. Latin and CJK letter-spacing agree (see letter-spacing/).
 
 ## Coverage
@@ -151,6 +152,7 @@ Failures are permitted only for the following documented divergences; the verify
 - **RTL** (`rtl/`): Arabic (harakat, Arabic-Indic digits) on Droid Arabic Kufi; Hebrew (niqqud) on Droid Sans Hebrew.
 - **Emoji** (`emoji/`): plain smileys on DejaVu Sans (the reclassified known-gap string) and one glyph on the registered emoji face (Noto Color Emoji); arrows, suits, math/editorial marks, weather pictographs, currency on DejaVu Sans and Noto Sans. ZWJ family/flags/keycaps/skin-tone/VS16 sequences were dropped: they reroute to the color face at a 1.25em cell once an emoji face is installed and no longer match the engine.
 - **Thai** (`thai/`): Thai runs (tone marks, sara-am, country-name phrases) on the registered Noto Sans Thai face.
+- **Mixed-script** (`mixed-script/`): per-glyph script-run fallback at the measurement seam (`src/canvas/script-fallback.ts`) — mixed Latin/Han/emoji strings split into per-run faces (Latin primary, Droid Sans Fallback for Han, Noto Color Emoji for emoji, Liberation Serif for missing Latin on a CJK primary), matching Chrome's fontconfig resolution; the reclassified known-gap strings live here and in `rtl/`.
 - **Combining marks** (`combining-marks/`): decomposed/precomposed/double Latin diacritics on Noto Sans; Devanagari conjuncts, matras, digits on Droid Sans Devanagari.
 - **Tab runs** (`tabs/`): tabs on monospace faces (Source Code Pro, Liberation Mono).
 - **Letter-spaced** (`letter-spacing/`): positive, fractional, negative spacing on Latin and CJK.

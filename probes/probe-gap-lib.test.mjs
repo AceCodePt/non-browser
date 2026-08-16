@@ -21,8 +21,10 @@ import {
 import { loadTolerances } from '../dist/harness/tolerances.js';
 import { getBrowserConfig, setActiveBrowserConfig, firefoxConfig, safariConfig, resolveFontFamily } from '../dist/config/index.js';
 import { resolveFontFamilyInShorthand, installPretextMeasurement, prepareText, layoutLines } from '../dist/pretext/index.js';
-import { skiaCanvasFactory } from '../dist/canvas/skia.js';
-import { initMeasurement } from '../dist/layout/measure.js';
+import { skiaCanvasFactory, classifyCluster, graphemeClusters, parseFontShorthand, measureTextWithFallback } from '../dist/canvas/index.js';
+import { initMeasurement, measureTextWidth } from '../dist/layout/measure.js';
+import { GlobalFonts } from '@napi-rs/canvas';
+import { chromeConfig } from '../dist/config/index.js';
 import { resolve } from 'node:path';
 
 const tolerances = loadTolerances(resolve('tolerances.json'));
@@ -444,6 +446,133 @@ describe('seam font-resolution authority', () => {
     assert.ok(names.includes('safari-courier-new'), 'safari-track Courier New fallback fixture');
     assert.ok(names.includes('safari-monospace-generic'), 'safari-track generic monospace fixture');
     assert.ok(names.includes('safari-serif-generic'), 'safari-track generic serif fixture');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Per-glyph script-run font fallback (per-glyph-fallback)
+// ---------------------------------------------------------------------------
+//
+// The measurement seam (SkiaCanvas.measureText) splits mixed-script strings
+// into per-run faces through the active browser-config's scriptFallback /
+// scriptCoverage tables. These tests pin the deterministic engine widths the
+// corpus asserts against the Chrome oracle (verify:text-measure), the no-op
+// guarantee for single-face runs, and that the engine and Pretext seam
+// measure the same per-run faces on a multi-script string.
+
+describe('per-glyph script-run fallback', () => {
+  const register = (family, file) => skiaCanvasFactory.registerFont(file, family);
+
+  const ctxMeasure = (family, fontSize = 16) => {
+    const canvas = skiaCanvasFactory.create(1, 1);
+    return (text) => canvas.measureText(text, `${fontSize}px '${family}'`).width;
+  };
+
+  test('classifyCluster assigns fallback groups from script and codepoint range', () => {
+    assert.equal(classifyCluster('中'), 'Hani');
+    assert.equal(classifyCluster('テ'), 'Hani');
+    assert.equal(classifyCluster('ก'), 'Thai');
+    assert.equal(classifyCluster('م'), 'Arab');
+    assert.equal(classifyCluster('ש'), 'Hebr');
+    assert.equal(classifyCluster('क'), 'Deva');
+    assert.equal(classifyCluster('😀'), 'Emoji');
+    assert.equal(classifyCluster('a'), 'Latn');
+    assert.equal(classifyCluster('A'), 'Latn');
+    // Common/Inherited clusters attach by codepoint range:
+    assert.equal(classifyCluster(' '), null); // whitespace -> primary face
+    assert.equal(classifyCluster('\t'), null); // control -> primary face
+    assert.equal(classifyCluster('!'), 'Latn'); // ASCII punctuation -> Latin face
+    assert.equal(classifyCluster('。'), 'Hani'); // CJK punctuation -> Han face
+    assert.equal(classifyCluster('٠'), 'Arab'); // Arabic-Indic digit -> Arabic face
+    assert.equal(classifyCluster('a\u0300'), 'Latn'); // base+combining mark follows base
+  });
+
+  test('graphemeClusters keeps combining marks attached to their base', () => {
+    assert.deepEqual(graphemeClusters('a\u0300b'), ['a\u0300', 'b']);
+    assert.deepEqual(graphemeClusters('क्'), ['क्']);
+    assert.deepEqual(graphemeClusters('abc'), ['a', 'b', 'c']);
+  });
+
+  test('parseFontShorthand extracts size and quoted family', () => {
+    assert.deepEqual(parseFontShorthand("16px 'Noto Sans'"), { prefix: '', sizeToken: '16px', family: 'Noto Sans' });
+    assert.deepEqual(parseFontShorthand("bold 16px 'Droid Sans Fallback'"), { prefix: 'bold ', sizeToken: '16px', family: 'Droid Sans Fallback' });
+    assert.equal(parseFontShorthand('16px'), null);
+    assert.equal(parseFontShorthand(''), null);
+  });
+
+  test('the shim reproduces the engine widths the oracle corpus asserts (sub-pixel)', () => {
+    for (const [family, file] of [
+      ['Noto Sans', '/usr/share/fonts/google-noto/NotoSans-Regular.ttf'],
+      ['Droid Sans Fallback', '/usr/share/fonts/google-droid-sans-fonts/DroidSansFallbackFull.ttf'],
+      ['Noto Color Emoji', 'fonts/NotoColorEmoji.ttf'],
+      ['Liberation Serif', '/usr/share/fonts/liberation-serif/LiberationSerif-Regular.ttf'],
+    ]) {
+      register(family, file);
+    }
+    setActiveBrowserConfig(chromeConfig);
+    const measure = (text, font) => ctxMeasure(font.match(/'([^']+)'/)[1])(text);
+    const has = (family) => GlobalFonts.has(family);
+    // Engine widths measured against the Chrome oracle in verify:text-measure;
+    // each is the sum of the per-run faces' advances.
+    const cases = [
+      ['abc 中文 😀 def', "16px 'Noto Sans'", 115.32],
+      ['English 中文 mixed text テスト', "16px 'Droid Sans Fallback'", 209.63],
+      ['مرحبا! هل أنت بخير؟', "16px 'Droid Arabic Kufi'", 136.18],
+    ];
+    for (const [text, font, want] of cases) {
+      const got = measureTextWithFallback(text, font, chromeConfig, measure, has);
+      assert.ok(got !== null, `${font}: shim applied`);
+      assert.ok(Math.abs(got - want) <= 0.01, `${font}: shim width ${got} ~ ${want}`);
+    }
+  });
+
+  test('the shim is a no-op when one registered face covers the whole run', () => {
+    for (const [family, file] of [
+      ['Noto Sans', '/usr/share/fonts/google-noto/NotoSans-Regular.ttf'],
+      ['Droid Sans Fallback', '/usr/share/fonts/google-droid-sans-fonts/DroidSansFallbackFull.ttf'],
+    ]) {
+      register(family, file);
+    }
+    setActiveBrowserConfig(chromeConfig);
+    const measure = (text, font) => ctxMeasure(font.match(/'([^']+)'/)[1])(text);
+    const has = (family) => GlobalFonts.has(family);
+    // Fully covered runs: pure Latin on Noto Sans, pure Han on Droid Sans
+    // Fallback, a single emoji on DejaVu Sans (covered, not switched).
+    for (const [text, font] of [
+      ['The quick brown fox jumps over the lazy dog', "16px 'Noto Sans'"],
+      ['中文测试', "16px 'Droid Sans Fallback'"],
+    ]) {
+      assert.equal(measureTextWithFallback(text, font, chromeConfig, measure, has), null, `${font}: no change`);
+    }
+    register('DejaVu Sans', '/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf');
+    assert.equal(measureTextWithFallback('😀', "16px 'DejaVu Sans'", chromeConfig, measure, has), null, "covered emoji on DejaVu stays put");
+    // A single missing glyph on a Latin primary must still switch faces
+    // (Pretext measures per-grapheme through this seam).
+    const w = measureTextWithFallback('中', "16px 'Noto Sans'", chromeConfig, measure, has);
+    assert.equal(w, 16, 'single Han glyph on Noto Sans resolves through the Han face');
+  });
+
+  test('the engine and the Pretext seam measure the same per-run faces on a multi-script string', () => {
+    for (const [family, file] of [
+      ['Noto Sans', '/usr/share/fonts/google-noto/NotoSans-Regular.ttf'],
+      ['Droid Sans Fallback', '/usr/share/fonts/google-droid-sans-fonts/DroidSansFallbackFull.ttf'],
+      ['Noto Color Emoji', 'fonts/NotoColorEmoji.ttf'],
+      ['Liberation Serif', '/usr/share/fonts/liberation-serif/LiberationSerif-Regular.ttf'],
+    ]) {
+      register(family, file);
+    }
+    setActiveBrowserConfig(chromeConfig);
+    const canvas = initMeasurement({ family: chromeConfig.defaultFamily, filePath: chromeConfig.defaultFile }, skiaCanvasFactory);
+    installPretextMeasurement(canvas);
+
+    for (const [text, font, family] of [
+      ['abc 中文 😀 def', "16px 'Noto Sans'", 'Noto Sans'],
+      ['English 中文 mixed text テスト', "16px 'Droid Sans Fallback'", 'Droid Sans Fallback'],
+    ]) {
+      const engine = measureTextWidth(text, 16, family);
+      const seam = layoutLines(prepareText(text, font, {}), 5000, 24).lines[0].width;
+      assert.ok(Math.abs(engine - seam) <= 0.01, `${font}: engine ${engine} ~ seam ${seam}`);
+    }
   });
 });
 

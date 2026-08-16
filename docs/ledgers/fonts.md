@@ -55,6 +55,47 @@ shorthand through the active config via `resolveFontFamily` before the Canvas is
 touched (identical to `cssFontString` in `src/layout/measure.ts`), so the seam
 and the engine measure the same per-browser faces for any fixture family.
 
+## Per-glyph script-run fallback
+
+Chrome splits mixed-script strings into script runs and resolves each run's
+missing glyphs through fontconfig, so a single CSS family can land on several
+faces (Latin + Droid Sans Fallback + Noto Color Emoji for `"abc 中文 😀 def"`).
+The engine reproduces that at the single measurement choke point,
+`SkiaCanvas.measureText` (src/canvas/skia.ts), via a run-splitting shim
+(`src/canvas/script-fallback.ts`) that both the engine's `measureTextWidth`
+and the Pretext seam funnel through, so both measure the same per-run faces.
+
+Decisions:
+
+- **Script-run splitting.** Text is split into extended grapheme clusters
+  (`Intl.Segmenter`) and each cluster's face is resolved from a script group:
+  strong scripts map through their Unicode script property, and
+  Common/Inherited clusters (spaces, punctuation, combining marks) attach to a
+  group from their codepoint range (ASCII punctuation falls like Latin, CJK
+  punctuation like Han, Arabic-Indic digits like Arabic). Whitespace and
+  control characters always stay in the primary face, matching Chrome keeping
+  spaces and tab stops in the primary font.
+- **Per-script fallback preference** lives in the browser-config as
+  `scriptFallback` (`chromeConfig`: `Latn`→Liberation Serif, `Hani`→Droid Sans
+  Fallback, `Thai`→Noto Sans Thai, `Arab`→Droid Arabic Kufi, `Hebr`→Droid Sans
+  Hebrew, `Deva`→Droid Sans Devanagari, `Emoji`→Noto Color Emoji). `Latn`→
+  Liberation Serif is the machine-calibrated face fontconfig resolves missing
+  Latin to on this system (measured against the Chrome oracle). An empty table
+  disables run-splitting, so configs without per-script data (firefox, safari)
+  keep measuring through the single-face seam.
+- **Glyph-coverage gating.** A run only changes face when the active family
+  genuinely lacks its script, decided by the config's `scriptCoverage` table
+  (family → script groups it covers), not by a width heuristic — a covered
+  glyph's advance can equal the face's .notdef advance (e.g. Noto Sans's "V"
+  at 0.6em, full-width Han on Droid Sans Fallback, tabs on monospace faces), so
+  width-only glyph detection misreads real glyphs as missing. The shim is a
+  no-op whenever one registered face covers the whole run.
+- **Measurement.** Contiguous same-face clusters are measured as one segment
+  so kerning and script joining survive; widths sum across segments. The
+  reclassified mixed-script strings (mixed-script/, rtl/) close the layer-1
+  deltas to ≤ 0.5px (see text-measure.md; known-gaps 5 → 2: proportional-font
+  tabs and Arabic letter-spacing remain).
+
 ## Method
 
 `npm run verify:four-layer` registers the fixture font into the engine and

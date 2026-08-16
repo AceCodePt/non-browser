@@ -1,6 +1,6 @@
 {
   "name": "rtl",
-  "note": "Right-to-left scripts on Droid Arabic Kufi (Arabic with harakat/vowel marks and Arabic-Indic digits) and Droid Sans Hebrew (incl. niqqud vowel points). Strings are pure-script: Latin punctuation or ASCII digits in an Arabic/Hebrew context fall back per-glyph in Chrome and are tracked as known gaps.",
+  "note": "Right-to-left scripts on Droid Arabic Kufi (Arabic with harakat/vowel marks and Arabic-Indic digits) and Droid Sans Hebrew (incl. niqqud vowel points). The reclassified known-gap string with ASCII punctuation in an Arabic run ('مرحبا! هل أنت بخير؟') measures through the engine's per-glyph script-run fallback, which resolves the missing '!' to the Latin fallback face the way Chrome's fontconfig does.",
   "fonts": [
     { "family": "Droid Arabic Kufi", "file": "/usr/share/fonts/google-droid-sans-fonts/DroidKufi-Regular.ttf" },
     { "family": "Droid Sans Hebrew", "file": "/usr/share/fonts/google-droid-sans-fonts/DroidSansHebrew-Regular.ttf" }
@@ -13,6 +13,7 @@
     { "text": "الأرقام العربية ٠١٢٣٤٥٦٧٨٩", "font": "16px 'Droid Arabic Kufi'", "note": "Arabic-Indic digits" },
     { "text": "رقم ٥ ورقم ٧", "font": "16px 'Droid Arabic Kufi'", "note": "Arabic-Indic digits in prose" },
     { "text": "شَدَّة تَشْكِيل", "font": "16px 'Droid Arabic Kufi'", "note": "shadda/diacritics" },
+    { "text": "مرحبا! هل أنت بخير؟", "font": "16px 'Droid Arabic Kufi'", "note": "reclassified from known-gaps: ASCII '!' in an Arabic run falls back per-glyph to the Latin face (Liberation Serif) via the script-run shim, matching Chrome's fontconfig resolution" },
     { "text": "שלום עולם טקסט בעברית", "font": "16px 'Droid Sans Hebrew'", "note": "Hebrew greeting" },
     { "text": "זהו טקסט עברי לבדיקת רוחב טקסט בדפדפן", "font": "16px 'Droid Sans Hebrew'", "note": "long Hebrew sentence" },
     { "text": "אבגדהוזחטיכלמנסעפצקרשת", "font": "16px 'Droid Sans Hebrew'", "note": "full Hebrew alphabet" },

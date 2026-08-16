@@ -4,13 +4,12 @@
   "expected": {
     "measureText": {
       "result": "fail",
-      "reason": "Five font-fallback divergences where skia resolves glyphs differently than Chrome's fontconfig fallback: proportional-font tabs, mixed-script runs, and Arabic punctuation/letter-spacing. The Thai and emoji-smiley entries were reclassified into the pass corpus (thai/, emoji/) once a Thai-capable face (Noto Sans Thai) and an emoji-capable face were registered and the strings were measured on the faces where glyph resolution agrees. Each remaining entry carries its divergence mechanism; docs/ledgers/text-measure.md records the observed per-string deltas, and the fixture note is the owner of record.",
+      "reason": "Two font-fallback divergences where skia resolves glyphs differently than Chrome's fontconfig fallback: proportional-font tabs, and letter-spacing on the Arabic joining script. The three mixed-script/script-run entries (mixed-script x2 and Arabic-punctuation) were reclassified into the pass corpus (mixed-script/, rtl/) once the engine gained Chrome's per-glyph script-run fallback at the measurement seam (src/canvas/script-fallback.ts), and the Thai and emoji-smiley entries were reclassified earlier once Thai- and emoji-capable faces were registered. Each remaining entry carries its divergence mechanism; docs/ledgers/text-measure.md records the observed per-string deltas, and the fixture note is the owner of record.",
       "sunset": "Reclassify each entry into the pass corpus when skia's font fallback matches Chrome's per-glyph fallback and tab-stop semantics (e.g. an emoji-capable face registered system-wide or engine-side fontconfig-style fallback). No entry may be removed without its divergence first closing."
     }
   },
   "fonts": [
     { "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" },
-    { "family": "Droid Sans Fallback", "file": "/usr/share/fonts/google-droid-sans-fonts/DroidSansFallbackFull.ttf" },
     { "family": "Droid Arabic Kufi", "file": "/usr/share/fonts/google-droid-sans-fonts/DroidKufi-Regular.ttf" }
   ],
   "entries": [
@@ -18,21 +17,6 @@
       "text": "\t\t\t",
       "font": "16px 'Noto Sans'",
       "reason": "Proportional-font tabs: Chrome's canvas applies tab-stop semantics (a tab advances to the next tab stop) while skia returns the font's raw U+0009 advance. Monospace tabs agree (see tabs/); this is the proportional-font tab case."
-    },
-    {
-      "text": "abc 中文 😀 def",
-      "font": "16px 'Noto Sans'",
-      "reason": "Mixed-script string: Chrome resolves each missing glyph through its per-glyph fallback (CJK and emoji faces), while skia keeps the whole run in Noto Sans. Single-script strings in one font agree (see cjk/, rtl/); mixed runs diverge."
-    },
-    {
-      "text": "English 中文 mixed text テスト",
-      "font": "16px 'Droid Sans Fallback'",
-      "reason": "Mixed-script fallback: Chrome shapes Latin and Japanese through fallback faces rather than the registered CJK face; skia keeps the run in Droid Sans Fallback."
-    },
-    {
-      "text": "مرحبا! هل أنت بخير؟",
-      "font": "16px 'Droid Arabic Kufi'",
-      "reason": "Latin punctuation (!) in an Arabic run: Chrome falls the ASCII glyph back to a Latin face while skia keeps it in Droid Arabic Kufi. Pure-script Arabic and Arabic-Indic digits agree (see rtl/)."
     },
     {
       "text": "مرحبا",

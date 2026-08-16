@@ -8,6 +8,8 @@
 
 import { createCanvas, GlobalFonts, type Canvas as NapiCanvas, type SKRSContext2D } from '@napi-rs/canvas';
 import type { CanvasColor, CanvasFactory, CanvasLike, CanvasTextMetrics } from './interface.js';
+import { getActiveBrowserConfig } from '../config/browser-config.js';
+import { measureTextWithFallback } from './script-fallback.js';
 
 function cssColor(c: CanvasColor): string {
   if (c.a === 0) return 'rgba(0,0,0,0)';
@@ -36,8 +38,21 @@ export class SkiaCanvas implements CanvasLike {
   measureText(text: string, font: string): CanvasTextMetrics {
     this.ctx.font = font;
     const m = this.ctx.measureText(text);
+    // Per-glyph script-run fallback (Chrome's fontconfig resolution), shared by
+    // the engine's measureTextWidth and Pretext's measurement context. Returns
+    // the plain single-face width when one registered face covers the string.
+    const shimmed = measureTextWithFallback(
+      text,
+      font,
+      getActiveBrowserConfig(),
+      (t, f) => {
+        if (f !== this.ctx.font) this.ctx.font = f;
+        return this.ctx.measureText(t).width;
+      },
+      (family) => GlobalFonts.has(family),
+    );
     return {
-      width: m.width,
+      width: shimmed ?? m.width,
       actualBoundingBoxAscent: m.actualBoundingBoxAscent ?? 0,
       actualBoundingBoxDescent: m.actualBoundingBoxDescent ?? 0,
       actualBoundingBoxLeft: m.actualBoundingBoxLeft ?? 0,
