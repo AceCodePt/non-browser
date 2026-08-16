@@ -293,6 +293,8 @@ export interface ComputedStyle {
   fontStyle: 'normal' | 'italic';
   /** list-style-type; inherited (initial 'disc'). */
   listStyleType: ListStyleType;
+  /** list-style-position; inherited (initial 'outside'). */
+  listStylePosition: 'inside' | 'outside';
   /** line-height in px (used layout value); when `lineHeightNormal` is set the
    * computed value was the `normal` keyword (serialized as 'normal'). */
   lineHeight: number;
@@ -1055,6 +1057,8 @@ interface Defaults {
   fontStyleDefault?: 'normal' | 'italic';
   /** inherited list-style-type (default disc, matching the CSS initial). */
   listStyleTypeDefault?: ListStyleType;
+  /** inherited list-style-position (default outside, matching the CSS initial). */
+  listStylePositionDefault?: 'inside' | 'outside';
   /** UA-level default padding (e.g. td/th get 1px). */
   paddingDefault?: Length;
   /** UA-level default vertical-align (e.g. table cells get 'middle'). */
@@ -1165,6 +1169,14 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     if (!d) return defaults.listStyleTypeDefault ?? 'disc';
     const v = d.value.trim().toLowerCase();
     return v === 'none' || v === 'disc' || v === 'circle' || v === 'square' || v === 'decimal' || v === 'decimal-leading-zero' ? v : 'disc';
+  })();
+
+  // --- list-style-position (inherited; initial is outside) ---
+  const listStylePosition = (() => {
+    const d = decls.find((x) => x.property === 'list-style-position');
+    if (!d) return defaults.listStylePositionDefault ?? 'outside';
+    const v = d.value.trim().toLowerCase();
+    return v === 'inside' ? 'inside' : 'outside';
   })();
 
   const len = (name: string, dflt: Length = AUTO): Length => {
@@ -1589,6 +1601,7 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     fontWeight,
     fontStyle,
     listStyleType,
+    listStylePosition,
     lineHeight,
     lineHeightNormal,
     whiteSpace,

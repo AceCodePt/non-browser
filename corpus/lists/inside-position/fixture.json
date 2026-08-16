@@ -1,0 +1,122 @@
+{
+  "name": "inside-position",
+  "note": "list-style-position: inside (corpus/lists): the marker moves into the item's content box — the disc sits at the first line start and the decimal counter text leads the line, so the li's first-line text is pushed right by the marker advance (23px for the 16px disc, the counter text width for decimal). The verify checks the shifted first-line x against Chrome, computed list-style-position, and the raster.",
+  "harvest": {
+    "viewport": {
+      "width": 460,
+      "height": 160
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'}</style></head><body><ul id=\"u\" style=\"list-style-position:inside\"><li id=\"d1\">alpha</li><li id=\"d2\">beta</li></ul><ol id=\"o\" style=\"list-style-position:inside\"><li id=\"e1\">one</li><li id=\"e2\">two</li><li id=\"e3\">three</li></ol></body></html>",
+    "measureText": [
+      {
+        "text": "alpha",
+        "font": "16px 'Noto Sans'"
+      },
+      {
+        "text": "beta",
+        "font": "16px 'Noto Sans'"
+      },
+      {
+        "text": "one",
+        "font": "16px 'Noto Sans'"
+      },
+      {
+        "text": "two",
+        "font": "16px 'Noto Sans'"
+      },
+      {
+        "text": "three",
+        "font": "16px 'Noto Sans'"
+      }
+    ],
+    "computedStyle": [
+      {
+        "id": "u",
+        "props": [
+          "display",
+          "list-style-type",
+          "list-style-position",
+          "padding-left"
+        ]
+      },
+      {
+        "id": "d1",
+        "props": [
+          "display",
+          "list-style-type",
+          "list-style-position",
+          "padding-left"
+        ]
+      },
+      {
+        "id": "d2",
+        "props": [
+          "display",
+          "list-style-type",
+          "list-style-position"
+        ]
+      },
+      {
+        "id": "o",
+        "props": [
+          "display",
+          "list-style-type",
+          "list-style-position"
+        ]
+      },
+      {
+        "id": "e1",
+        "props": [
+          "display",
+          "list-style-type",
+          "list-style-position"
+        ]
+      },
+      {
+        "id": "e2",
+        "props": [
+          "display",
+          "list-style-type",
+          "list-style-position"
+        ]
+      },
+      {
+        "id": "e3",
+        "props": [
+          "display",
+          "list-style-type",
+          "list-style-position"
+        ]
+      }
+    ],
+    "rects": [
+      "u",
+      "d1",
+      "d2",
+      "o",
+      "e1",
+      "e2",
+      "e3"
+    ],
+    "textElements": [
+      "d1",
+      "d2",
+      "e1",
+      "e2",
+      "e3"
+    ],
+    "markerElements": [
+      "d1",
+      "d2",
+      "e1",
+      "e2",
+      "e3"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

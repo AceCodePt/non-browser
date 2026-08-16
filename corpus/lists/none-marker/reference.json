@@ -1,0 +1,116 @@
+{
+  "measureText": {
+    "16px 'Noto Sans' | alpha": 41.808074951171875,
+    "16px 'Noto Sans' | beta": 33.61607360839844,
+    "16px 'Noto Sans' | one": 28.592056274414062,
+    "16px 'Noto Sans' | two": 28.032058715820312
+  },
+  "computedStyle": {
+    "u": {
+      "display": "block",
+      "list-style-type": "none",
+      "list-style-position": "outside",
+      "padding-left": "40px"
+    },
+    "g1": {
+      "display": "list-item",
+      "list-style-type": "none",
+      "list-style-position": "outside"
+    },
+    "g2": {
+      "display": "list-item",
+      "list-style-type": "none"
+    },
+    "o": {
+      "display": "block",
+      "list-style-type": "none"
+    },
+    "h1": {
+      "display": "list-item",
+      "list-style-type": "none",
+      "list-style-position": "outside"
+    },
+    "h2": {
+      "display": "list-item",
+      "list-style-type": "none"
+    }
+  },
+  "rect": {
+    "u": {
+      "x": 0,
+      "y": 0,
+      "width": 460,
+      "height": 44
+    },
+    "g1": {
+      "x": 40,
+      "y": 0,
+      "width": 420,
+      "height": 22
+    },
+    "g2": {
+      "x": 40,
+      "y": 22,
+      "width": 420,
+      "height": 22
+    },
+    "o": {
+      "x": 0,
+      "y": 60,
+      "width": 460,
+      "height": 44
+    },
+    "h1": {
+      "x": 40,
+      "y": 60,
+      "width": 420,
+      "height": 22
+    },
+    "h2": {
+      "x": 40,
+      "y": 82,
+      "width": 420,
+      "height": 22
+    }
+  },
+  "fragments": {
+    "g1": [
+      {
+        "x": 40,
+        "y": 0,
+        "width": 41.8125,
+        "height": 22
+      }
+    ],
+    "g2": [
+      {
+        "x": 40,
+        "y": 22,
+        "width": 33.625,
+        "height": 22
+      }
+    ],
+    "h1": [
+      {
+        "x": 40,
+        "y": 60,
+        "width": 28.59375,
+        "height": 22
+      }
+    ],
+    "h2": [
+      {
+        "x": 40,
+        "y": 82,
+        "width": 28.046875,
+        "height": 22
+      }
+    ]
+  },
+  "markerTexts": {
+    "g1": null,
+    "g2": null,
+    "h1": null,
+    "h2": null
+  }
+}

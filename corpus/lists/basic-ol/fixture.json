@@ -1,0 +1,82 @@
+{
+  "name": "basic-ol",
+  "note": "Basic ordered list (corpus/lists): ol gets 40px padding-inline-start, 1em block margins, and decimal counters per li (1., 2., 3.). The verify checks computed list-style-type, the first-line text x (markers hang outside), the raster, and that Chrome's ::marker text matches the engine's renumbering.",
+  "harvest": {
+    "viewport": {
+      "width": 460,
+      "height": 120
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'}</style></head><body><ol id=\"ol\"><li id=\"b1\">one</li><li id=\"b2\">two</li><li id=\"b3\">three</li></ol></body></html>",
+    "measureText": [
+      {
+        "text": "one",
+        "font": "16px 'Noto Sans'"
+      },
+      {
+        "text": "two",
+        "font": "16px 'Noto Sans'"
+      },
+      {
+        "text": "three",
+        "font": "16px 'Noto Sans'"
+      }
+    ],
+    "computedStyle": [
+      {
+        "id": "ol",
+        "props": [
+          "display",
+          "list-style-type",
+          "list-style-position",
+          "padding-left",
+          "margin-top",
+          "margin-bottom"
+        ]
+      },
+      {
+        "id": "b1",
+        "props": [
+          "display",
+          "list-style-type",
+          "list-style-position"
+        ]
+      },
+      {
+        "id": "b2",
+        "props": [
+          "display",
+          "list-style-type"
+        ]
+      },
+      {
+        "id": "b3",
+        "props": [
+          "display",
+          "list-style-type"
+        ]
+      }
+    ],
+    "rects": [
+      "ol",
+      "b1",
+      "b2",
+      "b3"
+    ],
+    "textElements": [
+      "b1",
+      "b2",
+      "b3"
+    ],
+    "markerElements": [
+      "b1",
+      "b2",
+      "b3"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

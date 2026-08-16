@@ -89,6 +89,8 @@ export function computedStyleString(style: ComputedStyle, prop: string, refWidth
       return style.fontStyle;
     case 'list-style-type':
       return style.listStyleType;
+    case 'list-style-position':
+      return style.listStylePosition;
     case 'position':
       return style.position;
     case 'z-index':
