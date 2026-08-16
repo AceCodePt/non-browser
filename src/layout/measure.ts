@@ -13,6 +13,7 @@
 import type { CanvasFactory, CanvasLike } from '../canvas/interface.js';
 import { skiaCanvasFactory } from '../canvas/skia.js';
 import { getActiveBrowserConfig, resolveFontFamily } from '../config/browser-config.js';
+import { breakNextLine, prepareText, type PrepareOptions } from '../pretext/index.js';
 import type { Color, TextAlign, WhiteSpaceValue } from './css.js';
 import { letterSpacingPositions } from './letter-spacing.js';
 
@@ -25,6 +26,35 @@ export interface FontConfig {
 
 let factory: CanvasFactory = skiaCanvasFactory;
 let measurementCanvas: CanvasLike | null = null;
+
+/**
+ * Which breaker owns the soft-wrap (break/word-fill) decision:
+ *   - `true`  (default): @chenglou/pretext prepare/layout over the Canvas
+ *     interface's measureText — the shipped text-layout engine per charter §3.
+ *   - `false`: the hand-rolled greedy word wrapper (the flagged fallback). It
+ *     exists so operators can opt out of Pretext-specific divergences (see
+ *     docs/ledgers/breakers.md) and as the reference the drift gate compares
+ *     the Pretext path against on the spine corpus.
+ */
+let usePretextBreaker = true;
+
+export function setUsePretextBreaker(enabled: boolean): void {
+  usePretextBreaker = enabled;
+}
+
+export function getUsePretextBreaker(): boolean {
+  return usePretextBreaker;
+}
+
+/**
+ * Breaker selection knob for the verify scripts: `CASCADE_BREAKER=greedy` runs
+ * the flagged fallback instead of Pretext (used by the drift gate and the
+ * before/after bench). No-op when unset or set to `pretext`.
+ */
+export function applyBreakerFromEnv(): void {
+  if (process.env.CASCADE_BREAKER === 'greedy') usePretextBreaker = false;
+  else usePretextBreaker = true;
+}
 
 /**
  * Set up the measurement canvas. Font registration is the factory's job

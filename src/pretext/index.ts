@@ -16,9 +16,14 @@
  */
 
 import {
+  layoutNextLineRange,
   layoutWithLines,
+  materializeLineRange,
   prepareWithSegments,
   type LayoutLinesResult,
+  type LayoutCursor,
+  type LayoutLine,
+  type LayoutLineRange,
   type PrepareOptions,
   type PreparedTextWithSegments,
 } from '@chenglou/pretext';
@@ -150,4 +155,22 @@ export function layoutLines(
     lineCount: res.lineCount,
     height: res.height,
   };
+}
+
+export type { LayoutCursor, LayoutLine, LayoutLineRange };
+export interface PretextBreakLine {
+  text: string;
+  width: number;
+  end: LayoutCursor;
+}
+
+export function breakNextLine(
+  prepared: PreparedTextWithSegments,
+  start: LayoutCursor,
+  maxWidth: number,
+): PretextBreakLine | null {
+  const range: LayoutLineRange | null = layoutNextLineRange(prepared, start, maxWidth);
+  if (range === null) return null;
+  const line: LayoutLine = materializeLineRange(prepared, range);
+  return { text: line.text, width: line.width, end: range.end };
 }
