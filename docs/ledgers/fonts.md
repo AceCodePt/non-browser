@@ -10,6 +10,9 @@ engine **and** installed for the oracle so both resolve identical glyphs.
 | Family | Files | Registered by |
 | --- | --- | --- |
 | Noto Sans | `/usr/share/fonts/google-noto/NotoSans-Regular.ttf` | `renderHtml` via the skia factory |
+| Noto Sans Thai | `fonts/NotoSansThai-Regular.ttf` (vendored; env `NOTO_SANS_THAI_PATH`) | `chromeConfig` |
+| Noto Color Emoji | `fonts/NotoColorEmoji.ttf` (vendored; env `NOTO_COLOR_EMOJI_PATH`) | `chromeConfig` |
+| Hack Nerd Font (monospace) | `fonts/HackNerdFont-Regular.ttf` (vendored; env `HACK_FONT_PATH`) | `chromeConfig` |
 | Liberation Serif | `/usr/share/fonts/liberation-serif/LiberationSerif-Regular.ttf` | `chromeConfig` (cross-family corpus) |
 | Liberation Sans | `/usr/share/fonts/liberation-sans/LiberationSans-Regular.ttf` | `chromeConfig` |
 | Liberation Mono | `/usr/share/fonts/liberation-mono/LiberationMono-Regular.ttf` | `chromeConfig` |
@@ -22,11 +25,23 @@ the verify scripts. `@napi-rs/canvas` loads `.ttf`/`.woff2` (and `.otf`) files;
 a `familyAlias` may be passed to `registerFont` to force a family name for the
 glyphs, keeping the CSS font stack and the painted typeface consistent.
 
+The Thai, emoji, and Hack faces are the machine-calibrated set: their files are
+vendored under `fonts/` (byte-identical to the user-level installs Chrome's
+fontconfig resolves: `~/.local/share/fonts/` + `fc-cache`), and each path
+resolves through an env var first (`NOTO_SANS_THAI_PATH`,
+`NOTO_COLOR_EMOJI_PATH`, `HACK_FONT_PATH`) with graceful fallback to the
+vendored copy — registration paths carry no hard-coded home directory. A face
+whose file is absent is skipped and its generic falls back (e.g. `monospace` →
+Liberation Mono).
+
 The chrome config's fallback table (charter §11; populated from oracle
 measurements) maps `Times New Roman`/`Georgia`/`serif` → Liberation Serif,
-`Arial`/`sans-serif` → Liberation Sans, and `Courier New` → Liberation Mono, so
-the cross-family corpus (`corpus/cross-family/`, `npm run verify:cross-family`)
-exercises `resolveFontFamily` at layout time. The firefox table maps `Courier
+`Arial`/`sans-serif` → Liberation Sans, `Courier New` → Liberation Mono, and
+`monospace` → Hack Nerd Font (falling back to Liberation Mono), plus the
+registered Thai/emoji families (`Noto Sans Thai`, `Noto Color Emoji`) so a CSS
+stack naming them resolves deterministically; the cross-family corpus
+(`corpus/cross-family/`, `npm run verify:cross-family`) exercises
+`resolveFontFamily` at layout time. The firefox table maps `Courier
 New`/`Liberation Mono` → Source Code Pro (see `firefox.md`). The safari table
 (`src/config/safari.ts`) resolves the generics and metric-compatible families
 through the host's fontconfig resolution — `Courier New` → Liberation Mono,

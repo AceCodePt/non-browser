@@ -4,7 +4,7 @@
   "expected": {
     "measureText": {
       "result": "fail",
-      "reason": "Seven font-fallback divergences where skia resolves glyphs differently than Chrome's fontconfig fallback: emoji smileys, proportional-font tabs, mixed-script runs, Thai, and Arabic punctuation/letter-spacing. Each entry below carries its divergence mechanism; docs/ledgers/text-measure.md records the observed per-string deltas, and the fixture note is the owner of record.",
+      "reason": "Five font-fallback divergences where skia resolves glyphs differently than Chrome's fontconfig fallback: proportional-font tabs, mixed-script runs, and Arabic punctuation/letter-spacing. The Thai and emoji-smiley entries were reclassified into the pass corpus (thai/, emoji/) once a Thai-capable face (Noto Sans Thai) and an emoji-capable face were registered and the strings were measured on the faces where glyph resolution agrees. Each remaining entry carries its divergence mechanism; docs/ledgers/text-measure.md records the observed per-string deltas, and the fixture note is the owner of record.",
       "sunset": "Reclassify each entry into the pass corpus when skia's font fallback matches Chrome's per-glyph fallback and tab-stop semantics (e.g. an emoji-capable face registered system-wide or engine-side fontconfig-style fallback). No entry may be removed without its divergence first closing."
     }
   },
@@ -14,11 +14,6 @@
     { "family": "Droid Arabic Kufi", "file": "/usr/share/fonts/google-droid-sans-fonts/DroidKufi-Regular.ttf" }
   ],
   "entries": [
-    {
-      "text": "😀 😃 😄",
-      "font": "16px 'Noto Sans'",
-      "reason": "No emoji font is installed system-wide; Chrome falls back to an emoji-capable face for U+1F600-range smileys while skia's GlobalFonts keeps the missing glyph in Noto Sans. ZWJ sequences, flags, and keycaps measure identically (see emoji/), but plain smileys diverge."
-    },
     {
       "text": "\t\t\t",
       "font": "16px 'Noto Sans'",
@@ -38,11 +33,6 @@
       "text": "مرحبا! هل أنت بخير؟",
       "font": "16px 'Droid Arabic Kufi'",
       "reason": "Latin punctuation (!) in an Arabic run: Chrome falls the ASCII glyph back to a Latin face while skia keeps it in Droid Arabic Kufi. Pure-script Arabic and Arabic-Indic digits agree (see rtl/)."
-    },
-    {
-      "text": "สวัสดีชาวโลก ภาษาไทย",
-      "font": "16px 'Droid Sans Fallback'",
-      "reason": "Thai glyphs: the registered set has no Thai face, so skia's fallback and Chrome's fontconfig fallback resolve the run to different fonts and widths."
     },
     {
       "text": "مرحبا",
