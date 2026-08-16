@@ -50,7 +50,6 @@ export interface FlexLayoutInput {
   contentX: number;
   contentY: number;
   contentWidth: number;
-  /** container content-box height, or null when auto. */
   availableHeight: number | null;
   paints: PaintOp[];
   nextOrder: () => number;
@@ -83,13 +82,10 @@ interface FlexItem {
   maxCrossSize: number;
   hypotheticalCrossSize: number;
   usedCrossSize: number;
-  /** baseline offset from the margin-box top (row direction baseline alignment). */
   baselineFromMarginBoxTop: number;
   crossDefinite: boolean;
-  // flexible-length resolution state
   frozen: boolean;
   targetMainSize: number;
-  // placement
   mainPos: number;
   borderX: number;
   borderY: number;
@@ -100,7 +96,6 @@ interface FlexLine {
   crossSize: number;
   crossStart: number;
   baseline: number;
-  /** true when any item in the line is align-self/align-items: baseline. */
   hasBaseline: boolean;
 }
 
@@ -150,10 +145,6 @@ function padBlock(style: ComputedStyle, ref: number): number {
   );
 }
 
-// ===================================================================
-// Intrinsic content measurement (mirrors the grid module's helpers)
-// ===================================================================
-
 function hasInlineText(el: P5Element, styles: Map<P5Element, ComputedStyle>): boolean {
   for (const child of el.childNodes) {
     if (isTextNode(child)) {
@@ -181,7 +172,6 @@ function collectInlineText(el: P5Element, styles: Map<P5Element, ComputedStyle>)
   return out;
 }
 
-/** min/max-content inline sizes of an element's content (content-box). */
 function contentInlineSizes(
   el: P5Element,
   style: ComputedStyle,
@@ -209,7 +199,6 @@ function contentInlineSizes(
   return { min, max };
 }
 
-/** min/max-content contributions of an element in the inline axis (border-box). */
 function inlineContribution(
   el: P5Element,
   style: ComputedStyle,
@@ -235,7 +224,6 @@ function inlineContribution(
   return { min: clamp(content.min + pb, lo, hi), max: clamp(content.max + pb, lo, hi) };
 }
 
-/** Block-axis height of an element's content laid out at the given content width. */
 function contentBlockHeight(
   el: P5Element,
   style: ComputedStyle,
@@ -292,11 +280,6 @@ function measureChildBlockHeight(
   return clamp(h, lo, hi) + mT + mB;
 }
 
-// ===================================================================
-// Flex item collection
-// ===================================================================
-
-/** Anonymous flex item style: no box decoration, flex: 0 1 auto. */
 function anonymousStyle(container: ComputedStyle): ComputedStyle {
   return {
     ...container,
@@ -374,10 +357,6 @@ function collectFlexItems(
   return items;
 }
 
-// ===================================================================
-// Top-level layout
-// ===================================================================
-
 export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNode[]; height: number } {
   const { el, style, styles, contentX, contentY, contentWidth, availableHeight, paints, nextOrder, viewport } = input;
 
@@ -395,7 +374,6 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
   const items = collectFlexItems(el, style, styles);
   if (items.length === 0) return { children: [], height: 0 };
 
-  // --- 1. per-item main-axis geometry ---
   for (const item of items) {
     const s = item.style;
     const mainLen = isRow ? s.width : s.height;
@@ -419,8 +397,6 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
     item.crossStartAuto = isRow ? (wrapReverse ? margin.bottom.auto : margin.top.auto) : (wrapReverse ? margin.right.auto : margin.left.auto);
     item.crossEndAuto = isRow ? (wrapReverse ? margin.top.auto : margin.bottom.auto) : (wrapReverse ? margin.left.auto : margin.right.auto);
 
-    // flex base size (border-box): definite flex-basis, else main-size property,
-    // else content (max-content) size.
     const basis = s.flexBasis;
     let base: number | null = null;
     if (!basis.auto) {
@@ -441,8 +417,6 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
     }
     item.flexBaseSize = base;
 
-    // min/max main sizes (border-box). min-width/height: auto → content-based
-    // minimum in the main axis (0 for scroll containers).
     if (!mainMinLen.auto) {
       item.minMainSize = lengthToBorderBox(mainMinLen, availableMain, s, item.padBorderMain) ?? 0;
     } else {
@@ -456,7 +430,6 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
     item.hypotheticalMainSize = clamp(item.flexBaseSize, item.minMainSize, item.maxMainSize);
   }
 
-  // --- 2. collect items into flex lines ---
   const lines: FlexLine[] = [];
   if (!wrapEnabled) {
     lines.push({ items, crossSize: 0, crossStart: 0, baseline: 0, hasBaseline: false });
@@ -477,12 +450,10 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
     if (cur.length > 0) lines.push({ items: cur, crossSize: 0, crossStart: 0, baseline: 0, hasBaseline: false });
   }
 
-  // --- 3. resolve flexible lengths per line ---
   for (const line of lines) {
     resolveFlexibleLengths(line, availableMain, mainGap);
   }
 
-  // --- container main size for placement (indefinite → computed) ---
   let placeMain = availableMain;
   if (!Number.isFinite(placeMain)) {
     placeMain = 0;
@@ -494,7 +465,6 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
     }
   }
 
-  // --- 4. hypothetical cross size per item at the used main size ---
   for (const item of items) {
     const s = item.style;
     const crossLen = isRow ? s.height : s.width;
@@ -520,7 +490,6 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
       : lengthToBorderBox(crossMaxLen, containerCross ?? 0, s, item.padBorderCross) ?? Infinity;
   }
 
-  // --- 5. line cross sizes + align-content distribution ---
   // Baseline info first: for row-direction lines with baseline-aligned items,
   // the line baseline is the max item baseline offset and the line cross grows
   // to accommodate the lowest baseline-aligned item's bottom edge. This runs
@@ -623,14 +592,12 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
       for (const line of lines) crossExtent = Math.max(crossExtent, line.crossStart + line.crossSize);
     }
   }
-  // wrap-reverse packs lines from the cross end: mirror every line position.
   if (wrapReverse) {
     for (const line of lines) {
       line.crossStart = crossExtent - (line.crossStart + line.crossSize);
     }
   }
 
-  // --- 6. used cross size per item ---
   for (const line of lines) {
     for (const item of line.items) {
       const align = effectiveAlign(item, style, containerCross);
@@ -651,12 +618,10 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
     }
   }
 
-  // --- 7. place items ---
   const mainStartOrigin = isRow ? contentX : contentY;
   const mainEndOrigin = mainStartOrigin + placeMain;
   for (const line of lines) {
     const lineCrossEnd = line.crossStart + line.crossSize;
-    // main-axis placement with justify-content / auto margins
     const n = line.items.length;
     let sumOuter = 0;
     for (const item of line.items) {
@@ -750,7 +715,6 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
     }
   }
 
-  // --- 9. lay out each item through the block machinery ---
   const children: LayoutNode[] = [];
   for (const item of items) {
     const s = item.style;
@@ -780,7 +744,6 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
     children.push(node);
   }
 
-  // --- 10. container cross size (contentHeight) ---
   let height: number;
   if (isRow) {
     if (containerCross !== null) {
@@ -812,7 +775,6 @@ function resolveMainLen(l: Length, availableMain: number): number | null {
   return null;
 }
 
-/** Convert a length to a border-box size against the main axis ref. */
 function lengthToBorderBox(l: Length, ref: number, s: ComputedStyle, padBorder: number): number | null {
   const v = resolveMainLen(l, ref);
   if (v === null) return null;
@@ -868,7 +830,6 @@ function contentBasedMainSize(
   return contentBlockHeight(item.el, s, styles, contentBoxW) + item.padBorderMain;
 }
 
-/** Content-based minimum main size (min-width/height: auto) for a flex item. */
 function contentBasedMinMainSize(
   item: FlexItem,
   styles: Map<P5Element, ComputedStyle>,
@@ -954,7 +915,6 @@ function resolveFlexibleLengths(line: FlexLine, availableMain: number, mainGap: 
     }
     if (sumFactors <= 0) break;
 
-    // recompute remaining free space
     let remaining = availableMain - mainGap * (n - 1);
     for (const item of items) {
       const size = item.frozen ? item.targetMainSize : item.flexBaseSize;
@@ -969,7 +929,6 @@ function resolveFlexibleLengths(line: FlexLine, availableMain: number, mainGap: 
       item.targetMainSize = item.flexBaseSize + (remaining * factor) / sumFactors;
     }
 
-    // clamp + collect violations
     let clampedUp = 0;
     let clampedDown = 0;
     const upItems: FlexItem[] = [];

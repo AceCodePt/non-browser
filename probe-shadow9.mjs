@@ -23,7 +23,6 @@ try {
   for (const [label, bg] of [['opaque', '#336699'], ['transparent', 'transparent'], ['rgba-translucent', 'rgba(51,102,153,0.4)']]) {
     const data = await shotPixels(html(bg));
     console.log(`\n== ${label} bg ==`);
-    // sample: shadow region (x=158,y=138), box interior (x=80,y=60), shadow-overlap region
     const pts = {
       'shadow region (160,140)': (160 * W + 160) * 4,
       'shadow under-right of box (155,140)': (140 * W + 155) * 4,

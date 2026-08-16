@@ -70,7 +70,6 @@ const BROWSERS = [
   { key: 'safari', label: 'Safari (WebKit)', launcher: webkit },
 ];
 
-/** Harvest all four layers from one browser for one fixture. */
 async function harvest(page, f) {
   const { width, height } = f.viewport;
   await page.setContent(f.html);
@@ -217,8 +216,6 @@ function seamAgainstFragments(target, f, reference) {
 
 console.log('Cross-browser direct comparison (no engine for the pair deltas). Text pixels reported separately.\n');
 
-// Launch every target; a browser whose platform requirements are missing on
-// this host is recorded and its pairs skipped (each with the reason).
 const available = new Map();
 const unavailable = [];
 for (const b of BROWSERS) {
@@ -251,7 +248,6 @@ for (const f of FIXTURES) {
   }
   const keys = BROWSERS.map((b) => b.key).filter((k) => harvests[k]);
 
-  // Per-pair layer deltas across every launched pair.
   for (const a of keys) {
     for (const b of keys) {
       if (b <= a) continue;

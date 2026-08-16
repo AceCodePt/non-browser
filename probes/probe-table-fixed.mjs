@@ -13,22 +13,16 @@ async function cols(html) {
   });
 }
 
-// percent between min and max content
 console.log('pct-between:', await cols(`${H}<table style="width:300px;border-collapse:separate;border-spacing:0"><tr><td style="padding:0;width:25%">longer text here</td><td style="padding:0">BBBB</td></tr></table></body></html>`));
 
-// fixed between min and max content
 console.log('fixed-between:', await cols(`${H}<table style="width:300px;border-collapse:separate;border-spacing:0"><tr><td style="padding:0;width:100px">longer text here</td><td style="padding:0">BBBB</td></tr></table></body></html>`));
 
-// fixed less than min-content, auto col
 console.log('fixed-less-min:', await cols(`${H}<table style="width:300px;border-collapse:separate;border-spacing:0"><tr><td style="padding:0;width:30px">longer text here</td><td style="padding:0">BBBB</td></tr></table></body></html>`));
 
-// fixed greater than max-content
 console.log('fixed-more-max:', await cols(`${H}<table style="width:300px;border-collapse:separate;border-spacing:0"><tr><td style="padding:0;width:200px">longer text here</td><td style="padding:0">BBBB</td></tr></table></body></html>`));
 
-// shrink with fixed col between min and max: table 120, fixed 100
 console.log('shrink-fixed:', await cols(`${H}<table style="width:120px;border-collapse:separate;border-spacing:0"><tr><td style="padding:0;width:100px">longer text here</td><td style="padding:0">BBBB</td></tr></table></body></html>`));
 
-// fixed 60 with content 120 max: table 150
 console.log('shrink-fixed2:', await cols(`${H}<table style="width:150px;border-collapse:separate;border-spacing:0"><tr><td style="padding:0;width:60px">longer text here</td><td style="padding:0">BBBB</td></tr></table></body></html>`));
 
 await browser.close();

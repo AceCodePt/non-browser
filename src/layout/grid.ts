@@ -33,10 +33,6 @@ import type { P5Element, P5Text } from './types.js';
 
 const EPS = 0.001;
 
-// ===================================================================
-// Small helpers
-// ===================================================================
-
 const DEFAULT_AUTO: TrackDef = { min: { type: 'auto' }, max: { type: 'auto' }, names: [] };
 
 function clamp(v: number, lo: number, hi: number): number {
@@ -105,10 +101,6 @@ function idOf(el: P5Element | null): string | null {
   return a ? a.value : null;
 }
 
-// ===================================================================
-// Intrinsic contributions of a grid item
-// ===================================================================
-
 function hasInlineText(el: P5Element, styles: Map<P5Element, ComputedStyle>): boolean {
   for (const child of el.childNodes) {
     if (isTextNode(child)) {
@@ -136,7 +128,6 @@ function collectInlineText(el: P5Element, styles: Map<P5Element, ComputedStyle>)
   return out;
 }
 
-/** min/max-content inline sizes of an element's content (content-box). */
 function contentInlineSizes(
   el: P5Element,
   style: ComputedStyle,
@@ -164,7 +155,6 @@ function contentInlineSizes(
   return { min, max };
 }
 
-/** min-content / max-content / automatic-minimum contributions in the inline axis. */
 function inlineContributions(
   el: P5Element,
   style: ComputedStyle,
@@ -184,7 +174,6 @@ function inlineContributions(
   return { min: minC, max: maxC, minimum: minC };
 }
 
-/** Height of an element's content laid out at the given content width. */
 function contentHeightAtWidth(
   el: P5Element,
   style: ComputedStyle,
@@ -270,17 +259,11 @@ function blockContribution(
   return clamp(h, minH, maxH) + mT + mB;
 }
 
-/** fit-content width of an item within an available width. */
 function fitContentWidth(style: ComputedStyle, maxC: number, minC: number, available: number): number {
   return Math.min(maxC, Math.max(minC, available));
 }
 
-// ===================================================================
-// Placement resolution
-// ===================================================================
-
 interface AxisResolved {
-  /** absolute line index of the start, or null when auto-positioned. */
   start: number | null;
   span: number;
 }
@@ -297,7 +280,6 @@ function explicitLineCount(trackCount: number): number {
   return trackCount > 0 ? trackCount + 1 : 1;
 }
 
-/** Resolve a grid-line spec to a definite explicit line, or null. */
 function resolveLine(
   spec: GridLineSpec | null,
   isStart: boolean,
@@ -311,7 +293,6 @@ function resolveLine(
   if (spec.kind === 'integer') {
     return spec.value > 0 ? spec.value : explicitLines + spec.value + 1;
   }
-  // name
   const area = areas.get(spec.value);
   if (area) {
     return isStart ? (axis === 'row' ? area.rowStart : area.colStart) : (axis === 'row' ? area.rowEnd : area.colEnd);
@@ -413,10 +394,6 @@ function collectGridItems(
   return items;
 }
 
-// ===================================================================
-// Auto-placement
-// ===================================================================
-
 interface PlacedItem {
   el: P5Element;
   style: ComputedStyle;
@@ -493,7 +470,6 @@ function autoPlace(
 
   const placed: PlacedItem[] = [];
 
-  // 1. definite both axes.
   for (const item of items) {
     if (item.row.start === null || item.col.start === null) continue;
     const r = item.row.start + rowBase - 1;
@@ -502,8 +478,6 @@ function autoPlace(
   }
 
   if (!columnFlow) {
-    // Row flow.
-    // 2. Items locked to a definite row, auto column.
     const lastColInRow = new Map<number, number>();
     for (const item of items) {
       if (item.row.start === null || item.col.start !== null) continue;
@@ -516,13 +490,11 @@ function autoPlace(
       lastColInRow.set(r, col);
     }
 
-    // 4. Remaining items via the cursor.
     let cursorRow = 0;
     let cursorCol = 0;
     for (const item of items) {
       if (item.row.start !== null) continue;
       if (item.col.start !== null) {
-        // definite column, auto row
         const c = item.col.start + colBase - 1;
         if (!dense && c < cursorCol) cursorRow++;
         cursorCol = c;
@@ -531,7 +503,6 @@ function autoPlace(
         placed.push(place(item, cursorRow, cursorCol, item.row.span, item.col.span));
         continue;
       }
-      // auto both
       if (dense) {
         cursorRow = 0;
         cursorCol = 0;
@@ -554,8 +525,6 @@ function autoPlace(
       }
     }
   } else {
-    // Column flow (axes swapped).
-    // 2. Items locked to a definite column, auto row.
     const lastRowInCol = new Map<number, number>();
     for (const item of items) {
       if (item.col.start === null || item.row.start !== null) continue;
@@ -607,10 +576,6 @@ function autoPlace(
   return { placed, numCols: Math.max(numCols, 1), numRows: Math.max(numRows, 1) };
 }
 
-// ===================================================================
-// Track sizing algorithm (mirrors Blink's GridTrackSizingAlgorithm)
-// ===================================================================
-
 interface SizingItem {
   start: number;
   span: number;
@@ -636,7 +601,6 @@ interface TrackSet {
   isInfinitelyGrowable: boolean;
   itemIncurredIncrease: number;
   plannedIncrease: number;
-  // derived
   hasIntrinsicMin: boolean;
   hasContentBasedMin: boolean;
   hasMaxContentMin: boolean;
@@ -1034,10 +998,6 @@ function computeTrackSizes(
   return sets.map((s) => Math.max(0, s.baseSize));
 }
 
-// ===================================================================
-// Content alignment and layout
-// ===================================================================
-
 function trackOffsets(
   sizes: number[],
   gutterSize: number,
@@ -1087,19 +1047,13 @@ function trackOffsets(
   return { offsets, adjustedGutter: gutter };
 }
 
-/** Edge of a track area: a track's usable space starts after the gutter on its start line. */
 function areaStart(offsets: number[], trackIndex: number, gutter: number): number {
   return offsets[trackIndex] + (trackIndex > 0 ? gutter : 0);
 }
 
-/** Span size of a grid area covering tracks [start, end). */
 function areaSpan(offsets: number[], start: number, end: number, gutter: number): number {
   return offsets[end] - areaStart(offsets, start, gutter);
 }
-
-// ===================================================================
-// Top-level grid layout
-// ===================================================================
 
 export interface GridLayoutInput {
   el: P5Element;
@@ -1108,7 +1062,6 @@ export interface GridLayoutInput {
   contentX: number;
   contentY: number;
   contentWidth: number;
-  /** container content-box height, or null when auto. */
   availableHeight: number | null;
   paints: PaintOp[];
   nextOrder: () => number;
@@ -1124,7 +1077,6 @@ export function layoutGridChildren(input: GridLayoutInput): { children: LayoutNo
   const colLines = explicitLineCount(explicitColCount);
   const rowLines = explicitLineCount(explicitRowCount);
 
-  // Resolve placements, compute grid extent.
   const items = collectGridItems(el, styleRef, styles);
   let minColLine = Infinity;
   let minRowLine = Infinity;
@@ -1176,7 +1128,6 @@ export function layoutGridChildren(input: GridLayoutInput): { children: LayoutNo
   const colGap = styleRef.columnGap.auto ? 0 : styleRef.columnGap.px !== null ? styleRef.columnGap.px : (styleRef.columnGap.pct ?? 0) / 100 * contentWidth;
   const rowGap = styleRef.rowGap.auto ? 0 : styleRef.rowGap.px !== null ? styleRef.rowGap.px : (styleRef.rowGap.pct ?? 0) / 100 * (availableHeight ?? 0);
 
-  // Column items with inline contributions.
   const colItems: SizingItem[] = [];
   for (const item of placed) {
     const ic = inlineContributions(item.el, item.style, styles);
@@ -1195,7 +1146,6 @@ export function layoutGridChildren(input: GridLayoutInput): { children: LayoutNo
   const colSizes = computeTrackSizes(colDefs, colItems, contentWidth, colGap, styleRef.justifyContent);
   const { offsets: colOffsets, adjustedGutter: colGutter } = trackOffsets(colSizes, colGap, contentWidth, styleRef.justifyContent);
 
-  // Row items: block contribution at each item's spanned column width.
   const rowItems: SizingItem[] = [];
   for (const item of placed) {
     const spanW = areaSpan(colOffsets, item.colStart, item.colStart + item.colSpan, colGutter);
@@ -1228,7 +1178,6 @@ export function layoutGridChildren(input: GridLayoutInput): { children: LayoutNo
       ? availableHeight
       : rowOffsets[rowOffsets.length - 1] - rowOffsets[0];
 
-  // Lay out each item in its grid area.
   const children: LayoutNode[] = [];
   for (const item of placed) {
     const areaX = areaStart(colOffsets, item.colStart, colGutter);

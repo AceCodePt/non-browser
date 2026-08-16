@@ -16,7 +16,6 @@ export interface CompoundSelector {
   tag: string | null;
   id: string | null;
   classes: string[];
-  /** pseudo-element part (::before/::after or legacy :before/:after); null when absent. */
   pseudo: 'before' | 'after' | null;
 }
 
@@ -80,7 +79,6 @@ export function parseSelector(input: string): ComplexSelector | null {
     } else if (c === '*') {
       i++;
     } else if (c === '[') {
-      // attribute selector — skip through the closing bracket (not supported)
       const close = text.indexOf(']', i);
       i = close < 0 ? n : close + 1;
     } else if (c === ':') {
@@ -98,7 +96,6 @@ export function parseSelector(input: string): ComplexSelector | null {
         cur.pseudo = name;
         i = j;
       } else {
-        // pseudo-class — skip the identifier
         i = j;
       }
     } else {
@@ -138,7 +135,6 @@ function parentOf(el: P5Element): P5Element | null {
   return p && p.nodeName !== '#document' ? p : null;
 }
 
-/** Match a complex selector against an element (ancestors via parentNode). */
 export function matchesComplex(sel: ComplexSelector, el: P5Element): boolean {
   const parts = sel.parts;
   const n = parts.length;
@@ -166,7 +162,6 @@ export function matchesComplex(sel: ComplexSelector, el: P5Element): boolean {
   return true;
 }
 
-/** Specificity of a complex selector: (ids, classes, types) summed over parts. */
 export function specificity(sel: ComplexSelector): Specificity {
   let a = 0;
   let b = 0;

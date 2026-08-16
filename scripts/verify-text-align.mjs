@@ -75,7 +75,6 @@ function textRegionMask(width, height, rects, refData, candData) {
   return mask;
 }
 
-/** Diff engine vs Chrome line fragments (all dims within the rect tolerance). */
 function compareFragments(chromeFrags, engineFrags, maxPx) {
   let maxDelta = 0;
   let dims = 0;
@@ -106,7 +105,6 @@ try {
     await page.setContent(h.html);
     await page.evaluate(() => document.fonts.ready);
 
-    // --- Chrome oracle quantities ---
     const referenceRects = {};
     for (const id of h.rects ?? []) {
       referenceRects[id] = await page.$eval(`#${id}`, (el) => {
@@ -144,7 +142,6 @@ try {
       }
     }
 
-    // Chrome line fragments (Range.getClientRects) per text element.
     const fragments = [];
     const fragmentsById = {};
     if (h.textElements && h.textElements.length > 0) {
@@ -166,7 +163,6 @@ try {
     const { width, height } = refImg;
     await page.close();
 
-    // --- engine candidate ---
     const out = renderHtml(h.html, {
       width: viewport.width,
       height: viewport.height,
@@ -190,7 +186,6 @@ try {
       }
     }
 
-    // --- masks ---
     const textMask = textRegionMask(width, height, fragments, refImg.data, candImg.data);
     const mask = new Uint8Array(width * height);
     for (const r of h.maskRects ?? []) {
@@ -214,7 +209,6 @@ try {
       }
     }
 
-    // --- persist golden data ---
     writeFileSync(
       join(dir, 'reference.json'),
       JSON.stringify(
@@ -241,7 +235,6 @@ try {
     if (mask.some((b) => b === 1)) writeMaskPng('mask.png', mask);
     if (textMask.some((b) => b === 1)) writeMaskPng('text-mask.png', textMask);
 
-    // --- four-layer evaluation ---
     const fixture = {
       name,
       note: raw.note,

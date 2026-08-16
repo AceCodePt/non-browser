@@ -15,7 +15,7 @@ export interface Color {
   r: number;
   g: number;
   b: number;
-  a: number; // 0..1
+  a: number;
 }
 
 /**
@@ -24,25 +24,17 @@ export interface Color {
  * time (CSS Values §5.1), which a static renderer can do deterministically.
  */
 export interface Length {
-  /** px value when not auto and not a percentage/viewport unit. */
   px: number | null;
-  /** percentage (0..100) when the value is a percentage. */
   pct: number | null;
-  /** viewport-width units (1vw = 1% of viewport width). */
   vw: number | null;
-  /** viewport-height units (1vh = 1% of viewport height). */
   vh: number | null;
-  /** viewport-min units (1vmin = 1% of the smaller viewport dimension). */
   vmin: number | null;
-  /** viewport-max units (1vmax = 1% of the larger viewport dimension). */
   vmax: number | null;
-  /** em units (relative to the element's own font-size). */
   em: number | null;
   /** true when this is a UA "quirky" margin (Blink's `__qem`): a quirky
    * margin-block-start collapses through its parent, so the first in-flow
    * child sits flush with the parent's content top. */
   quirk?: boolean;
-  /** true for `auto`. */
   auto: boolean;
 }
 
@@ -93,9 +85,6 @@ export function resolveEmLength(l: Length, fontSize: number): Length {
 export type Side = 'top' | 'right' | 'bottom' | 'left';
 export const SIDES: Side[] = ['top', 'right', 'bottom', 'left'];
 
-// ===== Grid track sizing =====
-
-/** A single track sizing function, after minmax() is decomposed. */
 export type TrackFunction =
   | { type: 'fixed'; px: number }
   | { type: 'pct'; pct: number }
@@ -105,11 +94,9 @@ export type TrackFunction =
   | { type: 'max-content' }
   | { type: 'fit-content'; limit: { px: number | null; pct: number | null } };
 
-/** One resolved track: a min and a max sizing function plus start line names. */
 export interface TrackDef {
   min: TrackFunction;
   max: TrackFunction;
-  /** line names attached to the track's start line (explicit grid line index). */
   names: string[];
 }
 
@@ -121,17 +108,12 @@ export interface NamedArea {
 }
 
 export interface GridTemplate {
-  /** explicit track definitions (repeat() expanded), or [] for none. */
   tracks: TrackDef[];
-  /** row-major area name matrix; '.' marks a null cell. */
   areas: string[][] | null;
-  /** named grid areas -> 1-based line rectangle. */
   areasByName: Map<string, NamedArea>;
-  /** explicit line index (1-based) -> line names. */
   lineNames: Map<number, string[]>;
 }
 
-/** A grid-line value as authored (pre-resolution). */
 export type GridLineSpec =
   | { kind: 'auto' }
   | { kind: 'integer'; value: number; name?: string }
@@ -160,7 +142,6 @@ export interface CornerRadii {
   ry: Length;
 }
 
-/** The four corners of a border-radius, in TL/TR/BR/BL order. */
 export interface BorderRadius {
   topLeft: CornerRadii;
   topRight: CornerRadii;
@@ -215,7 +196,6 @@ export type TextAlign = 'left' | 'center' | 'right' | 'justify';
  */
 export type WhiteSpaceValue = 'normal' | 'nowrap' | 'pre' | 'pre-wrap' | 'pre-line';
 
-/** list-style-type values the engine renders (markers). */
 export type ListStyleType =
   | 'none'
   | 'disc'
@@ -225,7 +205,6 @@ export type ListStyleType =
   | 'decimal-leading-zero'
   | string;
 
-/** The parsed `content` value of a ::before/::after pseudo-element. */
 export type ContentValue = { kind: 'none' } | { kind: 'text'; text: string };
 
 /**
@@ -234,18 +213,14 @@ export type ContentValue = { kind: 'none' } | { kind: 'text'; text: string };
  * (no box is generated); an empty string still generates a box.
  */
 export interface PseudoBox {
-  /** content text ('' allowed); null = content none/normal → no generated box. */
   text: string | null;
-  /** the pseudo-element's computed style (font/color etc. — inherits the element). */
   style: ComputedStyle;
 }
 
 export interface ComputedStyle {
   display: DisplayValue;
   position: 'static' | 'relative' | 'absolute' | 'fixed';
-  /** null = auto (no stacking context). */
   zIndex: number | null;
-  /** top/right/bottom/left offsets (positioned boxes); auto when length auto. */
   top: Length;
   right: Length;
   bottom: Length;
@@ -253,24 +228,18 @@ export interface ComputedStyle {
   float: 'none' | 'left' | 'right';
   clear: 'none' | 'left' | 'right' | 'both';
   verticalAlign: VerticalAlign;
-  /** used horizontal text alignment (start/end normalized to left/right). */
   textAlign: TextAlign;
-  /** the CSSOM computed value (`getComputedStyle().textAlign`): left|center|right|justify|start|end verbatim. */
   textAlignComputed: string;
   // --- table properties (CSS 2.1 §17.6) ---
   borderCollapse: 'separate' | 'collapse';
-  /** horizontal border-spacing in px (separate model). */
   borderSpacingH: number;
-  /** vertical border-spacing in px (separate model). */
   borderSpacingV: number;
   captionSide: 'top' | 'bottom';
   tableLayout: 'auto' | 'fixed';
   emptyCells: 'show' | 'hide';
   boxSizing: 'content-box' | 'border-box';
   overflow: 'visible' | 'hidden';
-  /** border-box width; null = auto. */
   width: Length;
-  /** border-box height; null = auto. */
   height: Length;
   minWidth: Length;
   maxWidth: Length;
@@ -281,48 +250,33 @@ export interface ComputedStyle {
   borderWidth: Record<Side, number>;
   borderColor: Record<Side, Color>;
   borderStyle: Record<Side, 'none' | 'solid' | 'inset' | 'outset'>;
-  /** per-corner border radii (px/%/viewport lengths, pre-resolution). */
   borderRadius: BorderRadius;
   backgroundColor: Color;
   color: Color;
   fontFamily: string;
   fontSize: number;
-  /** resolved font-weight (400/700/...); inherited. */
   fontWeight: number;
-  /** resolved font-style; inherited. */
   fontStyle: 'normal' | 'italic';
-  /** list-style-type; inherited (initial 'disc'). */
   listStyleType: ListStyleType;
-  /** list-style-position; inherited (initial 'outside'). */
   listStylePosition: 'inside' | 'outside';
-  /** line-height in px (used layout value); when `lineHeightNormal` is set the
-   * computed value was the `normal` keyword (serialized as 'normal'). */
   lineHeight: number;
   /** true when line-height computed to the `normal` keyword (CSSOM reports it
    * as 'normal', while layout uses the font-metric-derived px value). */
   lineHeightNormal: boolean;
   whiteSpace: WhiteSpaceValue;
 
-  // --- text paint properties ---
-  /** letter-spacing in px (0 = normal). Negative values are allowed. */
   letterSpacing: number;
   /** active text-decoration lines, in the order they should paint. */
   textDecorationLines: DecorationLine[];
-  /** text-decoration-color; null = currentColor (the element's color). */
   textDecorationColor: Color | null;
-  /** text-decoration-thickness resolution. */
   textDecorationThickness: 'auto' | 'from-font' | { px: number };
-  /** text-underline-offset in px (0 = auto). */
   textUnderlineOffset: number;
 
-  // --- grid container properties ---
   gridTemplateColumns: GridTemplate | null;
   gridTemplateRows: GridTemplate | null;
   gridAutoColumns: TrackDef | null;
   gridAutoRows: TrackDef | null;
-  /** true when grid-auto-flow: column. */
   gridAutoFlowColumn: boolean;
-  /** true when grid-auto-flow: dense. */
   gridAutoFlowDense: boolean;
   rowGap: Length;
   columnGap: Length;
@@ -331,7 +285,6 @@ export interface ComputedStyle {
   justifyContent: ContentAlign;
   alignContent: ContentAlign;
 
-  // --- grid item properties ---
   gridRowStart: GridLineSpec | null;
   gridRowEnd: GridLineSpec | null;
   gridColumnStart: GridLineSpec | null;
@@ -339,26 +292,16 @@ export interface ComputedStyle {
   justifySelf: SelfAlign | null;
   alignSelf: SelfAlign | null;
 
-  // --- flex container properties ---
   flexDirection: 'row' | 'row-reverse' | 'column' | 'column-reverse';
   flexWrap: 'nowrap' | 'wrap' | 'wrap-reverse';
 
-  // --- flex item properties ---
-  /** flex-grow factor (>= 0). */
   flexGrow: number;
-  /** flex-shrink factor (>= 0). */
   flexShrink: number;
-  /** flex-basis; `auto` or `content` resolve against the main size / content. */
   flexBasis: Length;
-  /** order (integer, default 0). */
   order: number;
 
-  // --- generated content (::before / ::after) ---
-  /** parsed `content` value; none/normal → no generated box. */
   content: ContentValue;
-  /** resolved ::before box (null when no rule targets the pseudo). */
   before: PseudoBox | null;
-  /** resolved ::after box (null when no rule targets the pseudo). */
   after: PseudoBox | null;
 }
 
@@ -412,7 +355,6 @@ function clamp255(v: number): number {
   return Math.max(0, Math.min(255, v));
 }
 
-/** Parse a single length value: px, em, %, viewport unit, auto, 0. */
 export function parseLength(raw: string): Length {
   const s = raw.trim();
   if (s === 'auto') return AUTO;
@@ -440,11 +382,6 @@ export function parseLength(raw: string): Length {
   return AUTO;
 }
 
-/**
- * Parse a border-radius longhand value: `<length-percentage>{1,2}` where the
- * first is the horizontal radius and the second (optional) the vertical one
- * (defaults to the horizontal when omitted).
- */
 function parseRadiusPair(value: string): CornerRadii {
   const parts = value.trim().split(/\s+/).filter(Boolean);
   const rx = parts[0] !== undefined ? parseLength(parts[0]) : pxLength(0);
@@ -465,17 +402,11 @@ function expandRadiusList(list: Length[]): [Length, Length, Length, Length] {
   return [v0, v1, v2, v3];
 }
 
-/**
- * Parse the `border-radius` shorthand: horizontal and vertical radius lists
- * separated by an optional `/`. Without a slash, the vertical radii equal the
- * horizontal ones.
- */
 function parseRadiusShorthand(value: string): { rx: Length[]; ry: Length[] } {
   const parts = value.split('/');
   const horizRaw = parts[0] ?? '';
   const vertRaw = parts[1] ?? '';
   const rx = horizRaw.trim().split(/\s+/).filter(Boolean).map(parseLength);
-  // Without a slash the vertical radii are the same as the horizontal ones.
   const ry = vertRaw.trim() === '' ? rx : vertRaw.trim().split(/\s+/).filter(Boolean).map(parseLength);
   return { rx, ry };
 }
@@ -487,7 +418,6 @@ const RADIUS_LONGHANDS: Record<string, keyof BorderRadius> = {
   'border-bottom-left-radius': 'bottomLeft',
 };
 
-/** Parse `border-radius` (shorthand + longhands) into a per-corner radii set. */
 function parseBorderRadius(decls: Declaration[]): BorderRadius {
   const out: BorderRadius = {
     topLeft: ZERO_RADIUS,
@@ -512,9 +442,6 @@ function parseBorderRadius(decls: Declaration[]): BorderRadius {
   return out;
 }
 
-// ===== Grid parsing helpers =====
-
-/** Split a value on top-level whitespace, honoring () nesting. */
 function splitTopLevel(value: string): string[] {
   const out: string[] = [];
   let depth = 0;
@@ -542,7 +469,6 @@ function parseFixedOrPct(raw: string): { px: number | null; pct: number | null }
   return null;
 }
 
-/** Parse a single sizing function token (fr/px/%/auto/min-content/max-content/fit-content). */
 function parseTrackFunction(raw: string): TrackFunction {
   const s = raw.trim();
   if (s.startsWith('fit-content(') && s.endsWith(')')) {
@@ -593,7 +519,6 @@ function minmaxTrackDef(min: TrackFunction, max: TrackFunction): TrackDef {
   return d;
 }
 
-/** Parse one track-list token into a TrackDef (handles minmax()/bare values). */
 function parseTrackDef(tok: string): TrackDef {
   const s = tok.trim();
   if (s.startsWith('minmax(') && s.endsWith(')')) {
@@ -669,7 +594,6 @@ export function parseTrackList(value: string): GridTemplate | null {
   return { tracks, areas: null, areasByName: new Map(), lineNames };
 }
 
-/** Parse grid-template-areas string list into a name matrix + areas. */
 export function parseTemplateAreas(value: string): { areas: string[][] | null; areasByName: Map<string, NamedArea> } {
   // Extract quoted strings; each string is one row of cells. CSS allows both
   // single and double quotes.
@@ -706,7 +630,6 @@ export function parseTemplateAreas(value: string): { areas: string[][] | null; a
       if (cell !== '.' && cell !== '...') place(cell, r, c);
     }
   }
-  // Validate rectangularity of each area.
   for (const [name, a] of areasByName) {
     const cols = a.colEnd - a.colStart;
     const rowsN = a.rowEnd - a.rowStart;
@@ -741,7 +664,6 @@ function parseGridLine(value: string): GridLineSpec {
   return { kind: 'auto' };
 }
 
-/** Parse grid-row/grid-column shorthand. */
 function parseGridLinePair(value: string): { start: GridLineSpec; end: GridLineSpec } {
   const parts = value.split('/').map((p) => p.trim());
   if (parts.length === 1) {
@@ -752,7 +674,6 @@ function parseGridLinePair(value: string): { start: GridLineSpec; end: GridLineS
   return { start: parseGridLine(parts[0]), end: parseGridLine(parts[1]) };
 }
 
-/** Parse grid-area shorthand: row-start / column-start / row-end / column-end. */
 function parseGridArea(value: string): GridPlacementSpecs {
   const parts = value.split('/').map((p) => p.trim());
   if (parts.length === 1) {
@@ -770,7 +691,6 @@ export interface GridPlacementSpecs {
   colEnd: GridLineSpec;
 }
 
-/** Unescape one CSS string token body: `\X` → X (incl. hex escapes). */
 function unescapeCssString(s: string): string {
   return s.replace(/\\([0-9a-fA-F]{1,6})\s?|\\/g, (_m, hex: string | undefined) =>
     hex ? String.fromCodePoint(parseInt(hex, 16)) : '',
@@ -799,7 +719,6 @@ function parseContent(value: string): ContentValue {
   return sawString ? { kind: 'text', text: out } : { kind: 'none' };
 }
 
-/** Parse `content` from a declaration list (none when the property is absent). */
 function contentOf(decls: Declaration[]): ContentValue {
   const d = decls.find((x) => x.property === 'content');
   return d ? parseContent(d.value) : { kind: 'none' };
@@ -834,7 +753,6 @@ function parseBoxShorthand(raw: string): Record<Side, Length> {
 
 type BorderStyleKeyword = 'none' | 'solid' | 'inset' | 'outset';
 
-/** Parse a `border-style` shorthand (1-4 keywords) into per-side styles. */
 function parseBorderStyleShorthand(raw: string): Record<Side, BorderStyleKeyword> {
   const kw = (v: string): BorderStyleKeyword =>
     v === 'inset' ? 'inset' : v === 'outset' ? 'outset' : v === 'solid' ? 'solid' : 'none';
@@ -843,14 +761,12 @@ function parseBorderStyleShorthand(raw: string): Record<Side, BorderStyleKeyword
   return { top: t, right: r, bottom: b, left: l };
 }
 
-/** Parse a `border-color` shorthand (1-4 colors) into per-side colors. */
 function parseBorderColorShorthand(raw: string): Record<Side, Color> {
   const parts = raw.trim().split(/\s+/).map(parseColor);
   const [t = parseColor('black'), r = t, b = t, l = r] = parts;
   return { top: t, right: r, bottom: b, left: l };
 }
 
-/** Parse `flex-basis`; `auto` and `content` both resolve to AUTO (content-based). */
 function parseFlexBasis(value: string | undefined): Length {
   if (!value) return AUTO;
   const s = value.trim();
@@ -918,7 +834,6 @@ export interface Declaration {
   quirk?: boolean;
 }
 
-/** Parse the contents of a declaration block (no braces) into declarations. */
 export function parseDeclarationBlock(block: string): Declaration[] {
   return splitDeclarations(block)
     .map((d) => {
@@ -965,7 +880,6 @@ function parseLineHeight(value: string, fontSize: number): number {
   return fontSize * 1.2;
 }
 
-/** Parse `letter-spacing`: a px length (negative allowed) or `normal` → 0. */
 function parseLetterSpacing(value: string): number {
   const s = value.trim();
   if (s === 'normal' || s === 'inherit') return 0;
@@ -974,7 +888,6 @@ function parseLetterSpacing(value: string): number {
   return 0;
 }
 
-/** Parse `text-decoration-line` into an ordered line list. */
 function parseDecorationLines(value: string): DecorationLine[] {
   const s = value.trim();
   if (s === '' || s === 'none' || s === 'inherit') return [];
@@ -985,7 +898,6 @@ function parseDecorationLines(value: string): DecorationLine[] {
   return out;
 }
 
-/** Parse `text-decoration-thickness`: auto | from-font | <length>. */
 function parseDecorationThickness(value: string): 'auto' | 'from-font' | { px: number } {
   const s = value.trim();
   if (s === 'auto' || s === 'inherit') return 'auto';
@@ -995,7 +907,6 @@ function parseDecorationThickness(value: string): 'auto' | 'from-font' | { px: n
   return 'auto';
 }
 
-/** Parse a px length; `auto` → 0. Used for text-underline-offset. */
 function parsePxOffset(value: string): number {
   const s = value.trim();
   if (s === 'auto' || s === 'inherit') return 0;
@@ -1004,12 +915,6 @@ function parsePxOffset(value: string): number {
   return 0;
 }
 
-/**
- * Parse the `text-decoration` shorthand. Tokens: line keywords, a color, a
- * thickness (px/from-font), style keywords (only solid is painted; others are
- * treated as solid). Returns the resolved line list, color (null = currentColor),
- * thickness, and underline offset contribution (none from the shorthand).
- */
 function parseDecorationShorthand(value: string): {
   lines: DecorationLine[];
   color: Color | null;
@@ -1043,7 +948,6 @@ interface Defaults {
   /** the inherited (parent) font-size; a UA `font-size` multiplier resolves against it. */
   fontSize: number;
   color: Color;
-  /** inherited line-height: a px value or the `normal` keyword (resolved per-font). */
   lineHeight: number | 'normal';
   display: DisplayValue;
   letterSpacing?: number;
@@ -1051,35 +955,23 @@ interface Defaults {
   textDecorationColor?: Color | null;
   textDecorationThickness?: 'auto' | 'from-font' | { px: number };
   textUnderlineOffset?: number;
-  /** inherited font-weight (default 400). */
   fontWeightDefault?: number;
-  /** inherited font-style (default normal). */
   fontStyleDefault?: 'normal' | 'italic';
   /** inherited list-style-type (default disc, matching the CSS initial). */
   listStyleTypeDefault?: ListStyleType;
   /** inherited list-style-position (default outside, matching the CSS initial). */
   listStylePositionDefault?: 'inside' | 'outside';
-  /** UA-level default padding (e.g. td/th get 1px). */
   paddingDefault?: Length;
-  /** UA-level default vertical-align (e.g. table cells get 'middle'). */
   verticalAlignDefault?: VerticalAlign;
   /** UA-level default text-align (e.g. th gets 'center'); wins over inherited. */
   textAlignDefault?: TextAlign;
-  /** inherited text-align (text-align is inherited; used when no author value). */
   textAlignInherited?: TextAlign;
-  /** inherited computed text-align string (start/end/justify/... preserved verbatim). */
   textAlignComputedInherited?: string;
-  /** inherited white-space (white-space is inherited; used when no author value). */
   whiteSpaceDefault?: WhiteSpaceValue;
-  /** UA-level default border-collapse (table gets 'separate'). */
   borderCollapseDefault?: 'separate' | 'collapse';
-  /** UA-level default horizontal border-spacing (table gets 2px). */
   borderSpacingDefault?: number;
-  /** UA-level default vertical border-spacing (table gets 2px). */
   borderSpacingVDefault?: number;
-  /** UA-level default table-layout (table gets 'auto'). */
   tableLayoutDefault?: 'auto' | 'fixed';
-  /** UA-level default caption-side (caption gets 'top'). */
   captionSideDefault?: 'top' | 'bottom';
 }
 export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedStyle {
@@ -1102,8 +994,6 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
         .find(Boolean) ?? fontFamily;
   }
 
-  // --- font-size: declaration (px or em-of-parent), else UA multiplier, else
-  // the inherited size. `font` shorthand also carries a px size. ---
   let fontSize = defaults.fontSize;
   const fontDecl = decls.find((d) => d.property === 'font');
   if (fontDecl) {
@@ -1124,8 +1014,6 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     }
   }
 
-  // --- line-height: `normal` recomputes per-font; a px/number keeps its value;
-  // `inherit` inherits the parent's (a px value or the normal keyword). ---
   let lineHeight: number;
   let lineHeightNormal = false;
   const lhDecl = decls.find((d) => d.property === 'line-height');
@@ -1163,7 +1051,6 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     return v === 'italic' || v === 'oblique' ? 'italic' : 'normal';
   })();
 
-  // --- list-style-type (inherited; initial is disc) ---
   const listStyleType = (() => {
     const d = decls.find((x) => x.property === 'list-style-type');
     if (!d) return defaults.listStyleTypeDefault ?? 'disc';
@@ -1171,7 +1058,6 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     return v === 'none' || v === 'disc' || v === 'circle' || v === 'square' || v === 'decimal' || v === 'decimal-leading-zero' ? v : 'disc';
   })();
 
-  // --- list-style-position (inherited; initial is outside) ---
   const listStylePosition = (() => {
     const d = decls.find((x) => x.property === 'list-style-position');
     if (!d) return defaults.listStylePositionDefault ?? 'outside';
@@ -1232,7 +1118,6 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     return { top, right, bottom, left };
   })();
 
-  // Resolve em lengths (margins/paddings) against the element's own font-size.
   const resolveEm = (sides: Record<Side, Length>): Record<Side, Length> => ({
     top: resolveEmLength(sides.top, fontSize),
     right: resolveEmLength(sides.right, fontSize),
@@ -1370,7 +1255,6 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     ? textAlignDecl.value.trim()
     : defaults.textAlignDefault ?? defaults.textAlignComputedInherited ?? 'start';
 
-  // --- table properties ---
   const borderCollapseDecl = decls.find((d) => d.property === 'border-collapse');
   const borderCollapse: 'separate' | 'collapse' =
     borderCollapseDecl && borderCollapseDecl.value.trim() === 'collapse' ? 'collapse' : (defaults.borderCollapseDefault ?? 'separate');
@@ -1418,7 +1302,6 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     whiteSpace = defaults.whiteSpaceDefault ?? 'normal';
   }
 
-  // --- text paint properties (inherited) ---
   const letterSpacingDecl = decls.find((d) => d.property === 'letter-spacing');
   const letterSpacing = letterSpacingDecl ? parseLetterSpacing(letterSpacingDecl.value) : defaults.letterSpacing ?? 0;
 
@@ -1446,14 +1329,12 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     ? parsePxOffset(decOffsetDecl.value)
     : defaults.textUnderlineOffset ?? 0;
 
-  // --- grid properties ---
   const decl = (name: string) => decls.find((d) => d.property === name)?.value;
 
   const gridTemplateColumns = parseTrackList(decl('grid-template-columns') ?? '');
   const gridTemplateRows = parseTrackList(decl('grid-template-rows') ?? '');
   const areasRaw = parseTemplateAreas(decl('grid-template-areas') ?? '');
 
-  // Merge line names from template tracks and implicit area lines.
   const mergeLineNames = (template: GridTemplate | null, areas: Map<string, NamedArea> | null, axis: 'row' | 'col') => {
     const lineNames = new Map<number, string[]>();
     if (template) {
@@ -1529,7 +1410,6 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     gridColumnEnd = specs.colEnd;
   }
 
-  // --- flex properties ---
   const flexDir = decl('flex-direction');
   const flexDirection: 'row' | 'row-reverse' | 'column' | 'column-reverse' =
     flexDir === 'row-reverse'

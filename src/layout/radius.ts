@@ -40,7 +40,6 @@ export const ZERO_RESOLVED_RADII: ResolvedRadii = {
   bottomLeft: { rx: 0, ry: 0 },
 };
 
-/** A rounded rectangle clip: a border box plus its (unresolved) radii. */
 export interface RoundedClip {
   x: number;
   y: number;
@@ -49,7 +48,6 @@ export interface RoundedClip {
   radii: BorderRadius;
 }
 
-/** True when the box has at least one non-zero radius. */
 export function hasNonZeroRadius(br: BorderRadius): boolean {
   const corners = [br.topLeft, br.topRight, br.bottomRight, br.bottomLeft];
   return corners.some((c) => !isZeroRadiusLength(c.rx) || !isZeroRadiusLength(c.ry));
@@ -89,11 +87,6 @@ function reduceOverlap(radii: ResolvedRadii, width: number, height: number): Res
   };
 }
 
-/**
- * Resolve a `BorderRadius` against the border box dimensions. Percentages
- * resolve against the width (rx) and height (ry); viewport units resolve via
- * the viewport input. Returns clamped, overlap-reduced numeric radii.
- */
 export function resolveBorderRadius(
   br: BorderRadius,
   width: number,
@@ -114,7 +107,6 @@ export function resolveBorderRadius(
   return reduceOverlap(radii, width, height);
 }
 
-/** The padding-edge radii for a border: outer radii minus the border widths. */
 export function innerRadii(
   outer: ResolvedRadii,
   widths: SideWidths,

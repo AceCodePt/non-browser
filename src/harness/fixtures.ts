@@ -11,11 +11,9 @@ export interface GapDeclaration {
   result: 'fail';
   /** why the layer is expected to fail — references the fixture note and/or ledger. */
   reason: string;
-  /** the condition under which the gap is expected to close: a commit, a date, or a spec feature landing. */
   sunset: string;
 }
 
-/** A layer expectation is either 'pass' or a typed gap declaration — nothing else. */
 export type LayerExpectation = 'pass' | GapDeclaration;
 
 export interface Box {
@@ -39,7 +37,6 @@ export interface Fixture {
   referenceRgba: Buffer;
   candidateRgba: Buffer;
   mask: Uint8Array | null;
-  /** 1 = text-region pixel, compared under the screenshot text tier. */
   textMask: Uint8Array | null;
   reference: LayerValues;
   candidate: LayerValues;
@@ -145,7 +142,6 @@ function loadFixture(dir: string, baseTolerances: Tolerances): Fixture {
   };
 }
 
-/** Load every fixture (a directory with a fixture.json) under `dir`. */
 export function loadFixtureSet(dir: string, baseTolerances: Tolerances): Fixture[] {
   const entries = readdirSync(dir, { withFileTypes: true })
     .filter((e) => e.isDirectory())

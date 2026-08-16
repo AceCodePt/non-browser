@@ -17,7 +17,6 @@ async function chromeAlpha(shadow, bg) {
   await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = shot; });
   ctx.drawImage(img, 0, 0);
   const data = ctx.getImageData(0, 0, W, H).data;
-  // profile along row y=120 (box center), left of box edge x=120; alpha = 1 - v/255
   const out = [];
   for (let d = 0; d < 70; d++) {
     const x = 120 - d;

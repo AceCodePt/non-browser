@@ -38,7 +38,6 @@ import { setActiveBrowserConfig } from '../dist/config/browser-config.js';
 
 const FONT_FILE = firefoxConfig.defaultFile;
 const FONT_FAMILY = firefoxConfig.defaultFamily;
-/** px to expand text-fragment rects when building the screenshot mask. */
 const MASK_PAD = 2;
 
 const corpus = resolve('corpus/firefox-track');
@@ -53,7 +52,6 @@ function* fixtures() {
   }
 }
 
-/** Build the exclusion mask (1 = excluded) from Firefox's text fragment rects. */
 function rectsToMask(width, height, rects, pad) {
   const mask = new Uint8Array(width * height);
   for (const r of rects) {
@@ -87,7 +85,6 @@ try {
     await page.setContent(h.html);
     await page.evaluate(() => document.fonts.ready);
 
-    // --- Firefox oracle quantities ---
     const referenceRects = {};
     for (const id of h.rects ?? []) {
       referenceRects[id] = await page.$eval(`#${id}`, (el) => {
@@ -232,7 +229,6 @@ try {
       pretextResults.push({ name, pass: pretextPass, detail: pretextDetail });
     }
 
-    // --- screenshot mask: text fragments ∪ declared maskRects ---
     const mask = rectsToMask(width, height, fragments, MASK_PAD);
     for (const r of h.maskRects ?? []) {
       const x0 = Math.max(0, Math.floor(r.x));
@@ -255,7 +251,6 @@ try {
       }
     }
 
-    // Persist the corpus golden data.
     writeFileSync(
       join(dir, 'reference.json'),
       JSON.stringify(

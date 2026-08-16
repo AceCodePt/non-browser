@@ -22,7 +22,6 @@ async function chromePixels(shadow) {
   return ctx.getImageData(0, 0, W, H).data;
 }
 
-// render shadow rect + gaussian blur via skia shadowBlur (sigma = shadowBlur/2)
 function napiShadow(offX, offY, blurSigma, color, spread = 0) {
   const cvs = createCanvas(W, H);
   const ctx = cvs.getContext('2d');
@@ -39,7 +38,6 @@ function napiShadow(offX, offY, blurSigma, color, spread = 0) {
 }
 
 function diffProfile(ref, cand, region) {
-  // region: pixels outside the box (box x 110..210, y 40..180)
   let sum = 0, worst = 0, over = 0, n = 0;
   const [x0, y0, x1, y1] = region;
   for (let y = y0; y < y1; y++) {

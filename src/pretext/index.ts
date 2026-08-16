@@ -80,7 +80,6 @@ class InterfaceMeasureContext implements MeasureContextLike {
 const shimSymbol = Symbol.for('nonbrowser.pretext.offscreen-canvas');
 
 /**
- * Install the global OffscreenCanvas shim used by Pretext's measurement.
  * `canvas` is the measurement surface created by the same CanvasFactory the
  * engine paints with. Idempotent per canvas.
  */
@@ -121,7 +120,6 @@ export function segmentGraphemes(text: string): string[] {
   return out;
 }
 
-/** Prepare a text run for Pretext layout over the Canvas interface. */
 export function prepareText(
   text: string,
   font: string,
@@ -141,7 +139,6 @@ export interface PretextLayoutResult {
   height: number;
 }
 
-/** Lay out prepared text at a fixed width/line-height, mapping Pretext lines to plain shapes. */
 export function layoutLines(
   prepared: PreparedTextWithSegments,
   maxWidth: number,

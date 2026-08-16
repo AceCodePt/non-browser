@@ -40,7 +40,6 @@ import { gapLayers, expectedLabel } from './lib/expected.mjs';
 
 const corpus = resolve('corpus/segmenter-icu');
 const ledgerPath = resolve('docs/ledgers/icu.md');
-/** line-height for the Pretext layout() check. */
 const LINE_HEIGHT = 24;
 
 // --- runtime pin (charter §6): fail fast ---
@@ -68,7 +67,6 @@ if (supportedLocales.length !== fullIcuLocales.length) {
 }
 console.log(`verify:segmenter: runtime pin OK — node ${process.versions.node}, icu ${process.versions.icu}`);
 
-// --- corpus ---
 function* fixtures() {
   if (!statSync(corpus, { throwIfNoEntry: false })?.isDirectory()) {
     failFast(`corpus directory missing: ${corpus}`);
@@ -81,7 +79,6 @@ function* fixtures() {
   }
 }
 
-// --- register the corpus font set into the engine Canvas interface ---
 const registeredFamilies = new Set();
 const fixtureList = [...fixtures()];
 if (fixtureList.length === 0) {
@@ -131,11 +128,10 @@ try {
 
 let allPass = true;
 const failures = [];
-const categoryRows = []; // { name, expected, strings, segPass, layoutPass, detail }
-const stringRows = []; // { category, text, graphemes, segPass, layoutPass, expected }
+const categoryRows = [];
+const stringRows = [];
 
 try {
-  // --- layer 1: raw grapheme segmentation parity (Node vs Chrome) ---
   const allTexts = fixtureList.flatMap(({ raw }) => (raw.entries ?? []).map((e) => e.text));
   const chromeSegments = await page.evaluate((texts) => {
     const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
@@ -147,7 +143,6 @@ try {
   const nodeSegments = {};
   for (const t of allTexts) nodeSegments[t] = segmentGraphemes(t);
 
-  // --- layer 2: Pretext prepare+layout parity (Node vs Chrome) ---
   // Serve the repo so the browser can import the real @chenglou/pretext ESM
   // (same package the engine runs) and lay out the same corpus strings.
   const mime = { '.js': 'text/javascript', '.json': 'application/json' };
@@ -209,7 +204,6 @@ try {
   }
   server.close();
 
-  // --- per-entry checks ---
   for (const { name, raw } of fixtureList) {
     const isGapFixture = gapLayers(raw.expected).length > 0;
     const entries = raw.entries ?? [];
@@ -287,7 +281,6 @@ try {
   await browser.close();
 }
 
-// --- ledger ---
 const passStrings = stringRows.filter((r) => r.expected !== 'fail').length;
 const gapStrings = stringRows.length - passStrings;
 const segPassCount = stringRows.filter((r) => r.expected !== 'fail' && r.segPass).length;

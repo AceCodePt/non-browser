@@ -1,18 +1,15 @@
 import * as csstree from 'css-tree';
 
-// 1. @supports condition tree
 const sup = csstree.parse('@supports (display: flex) and not (color: red) or ((width: 1px) and (height: 2px)) { .a{} }');
 const s = sup.children.toArray()[0];
 const cond = s.prelude.children.toArray()[0];
 console.log('supports condition:', JSON.stringify(cond, (k,v) => v && v.type === 'List' ? `[List ${v.size}]` : v, 0));
-// generate each condition
 function walkCond(node, d) {
   console.log(' '.repeat(d*2) + node.type + (node.name ? ' name='+node.name : '') + (node.value ? ' value='+JSON.stringify(node.value) : ''));
   if (node.children) for (const c of node.children) walkCond(c, d+1);
 }
 walkCond(cond, 0);
 
-// 2. @import with media
 const imp = csstree.parse('@import url("a.css") screen and (min-width: 100px);');
 const i = imp.children.toArray()[0];
 console.log('import children:', i.prelude.children.toArray().map(c => c.type).join(', '));
@@ -23,7 +20,6 @@ for (const c of i.prelude.children.toArray()) {
   if (c.type === 'Raw') console.log('    raw:', JSON.stringify(c.value));
 }
 
-// 3. does parse throw on truly malformed input?
 const badInputs = [
   'div { color: red; ',
   '@media { }',
@@ -43,7 +39,6 @@ for (const b of badInputs) {
   }
 }
 
-// 4. unterminated block / brace recovery in a bigger sheet
 const mixed = `div { color: red; p { margin: 0 } } .x { width: 1px; }`;
 const ast2 = csstree.parse(mixed);
 for (const n of ast2.children.toArray()) {

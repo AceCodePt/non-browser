@@ -63,7 +63,6 @@ function* fixtures() {
 const luminance = (r, g, b) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
 const HIST_THRESHOLDS = [1, 2, 4, 8, 16, 32, 64];
 
-/** Compare two RGBA buffers over the ink pixels (core/fringe) of `mark`. */
 function regionStats(cand, ref, refLab, width, height, mark) {
   const classes = {
     core: { pixels: 0, sum: 0, max: 0, exceeding: 0, hist: new Array(HIST_THRESHOLDS.length).fill(0) },
@@ -210,7 +209,6 @@ console.log(`probe: combined worst mean ΔE ${combinedWorstMean.toFixed(3)}, wor
 console.log(`probe: decision = ${decision}`);
 console.log(`probe: proposed text tier = ${JSON.stringify(proposedTier)}`);
 
-// --- write the ledger ---
 const now = new Date().toISOString();
 const histRows = rows
   .map(

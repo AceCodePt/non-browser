@@ -13,18 +13,15 @@
 
 export const LAYER_NAMES = ['measureText', 'computedStyle', 'rect', 'screenshot'];
 
-/** A layer expectation is a documented gap when it is the typed { result:'fail', reason, sunset } object. */
 export function isGapExpectation(ex) {
   return !!ex && typeof ex === 'object' && !Array.isArray(ex) && ex.result === 'fail';
 }
 
-/** Layer names in a raw fixture `expected` object that declare a typed gap. */
 export function gapLayers(rawExpected) {
   if (!rawExpected || typeof rawExpected !== 'object' || Array.isArray(rawExpected)) return [];
   return LAYER_NAMES.filter((layer) => isGapExpectation(rawExpected[layer]));
 }
 
-/** Compact display label for a raw `expected` object: 'fail' when any layer declares a gap. */
 export function expectedLabel(rawExpected) {
   return gapLayers(rawExpected).length > 0 ? 'fail' : 'pass';
 }

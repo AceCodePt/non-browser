@@ -1,9 +1,7 @@
 import type { ScreenshotTolerance, TextTolerance } from './tolerances.js';
 
 export interface TextRegionResult {
-  /** text-region pixels actually compared (in textMask, not excluded). */
   pixels: number;
-  /** text-region pixels excluded by the exclusion mask (the text-pixel mask share). */
   maskedPixels: number;
   exceedingPixels: number;
   percentExceeding: number;
@@ -69,12 +67,11 @@ export function deltaE76(
 }
 
 export interface CompareInputs {
-  candidate: Buffer; // RGBA
-  reference: Buffer; // RGBA
+  candidate: Buffer;
+  reference: Buffer;
   width: number;
   height: number;
-  mask?: Uint8Array | null; // 1 = excluded from the diff
-  /** 1 = text-region pixel; compared under `textTolerance` instead of `tolerance`. */
+  mask?: Uint8Array | null;
   textMask?: Uint8Array | null;
   tolerance: ScreenshotTolerance;
   /** Text-region tier; required (in practice) when textMask is present. */

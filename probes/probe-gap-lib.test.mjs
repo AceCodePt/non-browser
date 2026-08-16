@@ -28,7 +28,6 @@ import { resolve } from 'node:path';
 const tolerances = loadTolerances(resolve('tolerances.json'));
 const TOL = tolerances.layers;
 
-/** Build a tiny valid fixture for compareLayers/validateFixtures tests. */
 function makeFixture(overrides = {}) {
   return {
     name: 'test-fixture',
@@ -44,7 +43,6 @@ function makeFixture(overrides = {}) {
   };
 }
 
-/** Build a harvest-shaped object with the given layer data. */
 function makeHarvest(overrides = {}) {
   return {
     measureText: { "16px 'Noto Sans' | hello": 100 },
@@ -60,10 +58,6 @@ function makeHarvest(overrides = {}) {
   };
 }
 
-// ---------------------------------------------------------------------------
-// rectsToTextMask
-// ---------------------------------------------------------------------------
-
 describe('rectsToTextMask', () => {
   test('empty rects produce an all-zero mask of the right size', () => {
     const m = rectsToTextMask(10, 10, []);
@@ -73,7 +67,6 @@ describe('rectsToTextMask', () => {
 
   test('a rect marks exactly its padded region', () => {
     const m = rectsToTextMask(10, 10, [{ x: 2, y: 2, width: 2, height: 2 }], 0);
-    // Without pad: only [2..4)x[2..4).
     for (let y = 0; y < 10; y++) {
       for (let x = 0; x < 10; x++) {
         const inRect = x >= 2 && x < 4 && y >= 2 && y < 4;
@@ -85,7 +78,6 @@ describe('rectsToTextMask', () => {
   test('MASK_PAD default expands the region by the exported constant', () => {
     assert.equal(MASK_PAD, 2);
     const m = rectsToTextMask(10, 10, [{ x: 5, y: 5, width: 1, height: 1 }]);
-    // Pad 2 on each side: [3..8)x[3..8).
     for (let y = 0; y < 10; y++) {
       for (let x = 0; x < 10; x++) {
         const inRect = x >= 3 && x < 8 && y >= 3 && y < 8;
@@ -96,12 +88,12 @@ describe('rectsToTextMask', () => {
 
   test('regions outside the canvas are clamped, not out-of-range', () => {
     const m = rectsToTextMask(5, 5, [{ x: -10, y: 3, width: 50, height: 4 }], 0);
-    assert.equal(m.length, 25); // no throw
-    assert.equal(m[0], 0); // (0,0) outside y=3
-    assert.equal(m[15], 1); // (0,3)
-    assert.equal(m[19], 1); // (4,3)
-    assert.equal(m[20], 1); // (0,4) — y1=min(5,7)=5, so row 4 is in
-    assert.equal(m[24], 1); // (4,4)
+    assert.equal(m.length, 25);
+    assert.equal(m[0], 0);
+    assert.equal(m[15], 1);
+    assert.equal(m[19], 1);
+    assert.equal(m[20], 1);
+    assert.equal(m[24], 1);
   });
 
   test('negative zero-size and degenerate rects are tolerated', () => {
@@ -116,9 +108,7 @@ describe('rectsToTextMask', () => {
       { x: 3, y: 3, width: 4, height: 4 },
     ], 0);
     assert.equal(m.length, 36);
-    // (5,5) reachable only through the second rect, clamped inside.
     assert.equal(m[5 * 6 + 5], 1);
-    // (0,0) from first rect only.
     assert.equal(m[0], 1);
   });
 
@@ -129,16 +119,11 @@ describe('rectsToTextMask', () => {
 
   test('fractional rects floor/ceil to cover the whole span', () => {
     const m = rectsToTextMask(5, 5, [{ x: 0.2, y: 0.8, width: 1.4, height: 1.3 }], 0);
-    // floor(0.2)=0 .. ceil(0.2+1.4)=2 -> x in {0,1}; y floor(0.8)=0..ceil(2.1)=3 -> {0,1,2}
     const covered = [];
     for (let y = 0; y < 5; y++) for (let x = 0; x < 5; x++) if (m[y * 5 + x]) covered.push(`${x},${y}`);
     assert.deepEqual(covered, ['0,0', '1,0', '0,1', '1,1', '0,2', '1,2']);
   });
 });
-
-// ---------------------------------------------------------------------------
-// delta
-// ---------------------------------------------------------------------------
 
 describe('delta', () => {
   test('is the absolute difference', () => {
@@ -152,10 +137,6 @@ describe('delta', () => {
     assert.ok(Math.abs(delta(0.1, 0.3) - 0.2) < 1e-9);
   });
 });
-
-// ---------------------------------------------------------------------------
-// compareLayers
-// ---------------------------------------------------------------------------
 
 describe('compareLayers', () => {
   test('identical harvests produce zero deltas and no mismatches', () => {
@@ -193,7 +174,7 @@ describe('compareLayers', () => {
     assert.deepEqual(r.measureText.deltas, [1, 4, 0]);
     assert.equal(r.measureText.meanDelta, 5 / 3);
     assert.equal(r.measureText.maxDelta, 4);
-    assert.equal(r.measureText.exceeds, true); // 4 > maxPx 0.5
+    assert.equal(r.measureText.exceeds, true);
   });
 
   test('a measureText delta beyond maxPx sets exceeds', () => {
@@ -244,7 +225,7 @@ describe('compareLayers', () => {
     assert.equal(r.rect.boxes, 2);
     assert.equal(r.rect.dims, 8);
     assert.equal(r.rect.maxDelta, 0.75);
-    assert.equal(r.rect.exceeds, true); // 0.75 > 0.5
+    assert.equal(r.rect.exceeds, true);
   });
 
   test('rect exceeding tolerance flag respects the layer-3 maxPx', () => {
@@ -291,10 +272,6 @@ describe('compareLayers', () => {
     assert.equal(r.rect.exceeds, false);
   });
 });
-
-// ---------------------------------------------------------------------------
-// validateFixtures
-// ---------------------------------------------------------------------------
 
 describe('validateFixtures', () => {
   test('a valid fixture reports no problems', () => {
@@ -359,10 +336,6 @@ describe('validateFixtures', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Seam font-resolution authority (browser-canvas-support)
-// ---------------------------------------------------------------------------
-//
 // One font-resolution authority: Pretext's measurement context and the engine's
 // measureTextWidth must resolve a CSS family through the active browser-config
 // (resolveFontFamily) identically, so the seam measures the same per-browser
@@ -374,7 +347,6 @@ describe('seam font-resolution authority', () => {
 
   const resolvedOf = (config, family) => resolveFontFamily(config, family);
 
-  /** Seam line widths for a family under a config, at a fixed wrap width. */
   const seamWidths = (config, family, text = SEAM_TEXT, maxWidth = 300, fontSize = 16) => {
     setActiveBrowserConfig(config);
     for (const reg of config.fonts) skiaCanvasFactory.registerFont(reg.filePath);
@@ -399,7 +371,6 @@ describe('seam font-resolution authority', () => {
   test('the safari config resolves the fallback-table families to registered faces', () => {
     assert.equal(resolvedOf(safariConfig, 'Courier New'), 'Liberation Mono');
     assert.equal(resolvedOf(safariConfig, 'serif'), 'Liberation Serif');
-    // monospace maps to a registered face (Hack Nerd Font when installed).
     const mono = resolvedOf(safariConfig, 'monospace');
     assert.ok(safariConfig.fonts.some((f) => f.family === mono), `monospace resolves to registered face '${mono}'`);
   });
@@ -416,7 +387,6 @@ describe('seam font-resolution authority', () => {
     setActiveBrowserConfig(safariConfig);
     assert.equal(resolveFontFamilyInShorthand("16px 'monospace'"), `16px '${resolvedOf(safariConfig, 'monospace')}'`);
     assert.equal(resolveFontFamilyInShorthand('16px serif'), "16px 'Liberation Serif'");
-    // A registered family passes through unchanged.
     assert.equal(resolveFontFamilyInShorthand("16px 'Noto Sans'"), "16px 'Noto Sans'");
   });
 
@@ -446,10 +416,6 @@ describe('seam font-resolution authority', () => {
     assert.ok(names.includes('safari-serif-generic'), 'safari-track generic serif fixture');
   });
 });
-
-// ---------------------------------------------------------------------------
-// Integration: the real probe fixtures must be valid and self-consistent.
-// ---------------------------------------------------------------------------
 
 describe('probe fixtures integration', () => {
   // The exact fixture set the probe runs lives in the lib, so the suite can

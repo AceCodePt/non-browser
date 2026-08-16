@@ -26,23 +26,19 @@ import { setActiveBrowserConfig, type BrowserConfig } from '../config/browser-co
 
 export interface ComputedStyleSpec {
   id: string;
-  /** pseudo-element to read the style from (e.g. 'before' → getComputedStyle(el, '::before')). */
   pseudo?: 'before' | 'after';
   props: string[];
 }
 
-/** Media-feature inputs beyond the viewport dimensions (media-queries phase). */
 export interface MediaInput {
   prefersColorScheme?: 'light' | 'dark';
   prefersReducedMotion?: 'no-preference' | 'reduce';
-  /** device resolution in dppx; default 1. */
   dppx?: number;
 }
 
 export interface RenderOptions {
   width: number;
   height: number;
-  /** CSS family name for measurement (e.g. 'Noto Sans'). */
   fontFamily: string;
   /** Path to the TTF that both the engine and the Chrome oracle resolve to. */
   fontFile: string;
@@ -55,26 +51,16 @@ export interface RenderOptions {
   browserConfig?: BrowserConfig;
   fontSize?: number;
   lineHeight?: number;
-  /** Canvas implementation; defaults to skia. */
   canvasFactory?: CanvasFactory;
-  /** When set, resolve these computed-style properties per id (layer 2). */
   computedStyle?: ComputedStyleSpec[];
-  /** When set, report absolute line-box rects for these ids (line fragments). */
   textElements?: string[];
-  /** Media-feature inputs for @media evaluation (defaults: light, no-preference, 1x). */
   media?: MediaInput;
 }
 
 export interface RenderHtmlOutput extends RenderOutput {
-  /** computed-style strings per id (present when opts.computedStyle is set). */
   computedStyles: Record<string, ComputedStyleProps>;
 }
 
-/**
- * Render an HTML document. Returns the painted pixel buffer, the
- * getBoundingClientRect values for every element that carries an `id`, and the
- * requested computed styles.
- */
 export function renderHtml(html: string, opts: RenderOptions): RenderHtmlOutput {
   const doc = parse(html);
   const htmlEl = (doc as unknown as { childNodes: DefaultTreeAdapterTypes.ChildNode[] }).childNodes.find(
@@ -159,7 +145,6 @@ export function renderHtml(html: string, opts: RenderOptions): RenderHtmlOutput 
   return { ...out, computedStyles };
 }
 
-/** Collect every `<style>` element in the document (head and body). */
 function collectStyleElements(node: unknown, out: P5Element[]): void {
   const children = (node as { childNodes?: DefaultTreeAdapterTypes.ChildNode[] }).childNodes;
   if (!children) return;

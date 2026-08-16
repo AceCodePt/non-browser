@@ -11,7 +11,6 @@ function gaussBlur(rgba, w, h, sigma) {
   const src = new Float32Array(rgba);
   const tmp = new Float32Array(w * h * 4);
   const out = new Float32Array(w * h * 4);
-  // kernel radius
   const r = Math.max(1, Math.ceil(sigma * 3));
   const weights = [];
   let sum = 0;
@@ -20,7 +19,6 @@ function gaussBlur(rgba, w, h, sigma) {
     weights.push(wgt); sum += wgt;
   }
   for (let i = 0; i < weights.length; i++) weights[i] /= sum;
-  // horizontal
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       let ar = 0, ag = 0, ab = 0, aa = 0;
@@ -35,7 +33,6 @@ function gaussBlur(rgba, w, h, sigma) {
       tmp[o] = ar; tmp[o + 1] = ag; tmp[o + 2] = ab; tmp[o + 3] = aa;
     }
   }
-  // vertical
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       let ar = 0, ag = 0, ab = 0, aa = 0;
@@ -59,13 +56,11 @@ function makeShadow(sigma, opts) {
   const ctx = cv.getContext('2d');
   ctx.clearRect(0, 0, W, H);
   if (inset) {
-    // inset shadow: fill border box, punch out inner rect
     const sx = x + offsetX + spread, sy = y + offsetY + spread;
     const sw = w - 2 * spread, sh = h - 2 * spread;
     ctx.fillStyle = color;
     ctx.fillRect(0, 0, W, H);
     ctx.clearRect(sx, sy, sw, sh);
-    // clip to border box
     const img = ctx.getImageData(0, 0, W, H);
     for (let yy = 0; yy < H; yy++) for (let xx = 0; xx < W; xx++) {
       if (xx < x || xx >= x + w || yy < y || yy >= y + h) img.data[(yy * W + xx) * 4 + 3] = 0;
@@ -81,7 +76,6 @@ function makeShadow(sigma, opts) {
   return blurred;
 }
 
-// composite rgba over white
 function overWhite(buf) {
   const out = Buffer.alloc(buf.length);
   for (let i = 0; i < buf.length / 4; i++) {
@@ -133,7 +127,6 @@ try {
     await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = shot; });
     cctx.drawImage(img, 0, 0);
     const ref = cctx.getImageData(0, 0, W, H).data;
-    // shadow params from the CSS string
     const inset = c.shadow.startsWith('inset');
     const parts = c.shadow.replace('inset', '').trim().split(/\s+/);
     const offX = parseFloat(parts[0]), offY = parseFloat(parts[1]);
@@ -141,14 +134,12 @@ try {
     const spread = parts[3] ? parseFloat(parts[3]) : 0;
     const color = parts[parts.length - 1];
     console.log(`\n== ${c.name} (off ${offX},${offY} blur ${blur} spread ${spread} ${inset ? 'inset' : ''}) ==`);
-    // isolate shadow: also render without shadow
     await page.setContent(html('0px 0px 0px 0px transparent'));
     const shot2 = await page.screenshot();
     const img2 = new (await import('@napi-rs/canvas')).Image();
     await new Promise((res, rej) => { img2.onload = res; img2.onerror = rej; img2.src = shot2; });
     cctx.drawImage(img2, 0, 0);
     const noShadow = cctx.getImageData(0, 0, W, H).data;
-    // difference = shadow contribution (approx: subtract box color where covered)
     for (const sigma of [blur / 4, blur / 3, blur / 2, blur * 0.6, blur * 0.75, blur, blur * 1.25, blur * 1.5, blur * 2]) {
       if (sigma === 0) continue;
       const shadowRgba = makeShadow(sigma, { x: 50, y: 50, w: 100, h: 100, offsetX: offX, offsetY: offY, spread, color, inset });

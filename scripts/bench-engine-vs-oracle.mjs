@@ -64,7 +64,6 @@ const renderOpts = (raw) => {
   };
 };
 
-// --- engine: cold (first call) and warm (mean over N after one warmup) ---
 const engineMs = {};
 for (const { name, raw } of fixtureList) {
   const opts = renderOpts(raw);
@@ -82,7 +81,6 @@ for (const { name, raw } of fixtureList) {
   console.log(`engine ${name}: cold ${engineMs[name].cold.toFixed(1)}ms warm ${engineMs[name].warm.toFixed(1)}ms`);
 }
 
-// --- Chrome render to first-contentful-paint, in-page ---
 async function measureChromeRender(browser, raw) {
   const h = raw.harvest;
   const page = await browser.newPage({ viewport: { width: h.viewport.width, height: h.viewport.height } });
@@ -157,7 +155,6 @@ async function oraclePerQuantity(page, h) {
   return shot;
 }
 
-// --- oracle harness, every quantity in one evaluate per fixture ---
 async function oracleBatched(page, h) {
   await page.evaluate((h) => {
     const rects = {};
@@ -204,7 +201,6 @@ async function measureHarness(browser, raw, oracleFn) {
   return now() - t0;
 }
 
-// --- cold run: fresh browser process per fixture, single-shot ---
 const cold = { chrome: {}, harnessPq: {}, harnessBatch: {}, launchMs: [] };
 for (const { name, raw } of fixtureList) {
   {
@@ -230,7 +226,6 @@ for (const { name, raw } of fixtureList) {
 }
 cold.launch = mean(cold.launchMs);
 
-// --- warm run: one pre-launched, warmed browser; means over N ---
 const warm = { chrome: {}, harnessPq: {}, harnessBatch: {} };
 const browser = await chromium.launch();
 try {
@@ -253,7 +248,6 @@ try {
   await browser.close();
 }
 
-// --- aggregate + ratios ---
 function aggregate(set) {
   const sum = (k) => fixtureList.reduce((a, f) => a + set[k][f.name], 0);
   return {
@@ -316,7 +310,6 @@ const harnessOverheadShareWarmPct = 100 - (warmAgg.chrome / warmAgg.harnessPq) *
 const rtShareWarmPct = ((warmAgg.harnessPq - warmAgg.harnessBatch) / warmAgg.harnessPq) * 100;
 const coldHarnessVsWarm = (coldAgg.harnessPq / warmAgg.harnessPq).toFixed(2);
 
-// warm per-fixture engine:CRO range and the speedup multiple range it implies
 const warmRatio = (n) => engineMs[n].warm / warm.chrome[n];
 const warmSpeedups = fixtureList.map((f) => warm.chrome[f.name] / engineMs[f.name].warm);
 const warmRatioMin = Math.min(...fixtureList.map((f) => warmRatio(f.name)));

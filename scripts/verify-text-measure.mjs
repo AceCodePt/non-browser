@@ -33,7 +33,6 @@ import { gapLayers, expectedLabel } from './lib/expected.mjs';
 const corpus = resolve('corpus/measure-corpus');
 const ledgerPath = resolve('docs/ledgers/text-measure.md');
 
-/** Round to 4 significant-ish digits for display. */
 const fmt = (n) => (Number.isFinite(n) ? n.toFixed(4) : 'n/a');
 
 function* fixtures() {
@@ -49,7 +48,6 @@ function* fixtures() {
   }
 }
 
-// --- register the corpus font set into the engine's Canvas interface ---
 const registeredFamilies = new Set();
 for (const { name, raw } of fixtures()) {
   for (const f of raw.fonts ?? []) {
@@ -88,7 +86,6 @@ async function chromeMeasure(text, font, letterSpacing) {
   );
 }
 
-/** Engine candidate width: the Canvas interface's measureText, plus ls×len. */
 function engineMeasure(text, font, letterSpacing) {
   const base = canvas.measureText(text, font).width;
   return base + (letterSpacing ?? 0) * text.length;
@@ -102,8 +99,8 @@ const esc = (s) => (controlRe.test(s) ? JSON.stringify(s) : s);
 
 let allPass = true;
 const failures = [];
-const categoryRows = []; // { name, note, expected, strings, meanDelta, maxDelta, checkPass }
-const stringRows = []; // { category, text, font, letterSpacing, engine, chrome, delta, pass, reason }
+const categoryRows = [];
+const stringRows = [];
 let worstDelta = 0;
 let totalStrings = 0;
 
@@ -193,7 +190,6 @@ try {
   await browser.close();
 }
 
-// --- summary ---
 const passStrings = stringRows.filter((r) => r.expected !== 'fail' && r.pass).length;
 const passExpected = stringRows.filter((r) => r.expected !== 'fail').length;
 const passRows = stringRows.filter((r) => r.expected !== 'fail');
@@ -203,7 +199,6 @@ const passWorstDelta = passRows.length > 0 ? Math.max(...passRows.map((r) => r.d
 const passRate = passExpected > 0 ? passStrings / passExpected : 1;
 const failingFonts = new Set(stringRows.filter((r) => !r.pass).map((r) => r.font.replace(/^.*?([\d.]+)px\s*/, '')).map((f) => f.replace(/['"]/g, '')));
 
-// --- ledger ---
 const md = [];
 md.push('# Text-Measure Ledger');
 md.push('');

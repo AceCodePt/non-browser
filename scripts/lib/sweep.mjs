@@ -22,17 +22,14 @@ export const GRID_AXES = {
   gap: ['0', '4px', '8px', '12px'],
 };
 
-/** Deterministic fixture name for a flex combo. */
 export function flexComboLabel(wrap, jc, ai) {
   return `flex-${wrap}-${jc}-${ai}`;
 }
 
-/** Deterministic fixture name for a grid combo. */
 export function gridComboLabel(template, gap) {
   return `grid-${gap.replace(/[^0-9a-z]/gi, '') || '0'}-${template.replace(/[^0-9a-z]/gi, '')}`;
 }
 
-/** HTML for one flex sweep fixture. */
 export function flexHtml(wrap, jc, ai) {
   return (
     `<html><head><style>html,body{margin:0;padding:0}</style></head><body>` +
@@ -45,7 +42,6 @@ export function flexHtml(wrap, jc, ai) {
   );
 }
 
-/** HTML for one grid sweep fixture. */
 export function gridHtml(template, gap) {
   return (
     `<html><head><style>html,body{margin:0;padding:0}</style></head><body>` +
@@ -60,7 +56,6 @@ export function gridHtml(template, gap) {
   );
 }
 
-/** The full cartesian product: { feature, label, dirName, viewport, html, rects }. */
 export function sweepCombos() {
   const combos = [];
   for (const wrap of FLEX_AXES['flex-wrap']) {

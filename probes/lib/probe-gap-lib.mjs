@@ -7,7 +7,6 @@
 
 export const MASK_PAD = 2;
 
-/** Build a text-region mask (1 = text pixel) from fragment rects, padded. */
 export function rectsToTextMask(width, height, rects, pad = MASK_PAD) {
   const mask = new Uint8Array(width * height);
   for (const r of rects ?? []) {
@@ -209,7 +208,6 @@ export const FIXTURES = [
 export function compareLayers(chrome, firefox, fixture) {
   const tol = fixture.tolerances?.layers ?? null;
 
-  // Layer 1: measureText.
   const mKeys = Object.keys(chrome.measureText ?? {});
   const mDeltas = mKeys.map((k) => delta(chrome.measureText?.[k] ?? NaN, firefox.measureText?.[k] ?? NaN));
   const mMean = mDeltas.length ? mDeltas.reduce((s, d) => s + d, 0) / mDeltas.length : 0;
@@ -222,7 +220,6 @@ export function compareLayers(chrome, firefox, fixture) {
     exceeds: tol ? mMax > tol.measureText.maxPx : false,
   };
 
-  // Layer 2: computedStyle.
   let styleMismatch = 0;
   let styleCount = 0;
   const styleMismatches = [];
@@ -239,7 +236,6 @@ export function compareLayers(chrome, firefox, fixture) {
   }
   const computedStyle = { count: styleCount, mismatches: styleMismatch, details: styleMismatches };
 
-  // Layer 3: rect.
   const ids = new Set([...Object.keys(chrome.rects ?? {}), ...Object.keys(firefox.rects ?? {})]);
   let rectDim = 0;
   let rectBoxes = 0;
@@ -265,7 +261,6 @@ export function compareLayers(chrome, firefox, fixture) {
     details: rectDetails,
   };
 
-  // Layer 3.5: line fragments per text element.
   const lineFragments = [];
   for (const id of Object.keys(chrome.textsById ?? {})) {
     const cw = chrome.widthsById?.[id] ?? [];
@@ -285,10 +280,6 @@ export function compareLayers(chrome, firefox, fixture) {
   return { measureText, computedStyle, rect, lineFragments };
 }
 
-/**
- * Validate every fixture's shape and that referenced ids exist in its HTML.
- * Returns an array of `{ fixture, problems }`; problems is empty when valid.
- */
 export function validateFixtures(fixtures) {
   const problems = [];
   for (const f of fixtures) {
@@ -309,7 +300,6 @@ export function validateFixtures(fixtures) {
     }
     if (!Array.isArray(f.rects)) bad.push('rects not an array');
     if (!Array.isArray(f.textElements)) bad.push('textElements not an array');
-    // Ids referenced by computedStyle/rects/textElements must appear in the HTML.
     const csIds = Array.isArray(f.computedStyle) ? f.computedStyle.map((c) => c.id) : [];
     for (const id of csIds) {
       if (id && !f.html.includes(`id="${id}"`)) bad.push(`computedStyle id "${id}" not present in html`);
