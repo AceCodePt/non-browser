@@ -137,22 +137,33 @@ export function parseFontShorthand(font: string): { prefix: string; sizeToken: s
   return { prefix, sizeToken, family };
 }
 
+export interface FallbackRun {
+  /** Contiguous same-face segment; kerning and script joining survive within it. */
+  text: string;
+  /** Full CSS font shorthand the segment measures and paints with. */
+  font: string;
+}
+
 /**
- * Measure `text` with Chrome's per-glyph script-run fallback, returning the
- * summed advance in px, or `null` when the whole string stays in the single
- * primary face (so the caller's plain single-face measurement stands — the
- * shim is a no-op whenever one registered face covers the whole run).
+ * Resolve `text` into Chrome's per-glyph script-run fallback segments, or
+ * `null` when the whole string stays in the single primary face (so callers'
+ * plain single-face path stands — run-splitting is a no-op whenever one
+ * registered face covers the whole run).
  *
- * `measure` measures a text run against a CSS font shorthand; `hasFamily`
- * reports whether a family is measurable through the current canvas.
+ * This is the one run-resolution authority: the measurement shim
+ * (`measureTextWithFallback`) and the paint path (`SkiaCanvas.drawText`) both
+ * resolve runs here, so a string's per-run faces and their accumulated advances
+ * are identical at measure and paint time.
+ *
+ * `hasFamily` reports whether a family is measurable through the current
+ * canvas.
  */
-export function measureTextWithFallback(
+export function resolveFallbackRuns(
   text: string,
   font: string,
   config: BrowserConfig,
-  measure: (text: string, font: string) => number,
   hasFamily: (family: string) => boolean,
-): number | null {
+): FallbackRun[] | null {
   if (text === '') return null;
   const parsed = parseFontShorthand(font);
   if (!parsed) return null;
@@ -217,14 +228,34 @@ export function measureTextWithFallback(
     segmentFonts.push(curFont);
   }
 
-  // The shim is a no-op only when every cluster stayed in the primary face
-  // (a single covered script run — the common Latin/CJK/RTL/Thai cases). A
-  // single-cluster text whose face changed (e.g. one missing Han glyph on a
+  // Run-splitting is a no-op only when every cluster stayed in the primary
+  // face (a single covered script run — the common Latin/CJK/RTL/Thai cases).
+  // A single-cluster text whose face changed (e.g. one missing Han glyph on a
   // Latin primary, measured through Pretext's per-grapheme seam) must still
-  // return the fallback face's advance.
+  // resolve to the fallback face's run.
   if (segmentFonts.every((f) => f === fontFor(active))) return null;
 
+  return segments.map((s, i) => ({ text: s, font: segmentFonts[i] }));
+}
+
+/**
+ * Measure `text` with Chrome's per-glyph script-run fallback, returning the
+ * summed advance in px, or `null` when the whole string stays in the single
+ * primary face (so the caller's plain single-face measurement stands).
+ *
+ * `measure` measures a text run against a CSS font shorthand; `hasFamily`
+ * reports whether a family is measurable through the current canvas.
+ */
+export function measureTextWithFallback(
+  text: string,
+  font: string,
+  config: BrowserConfig,
+  measure: (text: string, font: string) => number,
+  hasFamily: (family: string) => boolean,
+): number | null {
+  const runs = resolveFallbackRuns(text, font, config, hasFamily);
+  if (runs === null) return null;
   let width = 0;
-  for (let i = 0; i < segments.length; i++) width += measure(segments[i], segmentFonts[i]);
+  for (const run of runs) width += measure(run.text, run.font);
   return width;
 }

@@ -9,7 +9,7 @@
 import { createCanvas, GlobalFonts, type Canvas as NapiCanvas, type SKRSContext2D } from '@napi-rs/canvas';
 import type { CanvasColor, CanvasFactory, CanvasLike, CanvasTextMetrics } from './interface.js';
 import { getActiveBrowserConfig } from '../config/browser-config.js';
-import { measureTextWithFallback } from './script-fallback.js';
+import { measureTextWithFallback, resolveFallbackRuns } from './script-fallback.js';
 import { measureTextWithTabs } from './tabs.js';
 
 function cssColor(c: CanvasColor): string {
@@ -68,9 +68,29 @@ export class SkiaCanvas implements CanvasLike {
   }
 
   drawText(text: string, x: number, baselineY: number, font: string, color: CanvasColor): void {
-    this.ctx.font = font;
+    const config = getActiveBrowserConfig();
+    const hasFamily = (family: string): boolean => GlobalFonts.has(family);
+    // Paint the same per-run faces the measurement shim resolves, each run at
+    // its accumulated advance, so painted glyphs match the measured width (and
+    // Chrome's per-glyph fallback) instead of one face painting the whole
+    // mixed-script string.
+    const runs = resolveFallbackRuns(text, font, config, hasFamily);
     this.ctx.fillStyle = cssColor(color);
-    this.ctx.fillText(text, x, baselineY);
+    if (runs === null) {
+      this.ctx.font = font;
+      this.ctx.fillText(text, x, baselineY);
+      return;
+    }
+    const measure = (t: string, f: string): number => {
+      if (f !== this.ctx.font) this.ctx.font = f;
+      return this.ctx.measureText(t).width;
+    };
+    let advance = 0;
+    for (const run of runs) {
+      this.ctx.font = run.font;
+      this.ctx.fillText(run.text, x + advance, baselineY);
+      advance += measure(run.text, run.font);
+    }
   }
 
   beginPath(): void {

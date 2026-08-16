@@ -1,0 +1,116 @@
+{
+  "measureText": {
+    "16px 'Noto Sans' | abc 中文 😀 def": 115.31999969482422,
+    "16px 'Noto Sans' | hello 世界": 73.0099983215332,
+    "16px 'Noto Sans' | abc 中文 def": 91.19000053405762,
+    "16px 'Droid Arabic Kufi' | مرحبا! هل أنت بخير؟": 136.17999839782715,
+    "16px 'Droid Sans Fallback' | 中文 English 中文": 121.2699966430664
+  },
+  "computedStyle": {},
+  "rect": {
+    "m1": {
+      "x": 0,
+      "y": 0,
+      "width": 460,
+      "height": 24
+    },
+    "m2": {
+      "x": 0,
+      "y": 24,
+      "width": 460,
+      "height": 24
+    }
+  },
+  "paintRuns": {
+    "16px 'Noto Sans' | abc 中文 😀 def": [
+      {
+        "text": "abc ",
+        "font": "16px 'Noto Sans'",
+        "x": 0
+      },
+      {
+        "text": "中文",
+        "font": "16px 'Droid Sans Fallback'",
+        "x": 30.65999984741211
+      },
+      {
+        "text": " ",
+        "font": "16px 'Noto Sans'",
+        "x": 62.65999984741211
+      },
+      {
+        "text": "😀",
+        "font": "16px 'Noto Color Emoji'",
+        "x": 66.81999969482422
+      },
+      {
+        "text": " def",
+        "font": "16px 'Noto Sans'",
+        "x": 86.78999900817871
+      }
+    ],
+    "16px 'Noto Sans' | hello 世界": [
+      {
+        "text": "hello ",
+        "font": "16px 'Noto Sans'",
+        "x": 0
+      },
+      {
+        "text": "世界",
+        "font": "16px 'Droid Sans Fallback'",
+        "x": 41.0099983215332
+      }
+    ],
+    "16px 'Noto Sans' | abc 中文 def": [
+      {
+        "text": "abc ",
+        "font": "16px 'Noto Sans'",
+        "x": 0
+      },
+      {
+        "text": "中文",
+        "font": "16px 'Droid Sans Fallback'",
+        "x": 30.65999984741211
+      },
+      {
+        "text": " def",
+        "font": "16px 'Noto Sans'",
+        "x": 62.65999984741211
+      }
+    ],
+    "16px 'Droid Arabic Kufi' | مرحبا! هل أنت بخير؟": [
+      {
+        "text": "مرحبا",
+        "font": "16px 'Droid Arabic Kufi'",
+        "x": 0
+      },
+      {
+        "text": "!",
+        "font": "16px 'Liberation Serif'",
+        "x": 34.720001220703125
+      },
+      {
+        "text": " هل أنت بخير؟",
+        "font": "16px 'Droid Arabic Kufi'",
+        "x": 40.05000114440918
+      }
+    ],
+    "16px 'Droid Sans Fallback' | 中文 English 中文": [
+      {
+        "text": "中文 ",
+        "font": "16px 'Droid Sans Fallback'",
+        "x": 0
+      },
+      {
+        "text": "English",
+        "font": "16px 'Liberation Serif'",
+        "x": 36.189998626708984
+      },
+      {
+        "text": " 中文",
+        "font": "16px 'Droid Sans Fallback'",
+        "x": 85.07999801635742
+      }
+    ]
+  }
+}
