@@ -48,7 +48,6 @@ function* fixtures() {
   }
 }
 
-/** Text-region mask from Chrome's text fragment rects (tiered tolerance). */
 function textRegionMask(width, height, rects, refData, candData) {
   const mask = new Uint8Array(width * height);
   const isWhite = (d, o) => d[o] === 255 && d[o + 1] === 255 && d[o + 2] === 255;
@@ -67,7 +66,6 @@ function textRegionMask(width, height, rects, refData, candData) {
   return mask;
 }
 
-/** Merge one element's fragments into per-line boxes (same-y union). */
 function mergeLines(frags) {
   const groups = new Map();
   for (const f of frags) {
@@ -88,7 +86,6 @@ function mergeLines(frags) {
   return lines;
 }
 
-/** Diff engine vs Chrome per-line box unions (x, width within the rect tolerance). */
 function compareLines(chromeLines, engineLines, maxPx) {
   if (chromeLines.length !== engineLines.length) {
     return { pass: false, maxDelta: Number.POSITIVE_INFINITY, lines: Math.max(chromeLines.length, engineLines.length) };
@@ -192,7 +189,6 @@ try {
     // Chrome's ::marker text per li (ol numbering oracle).
     const chromeMarkerTexts = h.markerElements && h.markerElements.length > 0 ? await harvestMarkerTexts(client, h.markerElements) : {};
 
-    // Chrome line fragments (Range.getClientRects) per text element.
     const fragments = [];
     const fragmentsById = {};
     if (h.textElements && h.textElements.length > 0) {
@@ -239,11 +235,9 @@ try {
       }
     }
 
-    // --- masks ---
     const textMask = textRegionMask(width, height, fragments, refImg.data, candImg.data);
     const mask = new Uint8Array(width * height);
 
-    // --- persist golden data ---
     writeFileSync(
       join(dir, 'reference.json'),
       JSON.stringify(
@@ -270,7 +264,6 @@ try {
     if (mask.some((b) => b === 1)) writeMaskPng('mask.png', mask);
     if (textMask.some((b) => b === 1)) writeMaskPng('text-mask.png', textMask);
 
-    // --- four-layer evaluation ---
     const fixture = {
       name,
       note: raw.note,
@@ -297,7 +290,6 @@ try {
       failures.push(`fixture '${name}': four-layer check failed`);
     }
 
-    // --- ol marker numbering vs Chrome's ::marker text ---
     let markerPass = true;
     let markerDetail = 'no marker elements';
     const markerIds = h.markerElements ?? [];

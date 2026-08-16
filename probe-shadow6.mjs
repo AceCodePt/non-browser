@@ -22,8 +22,6 @@ async function chromePixels(shadow) {
 try {
   for (const blur of [0, 5, 10, 20, 30]) {
     const data = await chromePixels(`0px 0px ${blur}px 0px rgba(0,0,0,0.5)`);
-    // horizontal profile at y=110 (middle of box): box left edge at x=110
-    // shadow extends from x=110-blur to x=110
     const vals = [];
     for (let x = 110 - blur - 5; x <= 110 + 5; x++) {
       const o = (110 * W + x) * 4;

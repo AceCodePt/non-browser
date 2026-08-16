@@ -5,7 +5,6 @@ const W = 320, H = 200;
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: W, height: H } });
 
-// Chrome box-shadow profile
 async function boxShadowProfile(blur) {
   const html = `<!doctype html><style>html,body{margin:0;padding:0;width:${W}px;height:${H}px;background:#fff}</style>
   <body><div style="position:absolute;left:160px;top:30px;width:100px;height:140px;background:#336699;box-shadow:0px 0px ${blur}px 0px rgba(0,0,0,0.5)"></div></body>`;
@@ -25,7 +24,6 @@ async function boxShadowProfile(blur) {
   return out;
 }
 
-// Chrome canvas filter blur profile
 async function canvasFilterProfile(blur) {
   const html = `<!doctype html><style>html,body{margin:0;padding:0;background:#fff}</style>
   <body><canvas id="c" width="${W}" height="${H}"></canvas>
@@ -52,7 +50,6 @@ async function canvasFilterProfile(blur) {
   return out;
 }
 
-// @napi-rs/canvas filter blur profile
 function napiFilterProfile(blur) {
   const cvs = createCanvas(W, H);
   const ctx = cvs.getContext('2d');

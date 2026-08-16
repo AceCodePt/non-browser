@@ -122,7 +122,6 @@ export function renderMarkdown(report: Report): string {
   return lines.join('\n');
 }
 
-/** Write report.json + report.md under docs/reports/<timestamp>/; returns the directory. */
 export function writeReport(report: Report, baseDir = 'docs/reports'): string {
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
   const dir = join(baseDir, stamp);

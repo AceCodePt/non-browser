@@ -65,42 +65,23 @@ export function measureTextWidth(text: string, fontSize: number, family: string,
 }
 
 export interface LineBox {
-  /** x of the line box content start (absolute). */
   x: number;
-  /** y of the line box top (absolute). */
   y: number;
-  /** used (painted) width of the line. */
   width: number;
-  /** line box height (= line-height). */
   height: number;
-  /** the text laid out on this line. */
   text: string;
-  /** the word indices on this line. */
   startWord: number;
   endWord: number;
-  /** absolute baseline y of the line (inline layout sets it; plain text layout leaves it unset). */
   baseline?: number;
-  /**
-   * Optional per-run style overrides (inline layout with styled inline boxes).
-   * When absent, the caller's op-level text style applies.
-   */
   fontSize?: number;
   family?: string;
   color?: Color;
   letterSpacing?: number;
-  /** per-run font-weight override (e.g. bold runs inside a paragraph). */
   fontWeight?: number;
-  /** per-run font-style override. */
   fontStyle?: 'normal' | 'italic';
-  /** per-run text-decoration lines (e.g. an underline on an inline <a>). */
   decorationLines?: import('./block-inline.js').TextDecorationPaint | null;
 }
 
-/**
- * Greedy word wrap. `words` must already be split on whitespace; the caller
- * controls collapsing. `availableWidth` is the width usable on the current
- * line (already reduced by float intrusion).
- */
 export function wrapWords(
   words: string[],
   fontSize: number,
@@ -158,11 +139,8 @@ export function layoutTextLines(opts: {
   fontSize: number;
   family: string;
   letterSpacing?: number;
-  /** horizontal text alignment (default left). */
   align?: TextAlign;
-  /** the element's used white-space (default normal). */
   whiteSpace?: WhiteSpaceValue;
-  /** returns the usable width for a line spanning [top, bottom). */
   available: (top: number, bottom: number) => { x: number; width: number };
 }): { lines: LineBox[]; height: number } {
   const { text, y, lineHeight, fontSize, family, available } = opts;
@@ -180,7 +158,6 @@ export function layoutTextLines(opts: {
     lines.push({ x: lineX, y: lineTop, width, height: lineHeight, text: lineText, startWord: 0, endWord: 1 });
   };
 
-  // --- pre: preserve every space; newlines are forced breaks; no wrapping ---
   if (ws === 'pre') {
     let segments = text.split('\n');
     if (segments[segments.length - 1] === '') segments.pop();
@@ -192,7 +169,6 @@ export function layoutTextLines(opts: {
     return { lines, height: lineTop - y };
   }
 
-  // --- normal / nowrap: collapse the whole text (newlines become spaces) ---
   if (ws === 'normal' || ws === 'nowrap') {
     const collapsed = text.replace(/[ \t\r\n\f]+/g, ' ').trim();
     if (collapsed === '') return { lines, height: 0 };
@@ -206,7 +182,6 @@ export function layoutTextLines(opts: {
     return { lines, height: lineTop - y };
   }
 
-  // --- pre-line: collapse spaces but preserve newlines as forced breaks ---
   if (ws === 'pre-line') {
     let segments = text.split('\n');
     if (segments[segments.length - 1] === '') segments.pop();
@@ -223,7 +198,6 @@ export function layoutTextLines(opts: {
     return { lines, height: lineTop - y };
   }
 
-  // --- pre-wrap: preserve spaces and newlines; wrap at spaces ---
   let segments = text.split('\n');
   if (segments[segments.length - 1] === '') segments.pop();
   for (const seg of segments) {
@@ -233,7 +207,6 @@ export function layoutTextLines(opts: {
       lineTop += lineHeight;
       continue;
     }
-    // Tokenize into words and preserved space runs.
     const tokens: { k: 'w' | 's'; text: string }[] = [];
     for (const m of seg.matchAll(/([^ ]+)|( +)/g)) {
       tokens.push(m[1] !== undefined ? { k: 'w', text: m[1] } : { k: 's', text: m[2] });
@@ -310,7 +283,6 @@ function fillWordLines(
     const res = wrapWords(words.slice(idx), fontSize, family, availWidth, letterSpacing);
     const n = res.count;
     if (n === 0) {
-      // A single word wider than the line: place it alone (overflow allowed).
       const w = words[idx];
       lines.push({ x: av.x, y: lineTop, width: measure(w), height: lineHeight, text: w, startWord: idx, endWord: idx + 1 });
       idx += 1;

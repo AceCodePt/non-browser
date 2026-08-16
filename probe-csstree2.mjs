@@ -1,6 +1,5 @@
 import * as csstree from 'css-tree';
 
-// 1. node types of at-rule preludes
 const ast = csstree.parse('@supports (display: flex) and not (color: red) { .a{} } @media screen and (min-width: 100px) { .b{} } @import url("x.css");');
 for (const n of ast.children.toArray()) {
   if (n.type === 'Atrule') {
@@ -11,7 +10,6 @@ for (const n of ast.children.toArray()) {
   }
 }
 
-// 2. lexer matchProperty for value validation
 const checks = [
   ['color', 'red'], ['color', 'this-is-bad'], ['color', '12px'],
   ['display', 'flex'], ['display', 'banana'], ['display', 'ruby'],

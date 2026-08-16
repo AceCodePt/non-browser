@@ -30,52 +30,42 @@ async function probe(name, html, ids) {
   console.log('text:', JSON.stringify(text));
 }
 
-// Two multiword columns shrinking: to check shrink weights (max-min)
 await probe('shrink-two-multi',
   `${H}<table style="width:150px;border-collapse:separate;border-spacing:0"><tr><td id="a" style="padding:0">longer text here</td><td id="b" style="padding:0">more words here too</td></tr></table></body></html>`,
   ['a','b']);
 
-// CSS table model anonymous boxes
 await probe('css-anon',
   `${H}<div id="t" style="display:table;border-collapse:separate;border-spacing:0"><div id="r1" style="display:table-row"><div id="c1" style="display:table-cell;padding:0">A</div></div><div id="stray" style="display:block">stray block</div><div id="r2" style="display:table-row"><div id="c2" style="display:table-cell;padding:0">B</div></div></div></body></html>`,
   ['t','r1','c1','stray','r2','c2']);
 
-// anonymous stray TEXT in css table
 await probe('css-anon-text',
   `${H}<div id="t" style="display:table;border-collapse:separate;border-spacing:0"><div id="r1" style="display:table-row"><div id="c1" style="display:table-cell;padding:0">A</div></div>straytext<div id="r2" style="display:table-row"><div id="c2" style="display:table-cell;padding:0">B</div></div></div></body></html>`,
   ['t','r1','c1','r2','c2']);
 
-// rowspan heights
 await probe('rowspan',
   `${H}<table style="border-collapse:separate;border-spacing:0"><tr><td id="a" style="padding:0" rowspan="2">A<br>B<br>C</td><td id="b" style="padding:0">B</td></tr><tr><td id="c" style="padding:0">C</td></tr></table></body></html>`,
   ['a','b','c']);
 
-// rowspan with tall single-row cell
 await probe('rowspan-tall',
   `${H}<table style="border-collapse:separate;border-spacing:0"><tr><td id="a" style="padding:0;height:90px" rowspan="2">A</td><td id="b" style="padding:0;height:10px">B</td></tr><tr><td id="c" style="padding:0;height:10px">C</td></tr></table></body></html>`,
   ['a','b','c']);
 
-// cell vertical-align middle: text position in tall cell
 await probe('valign-mid',
   `${H}<table style="border-collapse:separate;border-spacing:0"><tr style="height:60px"><td id="a" style="padding:0">text</td></tr></table></body></html>`,
   ['a']);
 
-// fixed width smaller than content
 await probe('fixed-less-content',
   `${H}<table style="width:200px;border-collapse:separate;border-spacing:0"><tr><td id="a" style="padding:0;width:20px">BBBB</td><td id="b" style="padding:0">C</td></tr></table></body></html>`,
   ['a','b']);
 
-// percentage + auto mix
 await probe('pct-mix',
   `${H}<table style="width:300px;border-collapse:separate;border-spacing:0"><tr><td id="a" style="padding:0;width:25%">A</td><td id="b" style="padding:0">BBBB</td></tr></table></body></html>`,
   ['a','b']);
 
-// narrow available width, table auto
 await probe('auto-narrow',
   `${H}<div style="width:100px"><table style="border-collapse:separate;border-spacing:0"><tr><td id="a" style="padding:0">longer text here</td></tr></table></div></body></html>`,
   ['a']);
 
-// block content in cell: nested div with width
 await probe('cell-block',
   `${H}<table style="border-collapse:separate;border-spacing:0"><tr><td id="a" style="padding:0"><div id="inner" style="width:120px">block</div></td><td id="b" style="padding:0">B</td></tr></table></body></html>`,
   ['a','inner','b']);

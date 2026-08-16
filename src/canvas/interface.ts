@@ -11,7 +11,7 @@ export interface CanvasColor {
   r: number;
   g: number;
   b: number;
-  a: number; // 0..1
+  a: number;
 }
 
 export interface CanvasTextMetrics {
@@ -30,10 +30,8 @@ export interface CanvasLike {
   readonly width: number;
   readonly height: number;
 
-  /** Measure a text run's advance for a CSS font shorthand string. */
   measureText(text: string, font: string): CanvasTextMetrics;
 
-  /** Fill an axis-aligned rectangle with a solid color. */
   fillRect(x: number, y: number, w: number, h: number, color: CanvasColor): void;
 
   /**
@@ -42,7 +40,6 @@ export interface CanvasLike {
    */
   drawText(text: string, x: number, baselineY: number, font: string, color: CanvasColor): void;
 
-  /** Shape path primitives (used for fill/stroke shape paint). */
   beginPath(): void;
   moveTo(x: number, y: number): void;
   lineTo(x: number, y: number): void;
@@ -62,21 +59,15 @@ export interface CanvasLike {
     endAngle: number,
     counterclockwise?: boolean,
   ): void;
-  /** Save the drawing state (clip region, style) onto the state stack. */
   save(): void;
-  /** Restore the drawing state pushed by the most recent `save()`. */
   restore(): void;
-  /** Clip to the current path; subsequent draws are masked to it. */
   clip(fillRule?: 'nonzero' | 'evenodd'): void;
-  /** Fill the current path; `fillRule` defaults to `nonzero`. */
   fillPath(color: CanvasColor, fillRule?: 'nonzero' | 'evenodd'): void;
   strokePath(color: CanvasColor, lineWidth: number): void;
 
-  /** Composite the surface to a PNG-encoded pixel buffer. */
   toBuffer(): Buffer;
 }
 
-/** Creates surfaces and registers fonts for one Canvas implementation. */
 export interface CanvasFactory {
   create(width: number, height: number): CanvasLike;
   /**

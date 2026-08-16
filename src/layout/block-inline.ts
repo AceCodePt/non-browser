@@ -33,7 +33,6 @@ export { layoutPositionedChild, initialContainingBlock } from './positioning.js'
 export interface StyleDefaults {
   fontFamily: string;
   fontSize: number;
-  /** line-height: a px value or `normal` (resolved per-font against the element's family). */
   lineHeight: number | 'normal';
   color: Color;
   letterSpacing: number;
@@ -41,35 +40,21 @@ export interface StyleDefaults {
   textDecorationColor: Color | null;
   textDecorationThickness: 'auto' | 'from-font' | { px: number };
   textUnderlineOffset: number;
-  /** inherited font-weight. */
   fontWeight?: number;
-  /** inherited font-style. */
   fontStyle?: 'normal' | 'italic';
-  /** inherited list-style-type. */
   listStyleType?: ListStyleType;
-  /** inherited list-style-position. */
   listStylePosition?: 'inside' | 'outside';
-  /** UA-level default padding (e.g. td/th get 1px). */
   padding?: import('./css.js').Length;
-  /** UA-level default vertical-align (e.g. table cells get 'middle'). */
   verticalAlign?: VerticalAlign;
-  /** UA-level default text-align (e.g. th gets 'center'); wins over inherited. */
   textAlign?: TextAlign;
-  /** inherited text-align (text-align inherits; used when no author value). */
   textAlignInherited?: TextAlign;
-  /** inherited computed text-align string (start/end/justify/... preserved verbatim). */
   textAlignComputedInherited?: string;
-  /** inherited white-space (white-space inherits; used when no author value). */
   whiteSpace?: WhiteSpaceValue;
-  /** UA-level default border-collapse (table gets 'separate'). */
   borderCollapse?: 'separate' | 'collapse';
-  /** UA-level default horizontal border-spacing (table gets 2px). */
   borderSpacing?: number;
-  /** UA-level default vertical border-spacing (table gets 2px). */
   borderSpacingV?: number;
 }
 
-/** Tags whose UA default display is inline (mini-UA: the full table is a later task). */
 const INLINE_TAGS = new Set([
   'a', 'abbr', 'b', 'bdi', 'bdo', 'br', 'button', 'cite', 'code', 'data', 'dfn', 'em', 'i', 'kbd',
   'label', 'mark', 'q', 'ruby', 's', 'samp', 'small', 'span', 'strong', 'sub', 'sup', 'time', 'u',
@@ -216,14 +201,6 @@ function applyReplacedSize(el: P5Element, style: ComputedStyle): void {
   }
 }
 
-/**
- * Resolve one pseudo-element (::before/::after) of an element into a
- * `PseudoBox`. The generated inline box inherits the element's font/color (its
- * computed style is built from the element's resolved inherited properties)
- * and honors author declarations targeting the pseudo. Returns null when no
- * rule targets the pseudo; `box.text` is null when the pseudo's content is
- * none/normal (no box generated).
- */
 function computePseudoBox(
   el: P5Element,
   style: ComputedStyle,
@@ -261,11 +238,9 @@ export interface LayoutNode {
   isFloat: boolean;
   marginTop: number;
   marginBottom: number;
-  /** border-box top before relative offsets are applied (flow position). */
   flowY: number;
   children: LayoutNode[];
   lines: LineBox[];
-  /** list marker to paint (disc/decimal/etc.) for a list-item element. */
   marker?: ListMarker;
 }
 
@@ -276,26 +251,16 @@ export interface LayoutNode {
  * `RelativeSymbolMarkerRect` in list_marker.cc. */
 export interface ListMarker {
   kind: 'disc' | 'circle' | 'square' | 'decimal';
-  /** decimal marker text (e.g. "3. ", Chrome includes the suffix space). */
   text?: string;
-  /**
-   * Marker box inline size: the symbol width for geometric markers
-   * (ascent-based, `WidthOfSymbol`) or the decimal text advance.
-   */
   size: number;
-  /** geometric markers: the shape's bounding-square side (Chrome's bullet width). */
   shapeSize?: number;
-  /** geometric markers: the shape's center (decimal markers only use `x`). */
   centerX?: number;
   centerY?: number;
-  /** decimal markers: the text's left edge (right-aligned to the li border box
-   * outside, left-aligned to the content box inside). */
   x?: number;
   position: 'inside' | 'outside';
   fontSize: number;
   family: string;
   color: Color;
-  /** decimal markers: the li's first-line baseline to align the counter text. */
   baseline?: number;
 }
 
@@ -303,7 +268,6 @@ export interface TextDecorationPaint {
   lines: DecorationLine[];
   color: Color;
   thickness: 'auto' | 'from-font' | { px: number };
-  /** text-underline-offset in px. */
   underlineOffset: number;
 }
 
@@ -316,13 +280,9 @@ export interface PaintOp {
   color?: Color;
   borderWidths?: Record<'top' | 'right' | 'bottom' | 'left', number>;
   borderColors?: Record<'top' | 'right' | 'bottom' | 'left', Color>;
-  /** per-side border styles (inset/outset lighten per-side colors at paint). */
   borderStyles?: Record<'top' | 'right' | 'bottom' | 'left', 'none' | 'solid' | 'inset' | 'outset'>;
-  /** list marker to paint (kind === 'marker'). */
   marker?: ListMarker;
-  /** rounded-corner radii for this box's background/border paint. */
   borderRadius?: BorderRadius;
-  /** rounded-rect clip from a rounded overflow:hidden ancestor (border box). */
   clip?: RoundedClip;
   text?: {
     runs: {
@@ -338,7 +298,6 @@ export interface PaintOp {
       letterSpacing?: number;
       fontWeight?: number;
       fontStyle?: 'normal' | 'italic';
-      /** per-run decoration; overrides the op-level decoration when set. */
       decorationLines?: TextDecorationPaint | null;
     }[];
     fontSize: number;
@@ -357,7 +316,6 @@ export interface RootLayout {
   paints: PaintOp[];
 }
 
-// ===== paint stacking + containing-block state =====
 // Layout is a single-threaded recursive descent, so module-level stacks are
 // safe and let grid/flexbox (which delegate children to layoutElementBox)
 // inherit the current context without threading parameters through them.
@@ -392,14 +350,12 @@ let clipStack: RoundedClip[] = [];
 let insideMarkerAdvance: number | null = null;
 let insideMarkerOwner: P5Element | null = null;
 
-/** Push a paint op, tagging it with the innermost active rounded clip. */
 function pushPaintOp(paints: PaintOp[], op: PaintOp): void {
   const clip = clipStack.length > 0 ? clipStack[clipStack.length - 1] : null;
   if (clip) op.clip = clip;
   paints.push(op);
 }
 
-/** The root containing block (the viewport); pending root abs/fixed boxes. */
 let icbEntry: ContainingBlock = { rect: { x: 0, y: 0, width: 0, height: 0 }, heightKnown: true, pending: [] };
 
 function paintLevelFor(style: ComputedStyle): number {
@@ -409,7 +365,6 @@ function paintLevelFor(style: ComputedStyle): number {
   return STEP_POSITIONED + z;
 }
 
-/** Key for in-flow/float/inline content at the current stacking position. */
 function inFlowPaintKey(step: number): number[] {
   return [...paintScPath, paintZAutoActive ? STEP_POSITIONED : step];
 }
@@ -453,7 +408,6 @@ export function layoutRoot(
   const style = styles.get(body)!;
   const viewportWidth = viewport.width;
 
-  // Reset per-render stacking/containing-block state.
   paintScPath = [];
   paintZAutoStack = [];
   paintZAutoActive = false;
@@ -571,7 +525,6 @@ export function layoutRoot(
   };
 }
 
-/** Does this element have direct inline content (text) rather than block children? */
 function hasInlineContent(el: P5Element, styles: Map<P5Element, ComputedStyle>): boolean {
   const self = styles.get(el);
   // Generated ::before/::after text counts as inline content (an empty string
@@ -589,7 +542,6 @@ function hasInlineContent(el: P5Element, styles: Map<P5Element, ComputedStyle>):
   return false;
 }
 
-/** Does this element have any block-level (or float/positioned) children? */
 function hasBlockLevelChild(el: P5Element, styles: Map<P5Element, ComputedStyle>): boolean {
   for (const child of el.childNodes) {
     if (child.nodeName === '#text' || child.nodeName === '#comment') continue;
@@ -623,7 +575,6 @@ interface LayoutBlockInput {
   fm: FloatManager;
   contentX: number;
   contentWidth: number;
-  /** content box top (absolute) — the current flow position. */
   y: number;
   prevBottomMargin: number;
   /**
@@ -634,7 +585,6 @@ interface LayoutBlockInput {
   collapseTop?: boolean;
 }
 
-/** Lay out an element's border box and inline/block content. */
 export function layoutElementBox(
   el: P5Element,
   style: ComputedStyle,
@@ -892,7 +842,6 @@ export function layoutElementBox(
   return node;
 }
 
-/** Lay out one in-flow block-level child of a formatting context. */
 function layoutBlock(
   el: P5Element,
   style: ComputedStyle,
@@ -980,7 +929,6 @@ function layoutBlock(
   return node;
 }
 
-/** Place and lay out one float child. */
 function layoutFloat(
   el: P5Element,
   style: ComputedStyle,
@@ -1008,7 +956,6 @@ function layoutFloat(
   if (specW !== null) {
     borderBoxWidth = style.boxSizing === 'border-box' ? specW : specW + padBorderH;
   } else {
-    // shrink-to-fit: min(max-content, max(min-content, available))
     const text = collectInlineText(el, styles).trim();
     const ls = style.letterSpacing;
     const fullWidth = measureTextWidth(text, style.fontSize, style.fontFamily, ls, style.fontWeight, style.fontStyle);
@@ -1263,7 +1210,6 @@ function layoutBlockChildren(
   return { nodes, height: y - ctx.y };
 }
 
-/** Build the text-decoration paint descriptor for a style (null when no lines). */
 function decorationPaint(style: ComputedStyle): TextDecorationPaint | null {
   if (style.textDecorationLines.length === 0) return null;
   return {
@@ -1430,9 +1376,6 @@ function pushBorders(
   return op;
 }
 
-// ===================================================================
-// Inline formatting context (line boxes with atomic inline-blocks)
-// ===================================================================
 //
 // A block's inline content is a sequence of text runs and atomic inline-level
 // boxes (display:inline-block). They share line boxes: text wraps at spaces,
@@ -1450,9 +1393,7 @@ interface TextRunStyle {
   color: Color;
   letterSpacing: number;
   lineHeight: number;
-  /** font-weight of the run (bold runs measure/paint with the bold face). */
   fontWeight: number;
-  /** font-style of the run. */
   fontStyle: 'normal' | 'italic';
 }
 
@@ -1464,7 +1405,6 @@ interface AtomicPiece {
   marginRight: number;
   marginTop: number;
   marginBottom: number;
-  /** border-box width (shrink-to-fit or specified). */
   borderWidth: number;
   contentWidth: number;
 }
@@ -1493,16 +1433,6 @@ function runStyleOf(style: ComputedStyle): TextRunStyle {
   };
 }
 
-/**
- * Split a text node's raw value into word/space/break pieces under the
- * element's used white-space:
- *   - normal/nowrap: runs of white space (incl. newlines) collapse to one
- *     space piece; no break pieces.
- *   - pre-line: runs of spaces/tabs collapse to one space piece, but newlines
- *     are preserved as break pieces.
- *   - pre/pre-wrap: every space is preserved (space pieces carry their exact
- *     run), newlines are preserved as break pieces.
- */
 function pushTextPieces(raw: string, style: TextRunStyle, owner: P5Element | null, out: InlinePiece[], ws: WhiteSpaceValue): void {
   let run = '';
   const flushWord = (): void => {
@@ -1573,15 +1503,10 @@ function pushTextPieces(raw: string, style: TextRunStyle, owner: P5Element | nul
   flushWord();
 }
 
-/** An element that participates in inline layout as a box (not flattened text). */
 function isInlineBoxStyle(s: ComputedStyle): boolean {
   return s.display === 'inline-block' && s.float === 'none' && s.position === 'static';
 }
 
-/**
- * Size an inline-block: specified width (per box-sizing) or shrink-to-fit
- * (min(max(min-content, available), max-content)), then clamp to min/max-width.
- */
 function atomicBoxSize(
   el: P5Element,
   style: ComputedStyle,
@@ -1614,7 +1539,6 @@ function atomicBoxSize(
   return { borderWidth, contentWidth: Math.max(0, borderWidth - padBorderH) };
 }
 
-/** min/max-content widths of a piece sequence (content-box, incl. spaces). */
 function piecesContentSizes(pieces: InlinePiece[], style: ComputedStyle, ws: WhiteSpaceValue): { min: number; max: number } {
   const preserve = ws === 'pre' || ws === 'pre-wrap';
   let min = 0;
@@ -1810,7 +1734,6 @@ function walkLine(pieces: InlinePiece[], style: ComputedStyle, stretch = 0, ws: 
 interface MeasuredAtomic {
   piece: AtomicPiece;
   borderHeight: number;
-  /** distance from the border-box top to the baseline; null = no inline baseline. */
   baselineOffset: number | null;
 }
 
@@ -1862,7 +1785,6 @@ function atomicBaselineOffset(node: LayoutNode, style: ComputedStyle): number | 
   return last.y + lineAscentContribution(fontSize, lineHeight, metrics) - node.borderY;
 }
 
-/** Lay out one block element's inline content (text + inline-blocks) into line boxes. */
 function layoutInlineContent(
   el: P5Element,
   style: ComputedStyle,
@@ -1916,7 +1838,6 @@ function layoutInlineContent(
 
   for (const seg of segments) {
     if (seg.length === 0) {
-      // An empty segment is an empty line box (same height as a content line).
       const av = fm.floatIntrusion(y, y + style.lineHeight);
       lines.push({
         x: contentX + av.left,
@@ -1937,7 +1858,6 @@ function layoutInlineContent(
       const lineX = contentX + av.left;
       const availWidth = Math.max(0, contentWidth - av.left - av.right);
 
-      // ---- fill the line (greedy, breaking at the last space opportunity) ----
       const onLine: InlinePiece[] = [];
       let lastBreak = -1;
       let lineHasContent = false;
@@ -1978,8 +1898,6 @@ function layoutInlineContent(
         if (onLine.length > 0 && onLine[onLine.length - 1].kind === 'space') onLine.pop();
       }
 
-      // ---- alignment (text-align): shift the line within its available width;
-      // justify stretches inter-word spaces so non-last lines fill the width ----
       const natural = walkLine(onLine, style, 0, ws);
       const isLastLine = i >= seg.length;
       const align = style.textAlign;
@@ -1997,11 +1915,9 @@ function layoutInlineContent(
       }
       const walked = stretch !== 0 ? walkLine(onLine, style, stretch, ws) : natural;
 
-      // ---- measure atomics: height + baseline ----
       const measured = new Map<AtomicPiece, MeasuredAtomic>();
       for (const a of walked.atomics) measured.set(a.piece, measureAtomic(a.piece, styles, paints, nextOrder, viewport));
 
-      // ---- line box from the strut (if glyphs/whitespace), runs, and baseline atomics ----
       const hasText = onLine.some((p) => p.kind === 'word' || p.kind === 'space');
       let maxAscent = 0;
       let maxDescent = 0;
@@ -2055,7 +1971,6 @@ function layoutInlineContent(
         lineHeight = style.lineHeight;
       }
 
-      // ---- place text runs and atomics ----
       for (const r of walked.runs) {
         // The run may start with the whitespace separating inline elements; that
         // space belongs to the line (an anonymous inline box), so a span's rect

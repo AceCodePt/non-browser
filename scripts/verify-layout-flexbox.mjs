@@ -30,7 +30,6 @@ import { renderHtml } from '../dist/layout/render.js';
 
 const FONT_FILE = process.env.FONT_FILE ?? '/usr/share/fonts/google-noto/NotoSans-Regular.ttf';
 const FONT_FAMILY = process.env.FONT_FAMILY ?? 'Noto Sans';
-/** px to expand text-fragment rects when building the screenshot mask. */
 const MASK_PAD = 2;
 
 const corpus = resolve('corpus/flexbox');
@@ -45,7 +44,6 @@ function* fixtures() {
   }
 }
 
-/** Build the exclusion mask (1 = excluded) from Chrome's text fragment rects. */
 function buildMask(width, height, fragments, pad) {
   const mask = new Uint8Array(width * height);
   for (const f of fragments) {
@@ -72,7 +70,6 @@ try {
     await page.setContent(h.html);
     await page.evaluate(() => document.fonts.ready);
 
-    // --- Chrome oracle quantities ---
     const referenceRects = {};
     for (const id of h.rects ?? []) {
       referenceRects[id] = await page.$eval(`#${id}`, (el) => {
@@ -118,7 +115,6 @@ try {
     const { width, height } = refImg;
     await page.close();
 
-    // --- engine candidate ---
     const out = renderHtml(h.html, {
       width: viewport.width,
       height: viewport.height,
@@ -141,7 +137,6 @@ try {
 
     const mask = buildMask(width, height, fragments, MASK_PAD);
 
-    // Persist the corpus golden data.
     writeFileSync(
       join(dir, 'reference.json'),
       JSON.stringify({ measureText: referenceMeasure, computedStyle: {}, rect: referenceRects }, null, 2) + '\n',

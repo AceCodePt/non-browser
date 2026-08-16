@@ -33,21 +33,16 @@ export interface MediaQuery {
   condition: MediaCondition;
 }
 
-/** The viewport input and the media-feature environment a query evaluates against. */
 export interface MediaEnvironment {
   width: number;
   height: number;
-  /** prefers-color-scheme; default 'light'. */
   prefersColorScheme?: 'light' | 'dark';
-  /** prefers-reduced-motion; default 'no-preference'. */
   prefersReducedMotion?: 'no-preference' | 'reduce';
-  /** device resolution in dppx; default 1. */
   dppx?: number;
 }
 
 export type Token = string;
 
-/** Tokenize a condition/prelude string into tokens (parens, ':', '/', ',', identifiers). */
 export function tokenize(input: string): Token[] {
   const tokens: Token[] = [];
   let i = 0;
@@ -71,7 +66,6 @@ export function tokenize(input: string): Token[] {
   return tokens;
 }
 
-/** Split a token list on a top-level separator token (paren depth 0). */
 export function splitTopLevel(tokens: Token[], sep: string): Token[][] {
   const out: Token[][] = [];
   let depth = 0;
@@ -90,7 +84,6 @@ export function splitTopLevel(tokens: Token[], sep: string): Token[][] {
   return out;
 }
 
-/** Does this token list contain an `and`/`or` at paren depth 0? */
 export function hasTopLevelOperator(tokens: Token[]): boolean {
   let depth = 0;
   for (const t of tokens) {
@@ -101,7 +94,6 @@ export function hasTopLevelOperator(tokens: Token[]): boolean {
   return false;
 }
 
-/** Are the outer tokens a balanced `( ... )` pair wrapping the whole list? */
 function balancedWrap(tokens: Token[]): boolean {
   if (tokens.length < 2 || tokens[0] !== '(' || tokens[tokens.length - 1] !== ')') return false;
   let depth = 0;
@@ -181,7 +173,6 @@ export function parseQuery(tokens: Token[]): MediaCondition | null {
   return parseOr(tokens);
 }
 
-/** Parse a full @media prelude (a comma-separated media query list). */
 export function parseMediaQueryList(input: string): MediaQuery[] | null {
   const tokens = tokenize(input);
   if (tokens.length === 0) return null;
@@ -250,7 +241,6 @@ function compareNum(current: number, target: number, op: MediaOp): boolean {
   }
 }
 
-/** Evaluate a single media feature against the environment. */
 export function evaluateFeature(cond: { name: string; op: MediaOp; value: string | null }, env: MediaEnvironment): boolean {
   const rawName = cond.name.toLowerCase();
   let base = rawName;
@@ -348,7 +338,6 @@ export function evaluateCondition(cond: MediaCondition, env: MediaEnvironment): 
   }
 }
 
-/** A media query list (one @media prelude) matches when any query matches. */
 export function evaluateMediaQueryList(queries: MediaQuery[], env: MediaEnvironment): boolean {
   return queries.some((q) => evaluateCondition(q.condition, env));
 }

@@ -14,7 +14,6 @@ const registry: Record<BrowserTarget, BrowserConfig> = {
   safari: safariConfig,
 };
 
-/** The browser-config for a target (chrome by default). */
 export function getBrowserConfig(target: BrowserTarget = 'chrome'): BrowserConfig {
   return registry[target];
 }

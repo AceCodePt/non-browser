@@ -41,7 +41,6 @@ function* fixtures() {
   }
 }
 
-/** Text-region mask from Chrome's text fragment rects (tiered tolerance). */
 function textRegionMask(width, height, rects, refData, candData) {
   const mask = new Uint8Array(width * height);
   const isWhite = (d, o) => d[o] === 255 && d[o + 1] === 255 && d[o + 2] === 255;
@@ -77,7 +76,6 @@ try {
     await page.setContent(h.html);
     await page.evaluate(() => document.fonts.ready);
 
-    // --- Chrome oracle quantities ---
     const referenceRects = {};
     for (const id of h.rects ?? []) {
       referenceRects[id] = await page.$eval(`#${id}`, (el) => {
@@ -165,7 +163,6 @@ try {
     const textMask = textRegionMask(width, height, fragments, refImg.data, candImg.data);
     const mask = new Uint8Array(width * height);
 
-    // Persist the corpus golden data.
     writeFileSync(
       join(dir, 'reference.json'),
       JSON.stringify(

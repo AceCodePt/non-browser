@@ -46,7 +46,6 @@ function* fixtures() {
   }
 }
 
-/** Harvest getComputedStyle for every spec on a live page. */
 async function harvestComputed(page, specs) {
   const out = {};
   for (const { id, props } of specs) {
@@ -184,7 +183,6 @@ try {
   await browser.close();
 }
 
-// --- report ---
 const stamp = new Date().toISOString().replace(/[:.]/g, '-');
 const reportDir = join('docs/reports/media-queries', stamp);
 mkdirSync(reportDir, { recursive: true });

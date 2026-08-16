@@ -30,19 +30,16 @@ function fail(msg) {
   process.exit(1);
 }
 
-// 1. Faces registered in the chrome browser-config.
 const registered = chromeConfig.fonts.map((f) => `${f.family} @ ${f.filePath}`);
 const hasThai = registered.some((r) => /thai/i.test(r));
 const hasEmoji = registered.some((r) => /emoji/i.test(r));
 if (!hasThai) fail(`no Thai-capable face registered; set: ${registered.join('; ')}`);
 if (!hasEmoji) fail(`no emoji-capable face registered; set: ${registered.join('; ')}`);
 
-// 2. No machine-specific hard-coded font paths.
 for (const f of chromeConfig.fonts) {
   if (f.filePath.includes('/home/')) fail(`hard-coded user path in registration: ${f.filePath}`);
 }
 
-// 3. Known-gaps fixture no longer carries the Thai/emoji entries.
 const fixturePath = resolve('corpus/measure-corpus/known-gaps/fixture.json');
 const fixture = JSON.parse(readFileSync(fixturePath, 'utf8')) || {};
 const entries = fixture.entries ?? [];

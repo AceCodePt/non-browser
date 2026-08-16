@@ -104,7 +104,6 @@ function mergeLines(frags) {
   return lines;
 }
 
-/** Diff engine vs Chrome per-line box unions (x, width within the rect tolerance). */
 function compareLines(chromeLines, engineLines, maxPx) {
   if (chromeLines.length !== engineLines.length) {
     return { pass: false, maxDelta: Number.POSITIVE_INFINITY, lines: Math.max(chromeLines.length, engineLines.length) };
@@ -133,7 +132,6 @@ try {
     await page.setContent(h.html);
     await page.evaluate(() => document.fonts.ready);
 
-    // --- Chrome oracle quantities ---
     const referenceRects = {};
     for (const id of h.rects ?? []) {
       referenceRects[id] = await page.$eval(`#${id}`, (el) => {
@@ -171,7 +169,6 @@ try {
       }
     }
 
-    // Chrome line fragments (Range.getClientRects) per text element.
     const fragments = [];
     const fragmentsById = {};
     if (h.textElements && h.textElements.length > 0) {
@@ -193,7 +190,6 @@ try {
     const { width, height } = refImg;
     await page.close();
 
-    // --- engine candidate ---
     const out = renderHtml(h.html, {
       width: viewport.width,
       height: viewport.height,
@@ -217,7 +213,6 @@ try {
       }
     }
 
-    // --- masks ---
     const textMask = textRegionMask(width, height, fragments, refImg.data, candImg.data);
     const mask = new Uint8Array(width * height);
     for (const r of h.maskRects ?? []) {
@@ -241,7 +236,6 @@ try {
       }
     }
 
-    // --- persist golden data ---
     writeFileSync(
       join(dir, 'reference.json'),
       JSON.stringify(
@@ -268,7 +262,6 @@ try {
     if (mask.some((b) => b === 1)) writeMaskPng('mask.png', mask);
     if (textMask.some((b) => b === 1)) writeMaskPng('text-mask.png', textMask);
 
-    // --- four-layer evaluation ---
     const fixture = {
       name,
       note: raw.note,

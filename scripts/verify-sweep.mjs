@@ -135,7 +135,6 @@ try {
   await browser.close();
 }
 
-// --- ledger: axes, per-fixture results, and every recorded divergence ---
 {
   const gaps = rows.filter((r) => r.gap);
   const md = [];

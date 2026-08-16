@@ -92,7 +92,6 @@ try {
     await page.setContent(h.html);
     await page.evaluate(() => document.fonts.ready);
 
-    // --- Chrome oracle quantities ---
     const referenceRects = {};
     for (const id of h.rects ?? []) {
       referenceRects[id] = await page.$eval(`#${id}`, (el) => {
@@ -164,7 +163,6 @@ try {
     const { width, height } = refImg;
     await page.close();
 
-    // --- engine candidate ---
     const out = renderHtml(h.html, {
       width: viewport.width,
       height: viewport.height,
@@ -268,7 +266,6 @@ try {
       }
     }
 
-    // Persist the corpus golden data.
     writeFileSync(
       join(dir, 'reference.json'),
       JSON.stringify(

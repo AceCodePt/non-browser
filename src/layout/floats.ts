@@ -18,24 +18,18 @@
 import type { P5Element } from './types.js';
 
 export interface FormattingContext {
-  /** content box left (absolute). */
   readonly x: number;
-  /** content box width. */
   readonly width: number;
-  /** horizontal intrusion of floats over a line box spanning [top, bottom). */
   floatIntrusion(top: number, bottom: number): { left: number; right: number };
-  /** bottom margin edge of the lowest float on the given side(s), or -Infinity. */
   lowestFloatBottom(clear: 'none' | 'left' | 'right' | 'both'): number;
 }
 
 export interface PlacedFloat {
   isLeft: boolean;
-  /** margin box (absolute). */
   left: number;
   right: number;
   top: number;
   bottom: number;
-  /** border box (absolute). */
   borderX: number;
   borderY: number;
   borderWidth: number;
@@ -127,7 +121,6 @@ export class FloatManager implements FormattingContext {
       if (dim.isLeft ? x + w <= contentRight + EPS : x >= this.x - EPS) {
         break;
       }
-      // Cannot fit on this band: drop below the floats that block the full width.
       const down = this.floats.filter(
         (f) => f.bottom > y + EPS && f.left < contentRight - EPS && f.right > this.x + EPS,
       );

@@ -30,42 +30,34 @@ async function probe(name, html, ids, textIds = []) {
   console.log('text:', JSON.stringify(text));
 }
 
-// rowspan with unequal natural heights: rows 10 and 50, spanning cell 60 tall
 await probe('rowspan-unequal',
   `${H}<table style="border-collapse:separate;border-spacing:0"><tr><td id="a" style="padding:0" rowspan="2"><br><br></td><td id="b" style="padding:0;height:10px">B</td></tr><tr><td id="c" style="padding:0;height:50px">C</td></tr></table></body></html>`,
   ['a','b','c']);
 
-// spanning cell min-content: narrow table, spanning multiword cell
 await probe('colspan-min',
   `${H}<table style="width:80px;border-collapse:separate;border-spacing:0"><tr><td id="a" style="padding:0">AA</td><td id="b" style="padding:0">BB</td></tr><tr><td id="c" colspan="2" style="padding:0">longer text here</td></tr></table></body></html>`,
   ['a','b','c']);
 
-// text-align center on table -> cells inherit
 await probe('textalign-center',
   `${H}<table id="t" style="text-align:center;border-collapse:separate;border-spacing:0"><tr><td id="a" style="padding:0">A</td></tr></table></body></html>`,
   ['t','a'], ['a']);
 
-// vertical-align middle in tall cell: text rect
 await probe('valign-mid-text',
   `${H}<table style="border-collapse:separate;border-spacing:0"><tr style="height:60px"><td id="a" style="padding:0">text</td></tr></table></body></html>`,
   ['a'], ['a']);
 
-// vertical-align top/bottom in tall cell
 await probe('valign-tb',
   `${H}<table style="border-collapse:separate;border-spacing:0"><tr style="height:60px"><td id="a" style="padding:0;vertical-align:top">text</td><td id="b" style="padding:0;vertical-align:bottom">text</td></tr></table></body></html>`,
   ['a','b'], ['a','b']);
 
-// cell with explicit height larger than content + middle
 await probe('cell-height-mid',
   `${H}<table style="border-collapse:separate;border-spacing:0"><tr><td id="a" style="padding:0;height:80px">text</td></tr></table></body></html>`,
   ['a'], ['a']);
 
-// border-collapse: separate with borders: cell border width
 await probe('separate-border',
   `${H}<table id="t" style="border-collapse:separate;border-spacing:2px;border:1px solid #000"><tr><td id="a" style="padding:0;border:1px solid #f00">A</td><td id="b" style="padding:0;border:1px solid #00f">B</td></tr></table></body></html>`,
   ['t','a','b']);
 
-// collapsed borders: table width with collapse
 await probe('collapse-width',
   `${H}<table id="t" style="border-collapse:collapse;border:1px solid #000;width:100px"><tr><td id="a" style="padding:0;border:1px solid #f00;width:40px">A</td><td id="b" style="padding:0;border:1px solid #00f">B</td></tr></table></body></html>`,
   ['t','a','b']);

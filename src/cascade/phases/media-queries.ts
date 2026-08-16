@@ -33,32 +33,21 @@ export { parseContainerPrelude, parseContainerCondition } from '../stylesheet.js
 export type { MediaCondition, MediaEnvironment } from '../media.js';
 
 export interface ContainerSize {
-  /** container content-box width (px). */
   width: number;
-  /** container content-box height (px). */
   height: number;
 }
 
-/**
- * Declarations that target a pseudo-element, keyed per originating element.
- * `before`/`after` hold the cascade-ordered declaration lists for that
- * element's ::before / ::after (empty when no rule matched the pseudo).
- */
 export interface PseudoDecls {
   before: Declaration[];
   after: Declaration[];
 }
 
-/** The resolved cascade: element styles plus pseudo-element styles, both in ascending cascade order. */
 export interface CascadeResult {
   element: Map<P5Element, Declaration[]>;
   pseudo: Map<P5Element, PseudoDecls>;
 }
 
 /**
- * Evaluate a container condition against a container's size — the @container
- * evaluation model. `condition` is the parsed `@container` condition; features
- * are width/height comparisons (min/max/exact/range) and aspect-ratio.
  * Container-name resolution and container-size discovery come from layout and
  * are not available yet (see the ledger).
  */
@@ -140,7 +129,6 @@ function compare(current: number, target: number, op: MediaOp): boolean {
   }
 }
 
-/** An @media group (one enclosing @media's query list) matches when any query does. */
 function mediaGroupsActive(groups: MediaQuery[][], env: MediaEnvironment): boolean {
   return groups.every((g) => evaluateMediaQueryList(g, env));
 }

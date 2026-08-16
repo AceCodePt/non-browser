@@ -3,7 +3,7 @@ import { deflateSync, inflateSync } from 'node:zlib';
 export interface PngImage {
   width: number;
   height: number;
-  data: Buffer; // RGBA, 4 bytes per pixel, row-major
+  data: Buffer;
 }
 
 const SIGNATURE = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
@@ -193,7 +193,6 @@ export function decodePng(buf: Buffer): PngImage {
   return { width, height, data: rgba };
 }
 
-/** Encode an RGBA buffer as an 8-bit RGBA (color type 6) PNG. */
 export function encodePng(width: number, height: number, rgba: Buffer): Buffer {
   const stride = width * 4;
   if (rgba.length !== stride * height) {
@@ -201,14 +200,14 @@ export function encodePng(width: number, height: number, rgba: Buffer): Buffer {
   }
   const raw = Buffer.alloc((stride + 1) * height);
   for (let y = 0; y < height; y++) {
-    raw[y * (stride + 1)] = 0; // filter None
+    raw[y * (stride + 1)] = 0;
     rgba.copy(raw, y * (stride + 1) + 1, y * stride, (y + 1) * stride);
   }
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(width, 0);
   ihdr.writeUInt32BE(height, 4);
-  ihdr[8] = 8; // bit depth
-  ihdr[9] = 6; // color type RGBA
+  ihdr[8] = 8;
+  ihdr[9] = 6;
   ihdr[10] = 0;
   ihdr[11] = 0;
   ihdr[12] = 0;

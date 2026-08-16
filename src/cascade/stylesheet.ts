@@ -17,20 +17,15 @@ import { parseDeclarationBlock } from '../layout/css.js';
 import { parseMediaQueryList, type MediaQuery, type Token, tokenize, splitTopLevel, hasTopLevelOperator } from './media.js';
 
 export interface ContainerGroup {
-  /** container-name from the prelude, or null when none is given. */
   name: string | null;
-  /** parsed container condition; null when the prelude has no condition. */
   condition: MediaQuery | null;
 }
 
 export interface CascadeRule {
   selectors: string[];
   declarations: Declaration[];
-  /** one entry per enclosing @media; the rule needs every group to match. */
   mediaGroups: MediaQuery[][];
-  /** one entry per enclosing @container. */
   containerGroups: ContainerGroup[];
-  /** global source order across all stylesheets (ties break by this). */
   order: number;
 }
 
@@ -73,7 +68,6 @@ function stripComments(css: string): string {
   return out;
 }
 
-/** Content of a balanced `{ ... }` block whose opening brace is at `braceIndex`. */
 function readBalancedBlock(css: string, braceIndex: number): string {
   let depth = 0;
   let i = braceIndex;
@@ -89,7 +83,6 @@ function readBalancedBlock(css: string, braceIndex: number): string {
   return css.slice(braceIndex + 1);
 }
 
-/** Index of the closing brace matching the block opened at `braceIndex`. */
 function findClosingBrace(css: string, braceIndex: number): number {
   let depth = 0;
   let i = braceIndex;
@@ -105,7 +98,6 @@ function findClosingBrace(css: string, braceIndex: number): number {
   return n - 1;
 }
 
-/** Scan an at-rule prelude; stop at `{` or `;` at paren depth 0. */
 function readAtPrelude(css: string, start: number): { end: number; hasBlock: boolean } {
   let depth = 0;
   let i = start;
@@ -168,7 +160,6 @@ function splitSelectors(prelude: string): string[] {
   return out.filter(Boolean);
 }
 
-/** Container prelude: `@container [<name>] <condition>` -> name + condition. */
 export function parseContainerPrelude(prelude: string): ContainerGroup {
   const tokens = tokenize(prelude);
   let name: string | null = null;
@@ -181,12 +172,6 @@ export function parseContainerPrelude(prelude: string): ContainerGroup {
   return { name, condition };
 }
 
-/**
- * Parse a @container condition into a media-query-shaped tree (and/or/not over
- * parenthesized size features). Supports `(min-width: Npx)`, `(max-width: Npx)`,
- * `(width: Npx)`, range syntax `(width > Npx)`, `(<, <=, >=, ==)`, and
- * `(aspect-ratio: A/B)`.
- */
 export function parseContainerCondition(tokens: Token[]): MediaQuery | null {
   const cond = parseContainerCond(tokens);
   return cond ? { condition: cond } : null;
@@ -246,7 +231,6 @@ const RANGE_OPS: Record<string, import('./media.js').MediaOp> = {
 function parseContainerFeature(inner: Token[]): import('./media.js').MediaCondition | null {
   const name = inner[0]?.toLowerCase();
   if (!name) return null;
-  // range syntax: name <op> value  (3 tokens)
   if (inner.length === 3 && !inner.includes(':')) {
     const op = RANGE_OPS[inner[1]];
     if (op) return { type: 'feature', name, op, value: inner[2] };
@@ -275,7 +259,6 @@ interface ParseState {
   containerGroups: ContainerGroup[];
 }
 
-/** Parse a stylesheet's text into flattened rules. */
 export function parseStylesheet(css: string): StyleSheet {
   const text = stripComments(css);
   const rules: CascadeRule[] = [];
@@ -321,7 +304,6 @@ function parseTopLevel(css: string, inherited: ParseState, rules: CascadeRule[],
       }
       continue;
     }
-    // style rule
     const open = css.indexOf('{', i);
     if (open < 0) break;
     const selectors = splitSelectors(css.slice(i, open));

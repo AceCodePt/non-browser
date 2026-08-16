@@ -19,7 +19,6 @@ ctx.textBaseline = 'alphabetic';
 ctx.fillText('Ag', 0, 21);
 const cand = decodePng(cv.toBuffer('image/png'));
 
-// dump col 4 (left edge of A) and col 12 (right edge of A) and col 20 (left edge of g)
 for (const col of [4, 12, 20, 21, 36, 37]) {
   let c = [], n = [];
   for (let y = 0; y < 30; y++) {

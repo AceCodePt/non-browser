@@ -119,7 +119,6 @@ export function loadTolerances(path: string): Tolerances {
   return { version, layers: { measureText, computedStyle, rect, screenshot } };
 }
 
-/** Merge a per-fixture partial override over a base tolerance config. */
 export function mergeTolerances(base: Tolerances, override: Partial<LayerTolerances>): Tolerances {
   return {
     version: base.version,

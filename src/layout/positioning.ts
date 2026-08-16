@@ -22,21 +22,17 @@ import type { P5Element } from './types.js';
 export interface PendingAbs {
   el: P5Element;
   style: ComputedStyle;
-  /** static position (margin edge) for auto offsets, in viewport coords. */
   staticX: number;
   staticY: number;
-  /** true when position: fixed (containing block is always the viewport). */
   fixed: boolean;
 }
 
 export interface ContainingBlock {
-  /** padding box (border box minus borders). */
   rect: Box;
   heightKnown: boolean;
   pending: PendingAbs[];
 }
 
-/** The viewport = the initial containing block for the whole document. */
 export function initialContainingBlock(viewport: Viewport): Box {
   return { x: 0, y: 0, width: viewport.width, height: viewport.height };
 }
@@ -49,25 +45,19 @@ function resolve(l: Length, ref: number, viewport?: Viewport | null): number | n
 
 export interface AbsHorizontalInput {
   cbWidth: number;
-  /** containing block padding-box left (absolute). */
   cbX: number;
   staticLeft: number;
   left: number | null;
   right: number | null;
-  /** resolved width; null = auto. */
   width: number | null;
   marginLeft: number | null;
   marginRight: number | null;
-  /** border-left + border-right + padding-left + padding-right. */
   borderPadH: number;
-  /** shrink-to-fit width given the available space (used when width is auto). */
   shrinkFit: (avail: number) => number;
 }
 
 export interface AbsHorizontalOutput {
-  /** border box left (absolute). */
   x: number;
-  /** border box width. */
   width: number;
   marginLeft: number;
   marginRight: number;
@@ -124,25 +114,19 @@ export function solveAbsHorizontal(inp: AbsHorizontalInput): AbsHorizontalOutput
 
 export interface AbsVerticalInput {
   cbHeight: number;
-  /** containing block padding-box top (absolute). */
   cbY: number;
   staticTop: number;
   top: number | null;
   bottom: number | null;
-  /** resolved height; null = auto. */
   height: number | null;
   marginTop: number | null;
   marginBottom: number | null;
-  /** border-top + border-bottom + padding-top + padding-bottom. */
   borderPadV: number;
-  /** content-based height (used when height is auto and not stretched). */
   contentHeight: number;
 }
 
 export interface AbsVerticalOutput {
-  /** border box top (absolute). */
   y: number;
-  /** content box height (the equation's `height` term). */
   height: number;
   marginTop: number;
   marginBottom: number;
@@ -158,7 +142,6 @@ export function solveAbsVertical(inp: AbsVerticalInput): AbsVerticalOutput {
 
   if (height === null) {
     if (top !== null && bottom !== null) {
-      // Stretch: the box fills top..bottom.
       height = Math.max(0, H - top - bottom - (mT ?? 0) - (mB ?? 0) - borderPadV);
     } else {
       // Content height (out-of-flow children do not contribute).
@@ -194,8 +177,6 @@ export function solveAbsVertical(inp: AbsVerticalInput): AbsVerticalOutput {
   return { y: cbY + top! + (mT ?? 0), height, marginTop: mT ?? 0, marginBottom: mB ?? 0 };
 }
 
-// ===== shrink-to-fit width =====
-
 function maxContentOf(el: P5Element, styles: Map<P5Element, ComputedStyle>, refWidth: number): { max: number; min: number } {
   let max = 0;
   let min = 0;
@@ -224,7 +205,6 @@ function maxContentOf(el: P5Element, styles: Map<P5Element, ComputedStyle>, refW
   return { max, min };
 }
 
-/** Shrink-to-fit width: min(max(preferred-min, available), preferred-max). */
 export function absShrinkFitWidth(
   el: P5Element,
   styles: Map<P5Element, ComputedStyle>,
@@ -235,14 +215,6 @@ export function absShrinkFitWidth(
   return Math.min(Math.max(min, avail), max);
 }
 
-// ===== abs/fixed child layout =====
-
-/**
- * Lay out one out-of-flow (absolute or fixed) child against its containing
- * block. `cb` is the padding box the offsets resolve against (for fixed: the
- * viewport). Returns the laid-out node, already pushed onto `paints`/`children`
- * by the caller's ordering.
- */
 export function layoutPositionedChild(
   el: P5Element,
   style: ComputedStyle,

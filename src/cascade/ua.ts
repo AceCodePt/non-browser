@@ -21,12 +21,10 @@ import type { Declaration } from '../layout/css.js';
 import { parseSelector, matchesComplex, specificity, compareSpecificity, type Specificity } from './selector.js';
 
 export interface UaRule {
-  /** selector list (each parsed with the engine's selector matcher). */
   selectors: string[];
   declarations: Declaration[];
 }
 
-/** Cartesian selector list: `outer <space> inner` for every pair. */
 function descendantPairs(outer: string[], inner: string[]): string[] {
   const out: string[] = [];
   for (const o of outer) {
@@ -66,7 +64,6 @@ export const UA_STYLES: UaRule[] = [
   { selectors: ['div', 'article', 'aside', 'footer', 'header', 'hgroup', 'main', 'nav', 'section', 'figcaption', 'figure', 'center', 'form', 'dl', 'dt', 'dd', 'fieldset', 'legend'], declarations: decls({ display: 'block' }) },
   { selectors: ['address'], declarations: decls({ display: 'block', 'font-style': 'italic' }) },
 
-  // --- heading elements ---
   { selectors: ['h1'], declarations: decls({ display: 'block', 'font-size': '2em', 'margin-block-start': qem('0.67em'), 'margin-block-end': '0.67em', 'font-weight': 'bold' }) },
   { selectors: ['h2'], declarations: decls({ display: 'block', 'font-size': '1.5em', 'margin-block-start': qem('0.83em'), 'margin-block-end': '0.83em', 'font-weight': 'bold' }) },
   { selectors: ['h3'], declarations: decls({ display: 'block', 'font-size': '1.17em', 'margin-block-start': qem('1em'), 'margin-block-end': '1em', 'font-weight': 'bold' }) },
@@ -74,11 +71,9 @@ export const UA_STYLES: UaRule[] = [
   { selectors: ['h5'], declarations: decls({ display: 'block', 'font-size': '0.83em', 'margin-block-start': qem('1.67em'), 'margin-block-end': '1.67em', 'font-weight': 'bold' }) },
   { selectors: ['h6'], declarations: decls({ display: 'block', 'font-size': '0.67em', 'margin-block-start': qem('2.33em'), 'margin-block-end': '2.33em', 'font-weight': 'bold' }) },
 
-  // --- paragraphs / quotes ---
   { selectors: ['p'], declarations: decls({ display: 'block', 'margin-block-start': qem('1em'), 'margin-block-end': '1em' }) },
   { selectors: ['blockquote'], declarations: decls({ display: 'block', 'margin-block-start': qem('1em'), 'margin-block-end': '1em', 'margin-inline-start': '40px', 'margin-inline-end': '40px' }) },
 
-  // --- lists ---
   { selectors: ['ul', 'menu', 'dir'], declarations: decls({ display: 'block', 'list-style-type': 'disc', 'margin-block-start': qem('1em'), 'margin-block-end': '1em', 'padding-inline-start': '40px' }) },
   { selectors: ['ol'], declarations: decls({ display: 'block', 'list-style-type': 'decimal', 'margin-block-start': qem('1em'), 'margin-block-end': '1em', 'padding-inline-start': '40px' }) },
   { selectors: ['li'], declarations: decls({ display: 'list-item', 'text-align': 'match-parent' }) },
@@ -90,25 +85,20 @@ export const UA_STYLES: UaRule[] = [
   { selectors: descendantPairs(MARKER_LIST, ['dir', 'menu', 'ul']), declarations: decls({ 'list-style-type': 'circle' }) },
   { selectors: descendantPairs(MARKER_LIST, MARKER_LIST).flatMap((o) => descendantPairs([o], ['dir', 'menu', 'ul'])), declarations: decls({ 'list-style-type': 'square' }) },
 
-  // --- emphasis ---
   { selectors: ['strong', 'b'], declarations: decls({ 'font-weight': 'bolder' }) },
   { selectors: ['em', 'i', 'cite', 'var', 'dfn'], declarations: decls({ 'font-style': 'italic' }) },
 
-  // --- monospace / pre ---
   // Chrome renders `font-family: monospace` at the initial font size with the
   // fixed-pitch font's default size (13px at the default 16px root); the
   // fixture corpus uses the default root, so pre encodes that as 0.8125em.
   { selectors: ['pre'], declarations: decls({ display: 'block', 'font-family': 'monospace', 'font-size': '0.8125em', 'white-space': 'pre', 'margin-block-start': qem('1em'), 'margin-block-end': '1em' }) },
   { selectors: ['tt', 'code', 'kbd', 'samp'], declarations: decls({ 'font-family': 'monospace' }) },
 
-  // --- horizontal rule ---
   { selectors: ['hr'], declarations: decls({ display: 'block', overflow: 'hidden', 'margin-block-start': '0.5em', 'margin-block-end': '0.5em', 'margin-inline-start': 'auto', 'margin-inline-end': 'auto', 'border-style': 'inset', 'border-width': '1px', color: 'gray' }) },
 
-  // --- links (Chrome's -webkit-link color in light mode) ---
   { selectors: ['a'], declarations: decls({ color: 'rgb(0, 0, 238)', 'text-decoration': 'underline' }) },
 ];
 
-/** Parse the UA rules once (selector matching is per-element). */
 const PARSED_UA = UA_STYLES.map((rule, order) => ({
   order,
   sels: rule.selectors.map((s) => ({ raw: s, sel: parseSelector(s) })),

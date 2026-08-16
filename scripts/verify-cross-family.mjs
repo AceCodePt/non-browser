@@ -40,7 +40,6 @@ import { renderHtml } from '../dist/layout/render.js';
 import { chromeConfig, firefoxConfig } from '../dist/config/index.js';
 import { setActiveBrowserConfig } from '../dist/config/browser-config.js';
 
-/** px to expand text-fragment rects when building the screenshot mask. */
 const MASK_PAD = 2;
 
 const corpus = resolve('corpus/cross-family');
@@ -55,7 +54,6 @@ function* fixtures() {
   }
 }
 
-/** Build the exclusion mask (1 = excluded) from the oracle's text fragment rects. */
 function rectsToMask(width, height, rects, pad) {
   const mask = new Uint8Array(width * height);
   for (const r of rects) {
@@ -103,7 +101,6 @@ try {
     await page.setContent(h.html);
     await page.evaluate(() => document.fonts.ready);
 
-    // --- oracle quantities ---
     const referenceRects = {};
     for (const id of h.rects ?? []) {
       referenceRects[id] = await page.$eval(`#${id}`, (el) => {
@@ -198,7 +195,6 @@ try {
       }
     }
 
-    // Persist the corpus golden data.
     writeFileSync(
       join(dir, 'reference.json'),
       JSON.stringify(

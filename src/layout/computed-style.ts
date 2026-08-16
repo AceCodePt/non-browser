@@ -39,7 +39,6 @@ function lengthString(l: Length, ref: number, viewport?: Viewport | null): strin
   return null;
 }
 
-/** Serialize a family name the way CSSOM does: quote names that need it. */
 function fontFamilyString(family: string): string {
   if (/^[-_a-zA-Z][-_a-zA-Z0-9]*$/.test(family)) return family;
   return `"${family.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
@@ -57,7 +56,6 @@ function radiusAxisString(corners: CornerRadii[], get: (c: CornerRadii) => Lengt
   return s.join(' ');
 }
 
-/** Serialize the `border-radius` shorthand (horizontal axis [/ vertical axis]). */
 function borderRadiusString(style: ComputedStyle, refWidth: number, viewport?: Viewport | null): string {
   const { topLeft, topRight, bottomRight, bottomLeft } = style.borderRadius;
   const corners = [topLeft, topRight, bottomRight, bottomLeft];
@@ -66,7 +64,6 @@ function borderRadiusString(style: ComputedStyle, refWidth: number, viewport?: V
   return h === v ? h : `${h} / ${v}`;
 }
 
-/** Serialize one corner longhand: `rx` when rx===ry, else `rx ry`. */
 function cornerRadiusString(c: CornerRadii, refWidth: number, viewport?: Viewport | null): string {
   const rx = lengthString(c.rx, refWidth, viewport) ?? '0px';
   const ry = lengthString(c.ry, refWidth, viewport) ?? '0px';
@@ -213,10 +210,6 @@ export function computedStyleString(style: ComputedStyle, prop: string, refWidth
   }
 }
 
-/**
- * Compute a CSSOM property map for a style across a list of properties.
- * Properties the engine cannot compute are omitted from the result.
- */
 export function computedStyleFor(style: ComputedStyle, props: string[], refWidth: number, viewport?: Viewport | null): ComputedStyleProps {
   const out: ComputedStyleProps = {};
   for (const p of props) {

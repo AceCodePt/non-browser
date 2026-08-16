@@ -23,7 +23,6 @@ for (const id of ['a','b','c','d','e','f','g','h','i']) {
   }, id);
   console.log(id, JSON.stringify(r));
 }
-// default value on plain div
 const def = await page.evaluate(() => getComputedStyle(document.getElementById('d')).getPropertyValue('text-shadow'));
 console.log('default text-shadow', JSON.stringify(def));
 await browser.close();

@@ -24,9 +24,7 @@ type SideColors = Record<Side, Color>;
 export interface RenderOutput {
   width: number;
   height: number;
-  /** RGBA pixel buffer. */
   rgba: Buffer;
-  /** getBoundingClientRect per element id (border boxes). */
   rects: Record<string, Box>;
   /**
    * Absolute rects of the line boxes laid out for elements that generate
@@ -50,7 +48,6 @@ export interface RenderOutput {
   listMarkers: Record<string, string | null>;
 }
 
-/** Draw one layout line's text, applying letter-spacing when non-zero. */
 function paintTextRun(
   canvas: { drawText(text: string, x: number, baseline: number, font: string, color: Color): void },
   run: { text: string; x: number; baseline: number; fontWeight?: number; fontStyle?: 'normal' | 'italic' },
@@ -188,7 +185,6 @@ function blendWithWhite(c: Color): Color {
 
 type BorderStyle = 'none' | 'solid' | 'inset' | 'outset';
 
-/** The per-edge color for an inset/outset border, given the base border color. */
 function insetEdgeColor(style: BorderStyle, side: 'top' | 'right' | 'bottom' | 'left', base: Color): Color {
   if (style !== 'inset' && style !== 'outset') return base;
   const inset = style === 'inset';
@@ -224,7 +220,6 @@ function paintBorder(
   }
 }
 
-/** True when any resolved radius is non-zero (a plain rect otherwise). */
 function hasResolvedRadius(r: ResolvedRadii): boolean {
   const c = [r.topLeft, r.topRight, r.bottomRight, r.bottomLeft];
   return c.some((k) => k.rx > 0 || k.ry > 0);
@@ -274,12 +269,6 @@ function paintListMarker(canvas: CanvasLike, op: PaintOp): void {
   }
 }
 
-/**
- * Paint a rounded solid border as the region between the outer border-box
- * rounded rect and the inner padding-box rounded rect (outer radii minus the
- * border widths). With a uniform border color the whole ring fills once; with
- * differing side colors each side fills its band clipped to the ring.
- */
 function paintRoundedBorder(
   canvas: CanvasLike,
   op: PaintOp,
@@ -335,7 +324,6 @@ function paintRoundedBorder(
   }
 }
 
-/** Clip to a rounded overflow clip rect (border box + its radii). */
 function applyRoundedClip(canvas: CanvasLike, clip: RoundedClip, viewport?: Viewport | null): void {
   const radii = resolveBorderRadius(clip.radii, clip.width, clip.height, viewport);
   traceRoundedRect(canvas, clip.x, clip.y, clip.width, clip.height, radii);
@@ -354,10 +342,6 @@ function snapBox(b: Box): Box {
   const y1 = Math.round(b.y + b.height);
   return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
 }
-/**
- * Paint the layout through a CanvasFactory and produce the pixel buffer +
- * per-id rects.
- */
 export function paint(
   root: RootLayout,
   viewportWidth: number,

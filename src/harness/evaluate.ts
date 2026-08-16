@@ -37,7 +37,6 @@ export interface ScreenshotLayerResult {
   percentExceeding: number;
   worstDeltaE: number;
   meanDeltaE: number;
-  /** per-fixture text-parity metric: text pixels compared under the text tier. */
   textRegion: {
     pixels: number;
     maskedPixels: number;
@@ -176,7 +175,6 @@ export function evaluateScreenshot(fixture: Fixture): ScreenshotLayerResult {
   };
 }
 
-/** Evaluate all four layers and assert each against the fixture's declared expected result. */
 export function evaluateFixture(fixture: Fixture): FixtureResult {
   const layers: Record<LayerName, LayerResult> = {
     measureText: evaluateMeasureText(fixture),

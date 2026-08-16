@@ -41,7 +41,6 @@ if (typeof Intl.Segmenter !== 'function') {
   fail('Intl.Segmenter is required (charter §6) and unavailable');
 }
 
-// --- charter content assertions ---
 const charter = readFileSync(resolve('docs/charter.md'), 'utf8');
 
 const requires = [
@@ -183,7 +182,6 @@ const matrixLines = [];
     fail('charter.md missing: coverage matrix (§11)');
   } else {
     let i = start + 1;
-    // header row begins the table; keep rows until the next heading.
     while (i < lines.length && !/^##\s/.test(lines[i])) {
       const t = lines[i].trim();
       if (t.startsWith('|')) matrixLines.push(lines[i]);
