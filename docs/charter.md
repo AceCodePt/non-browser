@@ -128,18 +128,71 @@ the charter and the corpus cannot silently diverge:
 | grid | grid-auto-flow | yes | corpus/grid | grid-auto-flow |
 | grid | dense | yes | corpus/grid | dense |
 | grid | alignment | yes | corpus/grid | justify-items |
+| grid | grid-template-areas | yes | corpus/grid | grid-template-areas |
+| grid | placement (grid-area/grid-column/grid-row, line names) | yes | corpus/grid | grid-area |
+| grid | auto / implicit tracks (grid-auto-rows/columns) | yes | corpus/grid | grid-auto-columns |
+| grid | item self-alignment (justify-self/align-self) | yes | corpus/grid | justify-self |
 | block/inline | width | yes | corpus/spine, corpus/floats, corpus/positioning | width |
 | block/inline | height | yes | corpus/spine, corpus/positioning | height |
 | block/inline | margin | yes | corpus/spine, corpus/floats, corpus/positioning | margin |
 | block/inline | padding | yes | corpus/spine, corpus/positioning | padding |
+| block/inline | border (width/style/color) | yes | corpus/spine, corpus/flexbox, corpus/border-radius | border |
+| block/inline | border-radius | yes | corpus/border-radius | border-radius |
+| block/inline | background-color | yes | corpus/spine, corpus/border-radius | background-color |
 | block/inline | float | yes | corpus/floats | float |
+| block/inline | clear | yes | corpus/floats | clear |
 | block/inline | position | yes | corpus/positioning | position |
 | block/inline | z-index | yes | corpus/positioning | z-index |
 | block/inline | box-sizing | yes | corpus/spine | box-sizing |
+| block/inline | inline-block (shrink-to-fit, baseline) | yes | corpus/inline-block | inline-block |
+| block/inline | vertical-align | yes | corpus/inline-block | vertical-align |
+| block/inline | min/max width/height | yes | corpus/flexbox | min-width |
+| block/inline | overflow (hidden clip / BFC) | yes | corpus/border-radius, corpus/flexbox | overflow |
 | text | white-space | yes | corpus/spine, corpus/white-space | white-space |
 | text | letter-spacing | yes | corpus/paint-text, corpus/measure-corpus | letter-spacing |
 | text | text-decoration | yes | corpus/paint-text | text-decoration |
+| text | text-align | yes | corpus/text-align | text-align |
+| text | color (fill) | yes | corpus/paint-text, corpus/spine | color |
 | font | font-family (fallback tables) | yes | corpus/cross-family, corpus/firefox-track | font-family |
+| font | font-size | yes | corpus/paint-text, corpus/spine | font-size |
+| font | font-weight / font-style | yes | corpus/ua-styles | font-weight |
+| font | line-height | yes | corpus/spine, corpus/paint-text | line-height |
+| pseudo-elements | ::before/::after content | yes | corpus/pseudo-elements | content |
+| cascade | @media at-rule resolution | yes | corpus/media-queries | @media |
 | ua-stylesheet | UA defaults at lowest cascade priority | yes | corpus/ua-styles | UA stylesheet |
 | lists | list-style-type markers | yes | corpus/lists, corpus/ua-styles | list-style-type |
 | lists | list-style-position | yes | corpus/lists | list-style-position |
+
+### Deferred / Not in v1 (no silent absence)
+
+Every implemented-but-unclaimed property above the row set is claimed with its
+own row and corpus token. The following absent surfaces are recorded **here** so
+omission is explicit, never silent (the coverage-matrix reconcile ledger,
+`docs/ledgers/coverage-matrix.md`, cross-references each to the archive-audit
+classification):
+
+- **Per-element opacity / box-level compositing** — not implemented; the engine
+  carries per-color alpha only (`ComputedStyle.backgroundColor/color`), never a
+  subtree compositing alpha. Archived empty as `opacity-compositing`; re-dispatched
+  as `tasks/opacity-subtree-compositing`.
+- **box-shadow / text-shadow** — not implemented (no shadow parse, no shadow
+  paint). `box-shadow-paint` archived empty; re-dispatched as `tasks/shadow-paint`.
+- **outline** — not implemented; `paint-shapes` is archived PARTIAL and outline
+  has no owning task.
+- **tables layout** — CSS 2.1 §17 table display values (`display:table*`) and the
+  table properties (border-collapse, border-spacing, caption-side, table-layout,
+  empty-cells) are parsed and computed, and UA table defaults land, but there is
+  no table layout module (cell grid, border-collapse box model, spanning);
+  charter §3 keeps tables out of v1. `tables-layout` is archived PARTIAL.
+- **calc(), min(), max(), clamp()** — not implemented; `css.ts` resolves lengths
+  but has no value-function resolver. Scheduled as `tasks/calc-values`.
+- **Custom properties / var()** — not implemented; `cascade-custom-props`
+  archived EMPTY.
+- **Cascade layers / !important** — not implemented; `cascade-layers-important`
+  archived EMPTY.
+- **@import / @supports / @font-face** — not parsed; `parse-stylesheets` is
+  archived PARTIAL (the stylesheet parser explicitly skips these at-rules).
+- **@container container queries** — documented divergence, not silent:
+  `corpus/media-queries/container-gap` is a typed gap declaration and
+  `docs/ledgers/media-queries.md` §@container records why no `@container` rule is
+  ever applied.
