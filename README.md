@@ -48,7 +48,7 @@ const out = renderHtml(html, {
   fontFile: '/path/to/NotoSans-Regular.ttf',
 });
 
-out.rgba           // layer 4: the painted page as an RGBA pixel buffer
+out.rgba           // layer 4: the painted page (PNG-encoded buffer)
 out.rects          // layer 3: per-id border-box rects (getBoundingClientRect)
 out.computedStyles // layer 2: computed-style strings (getComputedStyle)
 // layer 1: text widths come from the same measurement engine the paint used
@@ -57,6 +57,10 @@ out.computedStyles // layer 2: computed-style strings (getComputedStyle)
 > `renderHtml` lives today at `src/layout/render.ts` (exported by
 > `src/layout/index.ts`); the public module path and type surface are being
 > formalized as the `public-api-surface` task.
+>
+> A runnable version of this exact flow — input, the four layers' output, and
+> a written PNG — lives in `examples/basic-render.mjs`
+> (`node examples/basic-render.mjs`).
 
 For an agent that needs to answer "does this card overflow?", "what is the width
 of `#header`?", "how tall is this paragraph at 640px?" — you call a function
