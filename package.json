@@ -33,6 +33,7 @@
     "verify:text-align": "npm run build && node scripts/verify-text-align.mjs",
     "verify:white-space": "npm run build && node scripts/verify-white-space.mjs",
     "probe:browser-gap": "npm run build && node probes/probe-browser-gap.mjs",
+    "bench:engine-vs-oracle": "npm run build && node scripts/bench-engine-vs-oracle.mjs",
     "test:probe": "npm run build && node --test probes/probe-gap-lib.test.mjs"
   },
   "dependencies": {
