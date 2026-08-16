@@ -1,7 +1,7 @@
 ---
 wait_human_start: false
 wait_human_merge: false
-dependencies: []
+dependencies: [render-output-selection]
 ---
 
 # Task: Task: Define, document, and smoke-test the public API surface of the library
