@@ -275,6 +275,9 @@ md.push('- **Emoji** (`emoji/`): plain smileys on DejaVu Sans (the reclassified 
 );
 md.push('- **Thai** (`thai/`): Thai runs (tone marks, sara-am, country-name phrases) on the registered Noto Sans Thai face.',
 );
+md.push(
+  '- **Mixed-script** (`mixed-script/`): per-glyph script-run fallback at the measurement seam (`src/canvas/script-fallback.ts`) — mixed Latin/Han/emoji strings split into per-run faces (Latin primary, Droid Sans Fallback for Han, Noto Color Emoji for emoji, Liberation Serif for missing Latin on a CJK primary), matching Chrome\'s fontconfig resolution; the reclassified known-gap strings live here and in `rtl/`.',
+);
 md.push('- **Combining marks** (`combining-marks/`): decomposed/precomposed/double Latin diacritics on Noto Sans; Devanagari conjuncts, matras, digits on Droid Sans Devanagari.',
 );
 md.push('- **Tab runs** (`tabs/`): tabs on monospace faces (Source Code Pro, Liberation Mono).',

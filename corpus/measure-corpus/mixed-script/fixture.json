@@ -1,0 +1,17 @@
+{
+  "name": "mixed-script",
+  "note": "Mixed-script strings measured through the engine's per-glyph script-run fallback (src/canvas/script-fallback.ts, wired into SkiaCanvas.measureText). Chrome splits each string into script runs and resolves each run through fontconfig per-glyph (Latin stays in the primary when covered; Han falls back to Droid Sans Fallback; emoji falls back to Noto Color Emoji; a Latin run on a CJK primary falls back to Liberation Serif, the face fontconfig resolves missing Latin to on this machine). Reclassified from known-gaps; each string's residual delta is sub-pixel because both sides resolve the same per-run faces.",
+  "fonts": [
+    { "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" },
+    { "family": "Droid Sans Fallback", "file": "/usr/share/fonts/google-droid-sans-fonts/DroidSansFallbackFull.ttf" },
+    { "family": "Noto Color Emoji", "file": "fonts/NotoColorEmoji.ttf" },
+    { "family": "Liberation Serif", "file": "/usr/share/fonts/liberation-serif/LiberationSerif-Regular.ttf" }
+  ],
+  "entries": [
+    { "text": "abc 中文 😀 def", "font": "16px 'Noto Sans'", "note": "reclassified from known-gaps: Latin in Noto Sans, Han in Droid Sans Fallback, emoji in Noto Color Emoji" },
+    { "text": "English 中文 mixed text テスト", "font": "16px 'Droid Sans Fallback'", "note": "reclassified from known-gaps: Han/kana in the CJK primary, Latin runs through the per-glyph fallback face (Liberation Serif)" },
+    { "text": "abc 中文 def", "font": "16px 'Noto Sans'", "note": "mixed Latin+Han, no emoji" },
+    { "text": "hello 世界", "font": "16px 'Noto Sans'", "note": "short Latin+Han mix" },
+    { "text": "中文 English 中文", "font": "16px 'Droid Sans Fallback'", "note": "Han primary covering the run, Latin falls back per-glyph" }
+  ]
+}

@@ -100,6 +100,41 @@ export const chromeConfig: BrowserConfig = {
     'Noto Sans Thai': 'Noto Sans Thai',
     'Noto Color Emoji': 'Noto Color Emoji',
   },
+  // Per-glyph script-run fallback (per-glyph-fallback): Chrome splits mixed-
+  // script strings into script runs and resolves each run's missing glyphs
+  // through fontconfig. This table names the face fontconfig resolves each
+  // script group's missing glyphs to on this machine (measured against the
+  // Chrome oracle: a missing Latin glyph falls to Liberation Serif, Han to
+  // Droid Sans Fallback, Thai to Noto Sans Thai, Arabic to Droid Arabic Kufi,
+  // emoji to Noto Color Emoji). `scriptCoverage` below records which script
+  // groups each registered family genuinely covers, so the shim only changes
+  // face when the active face lacks a run's script (see
+  // src/canvas/script-fallback.ts).
+  scriptFallback: {
+    Latn: 'Liberation Serif',
+    Hani: 'Droid Sans Fallback',
+    Thai: 'Noto Sans Thai',
+    Arab: 'Droid Arabic Kufi',
+    Hebr: 'Droid Sans Hebrew',
+    Deva: 'Droid Sans Devanagari',
+    Emoji: 'Noto Color Emoji',
+  },
+  scriptCoverage: {
+    'Noto Sans': ['Latn'],
+    'DejaVu Sans': ['Latn', 'Emoji'],
+    'Liberation Sans': ['Latn'],
+    'Liberation Serif': ['Latn'],
+    'Liberation Mono': ['Latn'],
+    'Source Code Pro': ['Latn'],
+    'Hack Nerd Font': ['Latn'],
+    'Droid Sans Fallback': ['Hani'],
+    'Droid Sans Japanese': ['Hani'],
+    'Droid Arabic Kufi': ['Arab'],
+    'Droid Sans Hebrew': ['Hebr'],
+    'Droid Sans Devanagari': ['Deva'],
+    'Noto Sans Thai': ['Thai'],
+    'Noto Color Emoji': ['Emoji'],
+  },
   defaultFamily: fontFamily,
   defaultFile: fontFile,
 };
