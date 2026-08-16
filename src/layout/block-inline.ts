@@ -13,7 +13,7 @@
  * swap in a different FormattingContext and the same block/inline layout runs.
  */
 
-import { parseStyleAttribute, pxLength, resolveLength, makeStyle, type BorderRadius, type ComputedStyle, type Color, type Declaration, type DecorationLine, type DisplayValue, type PseudoBox, type VerticalAlign, type Viewport } from './css.js';
+import { parseStyleAttribute, pxLength, resolveLength, makeStyle, type BorderRadius, type ComputedStyle, type Color, type Declaration, type DecorationLine, type DisplayValue, type PseudoBox, type TextAlign, type VerticalAlign, type Viewport } from './css.js';
 import { layoutTextLines, measureTextWidth, type LineBox } from './measure.js';
 import { FloatManager, type FormattingContext } from './floats.js';
 import { layoutGridChildren } from './grid.js';
@@ -44,9 +44,11 @@ export interface StyleDefaults {
   /** UA-level default vertical-align (e.g. table cells get 'middle'). */
   verticalAlign?: VerticalAlign;
   /** UA-level default text-align (e.g. th gets 'center'); wins over inherited. */
-  textAlign?: 'left' | 'center' | 'right';
+  textAlign?: TextAlign;
   /** inherited text-align (text-align inherits; used when no author value). */
-  textAlignInherited?: 'left' | 'center' | 'right';
+  textAlignInherited?: TextAlign;
+  /** inherited computed text-align string (start/end/justify/... preserved verbatim). */
+  textAlignComputedInherited?: string;
   /** UA-level default border-collapse (table gets 'separate'). */
   borderCollapse?: 'separate' | 'collapse';
   /** UA-level default horizontal border-spacing (table gets 2px). */
@@ -129,6 +131,7 @@ export function resolveStyles(
       verticalAlignDefault: tagDefaults.verticalAlign,
       textAlignDefault: tagDefaults.textAlign,
       textAlignInherited: d.textAlignInherited ?? d.textAlign ?? 'left',
+      textAlignComputedInherited: d.textAlignComputedInherited,
       borderCollapseDefault: tagDefaults.borderCollapse,
       borderSpacingDefault: tagDefaults.borderSpacing,
       borderSpacingVDefault: tagDefaults.borderSpacingV,
@@ -148,6 +151,7 @@ export function resolveStyles(
       textDecorationThickness: style.textDecorationThickness,
       textUnderlineOffset: style.textUnderlineOffset,
       textAlignInherited: style.textAlign,
+      textAlignComputedInherited: style.textAlignComputed,
     };
     for (const child of el.childNodes) {
       if (child.nodeName !== '#text') {
@@ -903,6 +907,7 @@ function layoutFloat(
       fontSize: style.fontSize,
       family: style.fontFamily,
       letterSpacing: style.letterSpacing,
+      align: style.textAlign,
       available: (top, bottom) => ({ x: 0, width: floatContentWidth }),
     });
     lines = lineRes.lines;
@@ -1295,8 +1300,13 @@ interface WalkedLine {
  * Leading/trailing spaces are dropped; internal spaces are part of their run.
  * `width` is the used (painted) line width. This mirrors the line-breaking
  * measurement so a line's wrap decision equals its final rendering width.
+ *
+ * `stretch` (px added to every inter-word space) implements `text-align:
+ * justify`: with a uniform stretch the run x/width and the line's total width
+ * grow by exactly `stretch × spaceCount`, so the line fills the available
+ * width the same way Chrome distributes the surplus across spaces.
  */
-function walkLine(pieces: InlinePiece[], style: ComputedStyle): WalkedLine {
+function walkLine(pieces: InlinePiece[], style: ComputedStyle, stretch = 0): WalkedLine {
   const runs: WalkedLine['runs'] = [];
   const atomics: WalkedLine['atomics'] = [];
   let x = 0;
@@ -1308,13 +1318,14 @@ function walkLine(pieces: InlinePiece[], style: ComputedStyle): WalkedLine {
   let hasContent = false;
   const flush = (): void => {
     if (!runText) return;
-    const w = measureTextWidth(runText, runStyle!.fontSize, runStyle!.family, runStyle!.letterSpacing);
+    const spaces = (runText.match(/ /g) ?? []).length;
+    const w = measureTextWidth(runText, runStyle!.fontSize, runStyle!.family, runStyle!.letterSpacing) + stretch * spaces;
     runs.push({ text: runText, x: runX, width: w, style: runStyle!, owner: runOwner });
     runText = '';
     runStyle = null;
     runOwner = null;
   };
-  const spaceW = (s: TextRunStyle): number => measureTextWidth(' ', s.fontSize, s.family, s.letterSpacing);
+  const spaceW = (s: TextRunStyle): number => measureTextWidth(' ', s.fontSize, s.family, s.letterSpacing) + stretch;
   for (const p of pieces) {
     if (p.kind === 'space') {
       prevWasSpace = true;
@@ -1456,7 +1467,24 @@ function layoutInlineContent(
     while (onLine.length > 0 && onLine[0].kind === 'space') onLine.shift();
     if (onLine.length > 0 && onLine[onLine.length - 1].kind === 'space') onLine.pop();
 
-    const walked = walkLine(onLine, style);
+    // ---- alignment (text-align): shift the line within its available width;
+    // justify stretches inter-word spaces so non-last lines fill the width ----
+    const natural = walkLine(onLine, style);
+    const isLastLine = i >= pieces.length;
+    const align = style.textAlign;
+    let alignOffset = 0;
+    let stretch = 0;
+    if (align === 'center') {
+      // An overflowing line (single word wider than the box) stays at the start
+      // edge under every alignment, matching Chrome.
+      alignOffset = natural.width <= availWidth ? (availWidth - natural.width) / 2 : 0;
+    } else if (align === 'right') {
+      alignOffset = natural.width <= availWidth ? availWidth - natural.width : 0;
+    } else if (align === 'justify' && !isLastLine) {
+      const spaceCount = onLine.filter((p) => p.kind === 'space').length;
+      if (spaceCount > 0 && natural.width < availWidth) stretch = (availWidth - natural.width) / spaceCount;
+    }
+    const walked = stretch !== 0 ? walkLine(onLine, style, stretch) : natural;
 
     // ---- measure atomics: height + baseline ----
     const measured = new Map<AtomicPiece, MeasuredAtomic>();
@@ -1519,7 +1547,7 @@ function layoutInlineContent(
       // space, so the span x is the run x and its width is the space-stripped
       // text width.)
       const spanText = r.text.replace(/^ /, '');
-      const runBox = { x: lineX + r.x, y, width: r.width, height: lineHeight };
+      const runBox = { x: lineX + alignOffset + r.x, y, width: r.width, height: lineHeight };
       if (r.owner && r.owner !== el) {
         // A span's getBoundingClientRect is the union of its inline boxes'
         // content boxes (baseline ± rounded font metrics), not the line boxes.
@@ -1558,7 +1586,7 @@ function layoutInlineContent(
     }
     for (const a of walked.atomics) {
       const m = measured.get(a.piece)!;
-      const borderX = lineX + a.x;
+      const borderX = lineX + alignOffset + a.x;
       const va = a.piece.style.verticalAlign;
       let borderY: number;
       if (va === 'baseline') {

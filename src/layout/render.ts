@@ -59,6 +59,8 @@ export interface RenderOptions {
   canvasFactory?: CanvasFactory;
   /** When set, resolve these computed-style properties per id (layer 2). */
   computedStyle?: ComputedStyleSpec[];
+  /** When set, report absolute line-box rects for these ids (line fragments). */
+  textElements?: string[];
   /** Media-feature inputs for @media evaluation (defaults: light, no-preference, 1x). */
   media?: MediaInput;
 }
@@ -128,7 +130,7 @@ export function renderHtml(html: string, opts: RenderOptions): RenderHtmlOutput 
   );
 
   const root = layoutRoot(body, styles, viewport);
-  const out = paint(root, opts.width, opts.height, Object.keys(collectIds(body)), config.defaultFile, factory, viewport);
+  const out = paint(root, opts.width, opts.height, Object.keys(collectIds(body)), config.defaultFile, factory, viewport, opts.textElements);
 
   const computedStyles: Record<string, ComputedStyleProps> = {};
   if (opts.computedStyle) {

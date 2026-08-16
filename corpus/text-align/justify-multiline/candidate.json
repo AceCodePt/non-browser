@@ -1,0 +1,52 @@
+{
+  "measureText": {
+    "14px 'Noto Sans' | justify this paragraph of text across multiple lines so that it wraps and the inter word spacing stretches to fill the full available width of the box each line": 992.3599853515625
+  },
+  "computedStyle": {
+    "j": {
+      "text-align": "justify"
+    }
+  },
+  "rect": {
+    "j": {
+      "x": 0,
+      "y": 0,
+      "width": 240,
+      "height": 110
+    }
+  },
+  "fragments": {
+    "j": [
+      {
+        "x": 0,
+        "y": 1,
+        "width": 240.00000309944153,
+        "height": 19
+      },
+      {
+        "x": 0,
+        "y": 23,
+        "width": 239.9799952507019,
+        "height": 19
+      },
+      {
+        "x": 0,
+        "y": 45,
+        "width": 240.0000021457672,
+        "height": 19
+      },
+      {
+        "x": 0,
+        "y": 67,
+        "width": 239.99999976158142,
+        "height": 19
+      },
+      {
+        "x": 0,
+        "y": 89,
+        "width": 58.529998779296875,
+        "height": 19
+      }
+    ]
+  }
+}

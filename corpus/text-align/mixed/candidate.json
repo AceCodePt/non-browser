@@ -1,0 +1,103 @@
+{
+  "measureText": {
+    "14px 'Noto Sans' | justified text that stretches its word spacing to fill each full line": 409.0199890136719
+  },
+  "computedStyle": {
+    "l": {
+      "text-align": "left"
+    },
+    "c": {
+      "text-align": "center"
+    },
+    "r": {
+      "text-align": "right"
+    },
+    "j": {
+      "text-align": "justify"
+    }
+  },
+  "rect": {
+    "l": {
+      "x": 0,
+      "y": 0,
+      "width": 220,
+      "height": 44
+    },
+    "c": {
+      "x": 0,
+      "y": 44,
+      "width": 220,
+      "height": 44
+    },
+    "r": {
+      "x": 0,
+      "y": 88,
+      "width": 220,
+      "height": 44
+    },
+    "j": {
+      "x": 0,
+      "y": 132,
+      "width": 220,
+      "height": 44
+    }
+  },
+  "fragments": {
+    "l": [
+      {
+        "x": 0,
+        "y": 1,
+        "width": 214.50999450683594,
+        "height": 19
+      },
+      {
+        "x": 0,
+        "y": 23,
+        "width": 95,
+        "height": 19
+      }
+    ],
+    "c": [
+      {
+        "x": 11.58500051498413,
+        "y": 45,
+        "width": 196.8300018310547,
+        "height": 19
+      },
+      {
+        "x": 48.725000619888306,
+        "y": 67,
+        "width": 122.54000091552734,
+        "height": 19
+      }
+    ],
+    "r": [
+      {
+        "x": 33.460001945495605,
+        "y": 89,
+        "width": 186.5399932861328,
+        "height": 19
+      },
+      {
+        "x": 116.66000008583069,
+        "y": 111,
+        "width": 103.33000183105469,
+        "height": 19
+      }
+    ],
+    "j": [
+      {
+        "x": 0,
+        "y": 133,
+        "width": 219.9999942779541,
+        "height": 19
+      },
+      {
+        "x": 0,
+        "y": 155,
+        "width": 210.9499969482422,
+        "height": 19
+      }
+    ]
+  }
+}

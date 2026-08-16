@@ -1,0 +1,46 @@
+{
+  "measureText": {
+    "14px 'Noto Sans' | This is a centered paragraph that wraps onto several lines each independently centered within the box.": 674.9000244140625
+  },
+  "computedStyle": {
+    "c": {
+      "text-align": "center"
+    }
+  },
+  "rect": {
+    "c": {
+      "x": 0,
+      "y": 0,
+      "width": 240,
+      "height": 88
+    }
+  },
+  "fragments": {
+    "c": [
+      {
+        "x": 11.494998335838318,
+        "y": 1,
+        "width": 217.00999450683594,
+        "height": 19
+      },
+      {
+        "x": 23.605000019073486,
+        "y": 23,
+        "width": 192.77999877929688,
+        "height": 19
+      },
+      {
+        "x": 6.885000109672546,
+        "y": 45,
+        "width": 226.22999572753906,
+        "height": 19
+      },
+      {
+        "x": 106.02000045776367,
+        "y": 67,
+        "width": 27.959999084472656,
+        "height": 19
+      }
+    ]
+  }
+}

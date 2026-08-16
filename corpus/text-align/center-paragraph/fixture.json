@@ -1,0 +1,37 @@
+{
+  "name": "center-paragraph",
+  "note": "text-align:center on a multi-line paragraph: each line box's content is independently centered within the block's content width. The line-fragment x/width is the alignment-critical geometry (layer-3); the computed value is 'center'.",
+  "harvest": {
+    "viewport": {
+      "width": 480,
+      "height": 200
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;width:240px;text-align:center\">This is a centered paragraph that wraps onto several lines each independently centered within the box.</div></body></html>",
+    "measureText": [
+      {
+        "text": "This is a centered paragraph that wraps onto several lines each independently centered within the box.",
+        "font": "14px 'Noto Sans'"
+      }
+    ],
+    "rects": [
+      "c"
+    ],
+    "computedStyle": [
+      {
+        "id": "c",
+        "props": [
+          "text-align"
+        ]
+      }
+    ],
+    "textElements": [
+      "c"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

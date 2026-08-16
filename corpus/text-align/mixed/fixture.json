@@ -1,0 +1,61 @@
+{
+  "name": "mixed",
+  "note": "left, center, right, and justify blocks side by side: each aligns its own lines independently (multi-line left wraps normally, center centers, right hugs the content edge, justify fills non-last lines).",
+  "harvest": {
+    "viewport": {
+      "width": 560,
+      "height": 400
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"l\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;width:220px;text-align:left\">left aligned text wrapping onto a couple of lines</div><div id=\"c\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;width:220px;text-align:center\">center aligned text that wraps onto multiple lines</div><div id=\"r\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;width:220px;text-align:right\">right aligned text that wraps onto a few lines</div><div id=\"j\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;width:220px;text-align:justify\">justified text that stretches its word spacing to fill each full line</div></body></html>",
+    "measureText": [
+      {
+        "text": "justified text that stretches its word spacing to fill each full line",
+        "font": "14px 'Noto Sans'"
+      }
+    ],
+    "rects": [
+      "l",
+      "c",
+      "r",
+      "j"
+    ],
+    "computedStyle": [
+      {
+        "id": "l",
+        "props": [
+          "text-align"
+        ]
+      },
+      {
+        "id": "c",
+        "props": [
+          "text-align"
+        ]
+      },
+      {
+        "id": "r",
+        "props": [
+          "text-align"
+        ]
+      },
+      {
+        "id": "j",
+        "props": [
+          "text-align"
+        ]
+      }
+    ],
+    "textElements": [
+      "l",
+      "c",
+      "r",
+      "j"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

@@ -25,6 +25,7 @@
     "verify:text-measure": "npm run build && node scripts/verify-text-measure.mjs",
     "verify:firefox": "npm run build && node scripts/verify-firefox.mjs",
     "verify:segmenter": "npm run build && node scripts/verify-segmenter.mjs",
+    "verify:text-align": "npm run build && node scripts/verify-text-align.mjs",
     "probe:browser-gap": "npm run build && node probes/probe-browser-gap.mjs",
     "test:probe": "npm run build && node --test probes/probe-gap-lib.test.mjs"
   },

@@ -1,0 +1,37 @@
+{
+  "name": "right-label",
+  "note": "text-align:right on a wrapping label: every line's right edge meets the block's content edge (line fragments x/width verified against Chrome).",
+  "harvest": {
+    "viewport": {
+      "width": 480,
+      "height": 200
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"r\" style=\"font-family:'Noto Sans';font-size:14px;line-height:22px;width:220px;text-align:right\">A right aligned label that wraps onto more than one line inside the box.</div></body></html>",
+    "measureText": [
+      {
+        "text": "A right aligned label that wraps onto more than one line inside the box.",
+        "font": "14px 'Noto Sans'"
+      }
+    ],
+    "rects": [
+      "r"
+    ],
+    "computedStyle": [
+      {
+        "id": "r",
+        "props": [
+          "text-align"
+        ]
+      }
+    ],
+    "textElements": [
+      "r"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

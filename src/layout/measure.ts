@@ -13,7 +13,7 @@
 import type { CanvasFactory, CanvasLike } from '../canvas/interface.js';
 import { skiaCanvasFactory } from '../canvas/skia.js';
 import { getActiveBrowserConfig, resolveFontFamily } from '../config/browser-config.js';
-import type { Color } from './css.js';
+import type { Color, TextAlign } from './css.js';
 
 export interface FontConfig {
   /** CSS family name as Chrome/fontconfig resolves it (e.g. 'Noto Sans'). */
@@ -110,6 +110,11 @@ export function wrapWords(
  * `lineHeight`, honoring `available` as a function of the line's vertical
  * position (the float-intrusion-aware width). Returns the laid-out lines and
  * the resulting content height.
+ *
+ * `align` applies text alignment per line within the available width:
+ * center/right shift the line; justify stretches inter-word spaces so every
+ * non-last line fills the available width, emitting one LineBox per word with
+ * the stretched advance (the last line stays left-aligned, matching Chrome).
  */
 export function layoutTextLines(opts: {
   text: string;
@@ -120,11 +125,14 @@ export function layoutTextLines(opts: {
   fontSize: number;
   family: string;
   letterSpacing?: number;
+  /** horizontal text alignment (default left). */
+  align?: TextAlign;
   /** returns the usable width for a line spanning [top, bottom). */
   available: (top: number, bottom: number) => { x: number; width: number };
 }): { lines: LineBox[]; height: number } {
   const { text, y, lineHeight, fontSize, family, available } = opts;
   const letterSpacing = opts.letterSpacing ?? 0;
+  const align = opts.align ?? 'left';
   // Collapse whitespace (CSS white-space: normal): collapse runs to a single
   // space, drop leading/trailing, split on spaces.
   const words = text.replace(/[ \t\r\n\f]+/g, ' ').trim().split(' ');
@@ -143,8 +151,27 @@ export function layoutTextLines(opts: {
       lines.push({ x: av.x, y: lineTop, width: measureTextWidth(w, fontSize, family, letterSpacing), height: lineHeight, text: w, startWord: idx, endWord: idx + 1 });
       idx += 1;
     } else {
-      const text = words.slice(idx, idx + n).join(' ');
-      lines.push({ x: av.x, y: lineTop, width: res.width, height: lineHeight, text, startWord: idx, endWord: idx + n });
+      const lineWords = words.slice(idx, idx + n);
+      const isLastLine = idx + n >= totalWords;
+      if (align === 'justify' && !isLastLine && lineWords.length > 1 && res.width < availWidth) {
+        // Distribute the surplus evenly across the inter-word spaces, emitting
+        // one word-per-LineBox so painting draws each word at its stretched x.
+        const stretch = (availWidth - res.width) / (lineWords.length - 1);
+        const spaceW = measureTextWidth(' ', fontSize, family, letterSpacing);
+        let x = av.x;
+        for (let wi = 0; wi < lineWords.length; wi++) {
+          const w = lineWords[wi];
+          lines.push({ x, y: lineTop, width: measureTextWidth(w, fontSize, family, letterSpacing), height: lineHeight, text: w, startWord: idx + wi, endWord: idx + wi + 1 });
+          if (wi < lineWords.length - 1) x += measureTextWidth(w, fontSize, family, letterSpacing) + spaceW + stretch;
+        }
+      } else {
+        const lineText = lineWords.join(' ');
+        let lineX = av.x;
+        // An overflowing line stays at the start edge under every alignment.
+        if (align === 'center' && res.width <= availWidth) lineX = av.x + (availWidth - res.width) / 2;
+        else if (align === 'right' && res.width <= availWidth) lineX = av.x + (availWidth - res.width);
+        lines.push({ x: lineX, y: lineTop, width: res.width, height: lineHeight, text: lineText, startWord: idx, endWord: idx + n });
+      }
       idx += n;
     }
     lineTop += lineHeight;
