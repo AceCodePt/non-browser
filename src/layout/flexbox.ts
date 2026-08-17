@@ -33,6 +33,7 @@ import {
   borderPaddingBlock,
   borderPaddingInline,
   clamp,
+  isScrollContainer,
   pxLength,
   resolveLength,
   type ComputedStyle,
@@ -376,7 +377,7 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
       item.minMainSize = lengthToBorderBox(mainMinLen, availableMain, s, item.padBorderMain) ?? 0;
     } else {
       item.minMainSize =
-        s.overflow !== 'visible' ? 0 : contentBasedMinMainSize(item, styles, isRow);
+        isScrollContainer(s.overflow) ? 0 : contentBasedMinMainSize(item, styles, isRow);
     }
     item.maxMainSize = mainMaxLen.auto
       ? Infinity

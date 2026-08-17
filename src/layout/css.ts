@@ -250,6 +250,28 @@ export type ListStyleType =
 
 export type ContentValue = { kind: 'none' } | { kind: 'text'; text: string };
 
+/** The computed `overflow` value (css-overflow-3 §2). */
+export type OverflowValue = 'visible' | 'hidden' | 'clip' | 'auto' | 'scroll';
+
+/**
+ * Overflow values that clip a box's content to the box (css-overflow-3 §2).
+ * `visible` never clips; `hidden`/`clip`/`auto`/`scroll` all do. Chrome paints
+ * these as a clip on the subtree to the box's padding box.
+ */
+export function clipsContent(overflow: OverflowValue): boolean {
+  return overflow !== 'visible';
+}
+
+/**
+ * Overflow values that establish a scroll container (css-overflow-3 §2): the
+ * box becomes a block formatting context root and its first child's top margin
+ * stops collapsing through it. `clip` clips without being a scroll container,
+ * so margins still collapse out of it exactly as they do for `visible`.
+ */
+export function isScrollContainer(overflow: OverflowValue): boolean {
+  return overflow === 'hidden' || overflow === 'auto' || overflow === 'scroll';
+}
+
 /**
  * The generated box a ::before/::after pseudo-element produces on its
  * originating element. `text` is null when the pseudo's content is none/normal
@@ -281,7 +303,7 @@ export interface ComputedStyle {
   tableLayout: 'auto' | 'fixed';
   emptyCells: 'show' | 'hide';
   boxSizing: 'content-box' | 'border-box';
-  overflow: 'visible' | 'hidden';
+  overflow: OverflowValue;
   width: Length;
   height: Length;
   minWidth: Length;
@@ -1445,8 +1467,14 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     boxSizingDecl && boxSizingDecl.value.trim() === 'border-box' ? 'border-box' : 'content-box';
 
   const overflowDecl = decls.find((d) => d.property === 'overflow');
-  const overflow: 'visible' | 'hidden' =
-    overflowDecl && overflowDecl.value.trim() !== 'visible' ? 'hidden' : 'visible';
+  const overflow: OverflowValue = (() => {
+    const v = overflowDecl?.value.trim() ?? '';
+    if (v === 'visible' || v === 'hidden' || v === 'clip' || v === 'auto' || v === 'scroll') return v;
+    // Unknown keyword or a two-axis shorthand (overflow: x y) outside the
+    // single-axis model: fall back to the initial value like Chrome does for
+    // an invalid value.
+    return 'visible';
+  })();
 
   const wsDecl = decls.find((d) => d.property === 'white-space');
   let whiteSpace: WhiteSpaceValue = wsDecl

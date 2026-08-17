@@ -13,7 +13,7 @@ import type { CanvasFactory, CanvasLike } from '../canvas/interface.js';
 import { skiaCanvasFactory } from '../canvas/skia.js';
 import type { Color, Side, Viewport } from './css.js';
 import { resolveEmLength, resolveLength } from './css.js';
-import { hasNonZeroRadius, innerRadii, resolveBorderRadius, traceRoundedRect, type RoundedClip, type ResolvedRadii } from './radius.js';
+import { hasNonZeroRadius, innerRadii, resolveBorderRadius, traceRoundedRect, type Clip, type ResolvedRadii, type RoundedClip } from './radius.js';
 import type { OpacityGroup, PaintOp, RootLayout, ShadowPaint, TextDecorationPaint, ListMarker } from './block-inline.js';
 import type { Box } from '../harness/fixtures.js';
 import { cssFontString, measureTextWidth } from './measure.js';
@@ -361,6 +361,22 @@ function applyRoundedClip(canvas: CanvasLike, clip: RoundedClip, viewport?: View
   canvas.clip();
 }
 
+/** Intersect the current path with a clip entry — a plain rect or a rounded
+ * rect — and set it as the canvas clip. Rect clips reuse the path so hard
+ * (non-AA) clip edges raster like Chrome's. */
+function applyClip(canvas: CanvasLike, clip: Clip, viewport?: Viewport | null): void {
+  if ('radii' in clip && hasNonZeroRadius(clip.radii)) {
+    applyRoundedClip(canvas, clip, viewport);
+    return;
+  }
+  canvas.moveTo(clip.x, clip.y);
+  canvas.lineTo(clip.x + clip.width, clip.y);
+  canvas.lineTo(clip.x + clip.width, clip.y + clip.height);
+  canvas.lineTo(clip.x, clip.y + clip.height);
+  canvas.closePath();
+  canvas.clip();
+}
+
 /**
  * Paint one box-shadow op. Solid shadows paint Chrome's sharp shape — the box
  * (or its inner frame for inset) translated by offset and expanded by spread —
@@ -582,7 +598,7 @@ function paintOp(canvas: CanvasLike, op: PaintOp, viewport: Viewport | null | un
   if (clipped) {
     canvas.save();
     canvas.beginPath();
-    applyRoundedClip(canvas, op.clip!, viewport);
+    applyClip(canvas, op.clip!, viewport);
   }
   if (op.kind === 'bg') {
     if (op.borderRadius && hasNonZeroRadius(op.borderRadius)) {
