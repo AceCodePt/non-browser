@@ -1,0 +1,34 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "s2": {
+      "opacity": "0.6"
+    }
+  },
+  "rect": {
+    "s2": {
+      "x": 10,
+      "y": 10,
+      "width": 110,
+      "height": 80
+    },
+    "nz": {
+      "x": 10,
+      "y": 10,
+      "width": 110,
+      "height": 80
+    },
+    "kid": {
+      "x": 10,
+      "y": 10,
+      "width": 110,
+      "height": 80
+    },
+    "s1": {
+      "x": 55,
+      "y": 40,
+      "width": 110,
+      "height": 80
+    }
+  }
+}

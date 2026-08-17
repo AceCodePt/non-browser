@@ -1,0 +1,22 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "ovl": {
+      "opacity": "0.35"
+    }
+  },
+  "rect": {
+    "content": {
+      "x": 40,
+      "y": 30,
+      "width": 140,
+      "height": 80
+    },
+    "ovl": {
+      "x": 40,
+      "y": 30,
+      "width": 140,
+      "height": 80
+    }
+  }
+}

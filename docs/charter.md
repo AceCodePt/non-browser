@@ -158,6 +158,7 @@ the charter and the corpus cannot silently diverge:
 | text | color (fill) | yes | corpus/paint-text, corpus/spine | color |
 | text | text-shadow | yes | corpus/box-shadow | text-shadow |
 | paint | box-shadow | yes | corpus/box-shadow | box-shadow |
+| paint | opacity (subtree compositing + stacking context) | yes | corpus/opacity | opacity |
 | font | font-family (fallback tables) | yes | corpus/cross-family, corpus/firefox-track | font-family |
 | font | font-size | yes | corpus/paint-text, corpus/spine | font-size |
 | font | font-weight / font-style | yes | corpus/ua-styles | font-weight |
@@ -176,10 +177,6 @@ omission is explicit, never silent (the coverage-matrix reconcile ledger,
 `docs/ledgers/coverage-matrix.md`, cross-references each to the archive-audit
 classification):
 
-- **Per-element opacity / box-level compositing** — not implemented; the engine
-  carries per-color alpha only (`ComputedStyle.backgroundColor/color`), never a
-  subtree compositing alpha. Archived empty as `opacity-compositing`; re-dispatched
-  as `tasks/opacity-subtree-compositing`.
 - **box-shadow / text-shadow** — not implemented (no shadow parse, no shadow
   paint). `box-shadow-paint` archived empty; re-dispatched as `tasks/shadow-paint`.
 - **outline** — not implemented; `paint-shapes` is archived PARTIAL and outline

@@ -1,0 +1,22 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "a": {
+      "opacity": "0.5"
+    }
+  },
+  "rect": {
+    "a": {
+      "x": 50,
+      "y": 30,
+      "width": 100,
+      "height": 60
+    },
+    "c": {
+      "x": 50,
+      "y": 30,
+      "width": 100,
+      "height": 60
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "overlay",
+  "note": "An overlay dim: a solid color panel is dimmed by a separate black panel at opacity 0.35 laid over it. Both are positioned boxes; the translucent overlay composites over the panel beneath, matching Chrome's element-level alpha against the content behind it.",
+  "harvest": {
+    "viewport": {
+      "width": 220,
+      "height": 140
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div style=\"position:absolute;left:0;top:0;width:220px;height:140px;background:#4caf50\"></div><div id=\"content\" style=\"position:absolute;left:40px;top:30px;width:140px;height:80px;background:#2196f3\"></div><div id=\"ovl\" style=\"position:absolute;left:40px;top:30px;width:140px;height:80px;background:#000000;opacity:0.35\"></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "ovl",
+        "props": ["opacity"]
+      }
+    ],
+    "rects": ["content", "ovl"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}
