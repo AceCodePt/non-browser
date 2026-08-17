@@ -16,7 +16,7 @@ Runtime pin record per the charter §6: every segmentation verification run reco
 
 ## Latest Run
 
-- Generated: 2026-08-17T22:43:24.546Z
+- Generated: 2026-08-17T23:17:32.645Z
 - Node ICU `78.3` vs Chrome 151.0.7922.34 ICU: **parity**
 - Strings segmented: 72 (72 pass corpus + 0 documented gaps)
 - Grapheme clusters: 182 (up to 13 in one string)
