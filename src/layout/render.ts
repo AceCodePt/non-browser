@@ -12,7 +12,8 @@
  * The dependency chain is strict — parse → cascade → measure → layout → paint —
  * so the entry functions below stop the pipeline at the stage their answer
  * needs: `renderHtml` runs everything, `rectsOf` stops after layout (no canvas,
- * no PNG), `computedStylesOf` stops after the cascade (no layout at all). All
+ * no PNG), `computedStylesOf` stops after the cascade (no layout at all, unless
+ * the document uses `@container`, whose sizes only layout can provide). All
  * three share the `prepare` core so a selective answer is guaranteed to be the
  * full path cut short, never a separate computation.
  */
@@ -21,8 +22,8 @@ import { parse, type DefaultTreeAdapterTypes } from 'parse5';
 import type { CanvasFactory, CanvasLike } from '../canvas/interface.js';
 import { skiaCanvasFactory } from '../canvas/skia.js';
 import { installPretextMeasurement } from '../pretext/index.js';
-import { resolveMediaCascade, type MediaEnvironment } from '../cascade/index.js';
-import { resolveStyles, layoutRoot } from './block-inline.js';
+import { resolveMediaCascade, hasContainerRules, type ContainerMap, type MediaEnvironment } from '../cascade/index.js';
+import { resolveStyles, layoutRoot, type RootLayout, type StyleDefaults, type LayoutNode } from './block-inline.js';
 import { computedStyleFor, type ComputedStyleProps } from './computed-style.js';
 import { paint, type RenderOutput } from './paint.js';
 import { initMeasurement } from './measure.js';
@@ -91,6 +92,11 @@ interface Prepared {
   factory: CanvasFactory;
   /** ids of every id-bearing element in the body, for rect completeness asserts. */
   ids: string[];
+  styleElements: P5Element[];
+  mediaEnv: MediaEnvironment;
+  styleDefaults: StyleDefaults;
+  /** whether any stylesheet declares @container rules (layout must resolve them). */
+  usesContainers: boolean;
 }
 
 /**
@@ -134,26 +140,28 @@ function prepare(html: string, opts: RenderOptions, label: string): Prepared {
   };
   const styleElements: P5Element[] = [];
   collectStyleElements(doc, styleElements);
+  const usesContainers = hasContainerRules(styleElements);
   const cascade = resolveMediaCascade(body, styleElements, mediaEnv);
 
+  const styleDefaults: StyleDefaults = {
+    fontFamily: opts.fontFamily,
+    fontSize: opts.fontSize ?? 16,
+    lineHeight: opts.lineHeight ?? 'normal',
+    color: { r: 0, g: 0, b: 0, a: 1 },
+    letterSpacing: 0,
+    textDecorationLines: [],
+    textDecorationColor: null,
+    textDecorationThickness: 'auto',
+    textUnderlineOffset: 0,
+  };
   const styles = resolveStyles(
     body,
-    {
-      fontFamily: opts.fontFamily,
-      fontSize: opts.fontSize ?? 16,
-      lineHeight: opts.lineHeight ?? 'normal',
-      color: { r: 0, g: 0, b: 0, a: 1 },
-      letterSpacing: 0,
-      textDecorationLines: [],
-      textDecorationColor: null,
-      textDecorationThickness: 'auto',
-      textUnderlineOffset: 0,
-    },
+    styleDefaults,
     cascade.element,
     cascade.pseudo,
   );
 
-  return { body, styles, viewport, config, factory, ids: Object.keys(collectIds(body)) };
+  return { body, styles, viewport, config, factory, ids: Object.keys(collectIds(body)), styleElements, mediaEnv, styleDefaults, usesContainers };
 }
 
 function assertIdsHaveRects(ids: string[], rects: Record<string, Box>): void {
@@ -162,6 +170,80 @@ function assertIdsHaveRects(ids: string[], rects: Record<string, Box>): void {
   if (missing.length > 0) {
     throw new Error(`layout: no rect collected for id(s): ${missing.join(', ')}`);
   }
+}
+
+/** Layout runs the cascade then computes container sizes; re-resolving the
+ * cascade against those sizes can change container sizes again (an @container
+ * rule may itself set a container's width). Iterate to a fixed point so the
+ * reported styles/layout reflect the converged container set — matching Chrome's
+ * layout/cascade reflow loop. Containers whose content-box size stops changing
+ * are the convergence signal. */
+const MAX_CONTAINER_ITERS = 8;
+
+function containerMapsEqual(a: ContainerMap, b: ContainerMap): boolean {
+  if (a.size !== b.size) return false;
+  for (const [el, da] of a) {
+    const db = b.get(el);
+    if (!db || db.width !== da.width || db.height !== da.height) return false;
+  }
+  return true;
+}
+
+/** Only inline-size containers are queryable in v1, so size/block-size elements
+ * are skipped here; the collected content-box size feeds evaluateContainerCondition. */
+function collectContainerSizes(root: RootLayout): ContainerMap {
+  const map: ContainerMap = new Map();
+  const walk = (node: LayoutNode): void => {
+    if (node.style.containerType === 'inline-size' && node.element) {
+      map.set(node.element, {
+        width: node.contentWidth,
+        height: node.contentHeight,
+        name: node.style.containerName,
+      });
+    }
+    for (const c of node.children) walk(c);
+  };
+  walk(root.root);
+  return map;
+}
+
+/** The fixed-point iteration body: re-run the cascade with @container rules
+ * resolved against the current container sizes, then re-resolve styles. */
+function resolveStylesWithContainers(
+  prep: Prepared,
+  containers: ContainerMap,
+): Map<P5Element, ComputedStyle> {
+  const cascade = resolveMediaCascade(prep.body, prep.styleElements, prep.mediaEnv, containers);
+  return resolveStyles(prep.body, prep.styleDefaults, cascade.element, cascade.pseudo);
+}
+
+/** The container-aware cascade/layout fixed point shared by renderHtml and
+ * rectsOf: returns the converged styles and layout root. Documents without
+ * @container rules skip the iteration and use the single-pass styles directly. */
+function convergeLayout(prep: Prepared): { styles: Map<P5Element, ComputedStyle>; root: RootLayout } {
+  if (!prep.usesContainers) {
+    return { styles: prep.styles, root: layoutRoot(prep.body, prep.styles, prep.viewport) };
+  }
+  let styles = prep.styles;
+  let root = layoutRoot(prep.body, prep.styles, prep.viewport);
+  let containers = collectContainerSizes(root);
+  for (let i = 0; i < MAX_CONTAINER_ITERS; i++) {
+    const nextStyles = resolveStylesWithContainers(prep, containers);
+    const nextRoot = layoutRoot(prep.body, nextStyles, prep.viewport);
+    const nextContainers = collectContainerSizes(nextRoot);
+    styles = nextStyles;
+    root = nextRoot;
+    if (containerMapsEqual(containers, nextContainers)) break;
+    containers = nextContainers;
+  }
+  return { styles, root };
+}
+
+/** The computed-style layer's styles: layout-free unless the document uses
+ * @container, whose sizes only layout can provide (a bare getComputedStyle
+ * still reflects container queries, so a container doc must pay for layout). */
+function resolveComputedStyles(prep: Prepared): Map<P5Element, ComputedStyle> {
+  return prep.usesContainers ? convergeLayout(prep).styles : prep.styles;
 }
 
 /**
@@ -204,10 +286,10 @@ function collectComputedStyles(
 
 export function renderHtml(html: string, opts: RenderOptions): RenderHtmlOutput {
   const prep = prepare(html, opts, 'renderHtml');
-  const root = layoutRoot(prep.body, prep.styles, prep.viewport);
+  const { styles, root } = convergeLayout(prep);
   const out = paint(root, opts.width, opts.height, prep.ids, prep.config.defaultFile, prep.factory, prep.viewport, opts.textElements);
 
-  return { ...out, computedStyles: collectComputedStyles(opts, prep.body, prep.styles, prep.viewport, opts.width, 'renderHtml') };
+  return { ...out, computedStyles: collectComputedStyles(opts, prep.body, styles, prep.viewport, opts.width, 'renderHtml') };
 }
 
 /**
@@ -217,16 +299,19 @@ export function renderHtml(html: string, opts: RenderOptions): RenderHtmlOutput 
  */
 export function rectsOf(html: string, opts: RenderOptions): RectsOutput {
   const prep = prepare(html, opts, 'rectsOf');
-  const root = layoutRoot(prep.body, prep.styles, prep.viewport);
+  const { root } = convergeLayout(prep);
   assertIdsHaveRects(prep.ids, root.rects);
   return { width: opts.width, height: opts.height, rects: root.rects };
 }
 
 /**
  * Snapshot of the computed-style layer alone. Resolves the cascade and reports
- * computedStyleFor for `opts.computedStyle` — never lays out, never paints.
- * This stays layout-free only because the reported values are computed/
- * specified values (getComputedStyle serialization), never used values.
+ * computedStyleFor for `opts.computedStyle` — reports `/computed` values
+ * (getComputedStyle serialization), never used values. Stays layout-free for
+ * documents without `@container`; a document that uses `@container` runs layout
+ * internally to resolve the container sizes a container query needs (a browser
+ * applies container queries to computed styles, so the answer must reflect
+ * them).
  */
 export function computedStylesOf(html: string, opts: RenderOptions): ComputedStylesOutput {
   if (!opts.computedStyle) {
@@ -236,7 +321,7 @@ export function computedStylesOf(html: string, opts: RenderOptions): ComputedSty
   return {
     width: opts.width,
     height: opts.height,
-    computedStyles: collectComputedStyles(opts, prep.body, prep.styles, prep.viewport, opts.width, 'computedStylesOf'),
+    computedStyles: collectComputedStyles(opts, prep.body, resolveComputedStyles(prep), prep.viewport, opts.width, 'computedStylesOf'),
   };
 }
 

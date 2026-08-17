@@ -7,13 +7,11 @@
  * height, prefers-color-scheme, prefers-reduced-motion, dppx — is the only
  * media surface: nothing here touches a live browser.
  *
- * `@container`: this task establishes the *evaluation model* (a parsed
- * container condition can be evaluated against a container's content-box
- * size), but the layout plumbing that computes container-type/container-name
- * containers does not exist yet — container sizing is provided by layout in a
- * later task. Until then the phase parses @container rules but never applies
- * them; the gap is documented in docs/ledgers/media-queries.md and proven by
- * the corpus fixtures `container-inert` and `container-gap`.
+ * `@container`: layout provides each inline-size container's content-box size,
+ * and this phase resolves each rule's nearest qualifying ancestor container
+ * (by name, when named) and evaluates the condition against that size. Only
+ * `container-type: inline-size` establishes a container in v1; `size`/
+ * `block-size` parse but establish none (documented in docs/ledgers/media-queries.md).
  */
 
 import type { P5Element } from '../../layout/types.js';
@@ -32,10 +30,34 @@ export type { ContainerGroup };
 export { parseContainerPrelude, parseContainerCondition } from '../stylesheet.js';
 export type { MediaCondition, MediaEnvironment } from '../media.js';
 
+/** True when any stylesheet declares an @container rule — the signal that layout
+ * must resolve container sizes for the cascade. */
+export function hasContainerRules(styleElements: P5Element[]): boolean {
+  for (const el of styleElements) {
+    const css = styleText(el);
+    if (!css) continue;
+    for (const rule of parseStylesheet(css).rules) {
+      if (rule.containerGroups.length > 0) return true;
+    }
+  }
+  return false;
+}
+
 export interface ContainerSize {
   width: number;
   height: number;
 }
+
+/** Container data for one element, supplied by layout: the content-box size and
+ * the element's container-name (css-contain-3 §3.2). Only elements that
+ * establish a container (container-type: inline-size in v1) appear as keys. */
+export interface ContainerData extends ContainerSize {
+  name: string[];
+}
+
+/** element → container data; `undefined` means @container rules cannot be
+ * resolved (no layout available) and are left unapplied. */
+export type ContainerMap = Map<P5Element, ContainerData>;
 
 export interface PseudoDecls {
   before: Declaration[];
@@ -133,6 +155,44 @@ function mediaGroupsActive(groups: MediaQuery[][], env: MediaEnvironment): boole
   return groups.every((g) => evaluateMediaQueryList(g, env));
 }
 
+/** The nearest ancestor of `el` that establishes a query container matching the
+ * group's name. An unnamed query selects the nearest container regardless of
+ * name; a named query skips non-matching containers and keeps walking up
+ * (css-contain-3 §3.1 container selection). Returns null when layout supplies no
+ * container for that ancestor (it does not establish one in v1). */
+function queryContainerFor(el: P5Element, name: string | null, containers: ContainerMap): ContainerData | null {
+  let cur = el.parentNode as unknown;
+  while (cur && isElementLike(cur)) {
+    const data = containers.get(cur as P5Element);
+    if (data !== undefined && (name === null || data.name.includes(name))) return data;
+    cur = (cur as P5Element).parentNode as unknown;
+  }
+  return null;
+}
+
+function isElementLike(n: unknown): boolean {
+  return typeof n === 'object' && n !== null && (n as { nodeName?: string }).nodeName !== undefined;
+}
+
+/** True when every enclosing @container group resolves a matching container and
+ * its condition holds against that container's content-box size. With no layout
+ * container map (@container unresolved), a rule nested in any @container group
+ * is inactive. */
+function containerGroupsActive(
+  groups: ContainerGroup[],
+  el: P5Element,
+  containers: ContainerMap | undefined,
+): boolean {
+  if (groups.length === 0) return true;
+  if (!containers) return false;
+  return groups.every((g) => {
+    const container = queryContainerFor(el, g.name, containers);
+    if (!container) return false;
+    if (!g.condition) return true;
+    return evaluateContainerCondition(g.condition.condition, container);
+  });
+}
+
 /**
  * Resolve the stylesheet cascade for the body subtree: for every element, the
  * declarations of the matching rules that are active in this media environment,
@@ -143,24 +203,21 @@ function mediaGroupsActive(groups: MediaQuery[][], env: MediaEnvironment): boole
  * originating element and their declarations are collected separately (per
  * pseudo), never applied to the element itself.
  *
- * @container rules parse but never apply (no container sizing from layout yet);
- * they are excluded here by construction, which is the documented gap.
+ * @container rules apply only when `containers` (layout-provided container
+ * sizes) is supplied; otherwise they parse but never apply — the documented
+ * pre-layout state.
  */
 export function resolveMediaCascade(
   root: P5Element,
   styleElements: P5Element[],
   env: MediaEnvironment,
+  containers?: ContainerMap,
 ): CascadeResult {
   const rules: CascadeRule[] = [];
   for (const el of styleElements) {
     const css = styleText(el);
     if (!css) continue;
     for (const rule of parseStylesheet(css).rules) {
-      // @container rules parse but never apply: container sizing comes from
-      // layout, which this task doesn't have yet (documented gap — see
-      // docs/ledgers/media-queries.md). Excluding them here keeps the engine
-      // from silently applying a query it cannot resolve.
-      if (rule.containerGroups.length > 0) continue;
       if (!mediaGroupsActive(rule.mediaGroups, env)) continue;
       rules.push(rule);
     }
@@ -174,6 +231,9 @@ export function resolveMediaCascade(
     // specificity per target and record the rule against every target it matches.
     const matched: { spec: Specificity; order: number; decls: Declaration[]; target: 'element' | 'before' | 'after' }[] = [];
     for (const rule of rules) {
+      // A rule inside a false @container group is inert for this element; a
+      // rule with no container groups is always considered.
+      if (!containerGroupsActive(rule.containerGroups, el, containers)) continue;
       let elementBest: Specificity | null = null;
       let beforeBest: Specificity | null = null;
       let afterBest: Specificity | null = null;

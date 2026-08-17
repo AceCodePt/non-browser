@@ -6,8 +6,11 @@
         "height": 400
       },
       "computedStyle": {
-        "child": {
+        "inner": {
           "color": "rgb(255, 0, 0)"
+        },
+        "grand": {
+          "color": "rgb(0, 0, 0)"
         }
       }
     },
@@ -17,8 +20,11 @@
         "height": 600
       },
       "computedStyle": {
-        "child": {
+        "inner": {
           "color": "rgb(255, 0, 0)"
+        },
+        "grand": {
+          "color": "rgb(0, 0, 0)"
         }
       }
     }

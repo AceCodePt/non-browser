@@ -1,0 +1,16 @@
+{
+  "name": "nested-container",
+  "note": "Nested containers resolve each @container query against the element's NEAREST qualifying ancestor container: #inner sits directly in .outer (width 400px) so (min-width:300px) matches; #grand sits in .inner (width 200px) so the same query does NOT match (the nearer 200px container is selected, not the 400px outer).",
+  "harvest": {
+    "html": "<html><head><style>\n  body { margin: 0; }\n  .outer { container-type: inline-size; width: 400px; }\n  .inner { container-type: inline-size; width: 200px; }\n  @container (min-width: 300px) { #inner { color: rgb(255,0,0); } }\n  @container (min-width: 300px) { #grand { color: rgb(0,0,255); } }\n</style></head><body><div class=\"outer\"><div id=\"inner\">Inner</div><div class=\"inner\"><div id=\"grand\">Grand</div></div></div></body></html>",
+    "viewports": [
+      { "width": 600, "height": 400 },
+      { "width": 800, "height": 600 }
+    ],
+    "computedStyle": [
+      { "id": "inner", "props": ["color"] },
+      { "id": "grand", "props": ["color"] }
+    ]
+  },
+  "expected": { "computedStyle": "pass" }
+}

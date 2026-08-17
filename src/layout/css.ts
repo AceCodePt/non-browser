@@ -381,6 +381,12 @@ export interface ComputedStyle {
   content: ContentValue;
   before: PseudoBox | null;
   after: PseudoBox | null;
+
+  /** css-contain-3 §3.1: `normal` establishes no container; only `inline-size`
+   * establishes one in v1 (`size`/`block-size` are parsed but not-yet). */
+  containerType: 'normal' | 'inline-size' | 'size' | 'block-size';
+  /** css-contain-3 §3.2: the query-container names this element answers to. */
+  containerName: string[];
 }
 
 /**
@@ -1731,6 +1737,18 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   const orderDecl = decl('order');
   const order = orderDecl && /^-?\d+$/.test(orderDecl.trim()) ? parseInt(orderDecl, 10) : 0;
 
+  const containerTypeDecl = decls.find((d) => d.property === 'container-type');
+  const containerType: 'normal' | 'inline-size' | 'size' | 'block-size' = (() => {
+    const v = containerTypeDecl?.value.trim();
+    if (v === 'inline-size' || v === 'size' || v === 'block-size') return v;
+    return 'normal';
+  })();
+  const containerName: string[] = (() => {
+    const v = decls.find((d) => d.property === 'container-name')?.value.trim();
+    if (!v || v === 'none') return [];
+    return v.split(/\s+/).map((s) => s.trim()).filter(Boolean);
+  })();
+
   return {
     display,
     position,
@@ -1815,5 +1833,7 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     content: contentOf(decls),
     before: null,
     after: null,
+    containerType,
+    containerName,
   };
 }
