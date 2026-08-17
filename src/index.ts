@@ -1,6 +1,6 @@
 /**
  * Module boundary — package.json `exports` resolves consumers only to this
- * file, so everything a cascade-core consumer can import comes from here.
+ * file, so everything a package consumer can import comes from here.
  * Deep-dist imports stay reachable inside the repo for the verify/harness
  * scripts, but the charter §§4–5 contract is intentional: renderHtml, its
  * option/output shapes, and the browser-config selection — nothing else.
