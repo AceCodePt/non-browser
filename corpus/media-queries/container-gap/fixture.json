@@ -1,6 +1,6 @@
 {
   "name": "container-gap",
-  "note": "Documented @container gap, divergence side: an ancestor DOES establish a container (container-type: inline-size, width 400px), so Chrome's @container (min-width: 100px) matches and paints #child red. The engine's @container evaluation model parses this query but layout does not yet resolve container sizes, so the rule is never applied and #child stays black. This fixture is authored with expected computedStyle: 'fail' to prove the divergence is real and documented — the check passes only when Chrome and the engine disagree exactly as the ledger describes. See docs/ledgers/media-queries.md.",
+  "note": "@container with an established container: .wrap establishes a container (container-type: inline-size, width 400px), so Chrome's @container (min-width: 100px) matches and paints #child red. Now that layout resolves container sizes, the engine matches the same rule against .wrap's content-box width and paints #child red too. See docs/ledgers/media-queries.md.",
   "harvest": {
     "html": "<html><head><style>\n  body { margin: 0; }\n  .wrap { container-type: inline-size; width: 400px; }\n  @container (min-width: 100px) { #child { color: rgb(255,0,0); } }\n</style></head><body><div class=\"wrap\"><div id=\"child\">Child</div></div></body></html>",
     "viewports": [
@@ -11,11 +11,5 @@
       { "id": "child", "props": ["color"] }
     ]
   },
-  "expected": {
-    "computedStyle": {
-      "result": "fail",
-      "reason": "The @container gap: an ancestor DOES establish a container (.wrap, container-type: inline-size, width 400px), so Chrome's @container (min-width: 100px) matches and paints #child red, while the engine parses the query but layout does not yet resolve container sizes, so the rule never applies and #child stays black. Documented in docs/ledgers/media-queries.md.",
-      "sunset": "Sunset when layout resolves container sizes (container-type/container-name plumbing lands); the fixture then flips to pass and the corpus exercises @container for real."
-    }
-  }
+  "expected": { "computedStyle": "pass" }
 }

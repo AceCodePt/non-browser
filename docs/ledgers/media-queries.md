@@ -30,8 +30,13 @@ exact equality), at multiple viewports per fixture:
   contribute, ordered by specificity then source order (media-specificity)
 - viewport units `vw` / `vh` / `vmin` / `vmax` resolve against the viewport
   input at computed-value time, in both stylesheet and inline declarations
+- `@container` (inline-size scope): layout computes each inline-size container's
+  content-box size, the cascade resolves each rule's nearest qualifying ancestor
+  container (by name, when a name is given) and evaluates the condition against
+  that size, then the engine iterates cascade↔layout to a fixed point — matching
+  Chrome for min-/max-width, exact, and range-syntax width conditions.
 
-## Corpus (12 fixtures)
+## Corpus (14 fixtures)
 
 | Fixture | Covers |
 | --- | --- |
@@ -46,53 +51,33 @@ exact equality), at multiple viewports per fixture:
 | `media-query-list` | comma-separated OR |
 | `media-specificity` | specificity + source order inside a true query |
 | `container-inert` | `@container` with no container established (both engines ignore) |
-| `container-gap` | `@container` with an established container (documented divergence) |
+| `container-gap` | `@container` with an established container (was the documented divergence) |
+| `nested-container` | nearest-container resolution across nested inline-size containers |
+| `non-matching-container` | a container whose size fails the query, plus an uncontained element |
 
-## @container gap (documented, not silently wrong)
+## @container (resolved divergence, inline-size scope)
 
-`@container` needs `container-type`/`container-name` plumbing that layout
-provides later. This task establishes the *evaluation model* — the phase parses
-`@container` conditions (min-/max-width, exact, range syntax `width > 300px`,
-aspect-ratio, `and`/`or`/`not`) and `evaluateContainerCondition(condition,
-containerSize)` can evaluate them against a container's content-box size — but
-layout does not yet compute container sizes, so the cascade **never applies**
-`@container` rules.
+The one declared resolution error now closes: layout computes container sizes,
+so the cascade applies `@container` rules. `container-gap` was a typed-fail
+fixture proving the engine never applied `@container` while layout provided no
+container sizing; it now passes with exact computed-style equality against
+Chrome (`#child` is `rgb(255, 0, 0)` at both harvest viewports).
 
-Two corpus fixtures prove the state, so the gap is observable rather than
-silent:
+How it works: an element establishes a query container when its
+`container-type` is not `normal`. v1 implements `inline-size` (the content-box
+width feeds size conditions, matching Chrome); `size` and `block-size` parse but
+establish no container yet — documented scope, not silent. For each `@container`
+rule, the engine walks up from the target element and selects the nearest
+ancestor that establishes a container; a named query `@container sidebar (...)` 
+selects the nearest ancestor whose `container-name` lists `sidebar` (skipping
+non-matching nearer containers). The condition — min-/max-width, exact, range
+syntax `width > 300px`, aspect-ratio, `and`/`or`/`not` — is evaluated against
+that container's content-box size via `evaluateContainerCondition`. Because an
+`@container` rule can itself change a container's size, the cascade↔layout loop
+iterates to a fixed point on the container content-box sizes before reporting.
 
-1. `container-inert` — no `container-type`/`container-name` anywhere in the
-   document. Chrome's `@container (min-width: 100px)` evaluates to false
-   (querying a size feature without a container) and does not apply; the engine
-   also does not apply it. Computed styles match. This is the contract the
-   engine must keep even once container sizing lands: a size query with no
-   container must never match.
-
-2. `container-gap` — a container IS established:
-
-   ```html
-   <style>
-     body { margin: 0; }
-     .wrap { container-type: inline-size; width: 400px; }
-     @container (min-width: 100px) { #child { color: rgb(255, 0, 0); } }
-   </style>
-   <div class="wrap"><div id="child">Child</div></div>
-   ```
-
-   Chrome resolves the nearest container for `#child` to `.wrap`, whose
-   content-box width is 400px, so `(min-width: 100px)` matches and `#child` is
-   `rgb(255, 0, 0)`. The engine parses the same rule but cannot resolve a
-   container size, so `#child` stays `rgb(0, 0, 0)`. The fixture declares
-   `expected.computedStyle: 'fail'`, so the verify script passes **only while
-   Chrome and the engine diverge exactly as described above** — the divergence
-   is asserted, not papered over. When the container plumbing lands, this
-   fixture flips to `pass` and the whole corpus exercises `@container` for real.
-
-Concrete gap example that must also hold once implemented: with the above HTML
-at a 600px viewport, `getComputedStyle(#child).color` is `rgb(255, 0, 0)` in
-Chrome and `rgb(0, 0, 0)` in the engine today; a `@container (min-width: 401px)`
-variant would NOT match (container is 400px), and an element with no matching
-container must stay unaffected.
+The contract proven by `container-inert` still holds: a size query with no
+qualifying container never matches.
 
 ## Viewport input contract
 
@@ -104,17 +89,17 @@ once per viewport.
 
 ## Results
 
-`npm run verify:media-queries` exits 0. All 12 fixtures pass all fixture x
-viewport combinations with exact computed-style equality against Chrome; the
-`container-gap` fixture passes by asserting its documented divergence.
-`reference.json` (Chrome) and `candidate.json` (engine) are written per
-fixture; reports land in `docs/reports/media-queries/`.
+`npm run verify:media-queries` exits 0. All 14 fixtures pass all fixture x
+viewport combinations with exact computed-style equality against Chrome,
+including the flipped `container-gap` (previously the asserted `@container`
+divergence). `reference.json` (Chrome) and `candidate.json` (engine) are written
+per fixture; reports land in `docs/reports/media-queries/`.
 
 ## Divergences
 
-None beyond the documented `@container` gap above. Out of scope for this task
-and not exercised by the corpus: @media in `@import`ed sheets, `@supports`,
-range syntax inside @media (`(width > 300px)` is @container-only here), custom
-properties, `!important`/layers (separate cascade phase modules), and media
-queries whose feature the engine does not parse (those rules parse-error and
-are dropped, matching a browser's recovery).
+None beyond the `@container` `size`/`block-size` scope above (parse but no
+container in v1). Out of scope and not exercised by the corpus: @media in
+`@import`ed sheets, `@supports`, range syntax inside @media (`(width > 300px)`
+is @container-only here), custom properties, `!important`/layers (separate
+cascade phase modules), and media queries whose feature the engine does not
+parse (those rules parse-error and are dropped, matching a browser's recovery).

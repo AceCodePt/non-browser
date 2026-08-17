@@ -1,0 +1,16 @@
+{
+  "name": "non-matching-container",
+  "note": "A container whose fixed width fails the query: .narrow establishes a 150px container, so @container (min-width:200px) does NOT match and #n stays black; #free has no container ancestor at all (container-inert style) so the same @container never applies. Both stay unaffected by the container query.",
+  "harvest": {
+    "html": "<html><head><style>\n  body { margin: 0; }\n  .narrow { container-type: inline-size; width: 150px; }\n  #n { color: rgb(0,0,0); }\n  #free { color: rgb(0,0,0); }\n  @container (min-width: 200px) { #n { color: rgb(255,0,0); } }\n  @container (min-width: 200px) { #free { color: rgb(0,0,255); } }\n</style></head><body><div class=\"narrow\"><div id=\"n\">N</div></div><div id=\"free\">Free</div></body></html>",
+    "viewports": [
+      { "width": 600, "height": 400 },
+      { "width": 800, "height": 600 }
+    ],
+    "computedStyle": [
+      { "id": "n", "props": ["color"] },
+      { "id": "free", "props": ["color"] }
+    ]
+  },
+  "expected": { "computedStyle": "pass" }
+}

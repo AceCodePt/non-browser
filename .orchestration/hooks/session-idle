@@ -22,7 +22,8 @@ case "${TASK_NAME:-}" in
   *float*)            npm run verify:layout-floats ;;
   *grid*)             npm run verify:layout-grid ;;
   *position*)         npm run verify:layout-positioning ;;
-  *media*|*container*) npm run verify:media-queries ;;
+  *container*)        npm run verify:media-queries ;;
+  *media*)            npm run verify:media-queries ;;
   *paint-text*)       npm run verify:paint-text ;;
   *paint-run-fallback*) npm run build && node scripts/verify-paint-fallback.mjs && npm run verify:paint-text ;;
   *border-radius*)    npm run verify:border-radius ;;

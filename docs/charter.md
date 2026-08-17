@@ -173,6 +173,7 @@ the charter and the corpus cannot silently diverge:
 | font | line-height | yes | corpus/spine, corpus/paint-text | line-height |
 | pseudo-elements | ::before/::after content | yes | corpus/pseudo-elements | content |
 | cascade | @media at-rule resolution | yes | corpus/media-queries | @media |
+| cascade | @container container queries (inline-size) | yes | corpus/media-queries | @container |
 | ua-stylesheet | UA defaults at lowest cascade priority | yes | corpus/ua-styles | UA stylesheet |
 | lists | list-style-type markers | yes | corpus/lists, corpus/ua-styles | list-style-type |
 | lists | list-style-position | yes | corpus/lists | list-style-position |
@@ -198,7 +199,7 @@ classification):
   archived EMPTY.
 - **@import / @supports / @font-face** — not parsed; `parse-stylesheets` is
   archived PARTIAL (the stylesheet parser explicitly skips these at-rules).
-- **@container container queries** — documented divergence, not silent:
-  `corpus/media-queries/container-gap` is a typed gap declaration and
-  `docs/ledgers/media-queries.md` §@container records why no `@container` rule is
-  ever applied.
+- **@container `size` / `block-size` containment** — `container-type: inline-size`
+  is implemented (charter row above); the full `size` and `block-size`
+  containment values parse but establish no container in v1, documented in
+  `docs/ledgers/media-queries.md`.
