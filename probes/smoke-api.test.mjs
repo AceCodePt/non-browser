@@ -9,6 +9,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { renderHtml, getBrowserConfig, firefoxConfig, chromeConfig } from '../dist/index.js';
+import { rectsOf } from '../dist/layout/render.js';
 
 const HTML = `<!doctype html><html><head><style>
   body { font-family: 'Noto Sans'; margin: 0; }
@@ -37,4 +38,27 @@ test('the browser-config selection (charter §4) is part of the public surface',
   assert.equal(getBrowserConfig('chrome').browser, 'chrome');
   assert.equal(getBrowserConfig('firefox').browser, 'firefox');
   assert.equal(getBrowserConfig().browser, 'chrome', 'default target is chrome');
+});
+
+test('non-rendered ids get a zero rect instead of throwing (Blink parity)', () => {
+  const html = `<div id="bar"><div id="baz">content</div><div id="qux" style="display:none">hidden</div></div><script id="s">var x = 1</script>`;
+  const opts = {
+    width: 400,
+    height: 200,
+    fontFamily: 'Noto Sans',
+    fontFile: '/usr/share/fonts/google-noto/NotoSans-Regular.ttf',
+  };
+  const zero = { x: 0, y: 0, width: 0, height: 0 };
+
+  const out = renderHtml(html, opts);
+  for (const id of ['bar', 'baz', 'qux', 's']) {
+    assert.ok(out.rects[id], `renderHtml reports a rect for ${id}`);
+  }
+  assert.deepEqual(out.rects['qux'], zero, 'display:none id is zero');
+  assert.deepEqual(out.rects['s'], zero, 'script id is zero');
+  assert.ok(out.rects['bar'].width > 0, 'rendered id keeps its true border box');
+
+  const ro = rectsOf(html, opts);
+  assert.deepEqual(ro.rects['qux'], zero, 'rectsOf display:none id is zero');
+  assert.deepEqual(ro.rects['s'], zero, 'rectsOf script id is zero');
 });

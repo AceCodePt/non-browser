@@ -172,6 +172,15 @@ function assertIdsHaveRects(ids: string[], rects: Record<string, Box>): void {
   }
 }
 
+/** Give every DOM-present id a rect so the map is total: laid-out ids keep
+ * their true border box, and ids inside display:none subtrees or on void /
+ * non-layout elements (script, style) fall back to an all-zero rect — matching
+ * Blink, where getBoundingClientRect on an unrendered box returns zeros (the
+ * paint.ts contract "every element with an id" requires presence for all ids). */
+function backfillZeroRects(ids: string[], rects: Record<string, Box>): void {
+  for (const id of ids) if (!rects[id]) rects[id] = { x: 0, y: 0, width: 0, height: 0 };
+}
+
 /** Layout runs the cascade then computes container sizes; re-resolving the
  * cascade against those sizes can change container sizes again (an @container
  * rule may itself set a container's width). Iterate to a fixed point so the
@@ -221,21 +230,28 @@ function resolveStylesWithContainers(
  * rectsOf: returns the converged styles and layout root. Documents without
  * @container rules skip the iteration and use the single-pass styles directly. */
 function convergeLayout(prep: Prepared): { styles: Map<P5Element, ComputedStyle>; root: RootLayout } {
+  let styles: Map<P5Element, ComputedStyle>;
+  let root: RootLayout;
   if (!prep.usesContainers) {
-    return { styles: prep.styles, root: layoutRoot(prep.body, prep.styles, prep.viewport) };
+    styles = prep.styles;
+    root = layoutRoot(prep.body, prep.styles, prep.viewport);
+  } else {
+    styles = prep.styles;
+    root = layoutRoot(prep.body, prep.styles, prep.viewport);
+    let containers = collectContainerSizes(root);
+    for (let i = 0; i < MAX_CONTAINER_ITERS; i++) {
+      const nextStyles = resolveStylesWithContainers(prep, containers);
+      const nextRoot = layoutRoot(prep.body, nextStyles, prep.viewport);
+      const nextContainers = collectContainerSizes(nextRoot);
+      styles = nextStyles;
+      root = nextRoot;
+      if (containerMapsEqual(containers, nextContainers)) break;
+      containers = nextContainers;
+    }
   }
-  let styles = prep.styles;
-  let root = layoutRoot(prep.body, prep.styles, prep.viewport);
-  let containers = collectContainerSizes(root);
-  for (let i = 0; i < MAX_CONTAINER_ITERS; i++) {
-    const nextStyles = resolveStylesWithContainers(prep, containers);
-    const nextRoot = layoutRoot(prep.body, nextStyles, prep.viewport);
-    const nextContainers = collectContainerSizes(nextRoot);
-    styles = nextStyles;
-    root = nextRoot;
-    if (containerMapsEqual(containers, nextContainers)) break;
-    containers = nextContainers;
-  }
+  // Totalize the rect map once on the shared converge path so both renderHtml
+  // and rectsOf see every id (Blink parity for unrendered boxes).
+  backfillZeroRects(prep.ids, root.rects);
   return { styles, root };
 }
 
