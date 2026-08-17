@@ -13,13 +13,13 @@
  * swap in a different FormattingContext and the same block/inline layout runs.
  */
 
-import { borderPaddingBlock, borderPaddingInline, parseStyleAttribute, pxLength, resolveEmLength, resolveLength, makeStyle, type BorderRadius, type ComputedStyle, type Color, type Declaration, type DecorationLine, type DisplayValue, type ListStyleType, type PseudoBox, type Shadow, type TextAlign, type VerticalAlign, type Viewport, type WhiteSpaceValue } from './css.js';
+import { borderPaddingBlock, borderPaddingInline, clipsContent, isScrollContainer, parseStyleAttribute, pxLength, resolveEmLength, resolveLength, makeStyle, type BorderRadius, type ComputedStyle, type Color, type Declaration, type DecorationLine, type DisplayValue, type ListStyleType, type PseudoBox, type Shadow, type TextAlign, type VerticalAlign, type Viewport, type WhiteSpaceValue } from './css.js';
 import { layoutTextLines, measureTextWidth, type LineBox } from './measure.js';
 import { FloatManager, type FormattingContext } from './floats.js';
 import { layoutGridChildren } from './grid.js';
 import { layoutFlexChildren } from './flexbox.js';
 import { layoutPositionedChild, initialContainingBlock, type ContainingBlock } from './positioning.js';
-import { hasNonZeroRadius, type RoundedClip } from './radius.js';
+import { hasNonZeroRadius, type Clip } from './radius.js';
 import { activeFontMetrics, fallbackAscent, halfXHeight, lineAscentContribution, lineDescentContribution, roundedAscent, roundedDescent, type FontVerticalMetrics } from './fontmetrics.js';
 import type { P5Element, P5Text } from './types.js';
 import type { Box } from '../harness/fixtures.js';
@@ -314,7 +314,7 @@ export interface PaintOp {
   borderStyles?: Record<'top' | 'right' | 'bottom' | 'left', 'none' | 'solid' | 'inset' | 'outset'>;
   marker?: ListMarker;
   borderRadius?: BorderRadius;
-  clip?: RoundedClip;
+  clip?: Clip;
   text?: {
     runs: {
       text: string;
@@ -385,12 +385,14 @@ let paintZAutoActive = false;
 let cbStack: ContainingBlock[] = [];
 
 /**
- * Active rounded overflow clips. Each entry is the border box of a rounded
- * `overflow:hidden` ancestor; paint ops pushed while an entry is on the stack
- * are clipped to it (its `box` object is mutated once the ancestor's final
- * border-box height is known, so ops reference the final rect).
+ * Active overflow clips. Each entry is the border box of an ancestor whose
+ * `overflow` clips (hidden/clip/auto/scroll — rounded rect when the ancestor
+ * has a non-zero border-radius, plain rect otherwise); paint ops pushed while
+ * an entry is on the stack are clipped to it (its `box` object is mutated once
+ * the ancestor's final border-box height is known, so ops reference the final
+ * rect).
  */
-let clipStack: RoundedClip[] = [];
+let clipStack: Clip[] = [];
 
 /**
  * The staged inside-position marker of the list-item currently being laid out.
@@ -786,19 +788,16 @@ export function layoutElementBox(
     ownBg ? ownBg.order : shadowPlaceholders.length > 0 ? shadowPlaceholders[0].order : ownBorder ? ownBorder.order : 0,
   );
 
-  // A rounded overflow:hidden box clips its whole subtree (own background and
-  // border excluded) to its border-box rounded rect. The clip box is a shared
-  // mutable object: ops reference it, and its height is finalized once the
-  // border-box height is known below.
-  let clipEntry: RoundedClip | null = null;
-  if (style.overflow === 'hidden' && hasNonZeroRadius(style.borderRadius)) {
-    clipEntry = {
-      x: borderX,
-      y: borderY,
-      width: borderWidth,
-      height: 0,
-      radii: style.borderRadius,
-    };
+  // An overflow-clipping box clips its whole subtree (own background and
+  // border excluded) to its border-box rect — a rounded rect when the box has
+  // border-radius, a plain rect otherwise. The clip box is a shared mutable
+  // object: ops reference it, and its height is finalized once the border-box
+  // height is known below.
+  let clipEntry: Clip | null = null;
+  if (clipsContent(style.overflow)) {
+    clipEntry = hasNonZeroRadius(style.borderRadius)
+      ? { x: borderX, y: borderY, width: borderWidth, height: 0, radii: style.borderRadius }
+      : { x: borderX, y: borderY, width: borderWidth, height: 0 };
     clipStack.push(clipEntry);
   }
 
@@ -1004,7 +1003,7 @@ function layoutBlock(
   }
 
   // BFC-establishing blocks must not overlap floats: shift right and shrink.
-  const establishesBFC = style.overflow !== 'visible';
+  const establishesBFC = isScrollContainer(style.overflow);
   let borderX = contentX + marginL;
   let usableWidth = borderBoxWidth;
   if (establishesBFC) {
@@ -1964,7 +1963,7 @@ function measureAtomic(
  * its last line box (overflow visible) — else the bottom margin edge (null).
  */
 function atomicBaselineOffset(node: LayoutNode, style: ComputedStyle): number | null {
-  if (style.overflow !== 'visible') return null;
+  if (isScrollContainer(style.overflow)) return null;
   const last = node.lines[node.lines.length - 1];
   if (!last) return null;
   const metrics = activeFontMetrics();

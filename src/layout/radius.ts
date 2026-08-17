@@ -40,6 +40,14 @@ export const ZERO_RESOLVED_RADII: ResolvedRadii = {
   bottomLeft: { rx: 0, ry: 0 },
 };
 
+/** A plain-rect clip: the border box of a square overflow:hidden/clip element. */
+export interface RectClip {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export interface RoundedClip {
   x: number;
   y: number;
@@ -47,6 +55,14 @@ export interface RoundedClip {
   height: number;
   radii: BorderRadius;
 }
+
+/**
+ * The active clip a paint op is subject to: either a rounded rect (border-radius
+ * overflow:hidden) or a plain rect (square overflow:hidden / clip). Both share
+ * the mutable-box pattern — layout mutates `height` on the same object the ops
+ * reference once the box's final border-box height is known.
+ */
+export type Clip = RectClip | RoundedClip;
 
 export function hasNonZeroRadius(br: BorderRadius): boolean {
   const corners = [br.topLeft, br.topRight, br.bottomRight, br.bottomLeft];
