@@ -4,6 +4,15 @@
   "private": true,
   "type": "module",
   "description": "non-browser server-side CSS cascade: selector matching, ordering, inheritance, UA stylesheet, computed values",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "engines": {
     "node": ">=20"
   },
@@ -37,7 +46,8 @@
     "verify:white-space": "npm run build && node scripts/verify-white-space.mjs",
     "probe:browser-gap": "npm run build && node probes/probe-browser-gap.mjs",
     "bench:engine-vs-oracle": "npm run build && node scripts/bench-engine-vs-oracle.mjs",
-    "test:probe": "npm run build && node --test probes/probe-gap-lib.test.mjs"
+    "test:probe": "npm run build && node --test probes/probe-gap-lib.test.mjs",
+    "test:smoke": "npm run build && node --test probes/smoke-api.test.mjs"
   },
   "dependencies": {
     "@chenglou/pretext": "^0.0.8",
