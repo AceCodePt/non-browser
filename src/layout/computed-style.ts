@@ -143,6 +143,9 @@ export function computedStyleString(style: ComputedStyle, prop: string, refWidth
       return colorString(style.color);
     case 'background-color':
       return colorString(style.backgroundColor);
+    case 'opacity':
+      // Chrome computes an alpha-value to its normalized number (0.5, 1, 0).
+      return String(style.opacity);
     case 'width':
       return lengthString(style.width, refWidth, viewport);
     case 'height':

@@ -1,0 +1,28 @@
+{
+  "name": "nested-opacity",
+  "note": "Nested opacity composites inner-first-then-outer: a blue child at 0.5 inside a red parent surface at 0.6. The child is blended into the parent's offscreen surface at 0.5, then that surface at 0.6 over the white page — the two alpha values multiply through distinct offscreen buffers rather than into one flattened alpha.",
+  "harvest": {
+    "viewport": {
+      "width": 200,
+      "height": 120
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"o\" style=\"position:absolute;left:50px;top:40px;width:100px;height:60px;opacity:0.6;background:#ff0000\"><div id=\"i\" style=\"width:100px;height:60px;background:#0000ff;opacity:0.5;display:block\"></div></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "o",
+        "props": ["opacity"]
+      },
+      {
+        "id": "i",
+        "props": ["opacity"]
+      }
+    ],
+    "rects": ["o", "i"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

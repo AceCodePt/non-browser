@@ -90,6 +90,15 @@ export interface CanvasLike {
    */
   shadowText(text: string, x: number, baselineY: number, font: string, offsetX: number, offsetY: number, blurRadius: number, color: CanvasColor): void;
 
+  /**
+   * Composite another surface onto this one at 1:1 scale, source-over, with
+   * global alpha `alpha` (default 1) scaling its opacity. Used to blend an
+   * opacity-composited subtree surface into its parent — the source keeps its
+   * per-pixel alpha, so transparent regions leave the destination untouched.
+   * `source` must be a surface produced by this factory.
+   */
+  drawImage(source: CanvasLike, alpha?: number): void;
+
   toBuffer(): Buffer;
 }
 

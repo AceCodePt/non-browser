@@ -1,0 +1,28 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "btn": {
+      "opacity": "0.4"
+    }
+  },
+  "rect": {
+    "btn": {
+      "x": 60,
+      "y": 50,
+      "width": 100,
+      "height": 50
+    },
+    "glyph": {
+      "x": 70,
+      "y": 60,
+      "width": 80,
+      "height": 30
+    },
+    "back": {
+      "x": 0,
+      "y": 0,
+      "width": 220,
+      "height": 140
+    }
+  }
+}

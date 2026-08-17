@@ -1,0 +1,24 @@
+{
+  "name": "fade",
+  "note": "A hover fade through an already-translucent child: a box at opacity 0.5 whose only child is rgba(0,0,255,0.5), over the white page. Subtree compositing blends the child into the surface first, so the effective coverage is 0.75 of blue — if opacity were flattened into the child's alpha the result would differ (the two alphas would multiply into the color rather than composite once).",
+  "harvest": {
+    "viewport": {
+      "width": 200,
+      "height": 120
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"a\" style=\"position:absolute;left:50px;top:30px;width:100px;height:60px;opacity:0.5\"><div id=\"c\" style=\"width:100px;height:60px;background:rgba(0,0,255,0.5);display:block\"></div></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "a",
+        "props": ["opacity"]
+      }
+    ],
+    "rects": ["a", "c"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

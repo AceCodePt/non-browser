@@ -1,0 +1,24 @@
+{
+  "name": "opacity-z-index",
+  "note": "opacity<1 establishes a stacking context the way a positioned z-index box does: a negative-z-index descendant must stay composited inside the opacity surface instead of escaping to paint below a lower z-index sibling. s2 (opacity 0.6, z-index 5) holds an orange z:-5 child; if the child escaped it would render beneath the black s1, but with the opacity stacking context the whole s2 subtree paints atomically at z5 and blends over s1 at 0.6.",
+  "harvest": {
+    "viewport": {
+      "width": 220,
+      "height": 140
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"s2\" style=\"position:absolute;left:10px;top:10px;z-index:5;opacity:0.6;width:110px;height:80px;background:#008000\"><div id=\"nz\" style=\"position:absolute;left:0;top:0;z-index:-5;width:110px;height:80px;background:#ffa500\"></div><div id=\"kid\" style=\"width:110px;height:80px;background:#0000ff;display:block\"></div></div><div id=\"s1\" style=\"position:absolute;left:55px;top:40px;z-index:1;width:110px;height:80px;background:#000000\"></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "s2",
+        "props": ["opacity"]
+      }
+    ],
+    "rects": ["s2", "nz", "kid", "s1"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

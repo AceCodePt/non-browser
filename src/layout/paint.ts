@@ -14,7 +14,7 @@ import { skiaCanvasFactory } from '../canvas/skia.js';
 import type { Color, Side, Viewport } from './css.js';
 import { resolveEmLength, resolveLength } from './css.js';
 import { hasNonZeroRadius, innerRadii, resolveBorderRadius, traceRoundedRect, type RoundedClip, type ResolvedRadii } from './radius.js';
-import type { PaintOp, RootLayout, ShadowPaint, TextDecorationPaint, ListMarker } from './block-inline.js';
+import type { OpacityGroup, PaintOp, RootLayout, ShadowPaint, TextDecorationPaint, ListMarker } from './block-inline.js';
 import type { Box } from '../harness/fixtures.js';
 import { cssFontString, measureTextWidth } from './measure.js';
 import { fontVerticalMetrics, lineAscentContribution, roundedAscent, roundedDescent, type FontVerticalMetrics } from './fontmetrics.js';
@@ -456,47 +456,8 @@ export function paint(
 
   const fontMetrics = fontFile ? fontVerticalMetrics(fontFile) : null;
 
-  for (const op of root.paints) {
-    const clipped = op.clip != null;
-    if (clipped) {
-      canvas.save();
-      canvas.beginPath();
-      applyRoundedClip(canvas, op.clip!, viewport);
-    }
-    if (op.kind === 'bg') {
-      if (op.borderRadius && hasNonZeroRadius(op.borderRadius)) {
-        paintRoundedBackground(canvas, op, viewport);
-      } else {
-        const b = snapBox(op.box);
-        canvas.fillRect(b.x, b.y, b.width, b.height, op.color!);
-      }
-    } else if (op.kind === 'border') {
-      if (op.borderRadius && hasNonZeroRadius(op.borderRadius)) {
-        paintRoundedBorder(canvas, op, viewport);
-      } else {
-        const styles = op.borderStyles ?? { top: 'solid' as const, right: 'solid' as const, bottom: 'solid' as const, left: 'solid' as const };
-        paintBorder(canvas, op.box, op.borderWidths!, op.borderColors!, styles);
-      }
-    } else if (op.kind === 'shadow') {
-      paintShadow(canvas, op, viewport);
-    } else if (op.kind === 'text') {
-      const t = op.text!;
-      for (const run of t.runs) {
-        const fontSize = run.fontSize ?? t.fontSize;
-        const family = run.family ?? t.family;
-        const color = run.color ?? t.color;
-        const letterSpacing = run.letterSpacing ?? t.letterSpacing;
-        if (t.textShadow.length > 0) paintTextShadows(canvas, run, fontSize, family, t.textShadow, viewport);
-        paintTextRun(canvas, run, fontSize, family, color, letterSpacing);
-      }
-      if (fontMetrics) {
-        paintDecorations(canvas, t, fontMetrics);
-      }
-    } else if (op.kind === 'marker') {
-      paintListMarker(canvas, op);
-    }
-    if (clipped) canvas.restore();
-  }
+  const scopeItems = buildPaintScene(root);
+  renderSequence(canvas, scopeItems(null), factory, viewport, viewportWidth, viewportHeight, fontMetrics, scopeItems);
 
   const rects: Record<string, Box> = {};
   collectRects(root, rects);
@@ -520,6 +481,142 @@ export function paint(
     textFragments,
     listMarkers,
   };
+}
+
+/**
+ * An item paint.ts draws at one z-order position: either a bare op or an
+ * opacity<1 subtree surface (which renders atomically). Both carry a stacking
+ * key + order so a mixed sequence sorts exactly as the flat op list did.
+ */
+type PaintItem =
+  | { kind: 'op'; op: PaintOp }
+  | { kind: 'group'; group: OpacityGroup };
+
+function itemKey(item: PaintItem): number[] {
+  return item.kind === 'op' ? item.op.key : item.group.key;
+}
+
+function itemOrder(item: PaintItem): number {
+  return item.kind === 'op' ? item.op.order : item.group.order;
+}
+
+function compareItems(a: PaintItem, b: PaintItem): number {
+  const ka = itemKey(a);
+  const kb = itemKey(b);
+  const n = Math.min(ka.length, kb.length);
+  for (let i = 0; i < n; i++) if (ka[i] !== kb[i]) return ka[i] - kb[i];
+  const dl = ka.length - kb.length;
+  if (dl !== 0) return dl;
+  return itemOrder(a) - itemOrder(b);
+}
+
+function scopeItemsOf(root: RootLayout, byGroup: Map<number, PaintOp[]>, parent: number | null): PaintItem[] {
+  const items: PaintItem[] = [];
+  const ops = parent === null ? byGroup.get(-1) ?? [] : byGroup.get(parent) ?? [];
+  for (const op of ops) items.push({ kind: 'op', op });
+  for (const [, g] of root.opacityGroups) {
+    if (g.parent === parent) items.push({ kind: 'group', group: g });
+  }
+  items.sort(compareItems);
+  return items;
+}
+
+function buildPaintScene(root: RootLayout) {
+  const byGroup = new Map<number, PaintOp[]>();
+  byGroup.set(-1, []);
+  for (const op of root.paints) {
+    const g = op.group;
+    const key = g === undefined || g === null ? -1 : g;
+    let bucket = byGroup.get(key);
+    if (!bucket) {
+      bucket = [];
+      byGroup.set(key, bucket);
+    }
+    bucket.push(op);
+  }
+  return (parent: number | null): PaintItem[] => scopeItemsOf(root, byGroup, parent);
+}
+
+/**
+ * Paint an atomic opacity group's subtree into a transparent offscreen surface
+ * and blend it onto `canvas` at the group's alpha. level 0 drops the subtree
+ * from paint entirely while layout/frame geometry is untouched.
+ */
+function renderGroup(
+  canvas: CanvasLike,
+  group: OpacityGroup,
+  factory: CanvasFactory,
+  viewport: Viewport | null | undefined,
+  vw: number,
+  vh: number,
+  fontMetrics: FontVerticalMetrics | null,
+  scopeItems: (parent: number | null) => PaintItem[],
+): void {
+  if (group.level === 0) return;
+  const off = factory.create(vw, vh);
+  renderSequence(off, scopeItems(group.id), factory, viewport, vw, vh, fontMetrics, scopeItems);
+  canvas.drawImage(off, group.level);
+}
+
+function renderSequence(
+  canvas: CanvasLike,
+  items: PaintItem[],
+  factory: CanvasFactory,
+  viewport: Viewport | null | undefined,
+  vw: number,
+  vh: number,
+  fontMetrics: FontVerticalMetrics | null,
+  scopeItems: (parent: number | null) => PaintItem[],
+): void {
+  for (const item of items) {
+    if (item.kind === 'op') {
+      paintOp(canvas, item.op, viewport, fontMetrics);
+      continue;
+    }
+    renderGroup(canvas, item.group, factory, viewport, vw, vh, fontMetrics, scopeItems);
+  }
+}
+
+function paintOp(canvas: CanvasLike, op: PaintOp, viewport: Viewport | null | undefined, fontMetrics: FontVerticalMetrics | null): void {
+  const clipped = op.clip != null;
+  if (clipped) {
+    canvas.save();
+    canvas.beginPath();
+    applyRoundedClip(canvas, op.clip!, viewport);
+  }
+  if (op.kind === 'bg') {
+    if (op.borderRadius && hasNonZeroRadius(op.borderRadius)) {
+      paintRoundedBackground(canvas, op, viewport);
+    } else {
+      const b = snapBox(op.box);
+      canvas.fillRect(b.x, b.y, b.width, b.height, op.color!);
+    }
+  } else if (op.kind === 'border') {
+    if (op.borderRadius && hasNonZeroRadius(op.borderRadius)) {
+      paintRoundedBorder(canvas, op, viewport);
+    } else {
+      const styles = op.borderStyles ?? { top: 'solid' as const, right: 'solid' as const, bottom: 'solid' as const, left: 'solid' as const };
+      paintBorder(canvas, op.box, op.borderWidths!, op.borderColors!, styles);
+    }
+  } else if (op.kind === 'shadow') {
+    paintShadow(canvas, op, viewport);
+  } else if (op.kind === 'text') {
+    const t = op.text!;
+    for (const run of t.runs) {
+      const fontSize = run.fontSize ?? t.fontSize;
+      const family = run.family ?? t.family;
+      const color = run.color ?? t.color;
+      const letterSpacing = run.letterSpacing ?? t.letterSpacing;
+      if (t.textShadow.length > 0) paintTextShadows(canvas, run, fontSize, family, t.textShadow, viewport);
+      paintTextRun(canvas, run, fontSize, family, color, letterSpacing);
+    }
+    if (fontMetrics) {
+      paintDecorations(canvas, t, fontMetrics);
+    }
+  } else if (op.kind === 'marker') {
+    paintListMarker(canvas, op);
+  }
+  if (clipped) canvas.restore();
 }
 
 /**

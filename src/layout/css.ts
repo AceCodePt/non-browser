@@ -296,6 +296,9 @@ export interface ComputedStyle {
   borderRadius: BorderRadius;
   backgroundColor: Color;
   color: Color;
+  /** element-level opacity (css-transforms-1 §11): composites the whole subtree
+   * against what's behind it and establishes a stacking context when < 1. */
+  opacity: number;
   /** box-shadows, in source order (first shadow paints on top). Not inherited. */
   boxShadow: Shadow[];
   /** text-shadows (inherited), first on top. */
@@ -1482,6 +1485,17 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     ? parsePxOffset(decOffsetDecl.value)
     : defaults.textUnderlineOffset ?? 0;
 
+  const opacity = (() => {
+    const d = decls.find((x) => x.property === 'opacity');
+    if (!d) return 1;
+    const v = d.value.trim();
+    const pm = v.match(/^(\d+(?:\.\d+)?)%$/);
+    const nm = v.match(/^(\d+(?:\.\d+)?)$/);
+    const raw = pm ? parseFloat(pm[1]) / 100 : nm ? parseFloat(nm[1]) : NaN;
+    if (Number.isNaN(raw)) return 1;
+    return Math.min(1, Math.max(0, raw));
+  })();
+
   const boxShadow = (() => {
     const d = decls.find((x) => x.property === 'box-shadow');
     if (!d) return [];
@@ -1671,6 +1685,7 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     borderRadius,
     backgroundColor: bgDecl ? parseColor(bgDecl.value) : { r: 0, g: 0, b: 0, a: 0 },
     color: elementColor,
+    opacity,
     boxShadow,
     textShadow,
     fontFamily,

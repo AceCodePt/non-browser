@@ -1,0 +1,24 @@
+{
+  "name": "disabled-style",
+  "note": "Element-level opacity fades an entire subtree uniformly: a gray 'disabled' button at opacity 0.4 and its white glyph surface composite together over a gold backdrop, so the whole button dims rather than each child flattening its own alpha against the page.",
+  "harvest": {
+    "viewport": {
+      "width": 220,
+      "height": 140
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"back\" style=\"position:absolute;left:0;top:0;width:220px;height:140px;background:#ffd54f\"></div><div id=\"btn\" style=\"position:absolute;left:60px;top:50px;width:100px;height:50px;background:#616161;opacity:0.4\"><div id=\"glyph\" style=\"position:absolute;left:10px;top:10px;width:80px;height:30px;background:#ffffff\"></div></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "btn",
+        "props": ["opacity"]
+      }
+    ],
+    "rects": ["btn", "glyph", "back"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

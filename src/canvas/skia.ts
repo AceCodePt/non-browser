@@ -179,6 +179,15 @@ export class SkiaCanvas implements CanvasLike {
     this.ctx.restore();
   }
 
+  drawImage(source: CanvasLike, alpha = 1): void {
+    const src = source instanceof SkiaCanvas ? source.canvas : null;
+    if (!src) throw new Error('skia: drawImage requires a SkiaCanvas surface');
+    this.ctx.save();
+    this.ctx.globalAlpha = alpha;
+    this.ctx.drawImage(src, 0, 0);
+    this.ctx.restore();
+  }
+
   toBuffer(): Buffer {
     return this.canvas.toBuffer('image/png');
   }

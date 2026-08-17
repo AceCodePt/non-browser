@@ -300,6 +300,12 @@ export interface PaintOp {
   key: number[];
   order: number;
   kind: 'bg' | 'border' | 'text' | 'marker' | 'shadow';
+  /**
+   * The innermost opacity composite this op belongs to: the opacity<1 element
+   * whose subtree opacities as one atomic surface. Absent = paints straight
+   * onto the backdrop. Set in pushPaintOp from the active opacity stack.
+   */
+  group?: number;
   box: Box;
   color?: Color;
   shadow?: ShadowPaint;
@@ -334,12 +340,32 @@ export interface PaintOp {
   };
 }
 
+/**
+ * One opacity<1 element's subtree composite (css-transforms-1 §11): all ops
+ * tagged with this group id paint into a transparent offscreen surface, then
+ * that surface composites onto its parent at `level` alpha. `key`/`order` place
+ * the atomic surface at the element's stacking level among non-grouped ops.
+ */
+export interface OpacityGroup {
+  id: number;
+  /** the element's opacity in [0,1]; 0 drops the subtree from paint. */
+  level: number;
+  /** next-outer opacity group, or null for a top-level group. */
+  parent: number | null;
+  /** the element's paint key (ownKey), used to seat the surface in z-order. */
+  key: number[];
+  /** the element's own first-op order, seating the surface among same-key ops. */
+  order: number;
+}
+
 export interface RootLayout {
   root: LayoutNode;
   bodyHeight: number;
   bodyStyle: ComputedStyle;
   floats: FloatManager;
   paints: PaintOp[];
+  /** every opacity<1 composite, by id; paint.ts groups ops by PaintOp.group. */
+  opacityGroups: Map<number, OpacityGroup>;
 }
 
 // Layout is a single-threaded recursive descent, so module-level stacks are
@@ -376,10 +402,45 @@ let clipStack: RoundedClip[] = [];
 let insideMarkerAdvance: number | null = null;
 let insideMarkerOwner: P5Element | null = null;
 
+/**
+ * Stack of active opacity composites (innermost last). Every op pushed while a
+ * composite is active is tagged with the innermost group id so paint.ts can
+ * render that subtree to an offscreen surface and blend it as one unit.
+ */
+let opacityStack: number[] = [];
+let nextOpacityId = 0;
+const opacityGroups = new Map<number, OpacityGroup>();
+
 function pushPaintOp(paints: PaintOp[], op: PaintOp): void {
   const clip = clipStack.length > 0 ? clipStack[clipStack.length - 1] : null;
   if (clip) op.clip = clip;
+  const g = opacityStack[opacityStack.length - 1];
+  if (g !== undefined) op.group = g;
   paints.push(op);
+}
+
+function pushOpacityGroup(
+  level: number,
+  key: number[],
+  order: number,
+): number | null {
+  if (level >= 1) return null;
+  const parent = opacityStack[opacityStack.length - 1] ?? null;
+  const id = nextOpacityId++;
+  opacityStack.push(id);
+  opacityGroups.set(id, { id, level, parent, key, order });
+  return id;
+}
+
+function updateOpacityOrder(id: number | null, order: number): void {
+  if (id === null) return;
+  const g = opacityGroups.get(id);
+  if (g) g.order = order;
+}
+
+function popOpacityGroup(id: number | null): void {
+  if (id === null) return;
+  opacityStack.pop();
 }
 
 let icbEntry: ContainingBlock = { rect: { x: 0, y: 0, width: 0, height: 0 }, heightKnown: true, pending: [] };
@@ -439,6 +500,9 @@ export function layoutRoot(
   paintZAutoActive = false;
   cbStack = [];
   clipStack = [];
+  opacityStack = [];
+  nextOpacityId = 0;
+  opacityGroups.clear();
   icbEntry = { rect: initialContainingBlock(viewport), heightKnown: true, pending: [] };
   cbStack.push(icbEntry);
 
@@ -548,6 +612,7 @@ export function layoutRoot(
     bodyStyle: style,
     floats: fm,
     paints,
+    opacityGroups,
   };
 }
 
@@ -680,6 +745,12 @@ export function layoutElementBox(
     ownKey = inFlowPaintKey(style.display === 'inline-block' ? STEP_INLINE : STEP_INFLOW);
   }
 
+  // An opacity<1 element composites its entire subtree as one atomic surface
+  // (own background/border/shadows plus every descendant) blended against what
+  // is behind it. Push the composite before the own ops so they are captured;
+  // its placement order is finalized once the own ops carry an order below.
+  const ownOpacityGroup = pushOpacityGroup(style.opacity, ownKey, 0);
+
   // An element's own background/border paints before its contents (CSS
   // painting order: parent background first, then children in source order).
   // Placeholders (height 0) are pushed here and finalized after layout so the
@@ -708,6 +779,12 @@ export function layoutElementBox(
   if (ownBg) pushPaintOp(paints, ownBg);
   for (let i = shadowOps.length - 1; i >= 0; i--) if (shadowOps[i].inset) pushShadow(shadowOps[i]);
   const ownBorder = pushBorders(paints, nextOrder, ownKey, style, borderX, borderY, borderWidth, 0);
+  // The composite's placement order is its own first paint op (its background,
+  // else its first shadow), which seats the whole surface among same-level ops.
+  updateOpacityOrder(
+    ownOpacityGroup,
+    ownBg ? ownBg.order : shadowPlaceholders.length > 0 ? shadowPlaceholders[0].order : ownBorder ? ownBorder.order : 0,
+  );
 
   // A rounded overflow:hidden box clips its whole subtree (own background and
   // border excluded) to its border-box rounded rect. The clip box is a shared
@@ -879,6 +956,7 @@ export function layoutElementBox(
   }
   if (clipEntry) clipStack.pop();
   if (posPaint) popPositionedPaint(posPaint);
+  popOpacityGroup(ownOpacityGroup);
   void padBorderH;
   return node;
 }
@@ -1076,26 +1154,31 @@ function layoutFloat(
 
   const floatKey = inFlowPaintKey(STEP_FLOAT);
   const floatShadowOps = buildBoxShadowOps(style, placed.borderX, placed.borderY, borderBoxWidth, floatContentWidth, viewport);
+  const floatOpacityGroup = pushOpacityGroup(style.opacity, floatKey, 0);
+  let firstFloatOrder = 0;
   for (let i = floatShadowOps.length - 1; i >= 0; i--) {
     if (floatShadowOps[i].inset) continue;
+    firstFloatOrder = nextOrder();
     pushPaintOp(paints, {
       key: floatKey,
-      order: nextOrder(),
+      order: firstFloatOrder,
       kind: 'shadow',
       box: { x: placed.borderX, y: placed.borderY, width: borderBoxWidth, height: borderHeight },
       shadow: floatShadowOps[i],
     });
   }
   if (style.backgroundColor.a > 0) {
+    firstFloatOrder = nextOrder();
     pushPaintOp(paints, {
       key: floatKey,
-      order: nextOrder(),
+      order: firstFloatOrder,
       kind: 'bg',
       box: { x: placed.borderX, y: placed.borderY, width: borderBoxWidth, height: borderHeight },
       color: style.backgroundColor,
       borderRadius: style.borderRadius,
     });
   }
+  updateOpacityOrder(floatOpacityGroup, firstFloatOrder);
   for (let i = floatShadowOps.length - 1; i >= 0; i--) {
     if (!floatShadowOps[i].inset) continue;
     pushPaintOp(paints, {
@@ -1138,6 +1221,7 @@ function layoutFloat(
       },
     });
   }
+  popOpacityGroup(floatOpacityGroup);
   return node;
 }
 
