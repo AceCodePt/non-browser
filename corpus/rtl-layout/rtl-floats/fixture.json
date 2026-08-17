@@ -1,0 +1,22 @@
+{
+  "name": "rtl-floats",
+  "note": "Float placement under direction:rtl. float:inline-start computes to the physical right, float:inline-end to the left (css-logical-1 §4); the inline text hugs the inline-start (right) edge of each line box while wrapping between the two floats.",
+  "harvest": {
+    "viewport": {
+      "width": 480,
+      "height": 200
+    },
+    "html": "<body style=\"margin:0\"><div dir=\"rtl\" style=\"width:320px;background:#e0e0e0\"><div id=\"fl\" style=\"float:inline-start;width:80px;height:48px;background:#d9534f\"></div><div id=\"fr\" style=\"float:inline-end;width:60px;height:36px;background:#4a90d9\"></div><p id=\"p\" style=\"margin:0;font-family:'Noto Sans';font-size:14px;line-height:20px\">The quick brown fox jumps over the lazy dog while the floats hold both edges of this RTL paragraph text</p></div></body>",
+    "rects": ["fl", "fr", "p"],
+    "textElements": ["p"],
+    "computedStyle": [
+      { "id": "p", "props": ["direction", "text-align"] }
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

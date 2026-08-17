@@ -1,0 +1,23 @@
+{
+  "name": "rtl-mixed",
+  "note": "Mixed LTR/RTL nesting: an RTL block inside an LTR context resolves its inline-start margin/padding against its own direction (right), while an LTR child block resolves against left; an LTR-in-RTL element behaves LTR again. Each box lands where its own and its containing block's direction put it.",
+  "harvest": {
+    "viewport": {
+      "width": 480,
+      "height": 200
+    },
+    "html": "<body style=\"margin:0\"><div style=\"width:340px;background:#e0e0e0\"><div id=\"ma\" style=\"direction:rtl;margin-inline-start:16px;width:220px;background:#f0f0f0\"><div id=\"mb\" style=\"width:100px;height:22px;background:#d9534f\"></div><div id=\"mc\" style=\"width:60px;height:22px;background:#4a90d9;margin-inline-end:12px\"></div></div><div id=\"md\" style=\"direction:ltr;margin-inline-start:30px;width:140px;height:22px;background:#5cb85c\"></div><div id=\"me\" style=\"width:80px;height:22px;background:#f0ad4e\"></div></div></body>",
+    "rects": ["ma", "mb", "mc", "md", "me"],
+    "textElements": [],
+    "computedStyle": [
+      { "id": "ma", "props": ["direction", "margin-left", "margin-right"] },
+      { "id": "md", "props": ["direction", "margin-left"] }
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

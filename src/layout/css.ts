@@ -112,6 +112,10 @@ export function clamp(v: number, lo: number, hi: number): number {
 export type Side = 'top' | 'right' | 'bottom' | 'left';
 export const SIDES: Side[] = ['top', 'right', 'bottom', 'left'];
 
+/** The computed `direction` (css-writing-modes-4 §2.2): which physical edge a
+ * logical start/end resolves to along the inline axis. Inherited; initial ltr. */
+export type Direction = 'ltr' | 'rtl';
+
 export type TrackFunction =
   | { type: 'fixed'; px: number }
   | { type: 'pct'; pct: number }
@@ -226,8 +230,9 @@ export type VerticalAlign = 'baseline' | 'top' | 'middle' | 'bottom';
 
 /**
  * Used text-alignment: the layout keyword after `start`/`end` resolve against
- * the direction (LTR: start→left, end→right). `justify` is the used value for
- * stretching; the last line of a block always lays out left-aligned.
+ * the computed direction (LTR: start→left, end→right; RTL: start→right,
+ * end→left). `justify` is the used value for stretching; the last line of a
+ * block always lays out at the start edge.
  */
 export type TextAlign = 'left' | 'center' | 'right' | 'justify';
 
@@ -285,6 +290,7 @@ export interface PseudoBox {
 export interface ComputedStyle {
   display: DisplayValue;
   position: 'static' | 'relative' | 'absolute' | 'fixed';
+  direction: Direction;
   zIndex: number | null;
   top: Length;
   right: Length;
@@ -1138,12 +1144,17 @@ interface Defaults {
   textAlignDefault?: TextAlign;
   textAlignInherited?: TextAlign;
   textAlignComputedInherited?: string;
+  /** the inherited computed text-align keyword ('start'/'end'/'left'/'right'/
+   * 'center'/'justify'), resolved against the element's own direction. */
+  textAlignInheritedKeyword?: string;
   whiteSpaceDefault?: WhiteSpaceValue;
   borderCollapseDefault?: 'separate' | 'collapse';
   borderSpacingDefault?: number;
   borderSpacingVDefault?: number;
   tableLayoutDefault?: 'auto' | 'fixed';
   captionSideDefault?: 'top' | 'bottom';
+  /** inherited `direction` (direction inherits; initial ltr). */
+  directionInherited?: Direction;
 }
 export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedStyle {
   const color = (name: string, dflt: Color): Color => {
@@ -1241,6 +1252,23 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     return d ? resolveEmLength(parseLength(d.value), fontSize) : dflt;
   };
 
+  // Resolve one physical inset side from the longhands that feed it — the
+  // physical longhand, the block/inline logical longhand mapped per
+  // `direction` (css-logical-1 §2.4), and the `inset` shorthand — taking the
+  // cascade winner among them (the first declaration in the winner-first list).
+  const insetSide = (side: Side, dflt: Length = AUTO): Length => {
+    const names: string[] = [side];
+    if (side === 'top') names.push('inset-block-start');
+    else if (side === 'bottom') names.push('inset-block-end');
+    else if (side === 'left') names.push(direction === 'rtl' ? 'inset-inline-end' : 'inset-inline-start');
+    else names.push(direction === 'rtl' ? 'inset-inline-start' : 'inset-inline-end');
+    names.push('inset');
+    const d = decls.find((x) => names.includes(x.property));
+    if (!d) return dflt;
+    if (d.property === 'inset') return resolveEmLength(parseBoxShorthand(d.value)[side], fontSize);
+    return resolveEmLength(parseLength(d.value), fontSize);
+  };
+
   const marginLonghand = (name: string, dflt: Length, quirkDecls: string[]): Length => {
     const d = decls.find((x) => x.property === name);
     if (d) {
@@ -1262,29 +1290,40 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     return { top, right, bottom, left };
   };
 
+  // `direction` (css-writing-modes-4 §2.2): inherited, initial ltr. Resolved
+  // first so the logical→physical mappings below (margins, padding, insets,
+  // text-align, float) can read it — the declaration never participates in
+  // cascade order with the properties it maps.
+  const direction: Direction = (() => {
+    const d = decls.find((x) => x.property === 'direction');
+    return d && d.value.trim() === 'rtl' ? 'rtl' : (defaults.directionInherited ?? 'ltr');
+  })();
+
   // --- margins: the logical longhands (margin-block-start/end,
   // margin-inline-start/end) feed the physical sides, and the `margin`
   // shorthand wins over everything (CSS logical/physical is resolved in source
   // order in Blink; for the UA fixtures these never coexist). The UA
-  // margin-block-start carries the quirky-margin marker (Blink `__qem`). ---
+  // margin-block-start carries the quirky-margin marker (Blink `__qem`).
+  // The inline longhands map per `direction` (css-writing-modes-4 §2.2). ---
   const margin = (() => {
     const sh = decls.find((d) => d.property === 'margin');
     const top = marginLonghand('margin-block-start', len('margin-top', pxLength(0)), ['margin-block-start']);
     const bottom = marginLonghand('margin-block-end', len('margin-bottom', pxLength(0)), ['margin-block-end']);
-    const left = marginLonghand('margin-inline-start', len('margin-left', pxLength(0)), []);
-    const right = marginLonghand('margin-inline-end', len('margin-right', pxLength(0)), []);
+    const left = marginLonghand(direction === 'rtl' ? 'margin-inline-end' : 'margin-inline-start', len('margin-left', pxLength(0)), []);
+    const right = marginLonghand(direction === 'rtl' ? 'margin-inline-start' : 'margin-inline-end', len('margin-right', pxLength(0)), []);
     if (sh) return parseBoxShorthand(sh.value);
     return { top, right, bottom, left };
   })();
 
-  // --- padding: padding-inline-start feeds the left side (list gutters). ---
+  // --- padding: the inline logical longhands feed the physical sides per
+  // `direction` (the inline-start side holds the list gutter). ---
   const padding = (() => {
     const sh = decls.find((d) => d.property === 'padding');
     const dflt = defaults.paddingDefault ?? pxLength(0);
     const top = len('padding-top', dflt);
-    const right = len('padding-inline-end', len('padding-right', dflt));
+    const right = len(direction === 'rtl' ? 'padding-inline-start' : 'padding-inline-end', len('padding-right', dflt));
     const bottom = len('padding-bottom', dflt);
-    const left = len('padding-inline-start', len('padding-left', dflt));
+    const left = len(direction === 'rtl' ? 'padding-inline-end' : 'padding-inline-start', len('padding-left', dflt));
     if (sh) return parseBoxShorthand(sh.value);
     return { top, right, bottom, left };
   })();
@@ -1386,13 +1425,14 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     return 'static';
   })();
   // CSS 2.1 §9.7: float computes to 'none' for abs/fixed positioned boxes.
-  let float: 'none' | 'left' | 'right' = floatDecl
-    ? floatDecl.value.trim() === 'left'
-      ? 'left'
-      : floatDecl.value.trim() === 'right'
-        ? 'right'
-        : 'none'
-    : 'none';
+  // The logical keywords float:inline-start/end compute to the physical side
+  // per `direction` (css-logical-1 §4), mirroring Blink's computed value.
+  let float: 'none' | 'left' | 'right' = (() => {
+    const v = floatDecl?.value.trim();
+    if (v === 'left' || v === 'inline-start') return direction === 'rtl' && v === 'inline-start' ? 'right' : 'left';
+    if (v === 'right' || v === 'inline-end') return direction === 'rtl' && v === 'inline-end' ? 'left' : 'right';
+    return 'none';
+  })();
   if (position === 'absolute' || position === 'fixed') float = 'none';
 
   const zIndexDecl = decls.find((d) => d.property === 'z-index');
@@ -1400,9 +1440,13 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     zIndexDecl && /^-?\d+$/.test(zIndexDecl.value.trim()) ? parseInt(zIndexDecl.value.trim(), 10) : null;
 
   const clearDecl = decls.find((d) => d.property === 'clear');
-  const clear: 'none' | 'left' | 'right' | 'both' = clearDecl
-    ? (clearDecl.value.trim() as 'none' | 'left' | 'right' | 'both')
-    : 'none';
+  const clear: 'none' | 'left' | 'right' | 'both' = (() => {
+    const v = clearDecl?.value.trim();
+    if (v === 'left' || v === 'inline-start') return direction === 'rtl' && v === 'inline-start' ? 'right' : 'left';
+    if (v === 'right' || v === 'inline-end') return direction === 'rtl' && v === 'inline-end' ? 'left' : 'right';
+    if (v === 'both') return 'both';
+    return 'none';
+  })();
 
   const verticalAlignDecl = decls.find((d) => d.property === 'vertical-align');
   const verticalAlign: VerticalAlign = verticalAlignDecl
@@ -1410,20 +1454,25 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     : (defaults.verticalAlignDefault ?? 'baseline');
 
   const textAlignDecl = decls.find((d) => d.property === 'text-align');
-  const textAlignInheritedUsed = defaults.textAlignInherited ?? 'left';
-  // Used value: `start`/`end` resolve against LTR (start→left, end→right);
-  // `justify` carries through as the used value for line stretching.
-  const textAlign: TextAlign = (() => {
-    if (textAlignDecl) {
-      const v = textAlignDecl.value.trim();
-      if (v === 'center') return 'center';
-      if (v === 'right' || v === 'end') return 'right';
-      if (v === 'justify') return 'justify';
-      if (v === 'match-parent') return defaults.textAlignInherited ?? 'left';
-      return 'left';
-    }
-    return defaults.textAlignDefault ?? textAlignInheritedUsed;
-  })();
+  // The inherited text-align is its *computed* keyword (start/end/left/...),
+  // not the parent's used physical edge: css-text-3 inherits the computed
+  // value, so an element with no declaration resolves the inherited keyword
+  // against its OWN direction (an RTL child of an LTR subtree still aligns
+  // start → right).
+  const textAlignInheritedKeyword = defaults.textAlignInheritedKeyword ?? 'start';
+  const usedFromKeyword = (kw: string): TextAlign => {
+    if (kw === 'start') return direction === 'rtl' ? 'right' : 'left';
+    if (kw === 'end') return direction === 'rtl' ? 'left' : 'right';
+    if (kw === 'match-parent') return usedFromKeyword(textAlignInheritedKeyword);
+    if (kw === 'center' || kw === 'justify' || kw === 'right' || kw === 'left') return kw as TextAlign;
+    return direction === 'rtl' ? 'right' : 'left';
+  };
+  // Used value: `start`/`end` resolve against the computed `direction`
+  // (css-text-3 §4.2) — RTL maps start→right, end→left; `justify` carries
+  // through as the used value for line stretching.
+  const textAlign: TextAlign = textAlignDecl
+    ? usedFromKeyword(textAlignDecl.value.trim())
+    : (defaults.textAlignDefault ?? usedFromKeyword(textAlignInheritedKeyword));
   // Computed value matches Chrome's `getComputedStyle().textAlign` verbatim:
   // the authored keyword (start/end kept logical under LTR), else the inherited
   // computed value, else the UA default, else the initial `start` (CSS Text 3
@@ -1681,11 +1730,12 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   return {
     display,
     position,
+    direction,
     zIndex,
-    top: len('top'),
-    right: len('right'),
-    bottom: len('bottom'),
-    left: len('left'),
+    top: insetSide('top'),
+    right: insetSide('right'),
+    bottom: insetSide('bottom'),
+    left: insetSide('left'),
     float,
     clear,
     verticalAlign,

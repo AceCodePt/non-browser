@@ -172,20 +172,29 @@ export function layoutTextLines(opts: {
   letterSpacing?: number;
   align?: TextAlign;
   whiteSpace?: WhiteSpaceValue;
+  rtl?: boolean;
   available: (top: number, bottom: number) => { x: number; width: number };
 }): { lines: LineBox[]; height: number } {
   const { text, y, lineHeight, fontSize, family, available } = opts;
   const letterSpacing = opts.letterSpacing ?? 0;
   const align = opts.align ?? 'left';
   const ws = opts.whiteSpace ?? 'normal';
+  const rtl = opts.rtl ?? false;
   const lines: LineBox[] = [];
   let lineTop = y;
   const measure = (s: string): number => measureTextWidth(s, fontSize, family, letterSpacing);
   const pushLine = (av: { x: number; width: number }, width: number, lineText: string): void => {
+    // The line's start edge is the inline-start (right under RTL); an
+    // overflowing line stays there under every alignment, matching Chrome.
+    const fits = width <= av.width;
     let lineX = av.x;
-    // An overflowing line stays at the start edge under every alignment.
-    if (align === 'center' && width <= av.width) lineX = av.x + (av.width - width) / 2;
-    else if (align === 'right' && width <= av.width) lineX = av.x + (av.width - width);
+    if (align === 'center') {
+      lineX = rtl && !fits ? av.x + (av.width - width) : av.x + (fits ? (av.width - width) / 2 : 0);
+    } else if (align === 'right') {
+      lineX = rtl ? av.x + (av.width - width) : fits ? av.x + (av.width - width) : av.x;
+    } else if (align === 'left') {
+      lineX = rtl && !fits ? av.x + (av.width - width) : av.x;
+    }
     lines.push({ x: lineX, y: lineTop, width, height: lineHeight, text: lineText, startWord: 0, endWord: 1 });
   };
 
@@ -209,7 +218,7 @@ export function layoutTextLines(opts: {
       lineTop += lineHeight;
       return { lines, height: lineTop - y };
     }
-    lineTop = fillWordLines(collapsed.split(' '), lines, lineTop, available, measure, align, fontSize, family, letterSpacing, lineHeight);
+    lineTop = fillWordLines(collapsed.split(' '), lines, lineTop, available, measure, align, fontSize, family, letterSpacing, lineHeight, rtl);
     return { lines, height: lineTop - y };
   }
 
@@ -224,7 +233,7 @@ export function layoutTextLines(opts: {
         lineTop += lineHeight;
         continue;
       }
-      lineTop = fillWordLines(collapsed.split(' '), lines, lineTop, available, measure, align, fontSize, family, letterSpacing, lineHeight);
+      lineTop = fillWordLines(collapsed.split(' '), lines, lineTop, available, measure, align, fontSize, family, letterSpacing, lineHeight, rtl);
     }
     return { lines, height: lineTop - y };
   }
@@ -304,6 +313,7 @@ function fillWordLines(
   family: string,
   letterSpacing: number,
   lineHeight: number,
+  rtl = false,
 ): number {
   let lineTop = startTop;
   let idx = 0;
@@ -323,20 +333,26 @@ function fillWordLines(
       if (align === 'justify' && !isLastLine && lineWords.length > 1 && res.width < availWidth) {
         // Distribute the surplus evenly across the inter-word spaces, emitting
         // one word-per-LineBox so painting draws each word at its stretched x.
+        // The first word sits at the inline-start edge (right under RTL).
         const stretch = (availWidth - res.width) / (lineWords.length - 1);
         const spaceW = measure(' ');
-        let x = av.x;
+        const dir = rtl ? -1 : 1;
+        let x = rtl ? av.x + availWidth : av.x;
         for (let wi = 0; wi < lineWords.length; wi++) {
           const w = lineWords[wi];
-          lines.push({ x, y: lineTop, width: measure(w), height: lineHeight, text: w, startWord: idx + wi, endWord: idx + wi + 1 });
-          if (wi < lineWords.length - 1) x += measure(w) + spaceW + stretch;
+          const wx = dir === 1 ? x : x - measure(w);
+          lines.push({ x: wx, y: lineTop, width: measure(w), height: lineHeight, text: w, startWord: idx + wi, endWord: idx + wi + 1 });
+          x += dir * (measure(w) + spaceW + stretch);
         }
       } else {
         const lineText = lineWords.join(' ');
+        // An overflowing line stays at the inline-start edge under every
+        // alignment (the right edge under RTL).
+        const fits = res.width <= availWidth;
         let lineX = av.x;
-        // An overflowing line stays at the start edge under every alignment.
-        if (align === 'center' && res.width <= availWidth) lineX = av.x + (availWidth - res.width) / 2;
-        else if (align === 'right' && res.width <= availWidth) lineX = av.x + (availWidth - res.width);
+        if (align === 'center') lineX = rtl && !fits ? av.x + (av.width - res.width) : fits ? av.x + (availWidth - res.width) / 2 : av.x;
+        else if (align === 'right') lineX = rtl ? av.x + (availWidth - res.width) : fits ? av.x + (availWidth - res.width) : av.x;
+        else if (align === 'left') lineX = rtl && !fits ? av.x + (availWidth - res.width) : av.x;
         lines.push({ x: lineX, y: lineTop, width: res.width, height: lineHeight, text: lineText, startWord: idx, endWord: idx + n });
       }
       idx += n;

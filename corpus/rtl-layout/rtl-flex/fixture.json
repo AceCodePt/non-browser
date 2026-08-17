@@ -1,0 +1,22 @@
+{
+  "name": "rtl-flex",
+  "note": "Flex layout under direction:rtl: a row's main-start is the right edge (items flow right-to-left, css-flexbox-1 §4.1), and a column container's cross-start is the right edge (align-items:start pins items to the right).",
+  "harvest": {
+    "viewport": {
+      "width": 480,
+      "height": 200
+    },
+    "html": "<body style=\"margin:0\"><div dir=\"rtl\" style=\"display:flex;gap:10px;width:360px;background:#e0e0e0\"><div id=\"f1\" style=\"width:70px;height:30px;background:#d9534f\">1</div><div id=\"f2\" style=\"width:90px;height:30px;background:#4a90d9\">2</div><div id=\"f3\" style=\"width:60px;height:30px;background:#5cb85c\">3</div></div><div dir=\"rtl\" style=\"display:flex;flex-direction:column;align-items:start;gap:4px;width:260px;height:80px;background:#f0f0f0\"><div id=\"fc1\" style=\"width:50px;height:20px;background:#f0ad4e\"></div><div id=\"fc2\" style=\"width:100px;height:20px;background:#5bc0de\"></div></div></body>",
+    "rects": ["f1", "f2", "f3", "fc1", "fc2"],
+    "textElements": [],
+    "computedStyle": [
+      { "id": "f1", "props": ["direction"] }
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

@@ -13,7 +13,7 @@
  * swap in a different FormattingContext and the same block/inline layout runs.
  */
 
-import { borderPaddingBlock, borderPaddingInline, clipsContent, isScrollContainer, parseStyleAttribute, pxLength, resolveEmLength, resolveLength, makeStyle, type BorderRadius, type ComputedStyle, type Color, type Declaration, type DecorationLine, type DisplayValue, type ListStyleType, type PseudoBox, type Shadow, type TextAlign, type VerticalAlign, type Viewport, type WhiteSpaceValue } from './css.js';
+import { borderPaddingBlock, borderPaddingInline, clipsContent, isScrollContainer, parseStyleAttribute, pxLength, resolveEmLength, resolveLength, makeStyle, type BorderRadius, type ComputedStyle, type Color, type Declaration, type DecorationLine, type Direction, type DisplayValue, type ListStyleType, type PseudoBox, type Shadow, type TextAlign, type VerticalAlign, type Viewport, type WhiteSpaceValue } from './css.js';
 import { layoutTextLines, measureTextWidth, type LineBox } from './measure.js';
 import { FloatManager, type FormattingContext } from './floats.js';
 import { layoutGridChildren } from './grid.js';
@@ -51,6 +51,8 @@ export interface StyleDefaults {
   textAlign?: TextAlign;
   textAlignInherited?: TextAlign;
   textAlignComputedInherited?: string;
+  textAlignInheritedKeyword?: string;
+  direction?: import('./css.js').Direction;
   whiteSpace?: WhiteSpaceValue;
   borderCollapse?: 'separate' | 'collapse';
   borderSpacing?: number;
@@ -122,10 +124,15 @@ export function resolveStyles(
     // makeStyle reads the FIRST declaration of each property, so to get CSS
     // "last wins" semantics across the cascade feed the merged list in
     // reverse — the winner appears first. Origins layer: inline style > author
-    // stylesheet > UA stylesheet (each list already in ascending cascade order
-    // internally, so reversing yields descending with inline on top).
+    // stylesheet > presentational hints (dir) > UA stylesheet (each list
+    // already in ascending cascade order, so reversing yields descending with
+    // inline on top).
     const base = [];
     if (ua && ua.length > 0) base.push(...ua);
+    const dirAttr = el.attrs.find((a) => a.name === 'dir');
+    if (dirAttr && (dirAttr.value === 'rtl' || dirAttr.value === 'ltr')) {
+      base.push({ property: 'direction', value: dirAttr.value });
+    }
     if (cascade && cascade.length > 0) base.push(...cascade);
     if (inline.length > 0) base.push(...inline);
     const decls = base.reverse();
@@ -138,6 +145,8 @@ export function resolveStyles(
       textAlignDefault: tagDefaults.textAlign,
       textAlignInherited: d.textAlignInherited ?? d.textAlign ?? 'left',
       textAlignComputedInherited: d.textAlignComputedInherited,
+      textAlignInheritedKeyword: d.textAlignInheritedKeyword ?? 'start',
+      directionInherited: d.direction,
       whiteSpaceDefault: d.whiteSpace ?? 'normal',
       borderCollapseDefault: tagDefaults.borderCollapse,
       borderSpacingDefault: tagDefaults.borderSpacing,
@@ -164,6 +173,8 @@ export function resolveStyles(
       textShadow: style.textShadow,
       textAlignInherited: style.textAlign,
       textAlignComputedInherited: style.textAlignComputed,
+      textAlignInheritedKeyword: style.textAlignComputed,
+      direction: style.direction,
       fontWeight: style.fontWeight,
       fontStyle: style.fontStyle,
       listStyleType: style.listStyleType,
@@ -450,7 +461,7 @@ function popOpacityGroup(id: number | null): void {
   opacityStack.pop();
 }
 
-let icbEntry: ContainingBlock = { rect: { x: 0, y: 0, width: 0, height: 0 }, heightKnown: true, pending: [] };
+let icbEntry: ContainingBlock = { rect: { x: 0, y: 0, width: 0, height: 0 }, heightKnown: true, pending: [], direction: 'ltr' };
 
 function paintLevelFor(style: ComputedStyle): number {
   const z = style.zIndex;
@@ -510,7 +521,7 @@ export function layoutRoot(
   opacityStack = [];
   nextOpacityId = 0;
   opacityGroups.clear();
-  icbEntry = { rect: initialContainingBlock(viewport), heightKnown: true, pending: [] };
+  icbEntry = { rect: initialContainingBlock(viewport), heightKnown: true, pending: [], direction: 'ltr' };
   cbStack.push(icbEntry);
 
   const marginL = resolveLength(style.margin.left, viewportWidth, viewport) ?? 0;
@@ -580,10 +591,12 @@ export function layoutRoot(
       icbEntry.rect,
       p.staticX,
       p.staticY,
+      p.staticWidth,
       styles,
       paints,
       () => order++,
       viewport,
+      icbEntry.direction,
     );
     bodyNode.children.push(node);
   }
@@ -702,6 +715,10 @@ interface LayoutBlockInput {
   contentWidth: number;
   y: number;
   prevBottomMargin: number;
+  /** the containing block's computed direction — CSS 2.1 §10.3.3 resolves an
+   * over-constrained block against the containing block's direction, not the
+   * block's own. */
+  cbDirection: Direction;
   /**
    * When set, the child is the first in-flow block of a parent with no top
    * border/padding: its top margin collapses into the parent's top margin, so
@@ -755,6 +772,7 @@ export function layoutElementBox(
         rect: initialContainingBlock(viewport ?? { width: 0, height: 0 }),
         heightKnown: true,
         pending: [],
+        direction: 'ltr',
       };
     } else {
       const specH = resolveLength(style.height, contentWidth, viewport);
@@ -770,6 +788,7 @@ export function layoutElementBox(
         },
         heightKnown: specH !== null,
         pending: [],
+        direction: style.direction,
       };
     }
     cbStack.push(cbEntry);
@@ -886,7 +905,7 @@ export function layoutElementBox(
     const hasBlocks = el.childNodes.some((c) => c.nodeName !== '#text' && c.nodeName !== '#comment');
     if (hasBlocks) {
       const childFm = new FloatManager(contentX, contentWidth);
-      const state: LayoutBlockInput = { fm: childFm, contentX, contentWidth, y: contentY, prevBottomMargin: 0 };
+      const state: LayoutBlockInput = { fm: childFm, contentX, contentWidth, y: contentY, prevBottomMargin: 0, cbDirection: style.direction };
       const { nodes, height } = layoutBlockChildren(el, state, styles, paints, nextOrder, viewport);
       children.push(...nodes);
       contentHeight = height;
@@ -976,10 +995,12 @@ export function layoutElementBox(
         cb,
         p.staticX,
         p.staticY,
+        p.staticWidth,
         styles,
         paints,
         nextOrder,
         viewport,
+        cbEntry.direction,
       );
       children.push(posNode);
     }
@@ -1036,11 +1057,27 @@ function layoutBlock(
 
   // BFC-establishing blocks must not overlap floats: shift right and shrink.
   const establishesBFC = isScrollContainer(style.overflow);
+  const cbRtl = ctx.cbDirection === 'rtl';
   let borderX = contentX + marginL;
   let usableWidth = borderBoxWidth;
+  // CSS 2.1 §10.3.3: under an RTL containing block an over-constrained block
+  // (specified width, both margins non-auto) ignores margin-left and positions
+  // from the right; auto margins resolve mirrored (left:auto → flush right,
+  // right:auto → flush left, both:auto → centered).
+  if (specW !== null && cbRtl) {
+    const free = Math.max(0, contentWidth - borderBoxWidth - marginL - marginR);
+    const mLAuto = style.margin.left.auto;
+    const mRAuto = style.margin.right.auto;
+    if (mLAuto && mRAuto) borderX = contentX + free / 2;
+    else if (mLAuto) borderX = contentX + free + marginL;
+    else if (mRAuto) borderX = contentX + marginL;
+    else borderX = contentX + contentWidth - marginR - borderBoxWidth;
+  }
   if (establishesBFC) {
     const i = fm.floatIntrusion(borderTop, borderTop + Math.max(borderBoxWidth, 1));
-    borderX = contentX + marginL + i.left;
+    // A BFC box under RTL shifts away from the float intruding on the
+    // inline-end (left) instead of the inline-start (right).
+    borderX = cbRtl ? borderX - i.right : contentX + marginL + i.left;
     if (specW === null) usableWidth = Math.max(0, autoWidth - i.left - i.right);
   }
 
@@ -1133,6 +1170,7 @@ function layoutFloat(
       letterSpacing: style.letterSpacing,
       align: style.textAlign,
       whiteSpace: style.whiteSpace,
+      rtl: style.direction === 'rtl',
       available: (top, bottom) => ({ x: 0, width: floatContentWidth }),
     });
     lines = lineRes.lines;
@@ -1333,6 +1371,7 @@ function layoutBlockChildren(
         style,
         staticX: ctx.contentX,
         staticY: y,
+        staticWidth: ctx.contentWidth,
         fixed: style.position === 'fixed',
       });
       continue;
@@ -2053,13 +2092,14 @@ function layoutInlineContent(
   const lines: LineBox[] = [];
   const children: LayoutNode[] = [];
   const spanBounds = new Map<P5Element, { minX: number; minY: number; maxX: number; maxY: number }>();
+  const rtl = style.direction === 'rtl';
   let y = contentY;
 
   for (const seg of segments) {
     if (seg.length === 0) {
       const av = fm.floatIntrusion(y, y + style.lineHeight);
       lines.push({
-        x: contentX + av.left,
+        x: rtl ? contentX + contentWidth - av.right : contentX + av.left,
         y,
         width: 0,
         height: style.lineHeight,
@@ -2074,8 +2114,9 @@ function layoutInlineContent(
     let idx = 0;
     while (idx < seg.length) {
       const av = fm.floatIntrusion(y, y + style.lineHeight);
-      const lineX = contentX + av.left;
+      const availLeft = contentX + av.left;
       const availWidth = Math.max(0, contentWidth - av.left - av.right);
+      const availRight = availLeft + availWidth;
 
       const onLine: InlinePiece[] = [];
       let lastBreak = -1;
@@ -2120,15 +2161,25 @@ function layoutInlineContent(
       const natural = walkLine(onLine, style, 0, ws);
       const isLastLine = i >= seg.length;
       const align = style.textAlign;
-      let alignOffset = 0;
-      let stretch = 0;
-      if (align === 'center') {
-        // An overflowing line (single word wider than the box) stays at the start
-        // edge under every alignment, matching Chrome.
-        alignOffset = natural.width <= availWidth ? (availWidth - natural.width) / 2 : 0;
+      // The layout origin is where run x=0 sits: the text's left edge under
+      // LTR, its right edge under RTL (runs then place mirrored inside the
+      // line, css-text-3 §4.2). An overflowing line stays at the inline-start
+      // edge under every alignment, matching Chrome.
+      const fits = natural.width <= availWidth;
+      let origin: number;
+      if (rtl) {
+        if (align === 'center') origin = availLeft + (availWidth + natural.width) / 2;
+        else if (align === 'left') origin = fits ? availLeft + natural.width : availRight;
+        else origin = availRight;
+      } else if (align === 'center') {
+        origin = availLeft + (fits ? (availWidth - natural.width) / 2 : 0);
       } else if (align === 'right') {
-        alignOffset = natural.width <= availWidth ? availWidth - natural.width : 0;
-      } else if (align === 'justify' && justifyAllowed && !isLastLine) {
+        origin = availLeft + (fits ? availWidth - natural.width : 0);
+      } else {
+        origin = availLeft;
+      }
+      let stretch = 0;
+      if (align === 'justify' && justifyAllowed && !isLastLine) {
         const spaceCount = onLine.filter((p) => p.kind === 'space').length;
         if (spaceCount > 0 && natural.width < availWidth) stretch = (availWidth - natural.width) / spaceCount;
       }
@@ -2195,9 +2246,10 @@ function layoutInlineContent(
         // space belongs to the line (an anonymous inline box), so a span's rect
         // starts after it and its width excludes it. (runX already sits after the
         // space, so the span x is the run x and its width is the space-stripped
-        // text width.)
+        // text width.) Under RTL the runs place mirrored from the origin (the
+        // text's right edge), which is the correct visual order.
         const spanText = r.text.replace(/^ /, '');
-        const runBox = { x: lineX + alignOffset + r.x, y, width: r.width, height: lineHeight };
+        const runBox = { x: rtl ? origin - r.x - r.width : origin + r.x, y, width: r.width, height: lineHeight };
         if (r.owner && r.owner !== el) {
           // A span's getBoundingClientRect is the union of its inline boxes'
           // content boxes (baseline ± rounded font metrics), not the line boxes.
@@ -2236,7 +2288,7 @@ function layoutInlineContent(
       }
       for (const a of walked.atomics) {
         const m = measured.get(a.piece)!;
-        const borderX = lineX + alignOffset + a.x;
+        const borderX = rtl ? origin - a.x - a.piece.borderWidth : origin + a.x;
         const va = a.piece.style.verticalAlign;
         let borderY: number;
         if (va === 'baseline') {

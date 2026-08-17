@@ -319,9 +319,18 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
   const { el, style, styles, contentX, contentY, contentWidth, availableHeight, paints, nextOrder, viewport } = input;
 
   const isRow = style.flexDirection === 'row' || style.flexDirection === 'row-reverse';
-  const mainReverse = style.flexDirection === 'row-reverse' || style.flexDirection === 'column-reverse';
+  // The main axis reverses when the flex-direction keyword says so AND when a
+  // row container has direction:rtl (its inline-start is the right edge,
+  // css-flexbox-1 §4.1) — the two cancel out for row-reverse in RTL.
+  const flexMainReverse = style.flexDirection === 'row-reverse' || style.flexDirection === 'column-reverse';
+  const mainReverse = flexMainReverse !== (isRow && style.direction === 'rtl');
   const wrapEnabled = style.flexWrap === 'wrap' || style.flexWrap === 'wrap-reverse';
   const wrapReverse = style.flexWrap === 'wrap-reverse';
+  // The cross axis mirrors under direction:rtl for column containers (its
+  // cross axis is the inline axis): the cross-start edge is the right, exactly
+  // the mirror a wrap-reverse row applies. The two cancel for column + rtl +
+  // wrap-reverse.
+  const crossReverse = wrapReverse !== (!isRow && style.direction === 'rtl');
 
   const availableMain = isRow ? contentWidth : (availableHeight ?? Infinity);
   const containerCross = isRow ? availableHeight : contentWidth;
@@ -348,12 +357,12 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
     const mBottom = resolveLength(margin.bottom, contentWidth, viewport) ?? 0;
     item.mainStart = isRow ? (mainReverse ? mRight : mLeft) : (mainReverse ? mBottom : mTop);
     item.mainEnd = isRow ? (mainReverse ? mLeft : mRight) : (mainReverse ? mTop : mBottom);
-    item.crossStart = isRow ? (wrapReverse ? mBottom : mTop) : (wrapReverse ? mRight : mLeft);
-    item.crossEnd = isRow ? (wrapReverse ? mTop : mBottom) : (wrapReverse ? mLeft : mRight);
+    item.crossStart = isRow ? (crossReverse ? mBottom : mTop) : (crossReverse ? mRight : mLeft);
+    item.crossEnd = isRow ? (crossReverse ? mTop : mBottom) : (crossReverse ? mLeft : mRight);
     item.mainStartAuto = isRow ? (mainReverse ? margin.right.auto : margin.left.auto) : (mainReverse ? margin.bottom.auto : margin.top.auto);
     item.mainEndAuto = isRow ? (mainReverse ? margin.left.auto : margin.right.auto) : (mainReverse ? margin.top.auto : margin.bottom.auto);
-    item.crossStartAuto = isRow ? (wrapReverse ? margin.bottom.auto : margin.top.auto) : (wrapReverse ? margin.right.auto : margin.left.auto);
-    item.crossEndAuto = isRow ? (wrapReverse ? margin.top.auto : margin.bottom.auto) : (wrapReverse ? margin.left.auto : margin.right.auto);
+    item.crossStartAuto = isRow ? (crossReverse ? margin.bottom.auto : margin.top.auto) : (crossReverse ? margin.right.auto : margin.left.auto);
+    item.crossEndAuto = isRow ? (crossReverse ? margin.top.auto : margin.bottom.auto) : (crossReverse ? margin.left.auto : margin.right.auto);
 
     const basis = s.flexBasis;
     let base: number | null = null;
@@ -548,7 +557,7 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
       for (const line of lines) crossExtent = Math.max(crossExtent, line.crossStart + line.crossSize);
     }
   }
-  if (wrapReverse) {
+  if (crossReverse) {
     for (const line of lines) {
       line.crossStart = crossExtent - (line.crossStart + line.crossSize);
     }
@@ -633,9 +642,10 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
         : mainStartOrigin + rel + item.mainStart;
       rel += item.mainStart + item.usedMainSize + item.mainEnd + gapAdj;
     }
-    // cross-axis alignment per item. With wrap-reverse the line's cross-start
+    // cross-axis alignment per item. With crossReverse the line's cross-start
     // edge sits at crossStart + crossSize (the physical bottom for row
-    // direction), so start/end placement is mirrored inside the line.
+    // direction, the right for RTL column direction), so start/end placement
+    // is mirrored inside the line.
     for (const item of line.items) {
       const align = effectiveAlign(item, style, containerCross);
       const freeCross = line.crossSize - item.usedCrossSize - item.crossStart - item.crossEnd;
@@ -643,7 +653,7 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
       if (item.crossStartAuto || item.crossEndAuto) {
         const count = (item.crossStartAuto ? 1 : 0) + (item.crossEndAuto ? 1 : 0);
         const share = freeCross > EPS ? freeCross / count : 0;
-        crossPos = wrapReverse
+        crossPos = crossReverse
           ? item.crossStartAuto
             ? line.crossStart + line.crossSize - item.crossStart - item.usedCrossSize - share
             : line.crossStart + item.crossEnd + share
@@ -653,11 +663,11 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
       } else if (align === 'center') {
         crossPos = line.crossStart + item.crossStart + freeCross / 2;
       } else if (align === 'end') {
-        crossPos = wrapReverse
+        crossPos = crossReverse
           ? line.crossStart + item.crossEnd
           : lineCrossEnd - item.crossEnd - item.usedCrossSize;
       } else {
-        crossPos = wrapReverse
+        crossPos = crossReverse
           ? line.crossStart + line.crossSize - item.crossStart - item.usedCrossSize
           : line.crossStart + item.crossStart;
       }

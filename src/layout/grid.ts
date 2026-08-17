@@ -1030,6 +1030,10 @@ export interface GridLayoutInput {
 export function layoutGridChildren(input: GridLayoutInput): { children: LayoutNode[]; height: number } {
   const { el, style, styles, contentX, contentY, contentWidth, availableHeight, paints, nextOrder, viewport } = input;
   const styleRef = style;
+  // Grid lines run from the inline-start edge: under RTL column 1 is the
+  // rightmost track, so each item area is mirrored about the content box
+  // (css-grid-1 §8.1).
+  const rtl = styleRef.direction === 'rtl';
 
   const explicitColCount = styleRef.gridTemplateColumns?.tracks.length ?? 0;
   const explicitRowCount = styleRef.gridTemplateRows?.tracks.length ?? 0;
@@ -1140,7 +1144,12 @@ export function layoutGridChildren(input: GridLayoutInput): { children: LayoutNo
 
   const children: LayoutNode[] = [];
   for (const item of placed) {
-    const areaX = areaStart(colOffsets, item.colStart, colGutter);
+    // Mirror about the content box: the area's right edge sits where the
+    // track-end line lands in LTR coordinates (the raw offset, which excludes
+    // the trailing gutter that areaStart would add).
+    const areaX = rtl
+      ? contentX + contentWidth - colOffsets[item.colStart + item.colSpan]
+      : contentX + areaStart(colOffsets, item.colStart, colGutter);
     const areaY = areaStart(rowOffsets, item.rowStart, rowGutter);
     const areaW = areaSpan(colOffsets, item.colStart, item.colStart + item.colSpan, colGutter);
     const areaH = areaSpan(rowOffsets, item.rowStart, item.rowStart + item.rowSpan, rowGutter);
@@ -1182,8 +1191,12 @@ export function layoutGridChildren(input: GridLayoutInput): { children: LayoutNo
       mr = freeW;
     }
     let x = areaX + ml;
+    // justify-self resolves start/end against the inline axis: under RTL start
+    // is the area's right edge and end its left edge.
     if (js === 'center' && !mLoc && !mRac) x += freeW / 2;
-    else if (js === 'end' && !mLoc && !mRac) x += freeW;
+    else if (rtl ? js === 'start' : js === 'end') {
+      if (!mLoc && !mRac) x += freeW;
+    }
 
     const specH = item.style.height.px !== null ? item.style.height.px : null;
     let borderH: number;
