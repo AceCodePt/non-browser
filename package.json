@@ -47,6 +47,7 @@
     "verify:sweep": "npm run build && node scripts/generate-sweep.mjs && node scripts/verify-sweep.mjs",
     "verify:text-align": "npm run build && node scripts/verify-text-align.mjs",
     "verify:white-space": "npm run build && node scripts/verify-white-space.mjs",
+    "verify:property-coverage": "npm run build && node scripts/verify-property-coverage.mjs",
     "verify:breaker": "npm run build && node scripts/verify-breaker.mjs",
     "probe:browser-gap": "npm run build && node probes/probe-browser-gap.mjs",
     "bench:engine-vs-oracle": "npm run build && node scripts/bench-engine-vs-oracle.mjs",

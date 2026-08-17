@@ -1184,16 +1184,16 @@ interface Defaults {
 }
 export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedStyle {
   const color = (name: string, dflt: Color): Color => {
-    const v = decls.find((d) => d.property === name);
+    const v = findDecl(decls, name);
     return v ? parseColor(v.value) : dflt;
   };
 
-  const bgDecl = decls.find((d) => d.property === 'background-color') ?? decls.find((d) => d.property === 'background');
+  const bgDecl = findDecl(decls, 'background-color') ?? findDecl(decls, 'background');
   const elementColor = color('color', defaults.color);
 
   // --- font-family (needed before line-height/font-size-margin resolution) ---
   let fontFamily = defaults.fontFamily;
-  const ffDecl = decls.find((d) => d.property === 'font-family');
+  const ffDecl = findDecl(decls, 'font-family');
   if (ffDecl) {
     fontFamily =
       ffDecl.value
@@ -1203,7 +1203,7 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   }
 
   let fontSize = defaults.fontSize;
-  const fontDecl = decls.find((d) => d.property === 'font');
+  const fontDecl = findDecl(decls, 'font');
   if (fontDecl) {
     const m = fontDecl.value.match(
       /(?:(\d+(?:\.\d+)?)px\s*(?:\/\s*(\d+(?:\.\d+)?))?)\s*["']?([^"']+?)["']?$/,
@@ -1213,7 +1213,7 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
       if (m[3]) fontFamily = m[3].trim().replace(/,$/, '').trim();
     }
   }
-  const fsDecl = decls.find((d) => d.property === 'font-size');
+  const fsDecl = findDecl(decls, 'font-size');
   if (fsDecl) {
     const m = fsDecl.value.trim().match(/^(-?[\d.]+)(px|em)?$/);
     if (m) {
@@ -1224,7 +1224,7 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
 
   let lineHeight: number;
   let lineHeightNormal = false;
-  const lhDecl = decls.find((d) => d.property === 'line-height');
+  const lhDecl = findDecl(decls, 'line-height');
   const lhValue = lhDecl ? lhDecl.value.trim() : defaults.lineHeight;
   if (lhValue === 'normal') {
     lineHeightNormal = true;
@@ -1244,7 +1244,7 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
 
   // --- font-weight / font-style (inherited, UA `bolder` maps 400→700, 700→900) ---
   const fontWeight = (() => {
-    const d = decls.find((x) => x.property === 'font-weight');
+    const d = findDecl(decls, 'font-weight');
     if (!d) return defaults.fontWeightDefault ?? 400;
     const v = d.value.trim();
     if (/^-?\d+$/.test(v)) return parseInt(v, 10);
@@ -1253,7 +1253,7 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     return FONT_WEIGHT[v] ?? defaults.fontWeightDefault ?? 400;
   })();
   const fontStyle = (() => {
-    const d = decls.find((x) => x.property === 'font-style');
+    const d = findDecl(decls, 'font-style');
     if (!d) return defaults.fontStyleDefault ?? 'normal';
     const v = d.value.trim();
     return v === 'italic' || v === 'oblique' ? 'italic' : 'normal';
@@ -1263,32 +1263,32 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     // `list-style` shorthand sets type/position/image together; parse it here so
     // pages that write `list-style: none` (the ubiquitous "no bullets" reset)
     // don't silently keep disc markers.
-    const sh = decls.find((d) => d.property === 'list-style');
+    const sh = findDecl(decls, 'list-style');
     if (sh) {
       const parts = sh.value.trim().toLowerCase().split(/\s+/);
       for (const p of parts) {
         if (p === 'none' || p === 'disc' || p === 'circle' || p === 'square' || p === 'decimal' || p === 'decimal-leading-zero') return p;
       }
     }
-    const d = decls.find((x) => x.property === 'list-style-type');
+    const d = findDecl(decls, 'list-style-type');
     if (!d) return defaults.listStyleTypeDefault ?? 'disc';
     const v = d.value.trim().toLowerCase();
     return v === 'none' || v === 'disc' || v === 'circle' || v === 'square' || v === 'decimal' || v === 'decimal-leading-zero' ? v : 'disc';
   })();
 
   const listStylePosition = (() => {
-    const sh = decls.find((d) => d.property === 'list-style');
+    const sh = findDecl(decls, 'list-style');
     if (sh) {
       if (sh.value.trim().toLowerCase().split(/\s+/).includes('inside')) return 'inside';
     }
-    const d = decls.find((x) => x.property === 'list-style-position');
+    const d = findDecl(decls, 'list-style-position');
     if (!d) return defaults.listStylePositionDefault ?? 'outside';
     const v = d.value.trim().toLowerCase();
     return v === 'inside' ? 'inside' : 'outside';
   })();
 
   const len = (name: string, dflt: Length = AUTO): Length => {
-    const d = decls.find((x) => x.property === name);
+    const d = findDecl(decls, name);
     return d ? resolveEmLength(parseLength(d.value), fontSize) : dflt;
   };
 
@@ -1303,14 +1303,14 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     else if (side === 'left') names.push(direction === 'rtl' ? 'inset-inline-end' : 'inset-inline-start');
     else names.push(direction === 'rtl' ? 'inset-inline-start' : 'inset-inline-end');
     names.push('inset');
-    const d = decls.find((x) => names.includes(x.property));
+    const d = findDeclAny(decls, names);
     if (!d) return dflt;
     if (d.property === 'inset') return resolveEmLength(parseBoxShorthand(d.value)[side], fontSize);
     return resolveEmLength(parseLength(d.value), fontSize);
   };
 
   const marginLonghand = (name: string, dflt: Length, quirkDecls: string[]): Length => {
-    const d = decls.find((x) => x.property === name);
+    const d = findDecl(decls, name);
     if (d) {
       const l = parseLength(d.value);
       if (quirkDecls.includes(name) && d.quirk) l.quirk = true;
@@ -1320,7 +1320,7 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   };
 
   const sideLens = (shorthand: string): Record<Side, Length> => {
-    const sh = decls.find((d) => d.property === shorthand);
+    const sh = findDecl(decls, shorthand);
     const dflt = shorthand === 'padding' ? defaults.paddingDefault ?? pxLength(0) : pxLength(0);
     const top = len(`${shorthand}-top`, dflt);
     const right = len(`${shorthand}-right`, dflt);
@@ -1335,7 +1335,7 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   // text-align, float) can read it — the declaration never participates in
   // cascade order with the properties it maps.
   const direction: Direction = (() => {
-    const d = decls.find((x) => x.property === 'direction');
+    const d = findDecl(decls, 'direction');
     return d && d.value.trim() === 'rtl' ? 'rtl' : (defaults.directionInherited ?? 'ltr');
   })();
 
@@ -1346,7 +1346,7 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   // margin-block-start carries the quirky-margin marker (Blink `__qem`).
   // The inline longhands map per `direction` (css-writing-modes-4 §2.2). ---
   const margin = (() => {
-    const sh = decls.find((d) => d.property === 'margin');
+    const sh = findDecl(decls, 'margin');
     const top = marginLonghand('margin-block-start', len('margin-top', pxLength(0)), ['margin-block-start']);
     const bottom = marginLonghand('margin-block-end', len('margin-bottom', pxLength(0)), ['margin-block-end']);
     const left = marginLonghand(direction === 'rtl' ? 'margin-inline-end' : 'margin-inline-start', len('margin-left', pxLength(0)), []);
@@ -1358,7 +1358,7 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   // --- padding: the inline logical longhands feed the physical sides per
   // `direction` (the inline-start side holds the list gutter). ---
   const padding = (() => {
-    const sh = decls.find((d) => d.property === 'padding');
+    const sh = findDecl(decls, 'padding');
     const dflt = defaults.paddingDefault ?? pxLength(0);
     const top = len('padding-top', dflt);
     const right = len(direction === 'rtl' ? 'padding-inline-start' : 'padding-inline-end', len('padding-right', dflt));
@@ -1389,10 +1389,10 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     }
     return r;
   })();
-  const borderDecl = decls.find((d) => d.property === 'border');
-  const bwShort = decls.find((d) => d.property === 'border-width');
-  const bsShort = decls.find((d) => d.property === 'border-style');
-  const bcShort = decls.find((d) => d.property === 'border-color');
+  const borderDecl = findDecl(decls, 'border');
+  const bwShort = findDecl(decls, 'border-width');
+  const bsShort = findDecl(decls, 'border-style');
+  const bcShort = findDecl(decls, 'border-color');
   if (borderDecl) {
     const parts = borderDecl.value.trim().split(/\s+/);
     let width = 0;
@@ -1418,7 +1418,7 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
       // `border-<side>` is a four-in-one shorthand (width/style/color for that
       // side); parse it like the full `border` shorthand so pages that write
       // per-side borders (border-left, border-bottom, ...) get their width.
-      const sideShort = decls.find((d) => d.property === `border-${s}`);
+      const sideShort = findDecl(decls, `border-${s}`);
       if (sideShort) {
         const parts = sideShort.value.trim().split(/\s+/);
         let w = 0;
@@ -1439,7 +1439,7 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
       const c2 = bc ? bc[s] : color(`border-${s}-color`, parseColor('black'));
       borderColor[s] = c2;
       borderStyle[s] = bs ? bs[s] : (() => {
-        const d = decls.find((x) => x.property === `border-${s}-style`);
+        const d = findDecl(decls, `border-${s}-style`);
         const v = d ? d.value.trim() : '';
         if (v === 'inset') return 'inset';
         if (v === 'outset') return 'outset';
@@ -1449,7 +1449,7 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     }
   }
 
-  const displayDecl = decls.find((d) => d.property === 'display');
+  const displayDecl = findDecl(decls, 'display');
   const display: DisplayValue = (() => {
     if (!displayDecl) return defaults.display;
     const v = displayDecl.value.trim();
@@ -1473,8 +1473,8 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     return 'block';
   })();
 
-  const floatDecl = decls.find((d) => d.property === 'float');
-  const positionDecl = decls.find((d) => d.property === 'position');
+  const floatDecl = findDecl(decls, 'float');
+  const positionDecl = findDecl(decls, 'position');
   const position: 'static' | 'relative' | 'absolute' | 'fixed' = (() => {
     if (!positionDecl) return 'static';
     const v = positionDecl.value.trim();
@@ -1494,11 +1494,11 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   })();
   if (position === 'absolute' || position === 'fixed') float = 'none';
 
-  const zIndexDecl = decls.find((d) => d.property === 'z-index');
+  const zIndexDecl = findDecl(decls, 'z-index');
   const zIndex: number | null =
     zIndexDecl && /^-?\d+$/.test(zIndexDecl.value.trim()) ? parseInt(zIndexDecl.value.trim(), 10) : null;
 
-  const clearDecl = decls.find((d) => d.property === 'clear');
+  const clearDecl = findDecl(decls, 'clear');
   const clear: 'none' | 'left' | 'right' | 'both' = (() => {
     const v = clearDecl?.value.trim();
     if (v === 'left' || v === 'inline-start') return direction === 'rtl' && v === 'inline-start' ? 'right' : 'left';
@@ -1507,12 +1507,12 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     return 'none';
   })();
 
-  const verticalAlignDecl = decls.find((d) => d.property === 'vertical-align');
+  const verticalAlignDecl = findDecl(decls, 'vertical-align');
   const verticalAlign: VerticalAlign = verticalAlignDecl
     ? (verticalAlignDecl.value.trim() as VerticalAlign)
     : (defaults.verticalAlignDefault ?? 'baseline');
 
-  const textAlignDecl = decls.find((d) => d.property === 'text-align');
+  const textAlignDecl = findDecl(decls, 'text-align');
   // The inherited text-align is its *computed* keyword (start/end/left/...),
   // not the parent's used physical edge: css-text-3 inherits the computed
   // value, so an element with no declaration resolves the inherited keyword
@@ -1546,10 +1546,10 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     ? textAlignDecl.value.trim()
     : defaults.textAlignDefault ?? defaults.textAlignComputedInherited ?? 'start';
 
-  const borderCollapseDecl = decls.find((d) => d.property === 'border-collapse');
+  const borderCollapseDecl = findDecl(decls, 'border-collapse');
   const borderCollapse: 'separate' | 'collapse' =
     borderCollapseDecl && borderCollapseDecl.value.trim() === 'collapse' ? 'collapse' : (defaults.borderCollapseDefault ?? 'separate');
-  const borderSpacingDecl = decls.find((d) => d.property === 'border-spacing');
+  const borderSpacingDecl = findDecl(decls, 'border-spacing');
   const parseSpacing = (): { h: number; v: number } => {
     if (borderSpacingDecl) {
       const parts = borderSpacingDecl.value.trim().split(/\s+/);
@@ -1565,21 +1565,21 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     return { h: defaults.borderSpacingDefault ?? 0, v: defaults.borderSpacingVDefault ?? defaults.borderSpacingDefault ?? 0 };
   };
   const spacing = parseSpacing();
-  const captionSideDecl = decls.find((d) => d.property === 'caption-side');
+  const captionSideDecl = findDecl(decls, 'caption-side');
   const captionSide: 'top' | 'bottom' =
     captionSideDecl && captionSideDecl.value.trim() === 'bottom' ? 'bottom' : (defaults.captionSideDefault ?? 'top');
-  const tableLayoutDecl = decls.find((d) => d.property === 'table-layout');
+  const tableLayoutDecl = findDecl(decls, 'table-layout');
   const tableLayout: 'auto' | 'fixed' =
     tableLayoutDecl && tableLayoutDecl.value.trim() === 'fixed' ? 'fixed' : (defaults.tableLayoutDefault ?? 'auto');
-  const emptyCellsDecl = decls.find((d) => d.property === 'empty-cells');
+  const emptyCellsDecl = findDecl(decls, 'empty-cells');
   const emptyCells: 'show' | 'hide' =
     emptyCellsDecl && emptyCellsDecl.value.trim() === 'hide' ? 'hide' : 'show';
 
-  const boxSizingDecl = decls.find((d) => d.property === 'box-sizing');
+  const boxSizingDecl = findDecl(decls, 'box-sizing');
   const boxSizing: 'content-box' | 'border-box' =
     boxSizingDecl && boxSizingDecl.value.trim() === 'border-box' ? 'border-box' : 'content-box';
 
-  const overflowDecl = decls.find((d) => d.property === 'overflow');
+  const overflowDecl = findDecl(decls, 'overflow');
   const overflow: OverflowValue = (() => {
     const v = overflowDecl?.value.trim() ?? '';
     if (v === 'visible' || v === 'hidden' || v === 'clip' || v === 'auto' || v === 'scroll') return v;
@@ -1589,7 +1589,7 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     return 'visible';
   })();
 
-  const wsDecl = decls.find((d) => d.property === 'white-space');
+  const wsDecl = findDecl(decls, 'white-space');
   let whiteSpace: WhiteSpaceValue = wsDecl
     ? (wsDecl.value.trim() as WhiteSpaceValue)
     : (defaults.whiteSpaceDefault ?? 'normal');
@@ -1599,14 +1599,14 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     whiteSpace = defaults.whiteSpaceDefault ?? 'normal';
   }
 
-  const letterSpacingDecl = decls.find((d) => d.property === 'letter-spacing');
+  const letterSpacingDecl = findDecl(decls, 'letter-spacing');
   const letterSpacing = letterSpacingDecl ? parseLetterSpacing(letterSpacingDecl.value) : defaults.letterSpacing ?? 0;
 
   let textDecorationLines = defaults.textDecorationLines ?? [];
   let textDecorationColor: Color | null = defaults.textDecorationColor ?? null;
   let textDecorationThickness: 'auto' | 'from-font' | { px: number } =
     defaults.textDecorationThickness ?? 'auto';
-  const decShort = decls.find((d) => d.property === 'text-decoration');
+  const decShort = findDecl(decls, 'text-decoration');
   if (decShort) {
     const sh = parseDecorationShorthand(decShort.value);
     textDecorationLines = sh.lines.length > 0 ? sh.lines : textDecorationLines;
@@ -1615,19 +1615,19 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   }
   // Longhands override the shorthand (matches source-order semantics for the
   // common shorthand-then-override pattern).
-  const decLineDecl = decls.find((d) => d.property === 'text-decoration-line');
+  const decLineDecl = findDecl(decls, 'text-decoration-line');
   if (decLineDecl) textDecorationLines = parseDecorationLines(decLineDecl.value);
-  const decColorDecl = decls.find((d) => d.property === 'text-decoration-color');
+  const decColorDecl = findDecl(decls, 'text-decoration-color');
   if (decColorDecl) textDecorationColor = parseColor(decColorDecl.value);
-  const decThicknessDecl = decls.find((d) => d.property === 'text-decoration-thickness');
+  const decThicknessDecl = findDecl(decls, 'text-decoration-thickness');
   if (decThicknessDecl) textDecorationThickness = parseDecorationThickness(decThicknessDecl.value);
-  const decOffsetDecl = decls.find((d) => d.property === 'text-underline-offset');
+  const decOffsetDecl = findDecl(decls, 'text-underline-offset');
   const textUnderlineOffset = decOffsetDecl
     ? parsePxOffset(decOffsetDecl.value)
     : defaults.textUnderlineOffset ?? 0;
 
   const opacity = (() => {
-    const d = decls.find((x) => x.property === 'opacity');
+    const d = findDecl(decls, 'opacity');
     if (!d) return 1;
     const v = d.value.trim();
     const pm = v.match(/^(\d+(?:\.\d+)?)%$/);
@@ -1638,21 +1638,21 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   })();
 
   const boxShadow = (() => {
-    const d = decls.find((x) => x.property === 'box-shadow');
+    const d = findDecl(decls, 'box-shadow');
     if (!d) return [];
     const s = d.value.trim();
     if (s === '' || s === 'none') return [];
     return parseShadowList(s, elementColor);
   })();
   const textShadow = (() => {
-    const d = decls.find((x) => x.property === 'text-shadow');
+    const d = findDecl(decls, 'text-shadow');
     if (!d) return defaults.textShadow ?? [];
     const s = d.value.trim();
     if (s === '' || s === 'none') return [];
     return parseShadowList(s, elementColor);
   })();
 
-  const decl = (name: string) => decls.find((d) => d.property === name)?.value;
+  const decl = (name: string) => findDecl(decls, name)?.value;
 
   // em inside a track-size Length (calc() or fit-content()) folds against the
   // track list owner's font-size, like every other em length.
@@ -1791,14 +1791,14 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   const orderDecl = decl('order');
   const order = orderDecl && /^-?\d+$/.test(orderDecl.trim()) ? parseInt(orderDecl, 10) : 0;
 
-  const containerTypeDecl = decls.find((d) => d.property === 'container-type');
+  const containerTypeDecl = findDecl(decls, 'container-type');
   const containerType: 'normal' | 'inline-size' | 'size' | 'block-size' = (() => {
     const v = containerTypeDecl?.value.trim();
     if (v === 'inline-size' || v === 'size' || v === 'block-size') return v;
     return 'normal';
   })();
   const containerName: string[] = (() => {
-    const v = decls.find((d) => d.property === 'container-name')?.value.trim();
+    const v = findDecl(decls, 'container-name')?.value.trim();
     if (!v || v === 'none') return [];
     return v.split(/\s+/).map((s) => s.trim()).filter(Boolean);
   })();
