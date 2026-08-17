@@ -1652,6 +1652,46 @@ function runStyleOf(style: ComputedStyle): TextRunStyle {
   };
 }
 
+/** Field-wise run-style equality (runStyleOf returns fresh objects). */
+function sameRunStyle(a: TextRunStyle, b: TextRunStyle): boolean {
+  return (
+    a.fontSize === b.fontSize &&
+    a.family === b.family &&
+    a.color.r === b.color.r &&
+    a.color.g === b.color.g &&
+    a.color.b === b.color.b &&
+    a.color.a === b.color.a &&
+    a.letterSpacing === b.letterSpacing &&
+    a.lineHeight === b.lineHeight &&
+    a.fontWeight === b.fontWeight &&
+    a.fontStyle === b.fontStyle
+  );
+}
+
+/**
+ * Whether a piece stream is pure block-style text the flat `layoutTextLines`
+ * path lays out identically: no atomics, every word in the block's own run
+ * style, and no id-bearing span that needs a reported rect. Such content
+ * routes through the shared Pretext breaker instead of the walker below.
+ * `justify` is excluded because the walker emits one stretched run per line
+ * while layoutTextLines emits per-word boxes (the fragment granularity the
+ * text-align harness asserts); `pre-wrap` tabs are excluded because Pretext
+ * advances them to tab stops while the walker measures them as text.
+ */
+function pureTextDelegatable(pieces: InlinePiece[], style: ComputedStyle, el: P5Element, text: string): boolean {
+  if (style.textAlign === 'justify') return false;
+  if (style.whiteSpace === 'pre-wrap' && /[\t\r\f]/.test(text)) return false;
+  const blockRun = runStyleOf(style);
+  for (const p of pieces) {
+    if (p.kind === 'atomic') return false;
+    if (p.kind === 'word') {
+      if (!sameRunStyle(p.style, blockRun)) return false;
+      if (p.owner && p.owner !== el && p.owner.attrs.some((a) => a.name === 'id')) return false;
+    }
+  }
+  return pieces.some((p) => p.kind === 'word' || p.kind === 'space');
+}
+
 function pushTextPieces(raw: string, style: TextRunStyle, owner: P5Element | null, out: InlinePiece[], ws: WhiteSpaceValue): void {
   let run = '';
   const flushWord = (): void => {
@@ -2027,6 +2067,35 @@ function layoutInlineContent(
       : null;
   const pieces = buildPieces(el, style, styles, contentWidth, viewport, ws);
   if (pieces.length === 0) return { lines: [], children: [], contentHeight: 0 };
+
+  // Pure-text shortcut: the flat layoutTextLines path produces identical line
+  // boxes for this content (the walker below is only needed to mix atomics and
+  // foreign-style runs) and routes the word-fill through the Pretext breaker.
+  const inlineText = collectInlineText(el, styles);
+  if (pureTextDelegatable(pieces, style, el, inlineText)) {
+    const flat = layoutTextLines({
+      text: inlineText,
+      x: 0,
+      y: contentY,
+      width: contentWidth,
+      lineHeight: style.lineHeight,
+      fontSize: style.fontSize,
+      family: style.fontFamily,
+      letterSpacing: style.letterSpacing,
+      align: style.textAlign,
+      whiteSpace: ws,
+      available: (top, bottom) => {
+        const av = fm.floatIntrusion(top, bottom);
+        return { x: contentX + av.left, width: Math.max(0, contentWidth - av.left - av.right) };
+      },
+    });
+    const flatLines = flat.lines.map((l) => ({
+      ...l,
+      baseline: l.y + lineAscentContribution(style.fontSize, style.lineHeight, metrics),
+    }));
+    if (pendingAdvance !== null && flatLines.length > 0) flatLines[0].x += pendingAdvance;
+    return { lines: flatLines, children: [], contentHeight: flat.height };
+  }
 
   // Forced breaks (newlines under pre/pre-wrap/pre-line) split the piece
   // stream into segments. A trailing newline's empty final segment does not

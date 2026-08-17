@@ -1,0 +1,11 @@
+{
+  "name": "cjk-punctuation",
+  "category": "cjk-without-spaces",
+  "note": "CJK fullwidth book-title quotes, brackets and dashes: line counts match Chrome but the exact break positions differ because Pretext's kinsoku (line-start/end prohibited punctuation) sets are hand-rolled while Chrome uses ICU — see breakers.md.",
+  "fonts": [{ "family": "Droid Sans Fallback", "file": "/usr/share/fonts/google-droid-sans-fonts/DroidSansFallbackFull.ttf" }],
+  "harvest": {
+    "viewport": { "width": 460, "height": 200 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"p\" style=\"font-family:'Droid Sans Fallback';font-size:16px;line-height:24px;width:180px\">《红楼梦》是中国古典四大名著之首，被誉为\"中国封建社会的百科全书\"。它讲述了贾、史、王、薛四大家族的兴衰。</div></body></html>",
+    "textElements": ["p"]
+  }
+}

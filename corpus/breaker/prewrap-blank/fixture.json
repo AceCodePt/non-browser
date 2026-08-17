@@ -1,0 +1,11 @@
+{
+  "name": "prewrap-blank",
+  "category": "forced-breaks",
+  "note": "white-space:pre-wrap with interior blank lines: empty interior segments produce empty line boxes (Chrome) that the union-line merge must preserve.",
+  "fonts": [{ "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" }],
+  "harvest": {
+    "viewport": { "width": 460, "height": 220 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"p\" style=\"font-family:'Noto Sans';font-size:16px;line-height:24px;width:300px;white-space:pre-wrap\">line one\n\nline three\n\n\nline six</div></body></html>",
+    "textElements": ["p"]
+  }
+}

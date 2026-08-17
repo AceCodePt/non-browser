@@ -1,0 +1,11 @@
+{
+  "name": "long-word-breakword-200",
+  "category": "long-words",
+  "note": "Long words under overflow-wrap:break-word at a wider 200px column: a word fits whole on some lines and is split on others.",
+  "fonts": [{ "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" }],
+  "harvest": {
+    "viewport": { "width": 460, "height": 200 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"p\" style=\"font-family:'Noto Sans';font-size:16px;line-height:24px;width:200px;overflow-wrap:break-word\">supercalifragilisticexpialidocious antidisestablishmentarianism pneumonoultramicroscopicsilicovolcanoconiosis</div></body></html>",
+    "textElements": ["p"]
+  }
+}

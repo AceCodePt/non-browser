@@ -1,0 +1,15 @@
+{
+  "name": "long-word-default",
+  "category": "long-words",
+  "note": "KNOWN DIVERGENCE: the same long words with the default overflow-wrap:normal. Chrome does NOT break them (each overflows its line); Pretext's default behavior is overflow-wrap:break-word, so it splits them. Line counts diverge by construction.",
+  "fonts": [{ "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" }],
+  "harvest": {
+    "viewport": { "width": 460, "height": 240 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"p\" style=\"font-family:'Noto Sans';font-size:16px;line-height:24px;width:120px\">supercalifragilisticexpialidocious antidisestablishmentarianism pneumonoultramicroscopicsilicovolcanoconiosis</div></body></html>",
+    "textElements": ["p"]
+  },
+  "knownDivergence": {
+    "reason": "Pretext's default line breaking always applies overflow-wrap:break-word semantics (its prepare measures breakable grapheme runs), while Chrome's overflow-wrap:normal never breaks a word that fits nowhere on the line — the word overflows instead. The engine does not parse overflow-wrap, so the divergence is at the Pretext-config level: wordBreak has no 'normal-overflow' mode to opt out of grapheme splitting. A paragraph whose longest word exceeds the column under the default overflow-wrap diverges in line count.",
+    "sunset": "when Pretext exposes an overflow-wrap:normal-mode option (or the engine parses overflow-wrap and passes break-word only when declared)"
+  }
+}

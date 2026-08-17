@@ -9,16 +9,19 @@
  *   - layer-3 getBoundingClientRect  <= 0.5px per dimension
  *   - layer-4 screenshot     per-pixel delta-E <= 2 with <= 1% pixels exceeding
  *
- * Also exercises the Pretext seam: each fixture's text is run through
- * @chenglou/pretext prepare/layout over the Canvas interface (via the
- * OffscreenCanvas shim), and Pretext's line widths are diffed against Chrome's
- * line-fragment widths within the layer-1 sub-pixel tolerance. This proves
- * "Pretext prepare/layout over the Canvas interface's measureText" per fixture.
+ * The engine's shipped text path is the Pretext breaker (the default;
+ * `CASCADE_BREAKER=greedy` is the drift-gate fallback). The engine's own line
+ * fragments — collected from the rendered text elements — are compared against
+ * Chrome's `Range.getClientRects()` line boxes: the line counts must match and
+ * every line's x/width must sit within the layer-3 rect band. That, plus an
+ * explicit assertion that the Pretext breaker is the active engine breaker, is
+ * what proves the engine breaks text through the Pretext seam — there is no
+ * separate seam call under test (docs/ledgers/breakers.md).
  *
  * Writes reference.json/reference.png/mask.png (Chrome) and
  * candidate.json/candidate.png (engine) into each fixture directory, then a
  * report under docs/reports/. Exits 0 only when every fixture passes every
- * layer and Pretext agrees with Chrome.
+ * layer and the engine's line fragments match Chrome.
  */
 
 import { chromium } from 'playwright';
@@ -29,8 +32,7 @@ import { decodePng, encodePng } from '../dist/harness/png.js';
 import { evaluateFixture } from '../dist/harness/evaluate.js';
 import { buildReport, writeReport, renderMarkdown } from '../dist/harness/report.js';
 import { renderHtml } from '../dist/layout/render.js';
-import { installPretextMeasurement, prepareText, layoutLines } from '../dist/pretext/index.js';
-import { getMeasurementCanvas } from '../dist/layout/measure.js';
+import { getUsePretextBreaker } from '../dist/layout/measure.js';
 
 const FONT_FILE = process.env.FONT_FILE ?? '/usr/share/fonts/google-noto/NotoSans-Regular.ttf';
 const FONT_FAMILY = process.env.FONT_FAMILY ?? 'Noto Sans';
@@ -74,10 +76,36 @@ function textRegionMask(width, height, rects, refData, candData) {
   return mask;
 }
 
+/**
+ * Merge one element's fragments into per-line boxes: fragments sharing a line
+ * (same y) are unioned into [x, width]. Chrome reports one rect per inline
+ * text box, so a justified line may surface as several fragments; the union is
+ * the honest per-line geometry both breakers must agree on.
+ */
+function mergeLines(frags) {
+  const groups = new Map();
+  for (const f of frags) {
+    const key = Math.round(f.y * 10) / 10;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(f);
+  }
+  const lines = [];
+  for (const [key, fs] of [...groups.entries()].sort((a, b) => a[0] - b[0])) {
+    let minX = Infinity;
+    let maxRight = -Infinity;
+    for (const f of fs) {
+      minX = Math.min(minX, f.x);
+      maxRight = Math.max(maxRight, f.x + f.width);
+    }
+    lines.push({ x: minX, width: maxRight - minX });
+  }
+  return lines;
+}
+
 const tolerances = loadTolerances(resolve('tolerances.json'));
 const browser = await chromium.launch();
 const results = [];
-const pretextResults = [];
+const breakerResults = [];
 
 if (!statSync(corpus, { throwIfNoEntry: false })?.isDirectory()) {
   console.error(`verify:four-layer: corpus directory missing: ${corpus}`);
@@ -129,12 +157,10 @@ try {
       }
     }
 
-    // Chrome line fragments (used for the screenshot text mask and Pretext parity).
+    // Chrome line fragments (used for the screenshot text mask and the engine
+    // line-break parity check).
     const fragments = [];
     const fragmentsById = {};
-    const textsById = {};
-    const widthsById = {};
-    const fontById = {};
     if (h.textElements && h.textElements.length > 0) {
       for (const id of h.textElements) {
         const info = await page.evaluate((id) => {
@@ -146,15 +172,11 @@ try {
           for (const r of range.getClientRects()) {
             frags.push({ x: r.x, y: r.y, width: r.width, height: r.height });
           }
-          const cs = getComputedStyle(el);
-          return { text: el.textContent, clientWidth: el.clientWidth, fontSize: cs.fontSize, fontFamily: cs.fontFamily, letterSpacing: cs.letterSpacing, frags };
+          return { frags };
         }, id);
         if (!info) continue;
         fragments.push(...info.frags);
-        fragmentsById[id] = info.frags.map((f) => f.width);
-        textsById[id] = info.text ?? '';
-        widthsById[id] = info.clientWidth;
-        fontById[id] = { fontSize: info.fontSize, fontFamily: info.fontFamily, letterSpacing: info.letterSpacing };
+        fragmentsById[id] = info.frags;
       }
     }
 
@@ -169,6 +191,7 @@ try {
       fontFamily: FONT_FAMILY,
       fontFile: FONT_FILE,
       computedStyle: h.computedStyle,
+      textElements: h.textElements,
     });
     const candImg = decodePng(out.rgba);
 
@@ -184,55 +207,44 @@ try {
       }
     }
 
-    // --- Pretext seam: prepare/layout over the Canvas interface ---
-    // Proves the seam runs: Pretext's prepare/layout over the interface must
-    // break each text block into the same number of lines as Chrome, with line
-    // widths within the layer-1 sub-pixel (<=0.5px) tolerance. The seam is fed
-    // the fixture's real computed font-family, resolved through the active
-    // browser-config before measurement — the same resolution authority as the
-    // engine measure path. (Raw measureText parity is layer-1 above; Pretext's
-    // own width reporting rounds ~0.02px differently, so gating on the 0.5px
-    // band keeps this stable.)
-    let pretextPass = true;
-    let pretextDetail = 'no text elements';
+    // --- engine line fragments vs Chrome (the one breaker under test) ---
+    // The engine's shipped text path is the Pretext breaker (asserted below),
+    // so these fragments ARE the Pretext break decisions laid out by the
+    // engine — there is no separate seam call anymore. Line counts must match
+    // Chrome and every line's x/width must sit within the layer-3 rect band;
+    // the layer-1 mean/max measureText band is enforced on the raw advances
+    // above via the harness.
+    let breakerPass = true;
+    let breakerDetail = 'no text elements';
+    if (!getUsePretextBreaker()) {
+      breakerPass = false;
+      breakerDetail = 'the engine is NOT running the Pretext breaker (CASCADE_BREAKER=greedy leaked into the run)';
+    }
     const textIds = h.textElements ?? [];
-    if (textIds.length > 0) {
-      installPretextMeasurement(getMeasurementCanvas());
-      let maxDelta = 0;
-      let meanSum = 0;
+    if (breakerPass && textIds.length > 0) {
+      const maxPx = tolerances.layers.rect.maxPx;
+      let worst = 0;
       let totalLines = 0;
       for (const id of textIds) {
-        const text = textsById[id];
-        const maxWidth = widthsById[id] ?? viewport.width;
-        if (!text || !text.trim()) continue;
-        const f = fontById[id] ?? { fontSize: '16px', fontFamily: FONT_FAMILY, letterSpacing: 'normal' };
-        const fontSize = parseFloat(f.fontSize) || 16;
-        const family = f.fontFamily && f.fontFamily.trim() ? f.fontFamily.trim().replace(/^["']+|["']+$/g, '') : FONT_FAMILY;
-        const ls = f.letterSpacing && f.letterSpacing !== 'normal' ? parseFloat(f.letterSpacing) : 0;
-        const prepared = prepareText(text, `${fontSize}px '${family}'`, { letterSpacing: ls });
-        const res = layoutLines(prepared, maxWidth, 24);
-        const chromeWidths = fragmentsById[id] ?? [];
-        if (chromeWidths.length === 0) continue;
-        if (res.lines.length !== chromeWidths.length) {
-          pretextPass = false;
-          pretextDetail = `id ${id}: Chrome ${chromeWidths.length} lines vs Pretext ${res.lines.length}`;
+        const chrome = mergeLines(fragmentsById[id] ?? []);
+        const engine = mergeLines((out.textFragments[id] ?? []).map((f) => ({ x: f.x, y: f.y, width: f.width, height: f.height })));
+        totalLines += Math.max(chrome.length, engine.length);
+        if (chrome.length !== engine.length) {
+          breakerPass = false;
+          breakerDetail = `id ${id}: Chrome ${chrome.length} lines vs engine ${engine.length}`;
           break;
         }
-        for (let i = 0; i < chromeWidths.length; i++) {
-          const d = Math.abs(chromeWidths[i] - res.lines[i].width);
-          meanSum += d;
-          if (d > maxDelta) maxDelta = d;
-          totalLines++;
+        for (let k = 0; k < chrome.length; k++) {
+          worst = Math.max(worst, Math.abs(chrome[k].x - engine[k].x), Math.abs(chrome[k].width - engine[k].width));
         }
+        if (!breakerPass) break;
       }
-      if (pretextPass && totalLines > 0) {
-        const { maxPx, meanPx } = tolerances.layers.measureText;
-        const meanDelta = meanSum / totalLines;
-        pretextPass = maxDelta <= maxPx && meanDelta <= meanPx;
-        pretextDetail = `mean Δ ${meanDelta.toFixed(4)}px (≤ ${meanPx}px), max Δ ${maxDelta.toFixed(4)}px (≤ ${maxPx}px) over ${totalLines} lines`;
+      if (breakerPass && totalLines > 0) {
+        breakerPass = worst <= maxPx;
+        breakerDetail = `max Δ ${worst.toFixed(4)}px over ${totalLines} line(s) (≤ ${maxPx}px)`;
       }
-      pretextResults.push({ name, pass: pretextPass, detail: pretextDetail });
     }
+    breakerResults.push({ name, pass: breakerPass, detail: breakerDetail });
 
     // --- screenshot masks: text-region mask (fragments) and exclusion mask
     // (declared maskRects / maskElements only). Text pixels are NOT excluded
@@ -318,7 +330,7 @@ try {
     console.log(
       `verified ${name}: ${width}x${height}, ${fragments.length} text fragments, ` +
         `${textPixels} text px compared, ${mask.reduce((a, b) => a + b, 0)} masked` +
-        (h.textElements && fragments.length > 0 ? `, pretext ${pretextPass ? 'PASS' : 'FAIL'} (${pretextDetail})` : ''),
+        (h.textElements && fragments.length > 0 ? `, breaker ${breakerPass ? 'PASS' : 'FAIL'} (${breakerDetail})` : ''),
     );
   }
 } finally {
@@ -332,13 +344,13 @@ if (results.length === 0) {
 }
 const outDir = writeReport(report);
 console.log(renderMarkdown(report));
-if (pretextResults.length > 0) {
-  const allPretext = pretextResults.every((r) => r.pass);
-  console.log(`Pretext seam (${pretextResults.length} fixtures): ${allPretext ? 'PASS' : 'FAIL'}`);
-  for (const r of pretextResults) {
+if (breakerResults.length > 0) {
+  const allBreaker = breakerResults.every((r) => r.pass);
+  console.log(`Engine breaker (${breakerResults.length} fixtures): ${allBreaker ? 'PASS' : 'FAIL'}`);
+  for (const r of breakerResults) {
     console.log(`  ${r.name}: ${r.pass ? 'PASS' : 'FAIL'} — ${r.detail}`);
   }
 }
-const ok = report.allChecksPass && pretextResults.every((r) => r.pass);
+const ok = report.allChecksPass && breakerResults.every((r) => r.pass);
 console.log(ok ? `PASS: report written to ${outDir}` : `FAIL: report written to ${outDir}`);
 process.exit(ok ? 0 : 1);

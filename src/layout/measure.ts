@@ -2,12 +2,15 @@
  * Text measurement and line breaking over the generic Canvas interface.
  *
  * Measurement is the interface's `measureText` (skia today, CoreText/HarfBuzz
- * later); line breaking for the fixtures is plain CSS `white-space: normal`
- * word wrapping: text breaks at space opportunities, greedily filling each line
- * up to the available width. For the simple Latin fixtures this matches
- * Chrome's UAX#14-based breaking exactly (space is the break opportunity, no
- * hyphenation, no CJK). Pretext-based breaking over the same interface is wired
- * in src/pretext and owned by the text-breaker-parity task.
+ * later). Line breaking for the wrapping modes (`normal`/`pre-line`/`pre-wrap`)
+ * is owned by @chenglou/pretext over the same interface: `layoutTextLines`
+ * feeds the text through `breakNextLine` (src/pretext/index.ts) and keeps only
+ * the Chrome-parity layers that the plain-text breaker cannot express —
+ * float-intrusion via the `available` callback, per-word stretched advances
+ * for `text-align: justify`, and the per-mode white-space handling. The greedy
+ * word wrapper (`wrapWords`/`fillWordLines`) remains as the flagged fallback
+ * (see the breaker knob and docs/ledgers/breakers.md); the drift gate asserts
+ * it cannot silently diverge from Pretext on the spine corpus.
  */
 
 import type { CanvasFactory, CanvasLike } from '../canvas/interface.js';
@@ -160,6 +163,12 @@ export function wrapWords(
  * Every mode splits on `\n` first when newlines are significant; a trailing
  * newline's empty final segment does not generate a line box (Chrome drops
  * it), while empty interior segments do (empty line boxes).
+ *
+ * For the wrapping modes, the break/word-fill decision is Pretext's when
+ * `usePretextBreaker` is set (the default); the greedy wrapper below is the
+ * `CASCADE_BREAKER=greedy` fallback. Both paths feed the same per-mode
+ * white-space handling and alignment layers, so the two cannot disagree on
+ * the layering — only on where a line breaks (see docs/ledgers/breakers.md).
  */
 export function layoutTextLines(opts: {
   text: string;
@@ -209,7 +218,11 @@ export function layoutTextLines(opts: {
       lineTop += lineHeight;
       return { lines, height: lineTop - y };
     }
-    lineTop = fillWordLines(collapsed.split(' '), lines, lineTop, available, measure, align, fontSize, family, letterSpacing, lineHeight);
+    if (usePretextBreaker) {
+      lineTop = pretextWordFill(collapsed, lines, lineTop, available, measure, align, fontSize, family, letterSpacing, lineHeight, 'normal', false);
+    } else {
+      lineTop = fillWordLines(collapsed.split(' '), lines, lineTop, available, measure, align, fontSize, family, letterSpacing, lineHeight);
+    }
     return { lines, height: lineTop - y };
   }
 
@@ -224,8 +237,17 @@ export function layoutTextLines(opts: {
         lineTop += lineHeight;
         continue;
       }
-      lineTop = fillWordLines(collapsed.split(' '), lines, lineTop, available, measure, align, fontSize, family, letterSpacing, lineHeight);
+      if (usePretextBreaker) {
+        lineTop = pretextWordFill(collapsed, lines, lineTop, available, measure, align, fontSize, family, letterSpacing, lineHeight, 'normal', false);
+      } else {
+        lineTop = fillWordLines(collapsed.split(' '), lines, lineTop, available, measure, align, fontSize, family, letterSpacing, lineHeight);
+      }
     }
+    return { lines, height: lineTop - y };
+  }
+
+  if (usePretextBreaker) {
+    lineTop = pretextWordFill(text, lines, lineTop, available, measure, align, fontSize, family, letterSpacing, lineHeight, 'pre-wrap', true);
     return { lines, height: lineTop - y };
   }
 
@@ -285,6 +307,69 @@ export function layoutTextLines(opts: {
     }
   }
   return { lines, height: lineTop - y };
+}
+
+/**
+ * Pretext word-fill for the wrapping modes. Each line's break comes from
+ * `breakNextLine` over the same Canvas-interface measurement the engine uses;
+ * only the alignment/justify/float-intrusion layering is applied here.
+ *
+ * `prepareWs` is the Pretext white-space mode ('normal' collapses, 'pre-wrap'
+ * preserves spaces and newlines) and `hungSpace` selects the pre-wrap union
+ * line box: a trailing preserved-space run collapses to one hung space that
+ * stays on the line (Chrome). Under 'normal' the trailing space is dropped
+ * instead — it collapses away at the wrap point and is not painted.
+ */
+function pretextWordFill(
+  text: string,
+  lines: LineBox[],
+  startTop: number,
+  available: (top: number, bottom: number) => { x: number; width: number },
+  measure: (s: string) => number,
+  align: TextAlign,
+  fontSize: number,
+  family: string,
+  letterSpacing: number,
+  lineHeight: number,
+  prepareWs: 'normal' | 'pre-wrap',
+  hungSpace: boolean,
+): number {
+  let lineTop = startTop;
+  const prepared = prepareText(text, cssFontString(fontSize, family), { whiteSpace: prepareWs, letterSpacing });
+  const totalSegments = prepared.segments.length;
+  let cursor = { segmentIndex: 0, graphemeIndex: 0 };
+  while (true) {
+    const av = available(lineTop, lineTop + lineHeight);
+    const availWidth = Math.max(0, av.width);
+    const broke = breakNextLine(prepared, cursor, availWidth);
+    if (broke === null) break;
+    if (broke.end.segmentIndex === cursor.segmentIndex && broke.end.graphemeIndex === cursor.graphemeIndex) break;
+    let lineText = broke.text;
+    if (hungSpace) lineText = lineText.replace(/ +$/, (m) => (m ? ' ' : m));
+    else lineText = lineText.replace(/[ \t]+$/, '');
+    const width = measure(lineText);
+    const words = lineText.split(' ');
+    if (align === 'justify' && !hungSpace && !(broke.end.segmentIndex >= totalSegments) && words.length > 1 && width < availWidth) {
+      // Distribute the surplus evenly across the inter-word spaces, emitting
+      // one word-per-LineBox so painting draws each word at its stretched x.
+      const stretch = (availWidth - width) / (words.length - 1);
+      const spaceW = measure(' ');
+      let x = av.x;
+      for (let wi = 0; wi < words.length; wi++) {
+        lines.push({ x, y: lineTop, width: measure(words[wi]), height: lineHeight, text: words[wi], startWord: 0, endWord: 1 });
+        if (wi < words.length - 1) x += measure(words[wi]) + spaceW + stretch;
+      }
+    } else {
+      let lineX = av.x;
+      // An overflowing line stays at the start edge under every alignment.
+      if (align === 'center' && width <= availWidth) lineX = av.x + (availWidth - width) / 2;
+      else if (align === 'right' && width <= availWidth) lineX = av.x + (availWidth - width);
+      lines.push({ x: lineX, y: lineTop, width, height: lineHeight, text: lineText, startWord: 0, endWord: 1 });
+    }
+    lineTop += lineHeight;
+    cursor = broke.end;
+  }
+  return lineTop;
 }
 
 /**

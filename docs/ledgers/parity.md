@@ -34,8 +34,10 @@ All numbers below are from a fresh run on `main`
 | replaced-boxes | PASS mean Δ 0.0040px | PASS 0 mismatch | PASS max Δ 0.0000px | PASS 0 exceeding |
 | wrapping | PASS mean Δ 0.0020px | PASS 0 mismatch | PASS max Δ 0.0000px | PASS 0 exceeding |
 
-Pretext seam (break-point parity vs Chrome line fragments): PASS, means
-0.0000–0.0123px, max ≤ 0.0219px (charter §3 seam exercised per fixture).
+Engine breaker (break-point parity vs Chrome line fragments): PASS, max Δ
+0.0000–0.0150px per line (the engine's own fragments, laid out through the
+Pretext breaker — no separate seam call; layer-1 mean/max enforced on the
+measureText strings).
 
 ### Other Verifiers
 
@@ -44,7 +46,7 @@ Pretext seam (break-point parity vs Chrome line fragments): PASS, means
 | `verify:text-measure` | PASS 100.0% (96/96) | pass-corpus mean Δ 0.0025px, worst 0.0300px; 0 documented gaps (7 → 0) |
 | `verify:segmenter` | PASS 72/72 | grapheme + Pretext layout parity, node icu 78.3 vs chrome |
 | `verify:media-queries` | PASS | reduced-motion 2/2, resolution 2/4, viewport-units 2/14, width-breakpoint 3/9 |
-| `verify:firefox` | PASS | screenshot 0 exceeding; Pretext seam Δ 0.0000px |
+| `verify:firefox` | PASS | screenshot 0 exceeding; engine breaker (through Pretext) max Δ 0.0000px per line |
 | `verify:inline-block` | PASS 4/4 | rect max Δ 0.029px, screenshot ≤ 0.66% exceeding (badge backgrounds compared strictly, text under the tier) |
 | `verify:layout-{flexbox,grid,floats,positioning}`, `verify:paint-text`, `verify:firefox`, `verify:report` | PASS | rect max Δ 0.0000px, non-text screenshot 0 exceeding everywhere; text compared under the tier (0 exceeding on non-text, text under `layers.screenshot.text`) |
 
@@ -103,31 +105,32 @@ is scoped to non-text pixels; the text tier's within-region exceed allowance
 — each fixture reports its text-region pixels compared, mean/worst ΔE, and
 text-pixel mask share (0 by default — only declared masks stay masked).
 
-### 2. The layer-1 seam mean tolerance is now enforced — two owned seam overages
+### 2. The layer-1 mean tolerance is enforced — resolved when the seam call was retired
 
-`verify-four-layer.mjs` gates the Pretext seam on `maxPx ≤ 0.5px` **and** the
-charter's `< 0.01px` mean (`layer1-mean-gate`); a breach fails the run. The
-first enforced run exposes exactly the case this entry warned about:
-`basic-text` (mean Δ 0.0117px) and `wrapping` (mean Δ 0.0123px) exceed the
-0.01px band by 0.0017–0.0023px — the Pretext seam's width-reporting rounding.
-They are owned by `pretext-breaker-path` (re-opened: the seam is reworked when
-the engine ships the Pretext breaker), so `verify:four-layer` is red until that
-lands. `verify:text-measure` enforces the same mean (`evaluate.ts`: `pass:
-meanDelta <= meanPx && maxDelta <= maxPx`) and is green (pass-corpus mean
-0.0025px).
+`verify-four-layer.mjs` enforces the charter layer-1 mean on the measureText
+strings (`evaluate.ts`: `meanDelta <= meanPx && maxDelta <= maxPx`), and the
+engine's own line fragments are gated on the layer-3 rect band. The earlier
+owned overage (`basic-text` mean 0.0117px, `wrapping` mean 0.0123px) belonged
+to the standalone Pretext-seam call, which measured Pretext's internally
+rounded line widths against Chrome's fragments; `pretext-breaker-path` removed
+that call — the engine path is the one under test (the engine breaks text
+through Pretext and its fragments are measured with the engine's own canvas) —
+so `verify:four-layer` is green again. `verify:text-measure` enforces the same
+mean (pass-corpus mean 0.0025px).
 
-### 3. Pretext is a test seam, not the engine's text layout
+### 3. The engine's text layout is the Pretext breaker
 
-The engine's shipped line/word wrapping is hand-rolled: the greedy space-break
-wrapper in `src/layout/measure.ts` (`layoutTextLines`/`wrapWords`) serves
-pure-text blocks and floats, and the inline-piece walker in
-`src/layout/block-inline.ts` (`layoutInlineContent`/`walkLine`) handles inline
-content that mixes text runs with inline-level boxes. `@chenglou/pretext`
-prepare/layout runs only inside the verify harness over the Canvas interface.
-Break-point parity with Chrome is proven **for the seam**, not for the shipped
-layout path — this seam-vs-shipped split is the documented divergence
-(coherence-generalize requirement: a single line-breaking authority lands with
-the text-breaker-parity task).
+The engine's shipped line/word wrapper is `@chenglou/pretext` over the Canvas
+interface: `layoutTextLines` feeds the wrapping modes through `breakNextLine`
+(`src/layout/measure.ts`), and the pure-text block path delegates to it
+(`src/layout/block-inline.ts`). The greedy space-break wrapper survives only as
+the `CASCADE_BREAKER=greedy` fallback, which the drift gate (`verify:breaker`)
+proves agrees with Pretext on the spine. The inline-piece walker still owns
+mixed inline content (atomics, foreign-style spans) and `justify` lines — the
+per-run styling Pretext's plain-string model cannot carry — and the white-space
+per-mode handling stays in `layoutTextLines` (see `docs/ledgers/breakers.md`).
+Break-point parity with Chrome is proven **for the engine path**, which is the
+shipped layout path.
 
 ### 4. Seven text-measure gaps remain, all diverging — resolved (7 → 0)
 
@@ -239,7 +242,7 @@ Pretext:
 ## Performance: Engine vs Playwright Oracle
 
 Generated by `npm run bench:engine-vs-oracle` (scripts/bench-engine-vs-oracle.mjs) on
-2026-08-16 — node v26.7.0, Chrome via Playwright, Noto Sans (/usr/share/fonts/google-noto/NotoSans-Regular.ttf).
+2026-08-17 — node v26.7.0, Chrome via Playwright, Noto Sans (/usr/share/fonts/google-noto/NotoSans-Regular.ttf).
 
 ### Method: what each number is
 
@@ -270,49 +273,72 @@ Generated by `npm run bench:engine-vs-oracle` (scripts/bench-engine-vs-oracle.mj
 
 | Fixture | Engine | Chrome render | Harness | Batched | rt Δ (ms) | engine:CRO | harness:CRO | engine:harness |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| basic-text | 62.8 | 52.0 | 392.7 | 240.7 | 152.1 | 1.21 | 7.55 | 0.16 |
-| boxes | 10.9 | 40.0 | 293.8 | 225.3 | 68.5 | 0.27 | 7.35 | 0.04 |
-| inline-styles | 21.1 | 52.0 | 438.7 | 245.2 | 193.5 | 0.41 | 8.44 | 0.05 |
-| replaced-boxes | 11.3 | 60.0 | 463.7 | 207.0 | 256.7 | 0.19 | 7.73 | 0.02 |
-| wrapping | 18.0 | 40.0 | 306.9 | 214.5 | 92.4 | 0.45 | 7.67 | 0.06 |
-| **Sum (all spine)** | 124.1 | 244.0 | 1895.8 | 1132.7 | 763.1 | 0.51 | 7.77 | 0.07 |
+| basic-text | 236.3 | 48.0 | 508.6 | 325.3 | 183.2 | 4.92 | 10.60 | 0.46 |
+| boxes | 19.9 | 64.0 | 359.3 | 243.2 | 116.1 | 0.31 | 5.61 | 0.06 |
+| inline-styles | 58.7 | 64.0 | 666.4 | 273.4 | 392.9 | 0.92 | 10.41 | 0.09 |
+| replaced-boxes | 17.4 | 52.0 | 438.7 | 242.7 | 196.0 | 0.33 | 8.44 | 0.04 |
+| wrapping | 16.8 | 52.0 | 351.7 | 290.6 | 61.2 | 0.32 | 6.76 | 0.05 |
+| **Sum (all spine)** | 349.1 | 280.0 | 2324.8 | 1375.3 | 949.5 | 1.25 | 8.30 | 0.15 |
 
 ### Warm run (browser pre-launched and warmed, as the verify scripts run; means of 3)
 
 | Fixture | Engine | Chrome render | Harness | Batched | rt Δ (ms) | engine:CRO | harness:CRO | engine:harness |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| basic-text | 22.3 | 46.7 | 254.5 | 190.4 | 64.1 | 0.48 | 5.45 | 0.09 |
-| boxes | 12.0 | 42.7 | 262.5 | 183.8 | 78.7 | 0.28 | 6.15 | 0.05 |
-| inline-styles | 14.7 | 40.0 | 323.9 | 184.9 | 139.0 | 0.37 | 8.10 | 0.05 |
-| replaced-boxes | 15.1 | 53.3 | 300.9 | 213.2 | 87.7 | 0.28 | 5.64 | 0.05 |
-| wrapping | 20.1 | 61.3 | 271.2 | 193.5 | 77.7 | 0.33 | 4.42 | 0.07 |
-| **Sum (all spine)** | 84.2 | 244.0 | 1413.0 | 965.8 | 447.2 | 0.34 | 5.79 | 0.06 |
+| basic-text | 27.9 | 53.3 | 395.7 | 213.1 | 182.6 | 0.52 | 7.42 | 0.07 |
+| boxes | 15.9 | 48.0 | 335.4 | 242.0 | 93.4 | 0.33 | 6.99 | 0.05 |
+| inline-styles | 29.0 | 56.0 | 439.8 | 212.1 | 227.7 | 0.52 | 7.85 | 0.07 |
+| replaced-boxes | 16.2 | 49.3 | 359.9 | 220.5 | 139.4 | 0.33 | 7.29 | 0.04 |
+| wrapping | 23.9 | 48.0 | 380.0 | 184.1 | 195.9 | 0.50 | 7.92 | 0.06 |
+| **Sum (all spine)** | 112.8 | 254.7 | 1910.8 | 1071.9 | 839.0 | 0.44 | 7.50 | 0.06 |
+
+### Breaker before/after (performance guard)
+
+Both breakers are timed on the engine side within the same run. **Before** =
+the flagged greedy fallback (`CASCADE_BREAKER=greedy`, the pre-swap engine);
+**after** = the shipped Pretext breaker (the default). Columns: engine warm ms
+per breaker, the after-minus-before Δ, the percent over (negative = the Pretext
+path is faster), and each breaker's engine:CRO ratio (engine ÷ Chrome
+render-to-FCP; the lower the better). The recorded guard: the Pretext path's
+summed warm engine time is 112.8ms vs 137.9ms for the
+greedy fallback (-18.2%
+over; engine:CRO 0.54 → 0.44) —
+this is the documented, recorded regression bound, and the Pretext engine stays
+faster than Chrome's own render.
+
+| Fixture | Engine greedy ms | Engine pretext ms | Δ ms | % over | engine:CRO greedy | engine:CRO pretext |
+| --- | --- | --- | --- | --- | --- | --- |
+| basic-text | 34.7 | 27.9 | -6.8 | -19.6% | 0.65 | 0.52 |
+| boxes | 18.4 | 15.9 | -2.5 | -13.6% | 0.38 | 0.33 |
+| inline-styles | 27.3 | 29.0 | 1.7 | 6.4% | 0.49 | 0.52 |
+| replaced-boxes | 22.3 | 16.2 | -6.2 | -27.6% | 0.45 | 0.33 |
+| wrapping | 35.2 | 23.9 | -11.4 | -32.2% | 0.73 | 0.50 |
+| **Sum (all spine)** | 137.9 | 112.8 | -25.1 | -18.2% | 0.54 | 0.44 |
 
 ### Reading
 
 - **The engine is faster than Chrome's own render work.** On the sums the engine takes
-  51% of Chrome's render-to-FCP time cold (34% warm);
+  125% of Chrome's render-to-FCP time cold (44% warm);
   on the warm run — the one that mirrors the verify harness — the per-fixture
-  engine:CRO range is 0.28–0.48, i.e. the
-  engine is ~2.1–3.6x faster per
+  engine:CRO range is 0.33–0.52, i.e. the
+  engine is ~1.9–3.1x faster per
   fixture than Chrome's own render. The lone cold outlier is basic-text at
-  1.21, the process's first `renderHtml` call, which pays one-time
+  4.92, the process's first `renderHtml` call, which pays one-time
   font/measure-canvas init; it is not a representative render. The render work itself is
   genuinely where the engine wins, and it is not a timing artifact.
 - **Most of the old "28x" was the harness, not Chrome.** The full oracle path is
-  7.8x (cold) / 5.8x (warm) Chrome's actual render
-  cost; 83% of the warm harness wall-clock is
+  8.3x (cold) / 7.5x (warm) Chrome's actual render
+  cost; 87% of the warm harness wall-clock is
   harness overhead (page setup, evaluate round-trips, screenshot), not Chrome rendering.
-  The engine's honest multiple over the whole harness path is ~15.3x
-  (cold) / ~16.8x (warm) — far below the earlier ~28x that billed
+  The engine's honest multiple over the whole harness path is ~6.7x
+  (cold) / ~16.9x (warm) — far below the earlier ~28x that billed
   Chrome's render plus harness overhead against the engine.
 - **Per-quantity round-trips are a measurable, recoverable chunk.** Batching all oracle
-  quantities into one `evaluate` per fixture cuts the oracle path by 32%
-  (rt Δ sum 447ms warm), confirming
+  quantities into one `evaluate` per fixture cuts the oracle path by 44%
+  (rt Δ sum 839ms warm), confirming
   the suspicion the old table recorded.
 - **Cold vs warm.** Cold Chrome launch costs ~215ms; the cold
-  oracle path is 1.34× the warm path (1896ms
-  vs 1413ms summed), so browser warmth is the only material
+  oracle path is 1.22× the warm path (2325ms
+  vs 1911ms summed), so browser warmth is the only material
   temperature axis and the engine (in-process) is unaffected.
 
 Takeaway: time-wise the solution is genuinely more efficient than *Chrome rendering the

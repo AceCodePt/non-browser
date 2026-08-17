@@ -24,7 +24,7 @@ The four layers are independent and each fixture records expectations for all fo
 The following are **in scope** for v1:
 
 - Full CSS layout, landed in a defined order: block/inline → positioning → floats → flexbox → grid **last**.
-- Text: layout over a generic Canvas interface (`measureText` + paint primitives). The engine's own line/word wrapper (`block-inline.ts`/`measure.ts`) is the shipped breaking path; `@chenglou/pretext` prepare/layout is the break-parity test seam over the same interface (see `docs/ledgers/parity.md`, Honest Reading #3). Skia is the first implementation; CoreText/HarfBuzz may follow behind the same interface.
+- Text: layout over a generic Canvas interface (`measureText` + paint primitives). The engine's shipped breaking path is `@chenglou/pretext` prepare/break over the same interface (`src/layout/measure.ts` routes `layoutTextLines` through `breakNextLine`; see `docs/ledgers/breakers.md`). The greedy space-break wrapper survives only as the flagged `CASCADE_BREAKER=greedy` fallback that the drift gate pins to Pretext. Skia is the first implementation; CoreText/HarfBuzz may follow behind the same interface.
 - Replaced boxes at layout size for `<canvas>` and `<img>`.
 
 The following are **out of scope** for v1 and must not appear as scope commitments in any task:

@@ -1,0 +1,11 @@
+{
+  "name": "cjk-simplified",
+  "category": "cjk-without-spaces",
+  "note": "Simplified Chinese with CJK punctuation on Droid Sans Fallback, no spaces: per-grapheme breaking with no break opportunities inside words.",
+  "fonts": [{ "family": "Droid Sans Fallback", "file": "/usr/share/fonts/google-droid-sans-fonts/DroidSansFallbackFull.ttf" }],
+  "harvest": {
+    "viewport": { "width": 460, "height": 200 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"p\" style=\"font-family:'Droid Sans Fallback';font-size:16px;line-height:24px;width:200px\">我们坚持走中国特色社会主义道路，推动构建人类命运共同体，实现中华民族伟大复兴。建设社会主义现代化强国。</div></body></html>",
+    "textElements": ["p"]
+  }
+}

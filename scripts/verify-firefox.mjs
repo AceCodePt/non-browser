@@ -21,6 +21,11 @@
  * text-pixel mask share. Only declared maskRects/maskElements stay masked
  * (mask.png).
  *
+ * The engine's shipped text path is the Pretext breaker (the default), so the
+ * engine's own line fragments are compared against Firefox's line boxes — the
+ * engine path is what is verified, not a separate seam call (the same breaker
+ * verify:four-layer asserts on the chrome path).
+ *
  * Writes reference.json/reference.png/mask.png/text-mask.png (Firefox) and
  * candidate.json/candidate.png (engine) into each fixture directory, then a
  * report under docs/reports/firefox-track/. Exits 0 only when every fixture
@@ -35,8 +40,7 @@ import { decodePng, encodePng } from '../dist/harness/png.js';
 import { evaluateFixture } from '../dist/harness/evaluate.js';
 import { buildReport, writeReport, renderMarkdown } from '../dist/harness/report.js';
 import { renderHtml } from '../dist/layout/render.js';
-import { installPretextMeasurement, prepareText, layoutLines } from '../dist/pretext/index.js';
-import { getMeasurementCanvas } from '../dist/layout/measure.js';
+import { getUsePretextBreaker } from '../dist/layout/measure.js';
 import { firefoxConfig } from '../dist/config/index.js';
 import { setActiveBrowserConfig } from '../dist/config/browser-config.js';
 
@@ -59,8 +63,7 @@ function* fixtures() {
  * Text-region mask = every pixel inside Firefox's text fragment rects that
  * either rasterizer paints as anything other than pure white — glyph ink, the
  * AA fringe, and LCD/subpixel fringes that bleed past grayscale AA. These are
- * the pixels where text rasterization policy (hinting/AA) can differ, so they
- * are compared under the documented text tier (tolerances.json
+ * compared under the documented text tier (tolerances.json
  * layers.screenshot.text, justified by docs/ledgers/text-mask.md). Pure-white
  * pixels are not text and stay under the §10 band.
  */
@@ -82,11 +85,37 @@ function textRegionMask(width, height, rects, refData, candData) {
   return mask;
 }
 
+/**
+ * Merge one element's fragments into per-line boxes: fragments sharing a line
+ * (same y) are unioned into [x, width]. Gecko reports one rect per inline
+ * text box, so a justified line may surface as several fragments; the union is
+ * the honest per-line geometry both breakers must agree on.
+ */
+function mergeLines(frags) {
+  const groups = new Map();
+  for (const f of frags) {
+    const key = Math.round(f.y * 10) / 10;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(f);
+  }
+  const lines = [];
+  for (const [key, fs] of [...groups.entries()].sort((a, b) => a[0] - b[0])) {
+    let minX = Infinity;
+    let maxRight = -Infinity;
+    for (const f of fs) {
+      minX = Math.min(minX, f.x);
+      maxRight = Math.max(maxRight, f.x + f.width);
+    }
+    lines.push({ x: minX, width: maxRight - minX });
+  }
+  return lines;
+}
+
 const tolerances = loadTolerances(resolve('tolerances.json'));
 setActiveBrowserConfig(firefoxConfig);
 const browser = await firefox.launch();
 const results = [];
-const pretextResults = [];
+const breakerResults = [];;
 
 if (!statSync(corpus, { throwIfNoEntry: false })?.isDirectory()) {
   console.error(`verify:firefox: corpus directory missing: ${corpus}`);
@@ -138,12 +167,10 @@ try {
       }
     }
 
-    // Firefox line fragments (used for the screenshot text mask and Pretext parity).
+    // Firefox line fragments (used for the screenshot text mask and the engine
+    // line-break parity check).
     const fragments = [];
     const fragmentsById = {};
-    const textsById = {};
-    const widthsById = {};
-    const fontById = {};
     if (h.textElements && h.textElements.length > 0) {
       for (const id of h.textElements) {
         const info = await page.evaluate((id) => {
@@ -155,15 +182,11 @@ try {
           for (const r of range.getClientRects()) {
             frags.push({ x: r.x, y: r.y, width: r.width, height: r.height });
           }
-          const cs = getComputedStyle(el);
-          return { text: el.textContent, clientWidth: el.clientWidth, fontSize: cs.fontSize, fontFamily: cs.fontFamily, letterSpacing: cs.letterSpacing, frags };
+          return { frags };
         }, id);
         if (!info) continue;
         fragments.push(...info.frags);
-        fragmentsById[id] = info.frags.map((f) => f.width);
-        textsById[id] = info.text ?? '';
-        widthsById[id] = info.clientWidth;
-        fontById[id] = { fontSize: info.fontSize, fontFamily: info.fontFamily, letterSpacing: info.letterSpacing };
+        fragmentsById[id] = info.frags;
       }
     }
 
@@ -180,6 +203,7 @@ try {
       fontFile: FONT_FILE,
       browserConfig: firefoxConfig,
       computedStyle: h.computedStyle,
+      textElements: h.textElements,
     });
     const candImg = decodePng(out.rgba);
 
@@ -195,55 +219,40 @@ try {
       }
     }
 
-    // --- Pretext seam over the Canvas interface (same seam as the chrome path) ---
-    // The seam is handed the fixture's real computed font-family (harvested
-    // from the element, not the hard-coded default), so a fallback fixture
-    // resolves via resolveFontFamily exactly as the engine measure path does.
-    let pretextPass = true;
-    let pretextDetail = 'no text elements';
+    // --- engine line fragments vs Firefox (the one breaker under test) ---
+    // The engine's shipped text path is the Pretext breaker (asserted below),
+    // so these fragments ARE the Pretext break decisions laid out by the
+    // engine — there is no separate seam call anymore (docs/ledgers/breakers.md).
+    let breakerPass = true;
+    let breakerDetail = 'no text elements';
+    if (!getUsePretextBreaker()) {
+      breakerPass = false;
+      breakerDetail = 'the engine is NOT running the Pretext breaker (CASCADE_BREAKER=greedy leaked into the run)';
+    }
     const textIds = h.textElements ?? [];
-    if (textIds.length > 0) {
-      installPretextMeasurement(getMeasurementCanvas());
-      let maxDelta = 0;
-      let meanSum = 0;
+    if (breakerPass && textIds.length > 0) {
+      const maxPx = tolerances.layers.rect.maxPx;
+      let worst = 0;
       let totalLines = 0;
       for (const id of textIds) {
-        const text = textsById[id];
-        const maxWidth = widthsById[id] ?? viewport.width;
-        if (!text || !text.trim()) continue;
-        const f = fontById[id] ?? { fontSize: '16px', fontFamily: FONT_FAMILY, letterSpacing: 'normal' };
-        const fontSize = parseFloat(f.fontSize) || 16;
-        const family = f.fontFamily && f.fontFamily.trim() ? f.fontFamily.trim().replace(/^["']+|["']+$/g, '') : FONT_FAMILY;
-        const ls = f.letterSpacing && f.letterSpacing !== 'normal' ? parseFloat(f.letterSpacing) : 0;
-        const prepared = prepareText(text, `${fontSize}px '${family}'`, { letterSpacing: ls });
-        const res = layoutLines(prepared, maxWidth, 24);
-        const chromeWidths = fragmentsById[id] ?? [];
-        if (chromeWidths.length === 0) continue;
-        if (res.lines.length !== chromeWidths.length) {
-          pretextPass = false;
-          pretextDetail = `id ${id}: Firefox ${chromeWidths.length} lines vs Pretext ${res.lines.length}`;
+        const ff = mergeLines(fragmentsById[id] ?? []);
+        const engine = mergeLines((out.textFragments[id] ?? []).map((f) => ({ x: f.x, y: f.y, width: f.width, height: f.height })));
+        totalLines += Math.max(ff.length, engine.length);
+        if (ff.length !== engine.length) {
+          breakerPass = false;
+          breakerDetail = `id ${id}: Firefox ${ff.length} lines vs engine ${engine.length}`;
           break;
         }
-        for (let i = 0; i < chromeWidths.length; i++) {
-          const d = Math.abs(chromeWidths[i] - res.lines[i].width);
-          meanSum += d;
-          if (d > maxDelta) maxDelta = d;
-          totalLines++;
+        for (let k = 0; k < ff.length; k++) {
+          worst = Math.max(worst, Math.abs(ff[k].x - engine[k].x), Math.abs(ff[k].width - engine[k].width));
         }
       }
-      if (pretextPass && totalLines > 0) {
-        // Gate the seam on the charter layer-1 tolerances, mean AND max: the
-        // seam must render the fixture's real family within <0.01px mean and
-        // ≤ maxPx per line (the fallback fixture resolves through the firefox
-        // fallback table to Source Code Pro, which Firefox reproduces exactly).
-        const maxPx = tolerances.layers.measureText.maxPx;
-        const meanPx = tolerances.layers.measureText.meanPx;
-        const meanDelta = meanSum / totalLines;
-        pretextPass = maxDelta <= maxPx && meanDelta <= meanPx;
-        pretextDetail = `mean Δ ${meanDelta.toFixed(4)}px, max Δ ${maxDelta.toFixed(4)}px over ${totalLines} lines (mean ≤ ${meanPx}px, max ≤ ${maxPx}px)`;
+      if (breakerPass && totalLines > 0) {
+        breakerPass = worst <= maxPx;
+        breakerDetail = `max Δ ${worst.toFixed(4)}px over ${totalLines} line(s) (≤ ${maxPx}px)`;
       }
-      pretextResults.push({ name, pass: pretextPass, detail: pretextDetail });
     }
+    breakerResults.push({ name, pass: breakerPass, detail: breakerDetail });
 
     // --- text-region mask (fragments) and exclusion mask (declared
     // maskRects / maskElements only). Text pixels are NOT excluded any more:
@@ -326,7 +335,7 @@ try {
     console.log(
       `verified ${name}: ${width}x${height}, ${fragments.length} text fragments, ` +
         `${textPixels} text px compared, ${mask.reduce((a, b) => a + b, 0)} masked` +
-        (h.textElements && fragments.length > 0 ? `, pretext ${pretextPass ? 'PASS' : 'FAIL'} (${pretextDetail})` : ''),
+        (h.textElements && fragments.length > 0 ? `, breaker ${breakerPass ? 'PASS' : 'FAIL'} (${breakerDetail})` : ''),
     );
   }
 } finally {
@@ -340,13 +349,13 @@ if (results.length === 0) {
 }
 const outDir = writeReport(report);
 console.log(renderMarkdown(report));
-if (pretextResults.length > 0) {
-  const allPretext = pretextResults.every((r) => r.pass);
-  console.log(`Pretext seam (${pretextResults.length} fixtures): ${allPretext ? 'PASS' : 'FAIL'}`);
-  for (const r of pretextResults) {
+if (breakerResults.length > 0) {
+  const allBreaker = breakerResults.every((r) => r.pass);
+  console.log(`Engine breaker (${breakerResults.length} fixtures): ${allBreaker ? 'PASS' : 'FAIL'}`);
+  for (const r of breakerResults) {
     console.log(`  ${r.name}: ${r.pass ? 'PASS' : 'FAIL'} — ${r.detail}`);
   }
 }
-const ok = report.allChecksPass && pretextResults.every((r) => r.pass);
+const ok = report.allChecksPass && breakerResults.every((r) => r.pass);
 console.log(ok ? `PASS: report written to ${outDir}` : `FAIL: report written to ${outDir}`);
 process.exit(ok ? 0 : 1);
