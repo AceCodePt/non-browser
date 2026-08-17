@@ -1,0 +1,11 @@
+{
+  "name": "long-word-breakword-120",
+  "category": "long-words",
+  "note": "Very long words under overflow-wrap:break-word at 120px: Pretext's grapheme-level word breaking matches Chrome's break-word behavior (the engine ignores the property; Pretext's default already is break-word).",
+  "fonts": [{ "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" }],
+  "harvest": {
+    "viewport": { "width": 460, "height": 240 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"p\" style=\"font-family:'Noto Sans';font-size:16px;line-height:24px;width:120px;overflow-wrap:break-word\">supercalifragilisticexpialidocious antidisestablishmentarianism pneumonoultramicroscopicsilicovolcanoconiosis</div></body></html>",
+    "textElements": ["p"]
+  }
+}

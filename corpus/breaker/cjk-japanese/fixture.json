@@ -1,0 +1,11 @@
+{
+  "name": "cjk-japanese",
+  "category": "cjk-without-spaces",
+  "note": "Japanese kana/kanji with fullwidth punctuation on Droid Sans Fallback, no spaces: grapheme-level breaking with kana-specific kinsoku behavior.",
+  "fonts": [{ "family": "Droid Sans Fallback", "file": "/usr/share/fonts/google-droid-sans-fonts/DroidSansFallbackFull.ttf" }],
+  "harvest": {
+    "viewport": { "width": 460, "height": 200 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"p\" style=\"font-family:'Droid Sans Fallback';font-size:16px;line-height:24px;width:180px\">これは日本語のテキストを改行テストする文です。かなカタカナ漢字が混ざっています。</div></body></html>",
+    "textElements": ["p"]
+  }
+}

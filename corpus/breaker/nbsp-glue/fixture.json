@@ -1,0 +1,11 @@
+{
+  "name": "nbsp-glue",
+  "category": "misc",
+  "note": "Non-breaking spaces (U+00A0): Pretext classifies them as glue (no break opportunity) exactly where Chrome keeps Mr./Dr. and city names together.",
+  "fonts": [{ "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" }],
+  "harvest": {
+    "viewport": { "width": 460, "height": 200 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"p\" style=\"font-family:'Noto Sans';font-size:16px;line-height:24px;width:150px\">Mr.\u00a0Smith and Dr.\u00a0Jones went to the new\u00a0York museum.</div></body></html>",
+    "textElements": ["p"]
+  }
+}

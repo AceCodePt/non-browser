@@ -1,0 +1,11 @@
+{
+  "name": "forced-prewrap",
+  "category": "forced-breaks",
+  "note": "white-space:pre-wrap: newlines are forced breaks, spaces are preserved AND soft-wrap opportunities, and a trailing space at a wrap stays on the line as a hung space.",
+  "fonts": [{ "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" }],
+  "harvest": {
+    "viewport": { "width": 460, "height": 260 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"p\" style=\"font-family:'Noto Sans';font-size:16px;line-height:24px;width:120px;white-space:pre-wrap\">The quick brown fox jumps over the lazy dog.\n\nPack my box with five dozen liquor jugs.</div></body></html>",
+    "textElements": ["p"]
+  }
+}

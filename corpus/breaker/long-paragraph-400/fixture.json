@@ -1,0 +1,11 @@
+{
+  "name": "long-paragraph-400",
+  "category": "long-paragraph",
+  "note": "The spine wrapping text at a wide 400px column: most of the paragraph fits one line, with only the tail wrapping.",
+  "fonts": [{ "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" }],
+  "harvest": {
+    "viewport": { "width": 520, "height": 160 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"p\" style=\"font-family:'Noto Sans';font-size:16px;line-height:24px;width:400px\">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs. Sphinx of black quartz, judge my vow.</div></body></html>",
+    "textElements": ["p"]
+  }
+}

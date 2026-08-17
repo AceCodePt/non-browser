@@ -1,0 +1,11 @@
+{
+  "name": "narrow-multiline",
+  "category": "long-paragraph",
+  "note": "Short words at 12px in a very narrow 90px column: tight wrapping exercises the fit-epsilon boundary between the breakers.",
+  "fonts": [{ "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" }],
+  "harvest": {
+    "viewport": { "width": 460, "height": 200 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"p\" style=\"font-family:'Noto Sans';font-size:12px;line-height:18px;width:90px\">short words fill narrow lines here to test tight wrapping behavior at many widths</div></body></html>",
+    "textElements": ["p"]
+  }
+}

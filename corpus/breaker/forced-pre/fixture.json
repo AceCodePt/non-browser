@@ -1,0 +1,11 @@
+{
+  "name": "forced-pre",
+  "category": "forced-breaks",
+  "note": "white-space:pre: newlines are forced breaks and spaces never wrap; the last segment overflows the 200px box (Chrome keeps it on one line).",
+  "fonts": [{ "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" }],
+  "harvest": {
+    "viewport": { "width": 460, "height": 200 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"p\" style=\"font-family:'Noto Sans';font-size:16px;line-height:24px;width:200px;white-space:pre\">alpha beta gamma\ndelta epsilon zeta\neta theta iota kappa lambda</div></body></html>",
+    "textElements": ["p"]
+  }
+}

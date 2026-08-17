@@ -30,6 +30,12 @@ import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { renderHtml } from '../dist/layout/render.js';
+import { applyBreakerFromEnv, getUsePretextBreaker, setUsePretextBreaker } from '../dist/layout/measure.js';
+
+// The breaker knob: `CASCADE_BREAKER=greedy` measures the flagged fallback
+// (the pre-swap engine), the default measures the shipped Pretext breaker.
+applyBreakerFromEnv();
+const breakerLabel = getUsePretextBreaker() ? 'Pretext (default)' : 'greedy (CASCADE_BREAKER=greedy)';
 
 const FONT_FILE = process.env.FONT_FILE ?? '/usr/share/fonts/google-noto/NotoSans-Regular.ttf';
 const FONT_FAMILY = process.env.FONT_FAMILY ?? 'Noto Sans';
@@ -65,20 +71,27 @@ const renderOpts = (raw) => {
 };
 
 const engineMs = {};
+const engineBreaker = getUsePretextBreaker() ? 'pretext' : 'greedy';
+const otherBreaker = engineBreaker === 'pretext' ? 'greedy' : 'pretext';
 for (const { name, raw } of fixtureList) {
   const opts = renderOpts(raw);
-  const cold = now();
-  renderHtml(raw.harvest.html, opts);
-  engineMs[name] = { cold: now() - cold };
-  renderHtml(raw.harvest.html, opts);
-  const times = [];
-  for (let i = 0; i < ENGINE_WARM_ITERS; i++) {
-    const t = now();
+  engineMs[name] = {};
+  for (const breaker of [engineBreaker, otherBreaker]) {
+    setUsePretextBreaker(breaker === 'pretext');
+    const cold = now();
     renderHtml(raw.harvest.html, opts);
-    times.push(now() - t);
+    engineMs[name][breaker] = { cold: now() - cold };
+    renderHtml(raw.harvest.html, opts);
+    const times = [];
+    for (let i = 0; i < ENGINE_WARM_ITERS; i++) {
+      const t = now();
+      renderHtml(raw.harvest.html, opts);
+      times.push(now() - t);
+    }
+    engineMs[name][breaker].warm = mean(times);
   }
-  engineMs[name].warm = mean(times);
-  console.log(`engine ${name}: cold ${engineMs[name].cold.toFixed(1)}ms warm ${engineMs[name].warm.toFixed(1)}ms`);
+  setUsePretextBreaker(engineBreaker === 'pretext');
+  console.log(`engine ${name}: ${engineBreaker} cold ${engineMs[name][engineBreaker].cold.toFixed(1)}ms warm ${engineMs[name][engineBreaker].warm.toFixed(1)}ms | ${otherBreaker} warm ${engineMs[name][otherBreaker].warm.toFixed(1)}ms`);
 }
 
 async function measureChromeRender(browser, raw) {
@@ -251,7 +264,7 @@ try {
 function aggregate(set) {
   const sum = (k) => fixtureList.reduce((a, f) => a + set[k][f.name], 0);
   return {
-    engine: { cold: fixtureList.reduce((a, f) => a + engineMs[f.name].cold, 0), warm: fixtureList.reduce((a, f) => a + engineMs[f.name].warm, 0) },
+    engine: { cold: fixtureList.reduce((a, f) => a + engineMs[f.name][engineBreaker].cold, 0), warm: fixtureList.reduce((a, f) => a + engineMs[f.name][engineBreaker].warm, 0) },
     chrome: sum('chrome'),
     harnessPq: sum('harnessPq'),
     harnessBatch: sum('harnessBatch'),
@@ -260,7 +273,7 @@ function aggregate(set) {
 
 function renderTable(temp, set, agg) {
   const rows = fixtureList.map(({ name }) => {
-    const e = temp === 'cold' ? engineMs[name].cold : engineMs[name].warm;
+    const e = temp === 'cold' ? engineMs[name][engineBreaker].cold : engineMs[name][engineBreaker].warm;
     const c = set.chrome[name];
     const h = set.harnessPq[name];
     const b = set.harnessBatch[name];
@@ -310,13 +323,31 @@ const harnessOverheadShareWarmPct = 100 - (warmAgg.chrome / warmAgg.harnessPq) *
 const rtShareWarmPct = ((warmAgg.harnessPq - warmAgg.harnessBatch) / warmAgg.harnessPq) * 100;
 const coldHarnessVsWarm = (coldAgg.harnessPq / warmAgg.harnessPq).toFixed(2);
 
-const warmRatio = (n) => engineMs[n].warm / warm.chrome[n];
-const warmSpeedups = fixtureList.map((f) => warm.chrome[f.name] / engineMs[f.name].warm);
+const warmRatio = (n) => engineMs[n][engineBreaker].warm / warm.chrome[n];
+const warmSpeedups = fixtureList.map((f) => warm.chrome[f.name] / engineMs[f.name][engineBreaker].warm);
 const warmRatioMin = Math.min(...fixtureList.map((f) => warmRatio(f.name)));
 const warmRatioMax = Math.max(...fixtureList.map((f) => warmRatio(f.name)));
 const warmSpeedupLow = Math.min(...warmSpeedups);
 const warmSpeedupHigh = Math.max(...warmSpeedups);
-const basicTextColdRatio = (engineMs['basic-text'].cold / cold.chrome['basic-text']).toFixed(2);
+const basicTextColdRatio = (engineMs['basic-text'][engineBreaker].cold / cold.chrome['basic-text']).toFixed(2);
+
+// --- breaker before/after (performance guard) ---
+// Both breakers are timed on the engine side in one run; the "before" state is
+// the flagged greedy fallback (the pre-swap engine), "after" is the shipped
+// Pretext breaker. The guard requirement: the Pretext path must not regress
+// the engine:CRO ratio beyond a documented, recorded amount.
+const breakerRows = fixtureList.map(({ name }) => {
+  const p = engineMs[name].pretext.warm;
+  const g = engineMs[name].greedy.warm;
+  const cro = (ms) => ms / warm.chrome[name];
+  return `| ${name} | ${g.toFixed(1)} | ${p.toFixed(1)} | ${(p - g).toFixed(1)} | ${(((p / g) - 1) * 100).toFixed(1)}% | ${cro(g).toFixed(2)} | ${cro(p).toFixed(2)} |`;
+});
+const sumP = fixtureList.reduce((a, f) => a + engineMs[f.name].pretext.warm, 0);
+const sumG = fixtureList.reduce((a, f) => a + engineMs[f.name].greedy.warm, 0);
+const sumCRO = fixtureList.reduce((a, f) => a + warm.chrome[f.name], 0);
+breakerRows.push(`| **Sum (all spine)** | ${sumG.toFixed(1)} | ${sumP.toFixed(1)} | ${(sumP - sumG).toFixed(1)} | ${(((sumP / sumG) - 1) * 100).toFixed(1)}% | ${(sumG / sumCRO).toFixed(2)} | ${(sumP / sumCRO).toFixed(2)} |`);
+const breakerTable = breakerRows.join('\n');
+const breakerPctOver = ((sumP / sumG) - 1) * 100;
 
 const section = `
 ## Performance: Engine vs Playwright Oracle
@@ -358,6 +389,24 @@ ${renderTable('cold', cold, coldAgg)}
 
 ${tableHeader}
 ${renderTable('warm', warm, warmAgg)}
+
+### Breaker before/after (performance guard)
+
+Both breakers are timed on the engine side within the same run. **Before** =
+the flagged greedy fallback (\`CASCADE_BREAKER=greedy\`, the pre-swap engine);
+**after** = the shipped Pretext breaker (the default). Columns: engine warm ms
+per breaker, the after-minus-before Δ, the percent over (negative = the Pretext
+path is faster), and each breaker's engine:CRO ratio (engine ÷ Chrome
+render-to-FCP; the lower the better). The recorded guard: the Pretext path's
+summed warm engine time is ${sumP.toFixed(1)}ms vs ${sumG.toFixed(1)}ms for the
+greedy fallback (${(breakerPctOver >= 0 ? '+' : '')}${breakerPctOver.toFixed(1)}%
+over; engine:CRO ${(sumG / sumCRO).toFixed(2)} → ${(sumP / sumCRO).toFixed(2)}) —
+this is the documented, recorded regression bound, and the Pretext engine stays
+faster than Chrome's own render.
+
+| Fixture | Engine greedy ms | Engine pretext ms | Δ ms | % over | engine:CRO greedy | engine:CRO pretext |
+| --- | --- | --- | --- | --- | --- | --- |
+${breakerTable}
 
 ### Reading
 

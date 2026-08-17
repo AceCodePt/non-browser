@@ -1,0 +1,11 @@
+{
+  "name": "long-paragraph-180",
+  "category": "long-paragraph",
+  "note": "The same Latin text at a narrow 180px column, producing more wrap opportunities per sentence.",
+  "fonts": [{ "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" }],
+  "harvest": {
+    "viewport": { "width": 460, "height": 260 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"p\" style=\"font-family:'Noto Sans';font-size:16px;line-height:24px;width:180px\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</div></body></html>",
+    "textElements": ["p"]
+  }
+}

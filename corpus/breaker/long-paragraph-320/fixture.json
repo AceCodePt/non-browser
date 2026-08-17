@@ -1,0 +1,11 @@
+{
+  "name": "long-paragraph-320",
+  "category": "long-paragraph",
+  "note": "A multi-sentence Latin paragraph at 320px, the spine wrapping width: plain space-opportunity breaking is the core Pretext vs Chrome parity case.",
+  "fonts": [{ "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" }],
+  "harvest": {
+    "viewport": { "width": 460, "height": 220 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"p\" style=\"font-family:'Noto Sans';font-size:16px;line-height:24px;width:320px\">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs. Sphinx of black quartz, judge my vow. The quick brown fox jumps over the lazy dog again.</div></body></html>",
+    "textElements": ["p"]
+  }
+}

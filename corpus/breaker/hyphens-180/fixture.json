@@ -1,0 +1,11 @@
+{
+  "name": "hyphens-180",
+  "category": "hyphens",
+  "note": "Compounds with explicit U+002D hyphens at 180px: UAX#14 class HY makes the hyphen a break opportunity after which Chrome and Pretext both prefer to break.",
+  "fonts": [{ "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" }],
+  "harvest": {
+    "viewport": { "width": 460, "height": 240 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"p\" style=\"font-family:'Noto Sans';font-size:16px;line-height:24px;width:180px\">The state-of-the-art anti-establishmentarianism counter-revolutionary super-secret government-documented conspiracy-theory plan</div></body></html>",
+    "textElements": ["p"]
+  }
+}

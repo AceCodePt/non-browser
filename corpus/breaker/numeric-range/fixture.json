@@ -1,0 +1,11 @@
+{
+  "name": "numeric-range",
+  "category": "misc",
+  "note": "Numeric ranges with colons and dashes: UAX#14 keeps numeric runs (1:2, 3:4, 100-150) unbreakable, reproduced by Pretext's numeric-run merge.",
+  "fonts": [{ "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" }],
+  "harvest": {
+    "viewport": { "width": 460, "height": 200 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"p\" style=\"font-family:'Noto Sans';font-size:16px;line-height:24px;width:150px\">Pages 100-150 and 200-300 of the report, plus items 1:2 and 3:4.</div></body></html>",
+    "textElements": ["p"]
+  }
+}
