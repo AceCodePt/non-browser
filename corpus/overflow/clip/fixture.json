@@ -1,0 +1,26 @@
+{
+  "name": "clip",
+  "note": "overflow:clip on a square box clips its subtree to the padding box like overflow:hidden, but without establishing a scroll container: the computed value stays 'clip', no scrollbar, and the geometry is identical to hidden for the same children. A child that overflows the right/bottom edges and a negative-margin child poking out the left edge are both cut at the box edges.",
+  "harvest": {
+    "viewport": {
+      "width": 300,
+      "height": 220
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c\" style=\"position:relative;left:20px;top:20px;width:160px;height:100px;background:#f0f0f0;overflow:clip\"><div id=\"big\" style=\"width:240px;height:60px;background:#e06040;margin-left:40px\"></div><div id=\"neg\" style=\"width:70px;height:50px;background:#4060c0;margin-left:-30px;margin-top:10px\"></div></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "c",
+        "props": ["display", "overflow", "width", "height", "background-color"]
+      }
+    ],
+    "rects": ["c", "big", "neg"],
+    "textElements": [],
+    "measureText": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

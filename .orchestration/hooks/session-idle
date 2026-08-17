@@ -42,7 +42,7 @@ case "${TASK_NAME:-}" in
   *layers*|*output-selection*) npm run build && node scripts/verify-layers.mjs && npm run verify:four-layer ;;
   *spine*)            npm run verify:four-layer ;;
   *harness-tolerance*) npm run verify:report ;;
-  *)                  npm run verify ;;
+  *)                  npm run verify:all ;;
 esac
 
 # The default `npm run verify` stays green on unchanged code, so a no-op agent

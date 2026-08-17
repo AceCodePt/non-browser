@@ -1,0 +1,27 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "c": {
+      "display": "block",
+      "overflow": "hidden",
+      "border-radius": "32px",
+      "width": "180px",
+      "height": "120px",
+      "background-color": "rgb(240, 240, 240)"
+    }
+  },
+  "rect": {
+    "c": {
+      "x": 20,
+      "y": 20,
+      "width": 180,
+      "height": 120
+    },
+    "right": {
+      "x": 60,
+      "y": 80,
+      "width": 240,
+      "height": 160
+    }
+  }
+}
