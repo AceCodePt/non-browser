@@ -11,6 +11,7 @@
 
 import { fontMetricsForFamily, roundedAscent, roundedDescent } from './fontmetrics.js';
 import { foldEmExpr, parseMathValue, resolveMathExpr, type MathExpr } from './calc.js';
+import { registerRecognizedProperty } from './property-coverage.js';
 
 export interface Color {
   r: number;
@@ -593,7 +594,7 @@ function parseBorderRadius(decls: Declaration[]): BorderRadius {
     bottomRight: ZERO_RADIUS,
     bottomLeft: ZERO_RADIUS,
   };
-  const shorthand = decls.find((d) => d.property === 'border-radius');
+  const shorthand = findDecl(decls, 'border-radius');
   if (shorthand) {
     const { rx, ry } = parseRadiusShorthand(shorthand.value);
     const [tlx, trx, brx, blx] = expandRadiusList(rx);
@@ -604,7 +605,7 @@ function parseBorderRadius(decls: Declaration[]): BorderRadius {
     out.bottomLeft = { rx: blx, ry: bly };
   }
   for (const [prop, corner] of Object.entries(RADIUS_LONGHANDS)) {
-    const d = decls.find((x) => x.property === prop);
+    const d = findDecl(decls, prop);
     if (d) out[corner] = parseRadiusPair(d.value);
   }
   return out;
@@ -894,7 +895,7 @@ function parseContent(value: string): ContentValue {
 }
 
 function contentOf(decls: Declaration[]): ContentValue {
-  const d = decls.find((x) => x.property === 'content');
+  const d = findDecl(decls, 'content');
   return d ? parseContent(d.value) : { kind: 'none' };
 }
 
@@ -1024,6 +1025,26 @@ export function parseDeclarationBlock(block: string): Declaration[] {
 export function parseStyleAttribute(style: string | undefined): Declaration[] {
   if (!style) return [];
   return parseDeclarationBlock(style);
+}
+
+/**
+ * makeStyle's single property lookup choke point: registers the looked-up
+ * property name for the coverage audit, then returns the first declaration for
+ * that property (the makeStyle cascade winner). Auditing here is the only way
+ * to know which declared properties the engine actually consumes without a
+ * hand-maintained list diverging from the code. Purely observational.
+ */
+function findDecl(decls: Declaration[], name: string): Declaration | undefined {
+  registerRecognizedProperty(name);
+  return decls.find((d) => d.property === name);
+}
+
+/** Like findDecl, but registers and matches against any of several candidate
+ * names (used where one property resolves from multiple logical/physical
+ * sources picked by `direction`). */
+function findDeclAny(decls: Declaration[], names: string[]): Declaration | undefined {
+  for (const n of names) registerRecognizedProperty(n);
+  return decls.find((d) => names.includes(d.property));
 }
 
 const FONT_WEIGHT: Record<string, number> = {
