@@ -20,20 +20,24 @@ recorded in the "Corrected" section so the record is straight.
 ### 1. Copy-paste that has already drifted into a behavioral divergence
 
 The flex and grid modules carry near-verbatim copies of the inline-content
-sizing helpers — and the copies disagree:
+sizing helpers. Most are byte-identical (both `contentInlineSizes` pass
+`style.letterSpacing` to `measureTextWidth` — `flexbox.ts:142/144` and
+`grid.ts:98/100` are the same on that point; an earlier draft's claim that grid
+omitted letter-spacing was refuted by reading both call sites and is retracted).
+The genuine divergence is in the recursive inline-detection:
 
-- `flexbox.ts:133` `contentInlineSizes` measures with
-  `measureTextWidth(w, size, family, style.letterSpacing)` (letter-spacing
-  included).
-- `grid.ts:89` `contentInlineSizes` measures with
-  `measureTextWidth(w, size, family)` — **no letter-spacing**.
+- flexbox `hasInlineText`/`collectInlineText` (`flexbox.ts:112/126`) skip a
+  child whose `display` is `block`, `grid`, **or `flex`**.
+- grid `hasInlineText`/`collectInlineText` (`grid.ts:64/77`) skip a child whose
+  `display` is `block` or `grid` — **not `flex`**.
 
-Same text, same CSS, two different min/max content widths depending on whether
-the container is `display:flex` or `display:grid`. This is the exact bug class
-duplication breeds, and it is already present.
-- `hasInlineText` (`flexbox.ts:106` / `grid.ts:62`) and `collectInlineText`
-  (`flexbox.ts:119` / `grid.ts:75`) are byte-identical except that flexbox also
-  skips `display:flex` children — the one word that will quietly diverge next.
+So a text-bearing element nested under a `display:flex` child is treated as
+inline content when the container is a grid, but skipped when it is a flex
+container — same HTML, two different min/max content sizes depending on whether
+the ancestor is `display:grid` or `display:flex`. This is the exact bug class
+duplication breeds, and it is already present. Because the copies are
+byte-similar, each future edit to one (new display value, new skip rule) risks
+silently diverging the other.
 
 ### 2. Byte-identical duplicate comparator
 
@@ -90,12 +94,14 @@ Some edges are `import type` (harmless), but `parseDeclarationBlock` and
 | `usePretextBreaker` knob "written but never read" | Called from `verify-four-layer.mjs:219`, `verify-breaker.mjs:219–232`, `bench-engine-vs-oracle.mjs:37–93`. |
 | `paint.ts` alpha table `[153,170,187,204]` is unexplained magic | A named port of Blink's `Color` blending with the source in the names/comments. |
 | "Two parallel text engines kept parity by hand" | `layoutInlineContent` delegates pure text to the flat path (`block-inline.ts:2110–2115`); one authority, not two rivals. |
+| flex/grid `contentInlineSizes` diverged on letter-spacing (grid omitted it) | Both pass `style.letterSpacing` — `flexbox.ts:142/144` and `grid.ts:98/100` are identical on that point. The real drift is the `hasInlineText` `display:flex` skip-list difference (see finding #1). |
 
 ## Bottom line
 
 The code's structural risk is duplication, not cleverness: flex/grid helpers are
-copied and have already drifted (`letter-spacing`), media-op evaluation exists
-twice byte-for-byte, and a dead `minimum` field sits in a public return shape.
+copied and have already drifted (the `hasInlineText` `display:flex` skip-list
+disagrees), media-op evaluation exists twice byte-for-byte, and a dead
+`minimum` field sits in a public return shape.
 The monoliths (`block-inline.ts`, `makeStyle`) concentrate the risk. The good
 news is the behavior is anchored by a live-Chrome oracle on every run — so the
 drift is latent, but the fix is factoring, not proof.
