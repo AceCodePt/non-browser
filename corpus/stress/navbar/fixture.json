@@ -1,0 +1,34 @@
+{
+  "name": "navbar",
+  "note": "Stress nav bar (corpus/stress/navbar): a position:fixed bar (z-index:10) with an absolutely-positioned logo and a right-aligned flex menu of block links, a nested absolute dropdown below one item, and a hero section holding a z-indexed badge behind the fixed bar. Packs flex row with gap (menu intrinsic width = sum of items + gaps), nested list markers, and a z-index stacking context where the fixed header (z-index 10) paints above in-flow content and the badge (z-index 5) stacks above its own section — rendered small (360x640) and desktop (1280x800) with four-layer Chrome parity.",
+  "harvest": {
+    "viewports": [
+      { "width": 360, "height": 640 },
+      { "width": 1280, "height": 800 }
+    ],
+    "html": "<html><head><style>html,body{margin:0;padding:0}body{font-family:'Noto Sans';font-size:14px;line-height:20px;background:#f2f4f8}#nav{position:fixed;top:0;left:0;right:0;z-index:10;height:48px;background-color:#0f2a5e}.logo{position:absolute;left:16px;top:13px;color:#ffffff;font-size:16px;font-weight:700}#menu{position:absolute;right:16px;top:0;height:48px;display:flex;flex-direction:row;align-items:center;gap:14px;margin:0;padding:0;list-style:none}.menu-item{position:relative;display:block;height:20px}.menu-link{display:block;color:#cfe0ff;height:20px;line-height:20px}#sub{position:absolute;top:34px;left:0;z-index:12;margin:0;padding:6px 0;width:120px;list-style:none;background-color:#ffffff;border:1px solid #cdd4e2;box-shadow:0 2px 8px rgba(20,30,60,0.18)}#sub li{padding:4px 12px;color:#1a2233}main{padding-top:64px;margin:16px}.hero{position:relative;padding:24px;background-color:#ffffff;border:1px solid #d5dbe7;border-radius:10px}.hero h2{margin:0 0 8px;font-size:20px;line-height:26px;color:#0f2a5e}.hero p{margin:0;color:#3a4556}.badge{position:absolute;top:14px;right:14px;z-index:5;padding:6px 12px;background-color:#e8f0ff;border:1px solid #0f2a5e;border-radius:12px;color:#0f2a5e;font-size:12px;line-height:16px;font-weight:600}</style></head><body><header id=\"nav\"><span class=\"logo\" id=\"logo\">Acme Corp</span><ul id=\"menu\"><li class=\"menu-item\" id=\"mi1\"><a class=\"menu-link\" id=\"ma1\" href=\"#\">Products</a><ul id=\"sub\"><li id=\"s1\">Sub Alpha</li><li id=\"s2\">Sub Beta</li></ul></li><li class=\"menu-item\" id=\"mi2\"><a class=\"menu-link\" id=\"ma2\" href=\"#\">About</a></li><li class=\"menu-item\" id=\"mi3\"><a class=\"menu-link\" id=\"ma3\" href=\"#\">Contact</a></li></ul></header><main><section class=\"hero\" id=\"hero\"><h2 id=\"hh\">Welcome</h2><p id=\"hp\">The fixed header stacks above this hero; the floating badge stacks within its own section.</p><span class=\"badge\" id=\"badge\">New</span></section></main></body></html>",
+    "measureText": [
+      { "text": "Acme Corp", "font": "16px 'Noto Sans'" },
+      { "text": "Products", "font": "14px 'Noto Sans'" },
+      { "text": "About", "font": "14px 'Noto Sans'" },
+      { "text": "Sub Alpha", "font": "14px 'Noto Sans'" },
+      { "text": "Welcome", "font": "20px 'Noto Sans'" },
+      { "text": "New", "font": "12px 'Noto Sans'" }
+    ],
+    "computedStyle": [
+      { "id": "nav", "props": ["position", "z-index", "display", "background-color", "height"] },
+      { "id": "menu", "props": ["display", "list-style-type", "margin-top", "padding-left"] },
+      { "id": "ma1", "props": ["display", "height", "line-height", "color"] },
+      { "id": "sub", "props": ["position", "z-index", "display", "background-color", "border-top-width", "top", "width"] },
+      { "id": "badge", "props": ["position", "z-index", "background-color", "border-radius", "color", "font-weight"] }
+    ],
+    "rects": ["nav", "logo", "menu", "mi1", "ma1", "sub", "s1", "s2", "mi2", "hero", "hh", "hp"],
+    "textElements": ["logo", "ma1", "ma2", "ma3", "s1", "s2", "hh", "hp", "badge"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

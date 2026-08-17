@@ -153,11 +153,22 @@ function contentHeightAtWidth(
     });
     return res.height;
   }
+  // A column flex / grid container stacks its items in the block axis with a
+  // row gap between them (css-flexbox-1 §8.3.1, css-grid-1 §8.1). The sibling
+  // heights are summed, so the gap belongs between consecutive items — without
+  // it an auto-sized grid track under-measures a flex/grid child with a gap.
+  const blockGap =
+    style.flexDirection === 'column' || style.flexDirection === 'column-reverse' || style.display === 'grid' || style.display === 'inline-grid'
+      ? resolveLength(style.rowGap, w) ?? 0
+      : 0;
   let y = 0;
+  let counted = 0;
   for (const child of el.childNodes) {
     if (!isElementNode(child)) continue;
     const cs = styles.get(child);
     if (!cs || cs.display === 'none') continue;
+    if (counted > 0) y += blockGap;
+    counted++;
     y += measureChildHeight(child, cs, styles, w);
   }
   return y;
@@ -1150,7 +1161,7 @@ export function layoutGridChildren(input: GridLayoutInput): { children: LayoutNo
     const areaX = rtl
       ? contentX + contentWidth - colOffsets[item.colStart + item.colSpan]
       : contentX + areaStart(colOffsets, item.colStart, colGutter);
-    const areaY = areaStart(rowOffsets, item.rowStart, rowGutter);
+    const areaY = contentY + areaStart(rowOffsets, item.rowStart, rowGutter);
     const areaW = areaSpan(colOffsets, item.colStart, item.colStart + item.colSpan, colGutter);
     const areaH = areaSpan(rowOffsets, item.rowStart, item.rowStart + item.rowSpan, rowGutter);
 

@@ -1,0 +1,111 @@
+{
+  "measureText": {
+    "13px 'Noto Sans' | Full name": 59.68305969238281,
+    "13px 'Noto Sans' | Email address": 84.94207763671875,
+    "13px 'Noto Sans' | Company": 58.18804931640625,
+    "13px 'Noto Sans' | Submit form": 76.60908508300781
+  },
+  "computedStyle": {
+    "f": {
+      "display": "block",
+      "background-color": "rgb(255, 255, 255)",
+      "border-radius": "8px",
+      "border-top-width": "1px",
+      "padding-top": "16px",
+      "margin-top": "0px",
+      "box-sizing": "content-box"
+    },
+    "l1": {
+      "display": "inline-block",
+      "font-size": "13px",
+      "color": "rgb(34, 48, 74)",
+      "margin-top": "0px",
+      "margin-bottom": "4px"
+    },
+    "a": {
+      "display": "block",
+      "height": "32px",
+      "border-top-width": "1px",
+      "padding-top": "6px",
+      "background-color": "rgb(255, 255, 255)",
+      "box-sizing": "border-box"
+    },
+    "go": {
+      "display": "block",
+      "height": "36px",
+      "background-color": "rgb(15, 42, 94)",
+      "color": "rgb(255, 255, 255)",
+      "text-align": "center",
+      "line-height": "34px",
+      "border-top-width": "1px"
+    }
+  },
+  "rect": {
+    "f": {
+      "x": 0,
+      "y": 0,
+      "width": 1280,
+      "height": 268
+    },
+    "f1": {
+      "x": 17,
+      "y": 17,
+      "width": 1246,
+      "height": 54
+    },
+    "f2": {
+      "x": 17,
+      "y": 83,
+      "width": 1246,
+      "height": 54
+    },
+    "f3": {
+      "x": 17,
+      "y": 149,
+      "width": 1246,
+      "height": 54
+    },
+    "l1": {
+      "x": 17,
+      "y": 17,
+      "width": 59.6875,
+      "height": 18
+    },
+    "l2": {
+      "x": 17,
+      "y": 83,
+      "width": 84.953125,
+      "height": 18
+    },
+    "l3": {
+      "x": 17,
+      "y": 149,
+      "width": 58.203125,
+      "height": 18
+    },
+    "a": {
+      "x": 17,
+      "y": 39,
+      "width": 1246,
+      "height": 32
+    },
+    "b": {
+      "x": 17,
+      "y": 105,
+      "width": 1246,
+      "height": 32
+    },
+    "c": {
+      "x": 17,
+      "y": 171,
+      "width": 1246,
+      "height": 32
+    },
+    "go": {
+      "x": 17,
+      "y": 215,
+      "width": 1246,
+      "height": 36
+    }
+  }
+}

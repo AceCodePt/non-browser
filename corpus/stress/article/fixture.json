@@ -1,0 +1,36 @@
+{
+  "name": "article",
+  "note": "Stress text-heavy article (corpus/stress/article): a title, leaf paragraphs with varied text-align and a whole-block letter-spacing pass, a ::before-quoted blockquote with a left border, a default-indented bulleted list, and a white-space:pre block on a body background. Packs white-space normal/nowrap/pre, text-align left/right/justify, letter-spacing, list-style-type, and pseudo-element content — rendered small (360x640) and desktop (1280x800) with four-layer Chrome parity.",
+  "harvest": {
+    "viewports": [
+      { "width": 360, "height": 640 },
+      { "width": 1280, "height": 800 }
+    ],
+    "html": "<html><head><style>html,body{margin:0;padding:0}body{font-family:'Noto Sans';font-size:15px;line-height:23px;color:#1a2233;background:#fafbfd}#a{padding:20px}h1{font-size:24px;line-height:30px;margin:0 0 12px;color:#0f2a5e}.lead{text-align:justify;margin:0 0 14px}p{margin:0 0 14px}.tracked{letter-spacing:1.5px;color:#0f2a5e;margin:0 0 14px}.right{text-align:right}blockquote{margin:0 0 14px;padding:8px 14px;border-left:3px solid #c7d0e2;background-color:#f0f3f9;font-style:italic}blockquote::before{content:\"\\201C\";color:#0f2a5e;font-size:22px}ul{margin:0 0 14px;list-style-type:disc;list-style-position:outside}li{margin:0}pre{margin:0;padding:10px;background-color:#eef1f6;border:1px solid #d8deea;white-space:pre;font-family:'Noto Sans';font-size:13px;line-height:19px}.nowrap{white-space:nowrap;font-weight:600}</style></head><body><article id=\"a\"><h1 id=\"t1\">Field notes on the northern ridge</h1><p class=\"lead\" id=\"p1\">A long justified paragraph about geological strata, seasonal light, and the slow movement of ice across several mornings of observation in the high country.</p><p id=\"p2\">This paragraph carries ordinary body text that wraps at the container edge and continues over several lines of unremarkable prose.</p><p class=\"tracked\" id=\"p3\">A letter-spaced line that tracks its glyphs to test whole-block kerning.</p><blockquote id=\"bq\">The ridge keeps its own time; what looks still is only slow.</blockquote><p class=\"right\" id=\"p4\">A right-aligned footer line that ends the excerpt.</p><ul id=\"ul\"><li id=\"li1\">First observation</li><li id=\"li2\">Second observation</li><li id=\"li3\">Third observation</li></ul><pre id=\"pre\">raw line one\n  raw line two\n  raw line three</pre><p class=\"nowrap\" id=\"nowrap\">Keep this phrase on one line always.</p></article></body></html>",
+    "measureText": [
+      { "text": "Field notes on the northern ridge", "font": "24px 'Noto Sans'" },
+      { "text": "A long justified paragraph about geological strata, seasonal light, and the slow movement of ice across several mornings of observation in the high country.", "font": "15px 'Noto Sans'" },
+      { "text": "The ridge keeps its own time; what looks still is only slow.", "font": "15px 'Noto Sans'" },
+      { "text": "First observation", "font": "15px 'Noto Sans'" },
+      { "text": "raw line one", "font": "13px 'Noto Sans'" },
+      { "text": "Keep this phrase on one line always.", "font": "15px 'Noto Sans'" }
+    ],
+    "computedStyle": [
+      { "id": "a", "props": ["display", "background-color", "padding-top"] },
+      { "id": "t1", "props": ["display", "font-size", "line-height", "color", "margin-bottom"] },
+      { "id": "p1", "props": ["display", "text-align", "margin-bottom"] },
+      { "id": "bq", "props": ["display", "background-color", "border-left-width", "font-style", "padding-top"] },
+      { "id": "ul", "props": ["display", "list-style-type", "list-style-position", "padding-left"] },
+      { "id": "pre", "props": ["display", "white-space", "background-color", "border-top-width"] },
+      { "id": "nowrap", "props": ["display", "white-space", "font-weight"] }
+    ],
+    "rects": ["a", "t1", "p1", "p2", "p3", "bq", "p4", "ul", "li1", "li2", "li3", "pre", "nowrap"],
+    "textElements": ["t1", "p1", "p2", "p3", "bq", "p4", "li1", "li2", "li3", "nowrap"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

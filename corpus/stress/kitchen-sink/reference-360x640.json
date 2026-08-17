@@ -1,0 +1,301 @@
+{
+  "measureText": {
+    "16px 'Noto Sans' | Acme Corp": 82.28817749023438,
+    "24px 'Noto Sans' | Welcome to the kitchen sink": 316.48712158203125,
+    "13px 'Noto Sans' | A compact summary of the first metric with a headline figure and a supporting sentence.": 541.12548828125,
+    "15px 'Noto Sans' | This block flows right-to-left, mirroring its box and alignment while the rest of the page stays left-to-right.": 740,
+    "15px 'Noto Sans' | A short quote pulls out a key line for emphasis.": 330.2422180175781,
+    "20px 'Noto Sans' | Contact us": 99.4998779296875,
+    "13px 'Noto Sans' | Name": 36.66001892089844,
+    "13px 'Noto Sans' | Send message": 88.43907165527344
+  },
+  "computedStyle": {
+    "topbar": {
+      "position": "fixed",
+      "z-index": "10",
+      "display": "block",
+      "background-color": "rgb(15, 42, 94)",
+      "height": "48px"
+    },
+    "cards": {
+      "display": "grid",
+      "padding-top": "0px"
+    },
+    "card1": {
+      "display": "flex",
+      "border-radius": "10px",
+      "box-shadow": "rgba(20, 30, 60, 0.12) 0px 2px 6px 0px",
+      "background-color": "rgb(255, 255, 255)",
+      "padding-top": "14px"
+    },
+    "ct1": {
+      "display": "block",
+      "font-size": "16px",
+      "line-height": "22px",
+      "color": "rgb(15, 42, 94)",
+      "margin-bottom": "0px"
+    },
+    "wrap": {
+      "display": "block",
+      "margin-top": "0px"
+    },
+    "rtl": {
+      "display": "block",
+      "direction": "rtl",
+      "background-color": "rgb(255, 255, 255)",
+      "border-radius": "8px"
+    },
+    "arq": {
+      "display": "block",
+      "border-left-width": "3px",
+      "background-color": "rgb(240, 243, 249)",
+      "font-style": "italic"
+    },
+    "arl": {
+      "display": "block",
+      "list-style-type": "disc",
+      "list-style-position": "outside"
+    },
+    "arpre": {
+      "display": "block",
+      "white-space": "pre",
+      "border-top-width": "1px",
+      "background-color": "rgb(238, 241, 246)"
+    },
+    "artrack": {
+      "display": "block",
+      "letter-spacing": "1.5px"
+    },
+    "f1": {
+      "display": "block",
+      "height": "32px",
+      "border-top-width": "1px",
+      "box-sizing": "border-box"
+    },
+    "go": {
+      "display": "block",
+      "height": "36px",
+      "background-color": "rgb(15, 42, 94)",
+      "text-align": "center",
+      "line-height": "34px"
+    }
+  },
+  "rect": {
+    "topbar": {
+      "x": 0,
+      "y": 0,
+      "width": 360,
+      "height": 48
+    },
+    "brand": {
+      "x": 16,
+      "y": 13,
+      "width": 86.09375,
+      "height": 23
+    },
+    "nav": {
+      "x": 152.796875,
+      "y": 0,
+      "width": 191.203125,
+      "height": 48
+    },
+    "navi1": {
+      "x": 152.796875,
+      "y": 14,
+      "width": 62.34375,
+      "height": 20
+    },
+    "navlink1": {
+      "x": 152.796875,
+      "y": 14,
+      "width": 62.34375,
+      "height": 20
+    },
+    "dd": {
+      "x": 152.796875,
+      "y": 48,
+      "width": 132,
+      "height": 76
+    },
+    "dd1": {
+      "x": 153.796875,
+      "y": 55,
+      "width": 130,
+      "height": 31
+    },
+    "hero": {
+      "x": 16,
+      "y": 80,
+      "width": 328,
+      "height": 187
+    },
+    "heroh": {
+      "x": 35,
+      "y": 105,
+      "width": 290,
+      "height": 60
+    },
+    "cards": {
+      "x": 16,
+      "y": 283,
+      "width": 328,
+      "height": 646
+    },
+    "card1": {
+      "x": 16,
+      "y": 283,
+      "width": 328,
+      "height": 96
+    },
+    "ct1": {
+      "x": 31,
+      "y": 298,
+      "width": 298,
+      "height": 22
+    },
+    "cb1": {
+      "x": 31,
+      "y": 326,
+      "width": 298,
+      "height": 38
+    },
+    "card2": {
+      "x": 16,
+      "y": 393,
+      "width": 328,
+      "height": 96
+    },
+    "card3": {
+      "x": 16,
+      "y": 503,
+      "width": 328,
+      "height": 96
+    },
+    "card4": {
+      "x": 16,
+      "y": 613,
+      "width": 328,
+      "height": 96
+    },
+    "card5": {
+      "x": 16,
+      "y": 723,
+      "width": 328,
+      "height": 96
+    },
+    "card6": {
+      "x": 16,
+      "y": 833,
+      "width": 328,
+      "height": 96
+    },
+    "wrap": {
+      "x": 16,
+      "y": 945,
+      "width": 328,
+      "height": 553
+    },
+    "rtl": {
+      "x": 16,
+      "y": 945,
+      "width": 328,
+      "height": 129
+    },
+    "rth": {
+      "x": 33,
+      "y": 960,
+      "width": 294,
+      "height": 24
+    },
+    "rtp": {
+      "x": 33,
+      "y": 990,
+      "width": 294,
+      "height": 69
+    },
+    "article": {
+      "x": 16,
+      "y": 1090,
+      "width": 328,
+      "height": 408
+    },
+    "arth": {
+      "x": 33,
+      "y": 1107,
+      "width": 294,
+      "height": 26
+    },
+    "arp": {
+      "x": 33,
+      "y": 1143,
+      "width": 294,
+      "height": 69
+    },
+    "artrack": {
+      "x": 33,
+      "y": 1224,
+      "width": 294,
+      "height": 46
+    },
+    "arq": {
+      "x": 33,
+      "y": 1282,
+      "width": 294,
+      "height": 65
+    },
+    "arl": {
+      "x": 33,
+      "y": 1359,
+      "width": 294,
+      "height": 69
+    },
+    "arli1": {
+      "x": 73,
+      "y": 1359,
+      "width": 254,
+      "height": 23
+    },
+    "arpre": {
+      "x": 33,
+      "y": 1440,
+      "width": 294,
+      "height": 41
+    },
+    "formwrap": {
+      "x": 16,
+      "y": 1514,
+      "width": 328,
+      "height": 250
+    },
+    "fh": {
+      "x": 33,
+      "y": 1531,
+      "width": 294,
+      "height": 26
+    },
+    "f1": {
+      "x": 33,
+      "y": 1596,
+      "width": 294,
+      "height": 32
+    },
+    "f2": {
+      "x": 33,
+      "y": 1667,
+      "width": 294,
+      "height": 32
+    },
+    "go": {
+      "x": 33,
+      "y": 1711,
+      "width": 294,
+      "height": 36
+    },
+    "foot": {
+      "x": 16,
+      "y": 1780,
+      "width": 328,
+      "height": 51
+    }
+  }
+}

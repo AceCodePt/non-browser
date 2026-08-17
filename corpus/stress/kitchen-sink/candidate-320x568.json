@@ -1,0 +1,439 @@
+{
+  "measureText": {
+    "16px 'Noto Sans' | Acme Corp": 82.29000091552734,
+    "24px 'Noto Sans' | Welcome to the kitchen sink": 316.489990234375,
+    "13px 'Noto Sans' | A compact summary of the first metric with a headline figure and a supporting sentence.": 541.1300048828125,
+    "15px 'Noto Sans' | This block flows right-to-left, mirroring its box and alignment while the rest of the page stays left-to-right.": 740,
+    "15px 'Noto Sans' | A short quote pulls out a key line for emphasis.": 330.239990234375,
+    "20px 'Noto Sans' | Contact us": 99.5,
+    "13px 'Noto Sans' | Name": 36.65999984741211,
+    "13px 'Noto Sans' | Send message": 88.44000244140625
+  },
+  "computedStyle": {
+    "topbar": {
+      "position": "fixed",
+      "z-index": "10",
+      "display": "block",
+      "background-color": "rgb(15, 42, 94)",
+      "height": "48px"
+    },
+    "cards": {
+      "display": "grid",
+      "padding-top": "0px"
+    },
+    "card1": {
+      "display": "flex",
+      "border-radius": "10px",
+      "box-shadow": "rgba(20, 30, 60, 0.12) 0px 2px 6px 0px",
+      "background-color": "rgb(255, 255, 255)",
+      "padding-top": "14px"
+    },
+    "ct1": {
+      "display": "block",
+      "font-size": "16px",
+      "line-height": "22px",
+      "color": "rgb(15, 42, 94)",
+      "margin-bottom": "0px"
+    },
+    "wrap": {
+      "display": "block",
+      "margin-top": "0px"
+    },
+    "rtl": {
+      "display": "block",
+      "direction": "rtl",
+      "background-color": "rgb(255, 255, 255)",
+      "border-radius": "8px"
+    },
+    "arq": {
+      "display": "block",
+      "border-left-width": "3px",
+      "background-color": "rgb(240, 243, 249)",
+      "font-style": "italic"
+    },
+    "arl": {
+      "display": "block",
+      "list-style-type": "disc",
+      "list-style-position": "outside"
+    },
+    "arpre": {
+      "display": "block",
+      "white-space": "pre",
+      "border-top-width": "1px",
+      "background-color": "rgb(238, 241, 246)"
+    },
+    "artrack": {
+      "display": "block",
+      "letter-spacing": "1.5px"
+    },
+    "f1": {
+      "display": "block",
+      "height": "32px",
+      "border-top-width": "1px",
+      "box-sizing": "border-box"
+    },
+    "go": {
+      "display": "block",
+      "height": "36px",
+      "background-color": "rgb(15, 42, 94)",
+      "text-align": "center",
+      "line-height": "34px"
+    }
+  },
+  "rect": {
+    "hero": {
+      "x": 16,
+      "y": 80,
+      "width": 288,
+      "height": 187
+    },
+    "heroh": {
+      "x": 35,
+      "y": 105,
+      "width": 250,
+      "height": 60
+    },
+    "herop": {
+      "x": 35,
+      "y": 173,
+      "width": 250,
+      "height": 69
+    },
+    "badge": {
+      "x": 237.79000091552734,
+      "y": 94,
+      "width": 52.209999084472656,
+      "height": 30
+    },
+    "cards": {
+      "x": 16,
+      "y": 283,
+      "width": 288,
+      "height": 684
+    },
+    "card1": {
+      "x": 16,
+      "y": 283,
+      "width": 288,
+      "height": 115
+    },
+    "ct1": {
+      "x": 31,
+      "y": 298,
+      "width": 258,
+      "height": 22
+    },
+    "cb1": {
+      "x": 31,
+      "y": 326,
+      "width": 258,
+      "height": 57
+    },
+    "card2": {
+      "x": 16,
+      "y": 412,
+      "width": 288,
+      "height": 115
+    },
+    "ct2": {
+      "x": 31,
+      "y": 427,
+      "width": 258,
+      "height": 22
+    },
+    "cb2": {
+      "x": 31,
+      "y": 455,
+      "width": 258,
+      "height": 57
+    },
+    "card3": {
+      "x": 16,
+      "y": 541,
+      "width": 288,
+      "height": 96
+    },
+    "ct3": {
+      "x": 31,
+      "y": 556,
+      "width": 258,
+      "height": 22
+    },
+    "cb3": {
+      "x": 31,
+      "y": 584,
+      "width": 258,
+      "height": 38
+    },
+    "card4": {
+      "x": 16,
+      "y": 651,
+      "width": 288,
+      "height": 96
+    },
+    "ct4": {
+      "x": 31,
+      "y": 666,
+      "width": 258,
+      "height": 22
+    },
+    "cb4": {
+      "x": 31,
+      "y": 694,
+      "width": 258,
+      "height": 38
+    },
+    "card5": {
+      "x": 16,
+      "y": 761,
+      "width": 288,
+      "height": 96
+    },
+    "ct5": {
+      "x": 31,
+      "y": 776,
+      "width": 258,
+      "height": 22
+    },
+    "cb5": {
+      "x": 31,
+      "y": 804,
+      "width": 258,
+      "height": 38
+    },
+    "card6": {
+      "x": 16,
+      "y": 871,
+      "width": 288,
+      "height": 96
+    },
+    "ct6": {
+      "x": 31,
+      "y": 886,
+      "width": 258,
+      "height": 22
+    },
+    "cb6": {
+      "x": 31,
+      "y": 914,
+      "width": 258,
+      "height": 38
+    },
+    "wrap": {
+      "x": 16,
+      "y": 983,
+      "width": 288,
+      "height": 599
+    },
+    "rtl": {
+      "x": 16,
+      "y": 983,
+      "width": 288,
+      "height": 152
+    },
+    "rth": {
+      "x": 33,
+      "y": 998,
+      "width": 254,
+      "height": 24
+    },
+    "rtp": {
+      "x": 33,
+      "y": 1028,
+      "width": 254,
+      "height": 92
+    },
+    "article": {
+      "x": 16,
+      "y": 1151,
+      "width": 288,
+      "height": 431
+    },
+    "arth": {
+      "x": 33,
+      "y": 1168,
+      "width": 254,
+      "height": 26
+    },
+    "arp": {
+      "x": 33,
+      "y": 1204,
+      "width": 254,
+      "height": 69
+    },
+    "artrack": {
+      "x": 33,
+      "y": 1285,
+      "width": 254,
+      "height": 69
+    },
+    "arq": {
+      "x": 33,
+      "y": 1366,
+      "width": 254,
+      "height": 65
+    },
+    "arl": {
+      "x": 33,
+      "y": 1443,
+      "width": 254,
+      "height": 69
+    },
+    "arli1": {
+      "x": 73,
+      "y": 1443,
+      "width": 214,
+      "height": 23
+    },
+    "arli2": {
+      "x": 73,
+      "y": 1466,
+      "width": 214,
+      "height": 23
+    },
+    "arli3": {
+      "x": 73,
+      "y": 1489,
+      "width": 214,
+      "height": 23
+    },
+    "arpre": {
+      "x": 33,
+      "y": 1524,
+      "width": 254,
+      "height": 41
+    },
+    "formwrap": {
+      "x": 16,
+      "y": 1598,
+      "width": 288,
+      "height": 250
+    },
+    "fh": {
+      "x": 33,
+      "y": 1615,
+      "width": 254,
+      "height": 26
+    },
+    "fld1": {
+      "x": 33,
+      "y": 1653,
+      "width": 254,
+      "height": 59
+    },
+    "f1l": {
+      "x": 33,
+      "y": 1653,
+      "width": 36.65999984741211,
+      "height": 23
+    },
+    "f1": {
+      "x": 33,
+      "y": 1680,
+      "width": 254,
+      "height": 32
+    },
+    "fld2": {
+      "x": 33,
+      "y": 1724,
+      "width": 254,
+      "height": 59
+    },
+    "f2l": {
+      "x": 33,
+      "y": 1724,
+      "width": 33.380001068115234,
+      "height": 23
+    },
+    "f2": {
+      "x": 33,
+      "y": 1751,
+      "width": 254,
+      "height": 32
+    },
+    "go": {
+      "x": 33,
+      "y": 1795,
+      "width": 254,
+      "height": 36
+    },
+    "foot": {
+      "x": 16,
+      "y": 1864,
+      "width": 288,
+      "height": 51
+    },
+    "topbar": {
+      "x": 0,
+      "y": 0,
+      "width": 320,
+      "height": 48
+    },
+    "brand": {
+      "x": 16,
+      "y": 13,
+      "width": 86.08000183105469,
+      "height": 23
+    },
+    "nav": {
+      "x": 112.81999969482422,
+      "y": 0,
+      "width": 191.18000030517578,
+      "height": 48
+    },
+    "navi1": {
+      "x": 112.81999969482422,
+      "y": 14,
+      "width": 62.34000015258789,
+      "height": 20
+    },
+    "navlink1": {
+      "x": 112.81999969482422,
+      "y": 14,
+      "width": 62.34000015258789,
+      "height": 20
+    },
+    "dd": {
+      "x": 112.81999969482422,
+      "y": 48,
+      "width": 132,
+      "height": 76
+    },
+    "dd1": {
+      "x": 113.81999969482422,
+      "y": 55,
+      "width": 130,
+      "height": 31
+    },
+    "dd2": {
+      "x": 113.81999969482422,
+      "y": 86,
+      "width": 130,
+      "height": 31
+    },
+    "navi2": {
+      "x": 191.1599998474121,
+      "y": 14,
+      "width": 42.56999969482422,
+      "height": 20
+    },
+    "navlink2": {
+      "x": 191.1599998474121,
+      "y": 14,
+      "width": 42.56999969482422,
+      "height": 20
+    },
+    "navi3": {
+      "x": 249.72999954223633,
+      "y": 14,
+      "width": 54.27000045776367,
+      "height": 20
+    },
+    "navlink3": {
+      "x": 249.72999954223633,
+      "y": 14,
+      "width": 54.27000045776367,
+      "height": 20
+    }
+  }
+}

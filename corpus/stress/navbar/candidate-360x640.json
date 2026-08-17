@@ -1,0 +1,146 @@
+{
+  "measureText": {
+    "16px 'Noto Sans' | Acme Corp": 82.29000091552734,
+    "14px 'Noto Sans' | Products": 58.18000030517578,
+    "14px 'Noto Sans' | About": 39.72999954223633,
+    "14px 'Noto Sans' | Sub Alpha": 66.26000213623047,
+    "20px 'Noto Sans' | Welcome": 86.31999969482422,
+    "12px 'Noto Sans' | New": 25.079999923706055
+  },
+  "computedStyle": {
+    "nav": {
+      "position": "fixed",
+      "z-index": "10",
+      "display": "block",
+      "background-color": "rgb(15, 42, 94)",
+      "height": "48px"
+    },
+    "menu": {
+      "display": "flex",
+      "list-style-type": "none",
+      "margin-top": "0px",
+      "padding-left": "0px"
+    },
+    "ma1": {
+      "display": "block",
+      "height": "20px",
+      "line-height": "20px",
+      "color": "rgb(207, 224, 255)"
+    },
+    "sub": {
+      "position": "absolute",
+      "z-index": "12",
+      "display": "block",
+      "background-color": "rgb(255, 255, 255)",
+      "border-top-width": "1px",
+      "top": "34px",
+      "width": "120px"
+    },
+    "badge": {
+      "position": "absolute",
+      "z-index": "5",
+      "background-color": "rgb(232, 240, 255)",
+      "border-radius": "12px",
+      "color": "rgb(15, 42, 94)",
+      "font-weight": "600"
+    }
+  },
+  "rect": {
+    "hero": {
+      "x": 16,
+      "y": 80,
+      "width": 328,
+      "height": 144
+    },
+    "hh": {
+      "x": 41,
+      "y": 105,
+      "width": 278,
+      "height": 26
+    },
+    "hp": {
+      "x": 41,
+      "y": 139,
+      "width": 278,
+      "height": 60
+    },
+    "badge": {
+      "x": 277.79000091552734,
+      "y": 94,
+      "width": 52.209999084472656,
+      "height": 30
+    },
+    "nav": {
+      "x": 0,
+      "y": 0,
+      "width": 360,
+      "height": 48
+    },
+    "logo": {
+      "x": 16,
+      "y": 13,
+      "width": 86.08000183105469,
+      "height": 20
+    },
+    "menu": {
+      "x": 167.43999862670898,
+      "y": 0,
+      "width": 176.56000137329102,
+      "height": 48
+    },
+    "mi1": {
+      "x": 167.43999862670898,
+      "y": 14,
+      "width": 58.18000030517578,
+      "height": 20
+    },
+    "ma1": {
+      "x": 167.43999862670898,
+      "y": 14,
+      "width": 58.18000030517578,
+      "height": 20
+    },
+    "sub": {
+      "x": 167.43999862670898,
+      "y": 48,
+      "width": 122,
+      "height": 70
+    },
+    "s1": {
+      "x": 168.43999862670898,
+      "y": 55,
+      "width": 120,
+      "height": 28
+    },
+    "s2": {
+      "x": 168.43999862670898,
+      "y": 83,
+      "width": 120,
+      "height": 28
+    },
+    "mi2": {
+      "x": 239.61999893188477,
+      "y": 14,
+      "width": 39.72999954223633,
+      "height": 20
+    },
+    "ma2": {
+      "x": 239.61999893188477,
+      "y": 14,
+      "width": 39.72999954223633,
+      "height": 20
+    },
+    "mi3": {
+      "x": 293.3499984741211,
+      "y": 14,
+      "width": 50.650001525878906,
+      "height": 20
+    },
+    "ma3": {
+      "x": 293.3499984741211,
+      "y": 14,
+      "width": 50.650001525878906,
+      "height": 20
+    }
+  }
+}

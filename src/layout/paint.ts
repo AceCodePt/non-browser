@@ -469,7 +469,7 @@ export function paint(
   textElements?: string[],
 ): RenderOutput {
   const canvas = factory.create(viewportWidth, viewportHeight);
-  canvas.fillRect(0, 0, viewportWidth, viewportHeight, { r: 255, g: 255, b: 255, a: 1 });
+  canvas.fillRect(0, 0, viewportWidth, viewportHeight, root.canvasBackground);
 
   const fontMetrics = fontFile ? fontVerticalMetrics(fontFile) : null;
 

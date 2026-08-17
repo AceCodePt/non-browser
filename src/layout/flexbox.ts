@@ -146,10 +146,37 @@ function contentInlineSizes(
   }
   let min = 0;
   let max = 0;
+  // A row flex container's intrinsic inline size is the SUM of its items' sizes
+  // plus the gaps between them (css-flexbox-1 §9.4 intrinsic sizing), whereas a
+  // column flex / block container's inline size is the widest single child
+  // (items stack in the block axis). Taking the max here made a nested row flex
+  // (e.g. a menu) size to its widest item instead of the whole bar + gap.
+  if (style.display === 'flex' && (style.flexDirection === 'row' || style.flexDirection === 'row-reverse')) {
+    let n = 0;
+    const gap = gapLen(style.columnGap, 0, undefined);
+    let sumMin = 0;
+    let sumMax = 0;
+    for (const child of el.childNodes) {
+      if (!isElementNode(child)) continue;
+      const cs = styles.get(child);
+      if (!cs || cs.display === 'none') continue;
+      if (cs.position === 'absolute' || cs.position === 'fixed') continue;
+      if (n > 0) {
+        sumMin += gap;
+        sumMax += gap;
+      }
+      n++;
+      const c = inlineContribution(child, cs, styles);
+      sumMin += c.min;
+      sumMax += c.max;
+    }
+    return { min: sumMin, max: sumMax };
+  }
   for (const child of el.childNodes) {
     if (!isElementNode(child)) continue;
     const cs = styles.get(child);
     if (!cs || cs.display === 'none') continue;
+    if (cs.position === 'absolute' || cs.position === 'fixed') continue;
     const c = inlineContribution(child, cs, styles);
     min = Math.max(min, c.min);
     max = Math.max(max, c.max);
@@ -203,11 +230,22 @@ function contentBlockHeight(
     });
     return res.height;
   }
+  // A column flex / grid container stacks its items in the block axis with a
+  // row gap between them (css-flexbox-1 §8.3.1, css-grid-1 §8.1); the summed
+  // sibling heights must include those gaps or the measured block height of a
+  // flex/grid-cross-axis child comes out short.
+  const blockGap =
+    style.flexDirection === 'column' || style.flexDirection === 'column-reverse' || style.display === 'grid' || style.display === 'inline-grid'
+      ? resolveLength(style.rowGap, w) ?? 0
+      : 0;
   let h = 0;
+  let counted = 0;
   for (const child of el.childNodes) {
     if (!isElementNode(child)) continue;
     const cs = styles.get(child);
     if (!cs || cs.display === 'none') continue;
+    if (counted > 0) h += blockGap;
+    counted++;
     h += measureChildBlockHeight(child, cs, styles, w);
   }
   return h;

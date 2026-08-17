@@ -52,6 +52,38 @@ measureText strings).
 
 `check-charter`: PASS — charter ratified, runtime within pin.
 
+## Stress corpus (page-scale, multi-viewport)
+
+`corpus/stress` adds the page-scale gate the feature-isolated fixtures cannot
+cover (all four layers vs Chrome, no typed gaps — every fixture passes):
+
+- five small high-variety fixtures at 360x640 + 1280x800: `card-grid` (grid
+  tracks + flex-column cards + gap + border-radius + box-shadow), `form`
+  (labels + explicit-height styled inputs + submit), `article` (white-space
+  normal/nowrap/pre, text-align, whole-block letter-spacing, list-style,
+  ::before, a default-indented list), `navbar` (position:fixed flex bar,
+  z-index stacking, nested dropdown list), `rtl-mix` (per-element direction,
+  logical margins, RTL flex).
+- one `kitchen-sink` page combining all the above at 320x568, 360x640, and
+  1280x800 (deep nesting, flex+grid mix, opacity, borders, border-radius,
+  calc(), pseudo-elements, media queries, propagated body background).
+- `npm run verify:stress` (`scripts/verify-stress.mjs`) drives it; the
+  session-idle `*stress*` gate runs build + verify-stress + check-charter.
+  Runtime (fresh, node 26.7.0): 13/13 fixtures pass in ~37s wall-clock
+  (~10s user, ~308 MB peak RSS) across 13 page renders (6 small viewports +
+  3 kitchen-sink viewports) against live headless Chrome — the page-scale gate
+  pays one Playwright page and one engine render per viewport.
+
+Authoring it surfaced and closed real cross-feature engine bugs, all fixed in
+place (no new typed gaps): the auto grid-track measurement ignored a flex/grid
+child's row-gap; grid item placement dropped the container's top padding
+(`contentY`); the body background did not propagate to the canvas
+(css-backgrounds-3 §2.11.1); per-side `border-<side>` and the `list-style`
+shorthands were unparsed; a row flex container's intrinsic width took the max
+of its items instead of the sum + gaps (css-flexbox-1 §9.4), and absolutely
+positioned children leaked into a parent's intrinsic size. Each is recorded in
+the fix history on this branch.
+
 ## Known Gaps (typed, trend toward zero)
 
 Two fixtures currently declare a typed `expected.<layer>: { result:'fail',

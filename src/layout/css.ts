@@ -1233,6 +1233,16 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   })();
 
   const listStyleType = (() => {
+    // `list-style` shorthand sets type/position/image together; parse it here so
+    // pages that write `list-style: none` (the ubiquitous "no bullets" reset)
+    // don't silently keep disc markers.
+    const sh = decls.find((d) => d.property === 'list-style');
+    if (sh) {
+      const parts = sh.value.trim().toLowerCase().split(/\s+/);
+      for (const p of parts) {
+        if (p === 'none' || p === 'disc' || p === 'circle' || p === 'square' || p === 'decimal' || p === 'decimal-leading-zero') return p;
+      }
+    }
     const d = decls.find((x) => x.property === 'list-style-type');
     if (!d) return defaults.listStyleTypeDefault ?? 'disc';
     const v = d.value.trim().toLowerCase();
@@ -1240,6 +1250,10 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   })();
 
   const listStylePosition = (() => {
+    const sh = decls.find((d) => d.property === 'list-style');
+    if (sh) {
+      if (sh.value.trim().toLowerCase().split(/\s+/).includes('inside')) return 'inside';
+    }
     const d = decls.find((x) => x.property === 'list-style-position');
     if (!d) return defaults.listStylePositionDefault ?? 'outside';
     const v = d.value.trim().toLowerCase();
@@ -1374,10 +1388,29 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     const bs = bsShort ? parseBorderStyleShorthand(bsShort.value) : null;
     const bc = bcShort ? parseBorderColorShorthand(bcShort.value) : null;
     for (const s of SIDES) {
-      const w = bw ? bw[s] : len(`border-${s}-width`, pxLength(0));
-      borderWidth[s] = w.px ?? 0;
-      const c = bc ? bc[s] : color(`border-${s}-color`, parseColor('black'));
-      borderColor[s] = c;
+      // `border-<side>` is a four-in-one shorthand (width/style/color for that
+      // side); parse it like the full `border` shorthand so pages that write
+      // per-side borders (border-left, border-bottom, ...) get their width.
+      const sideShort = decls.find((d) => d.property === `border-${s}`);
+      if (sideShort) {
+        const parts = sideShort.value.trim().split(/\s+/);
+        let w = 0;
+        let st: 'none' | 'solid' | 'inset' | 'outset' = 'solid';
+        let c = parseColor('black');
+        for (const p of parts) {
+          if (p === 'solid' || p === 'none' || p === 'inset' || p === 'outset') st = p as 'none' | 'solid' | 'inset' | 'outset';
+          else if (/^-?[\d.]+px$/.test(p)) w = parseFloat(p);
+          else c = parseColor(p);
+        }
+        borderWidth[s] = st === 'none' ? 0 : w;
+        borderColor[s] = c;
+        borderStyle[s] = st;
+        continue;
+      }
+      const bw2 = bw ? bw[s] : len(`border-${s}-width`, pxLength(0));
+      borderWidth[s] = bw2.px ?? 0;
+      const c2 = bc ? bc[s] : color(`border-${s}-color`, parseColor('black'));
+      borderColor[s] = c2;
       borderStyle[s] = bs ? bs[s] : (() => {
         const d = decls.find((x) => x.property === `border-${s}-style`);
         const v = d ? d.value.trim() : '';

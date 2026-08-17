@@ -1,0 +1,32 @@
+{
+  "name": "rtl-mix",
+  "note": "Stress RTL/LTR mix (corpus/stress/rtl-mix): one document with an LTR header and an RTL section (direction:rtl) whose logical margins and inline flow mirror, plus an LTR block nested inside the RTL section. Packs per-element direction, logical margin-inline-start and padding-inline-start, text-align start/end under RTL, and a flex row that mirrors its main axis — rendered small (360x640) and desktop (1280x800) with four-layer Chrome parity. Latin text in RTL boxes keeps the test on the default Noto Sans font set (the engine supports direction, not glyph bidi reordering).",
+  "harvest": {
+    "viewports": [
+      { "width": 360, "height": 640 },
+      { "width": 1280, "height": 800 }
+    ],
+    "html": "<html><head><style>html,body{margin:0;padding:0}body{font-family:'Noto Sans';font-size:15px;line-height:23px;background:#f2f4f8}.ltr-head{padding:12px 16px;background-color:#0f2a5e;color:#ffffff;font-size:18px;font-weight:700}.rtl{display:block;direction:rtl;padding:16px 20px;margin-inline-start:12px;background-color:#ffffff;border:1px solid #d5dbe7}.rtl h2{direction:rtl;font-size:20px;line-height:26px;color:#0f2a5e;text-align:right;margin:0 0 8px}.rtl p{text-align:right;margin:0 0 10px;color:#3a4556}.rtl .plain{direction:ltr;text-align:left;color:#1a2233;margin:0 0 10px}.row{display:flex;flex-direction:row;justify-content:flex-start;gap:12px;margin:0}.cell{display:block;padding:8px 12px;background-color:#e8f0ff;border:1px solid #0f2a5e;border-radius:6px;color:#0f2a5e}</style></head><body><div class=\"ltr-head\" id=\"head\">Site Header</div><section class=\"rtl\" id=\"rtl\"><h2 id=\"rh\">Main heading</h2><p id=\"rp\">This Arabic-flavoured paragraph is set right-to-left, so its boxes and alignment mirror within this section while the page stays mostly left-to-right.</p><div class=\"plain\" id=\"plain\" dir=\"ltr\">An LTR sentence sits inside the RTL section and flows left.</div><div class=\"row\" id=\"row\"><span class=\"cell\" id=\"c1\">One</span><span class=\"cell\" id=\"c2\">Two</span><span class=\"cell\" id=\"c3\">Three</span></div></section></body></html>",
+    "measureText": [
+      { "text": "Site Header", "font": "18px 'Noto Sans'" },
+      { "text": "Main heading", "font": "20px 'Noto Sans'" },
+      { "text": "This Arabic-flavoured paragraph is set right-to-left, so its boxes and alignment mirror within this section while the page stays mostly left-to-right.", "font": "15px 'Noto Sans'" },
+      { "text": "An LTR sentence sits inside the RTL section and flows left.", "font": "15px 'Noto Sans'" }
+    ],
+    "computedStyle": [
+      { "id": "head", "props": ["display", "background-color", "font-size", "font-weight", "padding-top"] },
+      { "id": "rtl", "props": ["display", "direction", "background-color", "border-top-width", "margin-top"] },
+      { "id": "rh", "props": ["display", "direction", "text-align", "font-size", "color"] },
+      { "id": "plain", "props": ["display", "text-align", "color"] },
+      { "id": "c1", "props": ["display", "background-color", "border-radius", "color", "padding-top"] }
+    ],
+    "rects": ["head", "rtl", "rh", "rp", "plain", "row", "c1", "c2", "c3"],
+    "textElements": ["head", "rh", "rp", "plain", "c1", "c2", "c3"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

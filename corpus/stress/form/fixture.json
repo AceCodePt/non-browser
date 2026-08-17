@@ -1,0 +1,31 @@
+{
+  "name": "form",
+  "note": "Stress form (corpus/stress/form): a bordered, padded fieldset of label + input rows on a body background. Packs display:block and display:inline-block fields, label block-flow, explicit input height/border/padding/background-color, box-sizing, form margin reset, and a styled full-width submit control — rendered small (360x640) and desktop (1280x800) with four-layer Chrome parity. The inputs are styled with an explicit height so the engine's empty control box matches Chrome's UA-sized control.",
+  "harvest": {
+    "viewports": [
+      { "width": 360, "height": 640 },
+      { "width": 1280, "height": 800 }
+    ],
+    "html": "<html><head><style>html,body{margin:0;padding:0}body{font-family:'Noto Sans';font-size:14px;background:#eef1f6}form{margin:0;padding:0;border:1px solid #cdd4e2;border-radius:8px;background:#ffffff;padding:16px}.field{margin-bottom:12px}label{display:inline-block;margin-bottom:4px;font-size:13px;color:#22304a}.inp{display:block;box-sizing:border-box;width:100%;height:32px;border:1px solid #99a1b3;padding:6px;background-color:#ffffff;font-size:13px}.btn{display:block;box-sizing:border-box;width:100%;height:36px;border:1px solid #0f2a5e;background-color:#0f2a5e;color:#ffffff;font-size:13px;font-weight:600;line-height:34px;text-align:center}</style></head><body><form id=\"f\"><div class=\"field\" id=\"f1\"><label id=\"l1\" for=\"a\">Full name</label><input class=\"inp\" id=\"a\" type=\"text\"></div><div class=\"field\" id=\"f2\"><label id=\"l2\" for=\"b\">Email address</label><input class=\"inp\" id=\"b\" type=\"text\"></div><div class=\"field\" id=\"f3\"><label id=\"l3\" for=\"c\">Company</label><input class=\"inp\" id=\"c\" type=\"text\"></div><div class=\"btn\" id=\"go\">Submit form</div></form></body></html>",
+    "measureText": [
+      { "text": "Full name", "font": "13px 'Noto Sans'" },
+      { "text": "Email address", "font": "13px 'Noto Sans'" },
+      { "text": "Company", "font": "13px 'Noto Sans'" },
+      { "text": "Submit form", "font": "13px 'Noto Sans'" }
+    ],
+    "computedStyle": [
+      { "id": "f", "props": ["display", "background-color", "border-radius", "border-top-width", "padding-top", "margin-top", "box-sizing"] },
+      { "id": "l1", "props": ["display", "font-size", "color", "margin-top", "margin-bottom"] },
+      { "id": "a", "props": ["display", "height", "border-top-width", "padding-top", "background-color", "box-sizing"] },
+      { "id": "go", "props": ["display", "height", "background-color", "color", "text-align", "line-height", "border-top-width"] }
+    ],
+    "rects": ["f", "f1", "f2", "f3", "l1", "l2", "l3", "a", "b", "c", "go"],
+    "textElements": ["l1", "l2", "l3", "go"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

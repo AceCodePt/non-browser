@@ -1,0 +1,111 @@
+{
+  "measureText": {
+    "13px 'Noto Sans' | Full name": 59.68000030517578,
+    "13px 'Noto Sans' | Email address": 84.94000244140625,
+    "13px 'Noto Sans' | Company": 58.189998626708984,
+    "13px 'Noto Sans' | Submit form": 76.61000061035156
+  },
+  "computedStyle": {
+    "f": {
+      "display": "block",
+      "background-color": "rgb(255, 255, 255)",
+      "border-radius": "8px",
+      "border-top-width": "1px",
+      "padding-top": "16px",
+      "margin-top": "0px",
+      "box-sizing": "content-box"
+    },
+    "l1": {
+      "display": "inline-block",
+      "font-size": "13px",
+      "color": "rgb(34, 48, 74)",
+      "margin-top": "0px",
+      "margin-bottom": "4px"
+    },
+    "a": {
+      "display": "block",
+      "height": "32px",
+      "border-top-width": "1px",
+      "padding-top": "6px",
+      "background-color": "rgb(255, 255, 255)",
+      "box-sizing": "border-box"
+    },
+    "go": {
+      "display": "block",
+      "height": "36px",
+      "background-color": "rgb(15, 42, 94)",
+      "color": "rgb(255, 255, 255)",
+      "text-align": "center",
+      "line-height": "34px",
+      "border-top-width": "1px"
+    }
+  },
+  "rect": {
+    "f": {
+      "x": 0,
+      "y": 0,
+      "width": 360,
+      "height": 268
+    },
+    "f1": {
+      "x": 17,
+      "y": 17,
+      "width": 326,
+      "height": 54
+    },
+    "l1": {
+      "x": 17,
+      "y": 17,
+      "width": 59.6800012588501,
+      "height": 18
+    },
+    "a": {
+      "x": 17,
+      "y": 39,
+      "width": 326,
+      "height": 32
+    },
+    "f2": {
+      "x": 17,
+      "y": 83,
+      "width": 326,
+      "height": 54
+    },
+    "l2": {
+      "x": 17,
+      "y": 83,
+      "width": 84.94000148773193,
+      "height": 18
+    },
+    "b": {
+      "x": 17,
+      "y": 105,
+      "width": 326,
+      "height": 32
+    },
+    "f3": {
+      "x": 17,
+      "y": 149,
+      "width": 326,
+      "height": 54
+    },
+    "l3": {
+      "x": 17,
+      "y": 149,
+      "width": 58.189998626708984,
+      "height": 18
+    },
+    "c": {
+      "x": 17,
+      "y": 171,
+      "width": 326,
+      "height": 32
+    },
+    "go": {
+      "x": 17,
+      "y": 215,
+      "width": 326,
+      "height": 36
+    }
+  }
+}

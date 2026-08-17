@@ -1,0 +1,124 @@
+{
+  "measureText": {
+    "16px 'Noto Sans' | Alpha card": 80.00015258789062,
+    "13px 'Noto Sans' | A compact summary of the first metric with a headline figure and a supporting sentence.": 541.12548828125,
+    "16px 'Noto Sans' | Beta card": 71.12014770507812,
+    "13px 'Noto Sans' | The second panel shows progress across a longer window using flex column alignment.": 533.4815673828125,
+    "16px 'Noto Sans' | Gamma card": 96.46420288085938,
+    "13px 'Noto Sans' | Third panel: tighter text that wraps to several lines in a narrow column.": 431.45745849609375,
+    "16px 'Noto Sans' | Delta card": 76.52815246582031,
+    "13px 'Noto Sans' | A wider block of body copy that exercises interword wrapping and measurement.": 494.1304626464844
+  },
+  "computedStyle": {
+    "cards": {
+      "display": "grid",
+      "background-color": "rgba(0, 0, 0, 0)",
+      "padding-top": "16px"
+    },
+    "c1": {
+      "display": "flex",
+      "border-radius": "10px",
+      "border-top-width": "1px",
+      "padding-top": "14px",
+      "box-shadow": "rgba(20, 30, 60, 0.12) 0px 2px 6px 0px",
+      "background-color": "rgb(255, 255, 255)",
+      "margin-top": "0px"
+    },
+    "t1": {
+      "display": "block",
+      "font-size": "16px",
+      "line-height": "22px",
+      "margin-top": "0px",
+      "margin-bottom": "0px",
+      "color": "rgb(15, 42, 94)"
+    },
+    "b1": {
+      "display": "block",
+      "font-size": "13px",
+      "line-height": "19px",
+      "margin-top": "0px",
+      "margin-bottom": "0px",
+      "color": "rgb(58, 69, 86)"
+    }
+  },
+  "rect": {
+    "cards": {
+      "x": 0,
+      "y": 0,
+      "width": 1280,
+      "height": 244
+    },
+    "c1": {
+      "x": 16,
+      "y": 16,
+      "width": 405.328125,
+      "height": 98
+    },
+    "c2": {
+      "x": 437.328125,
+      "y": 16,
+      "width": 405.328125,
+      "height": 98
+    },
+    "c3": {
+      "x": 858.65625,
+      "y": 16,
+      "width": 405.34375,
+      "height": 98
+    },
+    "c4": {
+      "x": 16,
+      "y": 130,
+      "width": 405.328125,
+      "height": 98
+    },
+    "t1": {
+      "x": 31,
+      "y": 31,
+      "width": 375.328125,
+      "height": 22
+    },
+    "t2": {
+      "x": 452.328125,
+      "y": 31,
+      "width": 375.328125,
+      "height": 22
+    },
+    "t3": {
+      "x": 873.65625,
+      "y": 31,
+      "width": 375.34375,
+      "height": 22
+    },
+    "t4": {
+      "x": 31,
+      "y": 145,
+      "width": 375.328125,
+      "height": 22
+    },
+    "b1": {
+      "x": 31,
+      "y": 61,
+      "width": 375.328125,
+      "height": 38
+    },
+    "b2": {
+      "x": 452.328125,
+      "y": 61,
+      "width": 375.328125,
+      "height": 38
+    },
+    "b3": {
+      "x": 873.65625,
+      "y": 61,
+      "width": 375.34375,
+      "height": 38
+    },
+    "b4": {
+      "x": 31,
+      "y": 175,
+      "width": 375.328125,
+      "height": 38
+    }
+  }
+}

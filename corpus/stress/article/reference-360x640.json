@@ -1,0 +1,133 @@
+{
+  "measureText": {
+    "24px 'Noto Sans' | Field notes on the northern ridge": 373.9669189453125,
+    "15px 'Noto Sans' | A long justified paragraph about geological strata, seasonal light, and the slow movement of ice across several mornings of observation in the high country.": 1094.6473388671875,
+    "15px 'Noto Sans' | The ridge keeps its own time; what looks still is only slow.": 401.65765380859375,
+    "15px 'Noto Sans' | First observation": 118.15577697753906,
+    "13px 'Noto Sans' | raw line one": 74.68505859375,
+    "15px 'Noto Sans' | Keep this phrase on one line always.": 254.9866943359375
+  },
+  "computedStyle": {
+    "a": {
+      "display": "block",
+      "background-color": "rgba(0, 0, 0, 0)",
+      "padding-top": "20px"
+    },
+    "t1": {
+      "display": "block",
+      "font-size": "24px",
+      "line-height": "30px",
+      "color": "rgb(15, 42, 94)",
+      "margin-bottom": "12px"
+    },
+    "p1": {
+      "display": "block",
+      "text-align": "justify",
+      "margin-bottom": "14px"
+    },
+    "bq": {
+      "display": "block",
+      "background-color": "rgb(240, 243, 249)",
+      "border-left-width": "3px",
+      "font-style": "italic",
+      "padding-top": "8px"
+    },
+    "ul": {
+      "display": "block",
+      "list-style-type": "disc",
+      "list-style-position": "outside",
+      "padding-left": "40px"
+    },
+    "pre": {
+      "display": "block",
+      "white-space": "pre",
+      "background-color": "rgb(238, 241, 246)",
+      "border-top-width": "1px"
+    },
+    "nowrap": {
+      "display": "block",
+      "white-space": "nowrap",
+      "font-weight": "600"
+    }
+  },
+  "rect": {
+    "a": {
+      "x": 0,
+      "y": 0,
+      "width": 360,
+      "height": 722
+    },
+    "t1": {
+      "x": 20,
+      "y": 20,
+      "width": 320,
+      "height": 60
+    },
+    "p1": {
+      "x": 20,
+      "y": 92,
+      "width": 320,
+      "height": 92
+    },
+    "p2": {
+      "x": 20,
+      "y": 198,
+      "width": 320,
+      "height": 92
+    },
+    "p3": {
+      "x": 20,
+      "y": 304,
+      "width": 320,
+      "height": 46
+    },
+    "bq": {
+      "x": 20,
+      "y": 364,
+      "width": 320,
+      "height": 65
+    },
+    "p4": {
+      "x": 20,
+      "y": 443,
+      "width": 320,
+      "height": 46
+    },
+    "ul": {
+      "x": 20,
+      "y": 503,
+      "width": 320,
+      "height": 69
+    },
+    "li1": {
+      "x": 60,
+      "y": 503,
+      "width": 280,
+      "height": 23
+    },
+    "li2": {
+      "x": 60,
+      "y": 526,
+      "width": 280,
+      "height": 23
+    },
+    "li3": {
+      "x": 60,
+      "y": 549,
+      "width": 280,
+      "height": 23
+    },
+    "pre": {
+      "x": 20,
+      "y": 586,
+      "width": 320,
+      "height": 79
+    },
+    "nowrap": {
+      "x": 20,
+      "y": 665,
+      "width": 320,
+      "height": 23
+    }
+  }
+}

@@ -17,6 +17,7 @@ cd "${WORKTREE_PATH:-$(git rev-parse --show-toplevel)}" || exit 1
 
 case "${TASK_NAME:-}" in
   *sweep*|*coverage-matrix*|*cross-family*) npm run verify:sweep && npm run verify:cross-family && node scripts/check-charter.mjs ;;
+  *stress*)            npm run build && node scripts/verify-stress.mjs && node scripts/check-charter.mjs ;;
   *font-registration*) npm run build && node scripts/verify-font-registration.mjs && npm run verify:text-measure ;;
   *flexbox*)          npm run verify:layout-flexbox && npm run verify:sweep ;;
   *float*)            npm run verify:layout-floats ;;

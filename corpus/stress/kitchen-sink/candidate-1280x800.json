@@ -1,0 +1,439 @@
+{
+  "measureText": {
+    "16px 'Noto Sans' | Acme Corp": 82.29000091552734,
+    "24px 'Noto Sans' | Welcome to the kitchen sink": 316.489990234375,
+    "13px 'Noto Sans' | A compact summary of the first metric with a headline figure and a supporting sentence.": 541.1300048828125,
+    "15px 'Noto Sans' | This block flows right-to-left, mirroring its box and alignment while the rest of the page stays left-to-right.": 740,
+    "15px 'Noto Sans' | A short quote pulls out a key line for emphasis.": 330.239990234375,
+    "20px 'Noto Sans' | Contact us": 99.5,
+    "13px 'Noto Sans' | Name": 36.65999984741211,
+    "13px 'Noto Sans' | Send message": 88.44000244140625
+  },
+  "computedStyle": {
+    "topbar": {
+      "position": "fixed",
+      "z-index": "10",
+      "display": "block",
+      "background-color": "rgb(15, 42, 94)",
+      "height": "48px"
+    },
+    "cards": {
+      "display": "grid",
+      "padding-top": "0px"
+    },
+    "card1": {
+      "display": "flex",
+      "border-radius": "10px",
+      "box-shadow": "rgba(20, 30, 60, 0.12) 0px 2px 6px 0px",
+      "background-color": "rgb(255, 255, 255)",
+      "padding-top": "14px"
+    },
+    "ct1": {
+      "display": "block",
+      "font-size": "16px",
+      "line-height": "22px",
+      "color": "rgb(15, 42, 94)",
+      "margin-bottom": "0px"
+    },
+    "wrap": {
+      "display": "block",
+      "margin-top": "0px"
+    },
+    "rtl": {
+      "display": "block",
+      "direction": "rtl",
+      "background-color": "rgb(255, 255, 255)",
+      "border-radius": "8px"
+    },
+    "arq": {
+      "display": "block",
+      "border-left-width": "3px",
+      "background-color": "rgb(240, 243, 249)",
+      "font-style": "italic"
+    },
+    "arl": {
+      "display": "block",
+      "list-style-type": "disc",
+      "list-style-position": "outside"
+    },
+    "arpre": {
+      "display": "block",
+      "white-space": "pre",
+      "border-top-width": "1px",
+      "background-color": "rgb(238, 241, 246)"
+    },
+    "artrack": {
+      "display": "block",
+      "letter-spacing": "1.5px"
+    },
+    "f1": {
+      "display": "block",
+      "height": "32px",
+      "border-top-width": "1px",
+      "box-sizing": "border-box"
+    },
+    "go": {
+      "display": "block",
+      "height": "36px",
+      "background-color": "rgb(15, 42, 94)",
+      "text-align": "center",
+      "line-height": "34px"
+    }
+  },
+  "rect": {
+    "hero": {
+      "x": 16,
+      "y": 80,
+      "width": 1248,
+      "height": 111
+    },
+    "heroh": {
+      "x": 35,
+      "y": 105,
+      "width": 1210,
+      "height": 30
+    },
+    "herop": {
+      "x": 35,
+      "y": 143,
+      "width": 1210,
+      "height": 23
+    },
+    "badge": {
+      "x": 1197.7900009155273,
+      "y": 94,
+      "width": 52.209999084472656,
+      "height": 30
+    },
+    "cards": {
+      "x": 16,
+      "y": 207,
+      "width": 1248,
+      "height": 206
+    },
+    "card1": {
+      "x": 16,
+      "y": 207,
+      "width": 406.6666666666667,
+      "height": 96
+    },
+    "ct1": {
+      "x": 31,
+      "y": 222,
+      "width": 376.6666666666667,
+      "height": 22
+    },
+    "cb1": {
+      "x": 31,
+      "y": 250,
+      "width": 376.6666666666667,
+      "height": 38
+    },
+    "card2": {
+      "x": 436.6666666666667,
+      "y": 207,
+      "width": 406.6666666666667,
+      "height": 96
+    },
+    "ct2": {
+      "x": 451.6666666666667,
+      "y": 222,
+      "width": 376.6666666666667,
+      "height": 22
+    },
+    "cb2": {
+      "x": 451.6666666666667,
+      "y": 250,
+      "width": 376.6666666666667,
+      "height": 38
+    },
+    "card3": {
+      "x": 857.3333333333334,
+      "y": 207,
+      "width": 406.66666666666663,
+      "height": 96
+    },
+    "ct3": {
+      "x": 872.3333333333334,
+      "y": 222,
+      "width": 376.66666666666663,
+      "height": 22
+    },
+    "cb3": {
+      "x": 872.3333333333334,
+      "y": 250,
+      "width": 376.66666666666663,
+      "height": 38
+    },
+    "card4": {
+      "x": 16,
+      "y": 317,
+      "width": 406.6666666666667,
+      "height": 96
+    },
+    "ct4": {
+      "x": 31,
+      "y": 332,
+      "width": 376.6666666666667,
+      "height": 22
+    },
+    "cb4": {
+      "x": 31,
+      "y": 360,
+      "width": 376.6666666666667,
+      "height": 38
+    },
+    "card5": {
+      "x": 436.6666666666667,
+      "y": 317,
+      "width": 406.6666666666667,
+      "height": 96
+    },
+    "ct5": {
+      "x": 451.6666666666667,
+      "y": 332,
+      "width": 376.6666666666667,
+      "height": 22
+    },
+    "cb5": {
+      "x": 451.6666666666667,
+      "y": 360,
+      "width": 376.6666666666667,
+      "height": 38
+    },
+    "card6": {
+      "x": 857.3333333333334,
+      "y": 317,
+      "width": 406.66666666666663,
+      "height": 96
+    },
+    "ct6": {
+      "x": 872.3333333333334,
+      "y": 332,
+      "width": 376.66666666666663,
+      "height": 22
+    },
+    "cb6": {
+      "x": 872.3333333333334,
+      "y": 360,
+      "width": 376.66666666666663,
+      "height": 38
+    },
+    "wrap": {
+      "x": 16,
+      "y": 429,
+      "width": 1248,
+      "height": 415
+    },
+    "rtl": {
+      "x": 16,
+      "y": 429,
+      "width": 1248,
+      "height": 83
+    },
+    "rth": {
+      "x": 33,
+      "y": 444,
+      "width": 1214,
+      "height": 24
+    },
+    "rtp": {
+      "x": 33,
+      "y": 474,
+      "width": 1214,
+      "height": 23
+    },
+    "article": {
+      "x": 16,
+      "y": 528,
+      "width": 1248,
+      "height": 316
+    },
+    "arth": {
+      "x": 33,
+      "y": 545,
+      "width": 1214,
+      "height": 26
+    },
+    "arp": {
+      "x": 33,
+      "y": 581,
+      "width": 1214,
+      "height": 23
+    },
+    "artrack": {
+      "x": 33,
+      "y": 616,
+      "width": 1214,
+      "height": 23
+    },
+    "arq": {
+      "x": 33,
+      "y": 651,
+      "width": 1214,
+      "height": 42
+    },
+    "arl": {
+      "x": 33,
+      "y": 705,
+      "width": 1214,
+      "height": 69
+    },
+    "arli1": {
+      "x": 73,
+      "y": 705,
+      "width": 1174,
+      "height": 23
+    },
+    "arli2": {
+      "x": 73,
+      "y": 728,
+      "width": 1174,
+      "height": 23
+    },
+    "arli3": {
+      "x": 73,
+      "y": 751,
+      "width": 1174,
+      "height": 23
+    },
+    "arpre": {
+      "x": 33,
+      "y": 786,
+      "width": 1214,
+      "height": 41
+    },
+    "formwrap": {
+      "x": 16,
+      "y": 860,
+      "width": 1248,
+      "height": 250
+    },
+    "fh": {
+      "x": 33,
+      "y": 877,
+      "width": 1214,
+      "height": 26
+    },
+    "fld1": {
+      "x": 33,
+      "y": 915,
+      "width": 1214,
+      "height": 59
+    },
+    "f1l": {
+      "x": 33,
+      "y": 915,
+      "width": 36.65999984741211,
+      "height": 23
+    },
+    "f1": {
+      "x": 33,
+      "y": 942,
+      "width": 1214,
+      "height": 32
+    },
+    "fld2": {
+      "x": 33,
+      "y": 986,
+      "width": 1214,
+      "height": 59
+    },
+    "f2l": {
+      "x": 33,
+      "y": 986,
+      "width": 33.380001068115234,
+      "height": 23
+    },
+    "f2": {
+      "x": 33,
+      "y": 1013,
+      "width": 1214,
+      "height": 32
+    },
+    "go": {
+      "x": 33,
+      "y": 1057,
+      "width": 1214,
+      "height": 36
+    },
+    "foot": {
+      "x": 16,
+      "y": 1126,
+      "width": 1248,
+      "height": 51
+    },
+    "topbar": {
+      "x": 0,
+      "y": 0,
+      "width": 1280,
+      "height": 48
+    },
+    "brand": {
+      "x": 16,
+      "y": 13,
+      "width": 86.08000183105469,
+      "height": 23
+    },
+    "nav": {
+      "x": 1072.8199996948242,
+      "y": 0,
+      "width": 191.18000030517578,
+      "height": 48
+    },
+    "navi1": {
+      "x": 1072.8199996948242,
+      "y": 14,
+      "width": 62.34000015258789,
+      "height": 20
+    },
+    "navlink1": {
+      "x": 1072.8199996948242,
+      "y": 14,
+      "width": 62.34000015258789,
+      "height": 20
+    },
+    "dd": {
+      "x": 1072.8199996948242,
+      "y": 48,
+      "width": 132,
+      "height": 76
+    },
+    "dd1": {
+      "x": 1073.8199996948242,
+      "y": 55,
+      "width": 130,
+      "height": 31
+    },
+    "dd2": {
+      "x": 1073.8199996948242,
+      "y": 86,
+      "width": 130,
+      "height": 31
+    },
+    "navi2": {
+      "x": 1151.159999847412,
+      "y": 14,
+      "width": 42.56999969482422,
+      "height": 20
+    },
+    "navlink2": {
+      "x": 1151.159999847412,
+      "y": 14,
+      "width": 42.56999969482422,
+      "height": 20
+    },
+    "navi3": {
+      "x": 1209.7299995422363,
+      "y": 14,
+      "width": 54.27000045776367,
+      "height": 20
+    },
+    "navlink3": {
+      "x": 1209.7299995422363,
+      "y": 14,
+      "width": 54.27000045776367,
+      "height": 20
+    }
+  }
+}

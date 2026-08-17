@@ -1,0 +1,35 @@
+{
+  "name": "card-grid",
+  "note": "Stress card grid (corpus/stress/card-grid): a display:grid track of flex-column cards. Packs grid-template-columns/gap, flex column layout with justify-content/align-items, padding/margin, border + border-radius, box-shadow, background-color, a CSS-variable-free layout, and a width media query that switches the column count between the small and desktop viewports. All four layers must match Chrome at both declared viewports (360x640 and 1280x800).",
+  "harvest": {
+    "viewports": [
+      { "width": 360, "height": 640 },
+      { "width": 1280, "height": 800 }
+    ],
+    "html": "<html><head><style>html,body{margin:0;padding:0;background:#f2f4f8}body{font-family:'Noto Sans';color:#1a2233}#cards{display:grid;grid-template-columns:repeat(1,minmax(0,1fr));gap:16px;padding:16px}.card{display:flex;flex-direction:column;gap:8px;padding:14px;border:1px solid #cfd6e4;border-radius:10px;background:#ffffff;box-shadow:0 2px 6px rgba(20,30,60,0.12);margin:0}.card h3{margin:0;font-size:16px;line-height:22px;color:#0f2a5e}.card p{margin:0;font-size:13px;line-height:19px;color:#3a4556}@media (min-width:700px){#cards{grid-template-columns:repeat(3,minmax(0,1fr))}}</style></head><body><main id=\"cards\"><section class=\"card\" id=\"c1\"><h3 id=\"t1\">Alpha card</h3><p id=\"b1\">A compact summary of the first metric with a headline figure and a supporting sentence.</p></section><section class=\"card\" id=\"c2\"><h3 id=\"t2\">Beta card</h3><p id=\"b2\">The second panel shows progress across a longer window using flex column alignment.</p></section><section class=\"card\" id=\"c3\"><h3 id=\"t3\">Gamma card</h3><p id=\"b3\">Third panel: tighter text that wraps to several lines in a narrow column.</p></section><section class=\"card\" id=\"c4\"><h3 id=\"t4\">Delta card</h3><p id=\"b4\">A wider block of body copy that exercises interword wrapping and measurement.</p></section></main></body></html>",
+    "measureText": [
+      { "text": "Alpha card", "font": "16px 'Noto Sans'" },
+      { "text": "A compact summary of the first metric with a headline figure and a supporting sentence.", "font": "13px 'Noto Sans'" },
+      { "text": "Beta card", "font": "16px 'Noto Sans'" },
+      { "text": "The second panel shows progress across a longer window using flex column alignment.", "font": "13px 'Noto Sans'" },
+      { "text": "Gamma card", "font": "16px 'Noto Sans'" },
+      { "text": "Third panel: tighter text that wraps to several lines in a narrow column.", "font": "13px 'Noto Sans'" },
+      { "text": "Delta card", "font": "16px 'Noto Sans'" },
+      { "text": "A wider block of body copy that exercises interword wrapping and measurement.", "font": "13px 'Noto Sans'" }
+    ],
+    "computedStyle": [
+      { "id": "cards", "props": ["display", "background-color", "padding-top"] },
+      { "id": "c1", "props": ["display", "border-radius", "border-top-width", "padding-top", "box-shadow", "background-color", "margin-top"] },
+      { "id": "t1", "props": ["display", "font-size", "line-height", "margin-top", "margin-bottom", "color"] },
+      { "id": "b1", "props": ["display", "font-size", "line-height", "margin-top", "margin-bottom", "color"] }
+    ],
+    "rects": ["cards", "c1", "c2", "c3", "c4", "t1", "t2", "t3", "t4", "b1", "b2", "b3", "b4"],
+    "textElements": ["t1", "t2", "t3", "t4", "b1", "b2", "b3", "b4"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}
