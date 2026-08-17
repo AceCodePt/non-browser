@@ -1,0 +1,26 @@
+{
+  "name": "rounded-hidden",
+  "note": "overflow:hidden on a rounded box keeps the pre-existing rounded clip exact: a child that pokes out the right/bottom edges is cut to the rounded border-box rect, and the bottom corners are cut to the 32px radius curve. No border, so border and padding boxes coincide and the rounded clip is pixel-exact against Chrome (regression guard for the rounded path).",
+  "harvest": {
+    "viewport": {
+      "width": 300,
+      "height": 220
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c\" style=\"position:relative;left:20px;top:20px;width:180px;height:120px;background:#f0f0f0;border-radius:32px;overflow:hidden\"><div id=\"right\" style=\"width:240px;height:160px;background:#e06040;margin-left:40px;margin-top:60px\"></div></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "c",
+        "props": ["display", "overflow", "border-radius", "width", "height", "background-color"]
+      }
+    ],
+    "rects": ["c", "right"],
+    "textElements": [],
+    "measureText": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

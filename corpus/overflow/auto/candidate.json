@@ -1,0 +1,45 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "c": {
+      "display": "block",
+      "overflow": "auto",
+      "width": "160px",
+      "height": "100px",
+      "background-color": "rgb(240, 240, 240)"
+    },
+    "c2": {
+      "display": "block",
+      "overflow": "auto",
+      "width": "120px",
+      "height": "60px",
+      "background-color": "rgb(240, 240, 240)"
+    }
+  },
+  "rect": {
+    "c": {
+      "x": 20,
+      "y": 20,
+      "width": 180,
+      "height": 120
+    },
+    "kid": {
+      "x": 38,
+      "y": 38,
+      "width": 120,
+      "height": 60
+    },
+    "c2": {
+      "x": 20,
+      "y": 260,
+      "width": 120,
+      "height": 60
+    },
+    "kid2": {
+      "x": 30,
+      "y": 270,
+      "width": 100,
+      "height": 40
+    }
+  }
+}

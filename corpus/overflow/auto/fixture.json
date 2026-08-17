@@ -1,0 +1,30 @@
+{
+  "name": "auto",
+  "note": "overflow:auto parses to 'auto' and clips like hidden, but Chrome renders scrollbars only when content overflows. Content here fits exactly inside both boxes (padding + margins included), so no scrollbar appears and the layout must match Chrome pixel-exactly; a rounded auto box (c2) exercises the rounded clip path for a scroll container too.",
+  "harvest": {
+    "viewport": {
+      "width": 300,
+      "height": 220
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c\" style=\"position:relative;left:20px;top:20px;width:160px;height:100px;background:#f0f0f0;overflow:auto;padding:10px\"><div id=\"kid\" style=\"width:120px;height:60px;background:#e06040;margin:8px\"></div></div><div id=\"c2\" style=\"position:relative;left:20px;top:140px;width:120px;height:60px;background:#f0f0f0;overflow:auto;border-radius:16px\"><div id=\"kid2\" style=\"width:100px;height:40px;background:#4060c0;margin:10px\"></div></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "c",
+        "props": ["display", "overflow", "width", "height", "background-color"]
+      },
+      {
+        "id": "c2",
+        "props": ["display", "overflow", "width", "height", "background-color"]
+      }
+    ],
+    "rects": ["c", "kid", "c2", "kid2"],
+    "textElements": [],
+    "measureText": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}
