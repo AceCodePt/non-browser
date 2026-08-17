@@ -16,12 +16,8 @@ export interface GapDeclaration {
 
 export type LayerExpectation = 'pass' | GapDeclaration;
 
-export interface Box {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+import type { Box } from '../layout/types.js';
+export type { Box };
 
 export interface LayerValues {
   measureText: Record<string, number>;

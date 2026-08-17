@@ -22,7 +22,7 @@ import { layoutPositionedChild, initialContainingBlock, type ContainingBlock } f
 import { hasNonZeroRadius, type Clip } from './radius.js';
 import { activeFontMetrics, fallbackAscent, halfXHeight, lineAscentContribution, lineDescentContribution, roundedAscent, roundedDescent, type FontVerticalMetrics } from './fontmetrics.js';
 import type { P5Element, P5Text } from './types.js';
-import type { Box } from '../harness/fixtures.js';
+import type { Box } from './types.js';
 import type { PseudoDecls } from '../cascade/phases/media-queries.js';
 import { resolveUaDecls } from '../cascade/ua.js';
 
