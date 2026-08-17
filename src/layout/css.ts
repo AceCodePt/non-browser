@@ -1463,7 +1463,12 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   const usedFromKeyword = (kw: string): TextAlign => {
     if (kw === 'start') return direction === 'rtl' ? 'right' : 'left';
     if (kw === 'end') return direction === 'rtl' ? 'left' : 'right';
-    if (kw === 'match-parent') return usedFromKeyword(textAlignInheritedKeyword);
+    // match-parent computes to the parent's alignment resolved against the
+    // parent's direction (css-text-3 §4.2) — the parent's used value, which is
+    // never itself match-parent, so resolving from it terminates.
+    if (kw === 'match-parent') {
+      return defaults.textAlignInherited ?? usedFromKeyword(textAlignInheritedKeyword);
+    }
     if (kw === 'center' || kw === 'justify' || kw === 'right' || kw === 'left') return kw as TextAlign;
     return direction === 'rtl' ? 'right' : 'left';
   };
