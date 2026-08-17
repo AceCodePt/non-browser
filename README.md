@@ -114,7 +114,9 @@ and the harness diffs four independent quantities:
 This is the claim behind every number above: **for the corpus, the engine and
 Chrome agree within sub-pixel on layout and metrics, and pixel-identically on
 non-text paint.** The corpus spans block/inline, floats, positioning, flexbox,
-grid, text scripts (Latin/CJK/Thai/Arabic/emoji), white-space modes, lists,
+grid, text scripts (Latin/CJK/Thai/Arabic/emoji), white-space modes, text
+breaking (Pretext breaker, `corpus/breaker`), RTL box layout, value functions
+(`calc()`/`min()`/`max()`/`clamp()`), box-shadows, opacity compositing, lists,
 pseudo-elements, media queries, and a 110-fixture generated sweep.
 
 ### 2. Browser vs browser — the cross-browser probe (`npm run probe:browser-gap`)
@@ -162,15 +164,16 @@ reading:
 - **The green run proves parity for the verified corpus, not arbitrary HTML.**
   The corpus is authored alongside the engine; the coverage matrix and `tasks/`
   are the ledger of what is and isn't claimed. `calc()`, opacity compositing,
-  and box-shadow/text-shadow paint are implemented and corpus-verified
-  (`corpus/calc`, `corpus/opacity`, `corpus/box-shadow`; see `verify:calc`,
-  `verify:opacity`, `verify:shadow`). `direction: rtl` box layout is an active
-  task (`rtl-direction-layout`); tables and image decoding are out of v1
-  (charter §3).
-- **The engine's shipped text wrapping is still narrower than the seam.**
-  Break-parity with Chrome is proven for the Pretext-based seam; the shipped
-  greedy wrapper for plain text is being unified onto it (`pretext-breaker-path`
-  task).
+  box-shadow/text-shadow paint, and `direction: rtl` box layout are implemented
+  and corpus-verified (`corpus/calc`, `corpus/opacity`, `corpus/box-shadow`,
+  `corpus/rtl-layout`; see `verify:calc`, `verify:opacity`, `verify:shadow`,
+  `verify:rtl`). Tables and image decoding are out of v1 (charter §3).
+- **The engine's shipped text layout is the Pretext breaker.** `layoutTextLines`
+  breaks through `@chenglou/pretext` (`breakNextLine`) for every wrapping mode;
+  the greedy wrapper survives only as the `CASCADE_BREAKER=greedy` fallback that
+  the drift gate (`verify:breaker`) proves agrees with Pretext on the spine. The
+  inline-piece walker still owns mixed inline content (atomics, foreign-style
+  spans) and `justify` lines (`docs/ledgers/breakers.md`).
 - **Parity is font-set-bound.** The engine reproduces Chrome's *registered*
   font fallback; numbers reproduce where the same fonts resolve the same way.
   Font registration is `src/config/`; a machine-independent font bundle is open

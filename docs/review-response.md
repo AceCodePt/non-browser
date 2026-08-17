@@ -11,11 +11,11 @@ not scheduled), **Disputed** (finding partly rejected).
 | # | Finding | Verdict | Disposition |
 | --- | --- | --- | --- |
 | 1 | Charter/README contradict the corpus | Confirmed | **Fixed** (both halves) |
-| 2 | Default `npm run verify` covers 44% of fixtures | Confirmed | **Fixed** (`verify:all`); honestly red until the breaker task lands |
+| 2 | Default `npm run verify` covers 44% of fixtures | Confirmed | **Fixed** (`verify:all`); the full gate is green again after `pretext-breaker-path` retired the standalone seam call |
 | 3 | Text pixels effectively un-gated (97% tier) | Confirmed, already disclosed | **Acknowledged** — documented structural rasterizer gap; no tolerance change |
 | 4 | Coverage-matrix enforcement is substring grep | Confirmed | **Fixed** (paren-precise tokens) |
 | 5 | 26 scratch files committed at root | Confirmed | **Fixed** (deleted + no-op guard); residual hygiene rule not yet in place |
-| 6 | Code-quality debt (layering, cycle, dead code, size) | Confirmed | Box layering **Fixed**; the rest **Acknowledged**/**Owned** |
+| 6 | Code-quality debt (layering, cycle, dead code, size) | Confirmed | Box layering **Fixed**; breaker scaffolding and the two-text-engines **Fixed** (Pretext shipped breaker, attempt 3); the rest **Acknowledged** |
 
 ## Per-finding detail
 
@@ -36,7 +36,10 @@ project had introduced mid-flight:
 The residual truth in the review's framing — the machine-check does not parse the
 Deferred list, so the two halves can still drift — is **Acknowledged**: keeping
 them consistent is a manual ledger discipline until `check-charter` grows a
-Deferred-section parse.
+Deferred-section parse. The README staleness clause is also **Fixed**: `direction:
+rtl` was listed as an active task and is now implemented + corpus-verified
+(`corpus/rtl-layout`, `verify:rtl`); only tables and image decoding remain out of
+v1.
 
 ### 2. `npm run verify` covers 127/288 fixtures (44%) — FIXED
 
@@ -51,11 +54,11 @@ Remedied with a full gate:
   "all numbers reproducible via `npm run verify`" claim was reworded to point at
   `verify:<feature>` scripts and `verify:all`.
 
-Honest caveat: **`verify:all` is currently red.** It includes the seam-mean gate
-that `basic-text` (0.0117px) and `wrapping` (0.0123px) exceed. This is the truth
-surfacing (see the review's own premise): the seam genuinely violates the charter
-band and is **Owned** by `pretext-breaker-path` (re-opened, attempt 3, gated by
-`verify-breaker.mjs` + the no-op guard).
+The earlier red state is **resolved**: the seam-mean overage (`basic-text`
+0.0117px, `wrapping` 0.0123px) belonged to the standalone Pretext-seam call;
+`pretext-breaker-path` (third attempt) retired that call so the engine path —
+which breaks through Pretext — is the path under test, and `verify:four-layer`
+passes (engine-breaker max Δ ≤ 0.015px). The full gate is green again.
 
 ### 3. Text pixels are effectively un-gated — CONFIRMED, DISPUTED as "hidden"
 
@@ -104,14 +107,18 @@ task whose branch carries no changes at all (`.orchestration/hooks/session-idle`
   — verified, **Acknowledged** (ESM tolerates it; the type imports are one-way
   once `parseDeclarationBlock` moves, but that's a refactor, not scheduled).
 - **Dead code** — verified: `void padBorderH` (`block-inline.ts:991`),
-  unreachable `s === '0'` (`css.ts:526`), and the `breakNextLine`/`prepareText`/
-  `usePretextBreaker` scaffolding (`measure.ts`) that is imported/written but
-  never read. The breaker scaffolding is precisely the seam `pretext-breaker-path`
-  (re-opened) is mandated to consume, so it is **Owned**; the two dead lines are
-  **Acknowledged**.
+  unreachable `s === '0'` (`css.ts:526`). The `breakNextLine`/`prepareText`/
+  `usePretextBreaker` scaffolding (`measure.ts`) that was imported/written but
+  never read is **Fixed**: `pretext-breaker-path` (attempt 3) wired
+  `layoutTextLines` through `breakNextLine` and the knob now has real call sites.
+  The two dead lines remain **Acknowledged**.
 - **Two parallel text-layout engines** (`measure.ts` greedy wrapper vs
-  `block-inline.ts` inline walker, with a by-hand parity comment) — verified,
-  **Owned** by `pretext-breaker-path` (the shipped path unified onto Pretext).
+  `block-inline.ts` inline walker, with a by-hand parity comment) — **Fixed**:
+  the shipped path breaks through Pretext (`breakNextLine`); the greedy wrapper
+  survives only as the `CASCADE_BREAKER=greedy` fallback, proven equivalent by
+  the `verify:breaker` drift gate; the inline-piece walker stays only for mixed
+  inline content and `justify` lines, which Pretext's plain-string model cannot
+  carry (see `docs/ledgers/breakers.md`).
 - **flexbox/grid duplicated helpers** (e.g. identical `hasInlineText`),
   `makeStyle` at 617 lines, `block-inline.ts` at 2317 lines — verified,
   **Acknowledged** as debt; the single-authority mandate of `coherence-generalize`
@@ -123,15 +130,21 @@ task whose branch carries no changes at all (`.orchestration/hooks/session-idle`
   `session-idle`, breaker/rtl REDOs restored, debris deleted, charter reconciled.
 - `328b45c` — `Box` out of the harness; `verify:all` full gate + default fallback;
   paren-precise calc tokens; honest README.
-- Re-opened and gated: `pretext-breaker-path` (3rd attempt), `rtl-direction-layout`,
-  `overflow-clip-verification` — all behind task-specific gates + the no-op guard,
-  so a fourth empty archive cannot pass.
+- All three re-opened/gated tasks then **landed for real** (attempts 1–2 of the
+  breaker and the first rtl dispatch had been empty archives; the no-op guard +
+  task-specific gates made the third pass genuine): `pretext-breaker-path`
+  (`d91a8fb`, corpus/breaker + `verify-breaker.mjs` + drift gate + perf guard),
+  `rtl-direction-layout` (`5a8414a`, corpus/rtl-layout + `verify-rtl.mjs`),
+  `overflow-clip-verification` (corpus/overflow + `verify-overflow.mjs`).
+- `07b1ff9` — the honest-assessment review + this response, committed as a pair.
 
 ## Honest residuals (unchanged by this pass)
 
-1. `verify:all` red until `pretext-breaker-path` fixes the seam mean.
+1. `verify:all` green again; the residual red candidates are the same typed
+   gaps (`@container` sizing, the deliberate regression self-test) — not the
+   seam, which is resolved.
 2. Cascade⇄layout import cycle; `makeStyle`/`block-inline.ts` size; flexbox/grid
-   duplication; two dead lines.
+   duplication; two dead lines (`void padBorderH`, unreachable `s === '0'`).
 3. `check-charter` still does not parse the Deferred list (the two charter halves
    can still drift by hand).
 4. No pre-commit rule yet forbids the daemon from committing root scratch files.
