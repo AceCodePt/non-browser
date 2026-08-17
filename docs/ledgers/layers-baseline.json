@@ -1,6 +1,5 @@
 {
-  "generatedAt": "2026-08-17T02:11:55.461Z",
-  "generatedBy": "pre-refactor renderHtml capture (fork of scripts/verify-layers.mjs), entry-functions not yet present",
+  "generatedAt": "2026-08-17T05:34:03.276Z",
   "fixtures": {
     "border-radius/circle-50": {
       "sha256": "c9c1de75e34787220404d3e2c33096a6a882cab941a48bfcc7577185bed7a1d9",
@@ -755,6 +754,34 @@
       "sha256": "4e7d9441f3253756b2c64847ab3165f702830d4b1dffe6f40efbe3ca88380580",
       "width": 220,
       "height": 140,
+      "rectCount": 2,
+      "computedStyleCount": 1
+    },
+    "overflow/auto": {
+      "sha256": "8778d17ae972d49efc7f0e08860ae0b323451c245217e8187c5cfcb9fa1fdcac",
+      "width": 300,
+      "height": 220,
+      "rectCount": 4,
+      "computedStyleCount": 2
+    },
+    "overflow/clip": {
+      "sha256": "bb0a99388da9c0a169798248b878bf5ec25e4c25781bcd02e163b9995e5541e1",
+      "width": 300,
+      "height": 220,
+      "rectCount": 3,
+      "computedStyleCount": 1
+    },
+    "overflow/hidden-square": {
+      "sha256": "acdd1adfc46b8414eac5a3b0f123d6136552b2ebbf4b123e30c46a81340ffbab",
+      "width": 300,
+      "height": 220,
+      "rectCount": 3,
+      "computedStyleCount": 1
+    },
+    "overflow/rounded-hidden": {
+      "sha256": "b25493c93bd1c9d84632b630d0bdc0098907701c13604f80844bf702057834e6",
+      "width": 300,
+      "height": 220,
       "rectCount": 2,
       "computedStyleCount": 1
     },
@@ -1906,5 +1933,6 @@
       "rectCount": 1,
       "computedStyleCount": 1
     }
-  }
+  },
+  "generatedBy": "scripts/verify-layers.mjs --capture-baseline (pre-refactor renderHtml)"
 }
