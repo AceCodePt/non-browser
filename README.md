@@ -50,10 +50,11 @@ the gate, on the record in `docs/ledgers/breakers.md`, not hidden.
 
 So the honest headline: **on the verified corpus the engine is 100% Chrome-parity
 for text measurement, computed style, box geometry, and non-text paint, and 95%
-for exact line-count breaking.** The two caveats that keep the whole number off
-100% are (a) the one breaker divergence above, and (b) the type-level
-arbitrary-HTML gap — parity is proven for what the corpus exercises, and the
-`@container`-sizing gap is a separate declared divergence. There is exactly one
+for exact line-count breaking.** The caveats that keep the whole number off
+100% are the breaker divergence above (95%), `@container` `size`/`block-size`
+containment (inline-size is implemented; full two-axis containment is deferred),
+and the type-level arbitrary-HTML gap — parity is proven for what the corpus
+exercises. There is exactly one
 intentional `FAIL` in the run: the harness's own regression-divergence fixture,
 which must fail to prove the screenshot gate catches divergence.
 
@@ -145,7 +146,8 @@ non-text paint.** The corpus spans block/inline, floats, positioning, flexbox,
 grid, text scripts (Latin/CJK/Thai/Arabic/emoji), white-space modes, text
 breaking (Pretext breaker, `corpus/breaker`), RTL box layout, value functions
 (`calc()`/`min()`/`max()`/`clamp()`), box-shadows, opacity compositing, lists,
-pseudo-elements, media queries, and a 110-fixture generated sweep.
+pseudo-elements, media queries incl. `@container` (inline-size), overflow
+clipping, and a 110-fixture generated sweep.
 
 ### 2. Browser vs browser — the cross-browser probe (`npm run probe:browser-gap`)
 
@@ -192,10 +194,14 @@ reading:
 - **The green run proves parity for the verified corpus, not arbitrary HTML.**
   The corpus is authored alongside the engine; the coverage matrix and `tasks/`
   are the ledger of what is and isn't claimed. `calc()`, opacity compositing,
-  box-shadow/text-shadow paint, and `direction: rtl` box layout are implemented
-  and corpus-verified (`corpus/calc`, `corpus/opacity`, `corpus/box-shadow`,
-  `corpus/rtl-layout`; see `verify:calc`, `verify:opacity`, `verify:shadow`,
-  `verify:rtl`). Tables and image decoding are out of v1 (charter §3).
+  box-shadow/text-shadow paint, `direction: rtl` box layout, and `@container`
+  queries (inline-size) are implemented and corpus-verified (`corpus/calc`,
+  `corpus/opacity`, `corpus/box-shadow`, `corpus/rtl-layout`,
+  `corpus/media-queries`; see `verify:calc`, `verify:opacity`, `verify:shadow`,
+  `verify:rtl`, `verify:media-queries`). A property-coverage audit
+  (`src/layout/property-coverage.ts`) reports which declared CSS properties the
+  engine recognizes vs silently ignores, so unsupported properties can't slip
+  past unseen. Tables and image decoding are out of v1 (charter §3).
 - **The engine's shipped text layout is the Pretext breaker.** `layoutTextLines`
   breaks through `@chenglou/pretext` (`breakNextLine`) for every wrapping mode;
   the greedy wrapper survives only as the `CASCADE_BREAKER=greedy` fallback that
@@ -209,8 +215,9 @@ reading:
 - **Two typed gaps remain by design** (each declared, asserted to still diverge,
   on the record): the breaker's `long-word-default` line-count divergence, and a
   fixture that deliberately diverges to prove the screenshot gate fails as
-  designed. Plus `@container` is parsed but not applied (no container sizing).
-  None are hidden.
+  designed. Plus `@container` `size`/`block-size` containment (full two-axis
+  container sizing) is deferred — inline-size `@container` is implemented. None
+  are hidden.
 
 ## Where the numbers live
 
