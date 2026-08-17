@@ -1,0 +1,30 @@
+{
+  "name": "rtl-paragraph",
+  "note": "An RTL (Hebrew) paragraph laid out by its computed direction, not LTR: the dir attribute feeds direction:rtl (css-writing-modes-4 §2.2), padding-inline-start resolves to padding-right, text-align:start resolves to right-align, and a width-constrained sibling block inside the RTL context sits flush right (§10.3.3). The rect deltas vs Chrome are all direction-driven.",
+  "harvest": {
+    "viewport": {
+      "width": 480,
+      "height": 220
+    },
+    "html": "<body style=\"margin:0\"><div dir=\"rtl\" style=\"width:360px;background:#e0e0e0\"><p id=\"p\" style=\"margin:0 0 10px 0;font-family:'Droid Sans Hebrew';font-size:16px;line-height:24px;padding-inline-start:20px;text-align:start;background:#f0f0f0\">שלום עולם טקסט בעברית זהו טקסט עברי ארוך כדי לבדוק את רוחב השורה</p><div id=\"b\" style=\"width:120px;height:24px;background:#4a90d9\"></div></div></body>",
+    "fonts": [
+      {
+        "family": "Droid Sans Hebrew",
+        "file": "/usr/share/fonts/google-droid-sans-fonts/DroidSansHebrew-Regular.ttf"
+      }
+    ],
+    "defaultFamily": "Droid Sans Hebrew",
+    "rects": ["p", "b"],
+    "textElements": ["p"],
+    "computedStyle": [
+      { "id": "p", "props": ["direction", "text-align"] },
+      { "id": "b", "props": ["direction"] }
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

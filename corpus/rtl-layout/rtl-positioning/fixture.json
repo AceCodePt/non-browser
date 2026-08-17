@@ -1,0 +1,22 @@
+{
+  "name": "rtl-positioning",
+  "note": "Absolute positioning under direction:rtl: inset-inline-start maps to the right edge, inset-inline-end to the left (css-logical-1 §2.4); both offsets auto lands the box at the RTL static position (flush right); an over-constrained left+right+width box ignores the left offset (§10.3.7).",
+  "harvest": {
+    "viewport": {
+      "width": 480,
+      "height": 200
+    },
+    "html": "<body style=\"margin:0\"><div dir=\"rtl\" style=\"position:relative;width:320px;height:120px;background:#e0e0e0\"><div id=\"pa\" style=\"position:absolute;top:8px;inset-inline-start:12px;width:60px;height:30px;background:#d9534f\"></div><div id=\"pb\" style=\"position:absolute;top:50px;inset-inline-end:20px;width:70px;height:30px;background:#4a90d9\"></div><div id=\"pc\" style=\"position:absolute;top:8px;width:50px;height:30px;background:#5cb85c\"></div><div id=\"pd\" style=\"position:absolute;top:50px;left:10px;right:30px;width:100px;height:30px;background:#f0ad4e\"></div></div></body>",
+    "rects": ["pa", "pb", "pc", "pd"],
+    "textElements": [],
+    "computedStyle": [
+      { "id": "pa", "props": ["direction"] }
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

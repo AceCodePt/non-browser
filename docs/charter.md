@@ -156,6 +156,13 @@ the charter and the corpus cannot silently diverge:
 | text | letter-spacing | yes | corpus/paint-text, corpus/measure-corpus | letter-spacing |
 | text | text-decoration | yes | corpus/paint-text | text-decoration |
 | text | text-align | yes | corpus/text-align | text-align |
+| writing modes | direction (computed, inherited) | yes | corpus/rtl-layout | direction |
+| writing modes | logical margins/padding (inline-start/end per direction) | yes | corpus/rtl-layout | margin-inline-start |
+| writing modes | logical insets (inset-inline-start/end, §10.3.7 over-constraint) | yes | corpus/rtl-layout | inset-inline-start |
+| writing modes | text-align start/end used value per direction | yes | corpus/rtl-layout | text-align |
+| writing modes | logical float placement (float:inline-start/end) | yes | corpus/rtl-layout | float:inline-start |
+| writing modes | flex row main axis / column cross axis under rtl | yes | corpus/rtl-layout | flex-direction |
+| writing modes | grid column lines under rtl | yes | corpus/rtl-layout | grid-template-columns |
 | text | color (fill) | yes | corpus/paint-text, corpus/spine | color |
 | text | text-shadow | yes | corpus/box-shadow | text-shadow |
 | paint | box-shadow | yes | corpus/box-shadow | box-shadow |

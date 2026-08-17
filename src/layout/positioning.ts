@@ -25,6 +25,10 @@ export interface PendingAbs {
   style: ComputedStyle;
   staticX: number;
   staticY: number;
+  /** the width of the block formatting context that produced the static
+   * position — under an RTL containing block the static box sits flush right,
+   * so the offset equation needs the static box's inline-end edge. */
+  staticWidth: number;
   fixed: boolean;
 }
 
@@ -32,6 +36,9 @@ export interface ContainingBlock {
   rect: Box;
   heightKnown: boolean;
   pending: PendingAbs[];
+  /** the containing block's computed direction (CSS 2.1 §10.3.7 resolves
+   * over-constrained offsets against the containing block's direction). */
+  direction: 'ltr' | 'rtl';
 }
 
 export function initialContainingBlock(viewport: Viewport): Box {
@@ -48,6 +55,9 @@ export interface AbsHorizontalInput {
   cbWidth: number;
   cbX: number;
   staticLeft: number;
+  /** the static box's inline-end edge (right) under an RTL containing block —
+   * both offsets auto then pin the box's right edge there (§10.3.3). */
+  staticRight?: number;
   left: number | null;
   right: number | null;
   width: number | null;
@@ -55,6 +65,10 @@ export interface AbsHorizontalInput {
   marginRight: number | null;
   borderPadH: number;
   shrinkFit: (avail: number) => number;
+  /** the containing block's computed direction — an over-constrained box
+   * ignores the inline-end offset (right under ltr, left under rtl, CSS 2.1
+   * §10.3.7). */
+  direction?: 'ltr' | 'rtl';
 }
 
 export interface AbsHorizontalOutput {
@@ -66,6 +80,7 @@ export interface AbsHorizontalOutput {
 
 export function solveAbsHorizontal(inp: AbsHorizontalInput): AbsHorizontalOutput {
   const { cbWidth: W, cbX, staticLeft, borderPadH, shrinkFit } = inp;
+  const rtl = inp.direction === 'rtl';
   let left = inp.left;
   let right = inp.right;
   let width = inp.width;
@@ -92,11 +107,20 @@ export function solveAbsHorizontal(inp: AbsHorizontalInput): AbsHorizontalOutput
     } else if (mR === null) {
       mR = W - left - right - width - mL - borderPadH;
     } else {
-      // Over-constrained: ignore right in LTR.
-      right = W - left - width - mL - mR - borderPadH;
+      // Over-constrained: ignore the inline-end offset (right under ltr, left
+      // under rtl) per CSS 2.1 §10.3.7.
+      if (rtl) left = W - right - width - mL - mR - borderPadH;
+      else right = W - left - width - mL - mR - borderPadH;
     }
   } else {
-    if (left === null && right === null) left = staticLeft;
+    if (left === null && right === null) {
+      // Both offsets auto: the box lands at its static position. Under an RTL
+      // containing block that pins the box's inline-end (right) edge to the
+      // static BFC's inline-end edge (CSS 2.1 §10.3.3), so the box mirrors
+      // from the static right edge instead of taking a left static position.
+      if (rtl && inp.staticRight !== undefined) left = inp.staticRight - width - (mL ?? 0) - (mR ?? 0) - borderPadH;
+      else left = staticLeft;
+    }
     const mL0 = mL ?? 0;
     const mR0 = mR ?? 0;
     if (right === null) {
@@ -222,10 +246,13 @@ export function layoutPositionedChild(
   cb: Box,
   staticLeft: number,
   staticTop: number,
+  staticWidth: number,
   styles: Map<P5Element, ComputedStyle>,
   paints: PaintOp[],
   nextOrder: () => number,
   viewport?: Viewport,
+  /** the containing block's computed direction (CSS 2.1 §10.3.7). */
+  cbDirection: 'ltr' | 'rtl' = 'ltr',
 ): LayoutNode {
   const cbW = cb.width;
   const cbH = cb.height;
@@ -242,14 +269,20 @@ export function layoutPositionedChild(
   const pT = resolve(style.padding.top, cbW, viewport) ?? 0;
 
   // Static positions are absolute; the offset equations work in containing
-  // block coordinates, so rebase them.
+  // block coordinates, so rebase them. Under an RTL containing block both
+  // offsets auto put the box at the inline-start (right) static position,
+  // like a static box in normal flow would sit (§10.3.3) — the offset equation
+  // mirrors the static box against the static BFC's inline-end edge.
   const staticLeftRel = staticLeft - cb.x;
   const staticTopRel = staticTop - cb.y;
+  const rtl = cbDirection === 'rtl';
+  const bothAuto = resolve(style.left, cbW, viewport) === null && resolve(style.right, cbW, viewport) === null;
 
   const horiz = solveAbsHorizontal({
     cbWidth: cbW,
     cbX: cb.x,
     staticLeft: staticLeftRel,
+    staticRight: rtl && bothAuto ? staticLeftRel + staticWidth : undefined,
     left: resolve(style.left, cbW, viewport),
     right: resolve(style.right, cbW, viewport),
     width: resolve(style.width, cbW, viewport),
@@ -257,6 +290,7 @@ export function layoutPositionedChild(
     marginRight: mR,
     borderPadH,
     shrinkFit: (avail) => absShrinkFitWidth(el, styles, cbW, avail),
+    direction: cbDirection,
   });
 
   // The equation's `width` term is the content-box width.

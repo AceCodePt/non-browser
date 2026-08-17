@@ -109,6 +109,8 @@ export function computedStyleString(style: ComputedStyle, prop: string, refWidth
       return style.listStylePosition;
     case 'position':
       return style.position;
+    case 'direction':
+      return style.direction;
     case 'z-index':
       return style.zIndex === null ? 'auto' : String(style.zIndex);
     case 'top':

@@ -1,0 +1,22 @@
+{
+  "name": "rtl-grid",
+  "note": "Grid layout under direction:rtl: column lines run from the inline-start, so column 1 is the rightmost track and auto-placed items flow right-to-left (css-grid-1 §8.1). justify-self:end resolves against the RTL inline axis (left edge of the area); explicit grid-column:1 pins to the rightmost column.",
+  "harvest": {
+    "viewport": {
+      "width": 480,
+      "height": 200
+    },
+    "html": "<body style=\"margin:0;font-family:'Noto Sans';font-size:14px\"><div dir=\"rtl\" style=\"display:grid;grid-template-columns:90px 120px 70px;grid-template-rows:40px 40px;gap:10px;width:360px;background:#e0e0e0\"><div id=\"g1\" style=\"background:#d9534f\">1</div><div id=\"g2\" style=\"background:#4a90d9\">2</div><div id=\"g3\" style=\"background:#5cb85c\">3</div><div id=\"g4\" style=\"background:#f0ad4e;justify-self:end\">4</div><div id=\"g5\" style=\"background:#5bc0de;grid-column:1;grid-row:2\">5</div></div></body>",
+    "rects": ["g1", "g2", "g3", "g4", "g5"],
+    "textElements": [],
+    "computedStyle": [
+      { "id": "g1", "props": ["direction"] }
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}
