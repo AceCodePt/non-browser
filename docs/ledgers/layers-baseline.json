@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-17T13:46:52.676Z",
+  "generatedAt": "2026-08-17T16:16:18.080Z",
   "fixtures": {
     "border-radius/circle-50": {
       "sha256": "c9c1de75e34787220404d3e2c33096a6a882cab941a48bfcc7577185bed7a1d9",
@@ -807,7 +807,7 @@
       "computedStyleCount": 1
     },
     "media-queries/container-gap": {
-      "sha256": "0033e61335c7efcb6f5f6da8944cc83559bf48e30739b73898bf0605df124b89",
+      "sha256": "6beb71906cfdbc968059e89c4f0b68a02169b0bf275782d0c695995a69a9b6a6",
       "width": 600,
       "height": 400,
       "rectCount": 1,
@@ -833,6 +833,20 @@
       "height": 300,
       "rectCount": 1,
       "computedStyleCount": 1
+    },
+    "media-queries/nested-container": {
+      "sha256": "75b8626c24bae0dcf04407c2ac40b00e5539663ea6667e15163de1625f6cc1a7",
+      "width": 600,
+      "height": 400,
+      "rectCount": 2,
+      "computedStyleCount": 2
+    },
+    "media-queries/non-matching-container": {
+      "sha256": "4f3bb801206695b4b6effb07e32589de79fc560994d6b3b64e5dfb27731a9852",
+      "width": 600,
+      "height": 400,
+      "rectCount": 2,
+      "computedStyleCount": 2
     },
     "media-queries/orientation": {
       "sha256": "140f2bce67533d405d99e3f951abb50ab6b46638eaefebfac16a9227825b59d8",
