@@ -226,10 +226,10 @@ try {
         }
       }
       if (pretextPass && totalLines > 0) {
-        const maxPx = tolerances.layers.measureText.maxPx;
+        const { maxPx, meanPx } = tolerances.layers.measureText;
         const meanDelta = meanSum / totalLines;
-        pretextPass = maxDelta <= maxPx;
-        pretextDetail = `mean Δ ${meanDelta.toFixed(4)}px, max Δ ${maxDelta.toFixed(4)}px over ${totalLines} lines (≤ ${maxPx}px)`;
+        pretextPass = maxDelta <= maxPx && meanDelta <= meanPx;
+        pretextDetail = `mean Δ ${meanDelta.toFixed(4)}px (≤ ${meanPx}px), max Δ ${maxDelta.toFixed(4)}px (≤ ${maxPx}px) over ${totalLines} lines`;
       }
       pretextResults.push({ name, pass: pretextPass, detail: pretextDetail });
     }

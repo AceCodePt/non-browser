@@ -103,13 +103,18 @@ is scoped to non-text pixels; the text tier's within-region exceed allowance
 — each fixture reports its text-region pixels compared, mean/worst ΔE, and
 text-pixel mask share (0 by default — only declared masks stay masked).
 
-### 2. The layer-1 seam mean tolerance is informational, not enforced
+### 2. The layer-1 seam mean tolerance is now enforced — two owned seam overages
 
-`verify-four-layer.mjs` gates the Pretext seam on `maxPx ≤ 0.5px` only; the
-charter's `< 0.01px` mean is computed and reported but never checked. Example
-of why this matters: `basic-text`'s seam mean is 0.0117px — over the 0.01px
-band — yet the run is green. `verify:text-measure` likewise reports pass-corpus
-mean 0.0025px without failing on a per-category mean breach.
+`verify-four-layer.mjs` gates the Pretext seam on `maxPx ≤ 0.5px` **and** the
+charter's `< 0.01px` mean (`layer1-mean-gate`); a breach fails the run. The
+first enforced run exposes exactly the case this entry warned about:
+`basic-text` (mean Δ 0.0117px) and `wrapping` (mean Δ 0.0123px) exceed the
+0.01px band by 0.0017–0.0023px — the Pretext seam's width-reporting rounding.
+They are owned by `pretext-breaker-path` (re-opened: the seam is reworked when
+the engine ships the Pretext breaker), so `verify:four-layer` is red until that
+lands. `verify:text-measure` enforces the same mean (`evaluate.ts`: `pass:
+meanDelta <= meanPx && maxDelta <= maxPx`) and is green (pass-corpus mean
+0.0025px).
 
 ### 3. Pretext is a test seam, not the engine's text layout
 

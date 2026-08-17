@@ -36,7 +36,7 @@ case "${TASK_NAME:-}" in
   *shadow*)            npm run build && node scripts/verify-shadow.mjs && npm run verify:paint-text ;;
   *opacity*)           npm run build && node scripts/verify-opacity.mjs && npm run verify:paint-text ;;
   *overflow*)          npm run build && node scripts/verify-overflow.mjs && npm run verify:paint-text ;;
-  *rtl*)               npm run verify:layout-positioning && npm run verify:layout-floats && npm run verify:layout-grid && npm run verify:layout-flexbox ;;
+  *rtl*)               npm run build && node scripts/verify-rtl.mjs && npm run verify:layout-positioning && npm run verify:layout-floats && npm run verify:layout-grid && npm run verify:layout-flexbox ;;
   *text-tier*)         npm run verify:paint-text && npm run verify:layout-floats && npm run verify:layout-grid && npm run verify:layout-flexbox && npm run verify:layout-positioning && npm run verify:firefox ;;
   *mean-gate*|*layer1*) npm run verify:four-layer && npm run verify:text-measure ;;
   *layers*|*output-selection*) npm run build && node scripts/verify-layers.mjs && npm run verify:four-layer ;;
@@ -44,6 +44,19 @@ case "${TASK_NAME:-}" in
   *harness-tolerance*) npm run verify:report ;;
   *)                  npm run verify ;;
 esac
+
+# The default `npm run verify` stays green on unchanged code, so a no-op agent
+# could otherwise pass an empty session. Refuse to pass when the task branch
+# carries no changes at all — neither committed beyond its base nor uncommitted
+# in the worktree. (A doc-only task still produces a diff, so this only trips
+# on genuinely empty work.)
+if [ -z "$(git status --porcelain)" ]; then
+  base="$(git merge-base HEAD main 2>/dev/null || true)"
+  if [ -n "$base" ] && [ -z "$(git diff --name-only "$base" HEAD 2>/dev/null)" ]; then
+    echo "session-idle: task produced no changes (branch == base, clean tree) — refusing to pass" >&2
+    exit 1
+  fi
+fi
 
 # Verification passed: commit the work (idempotent - an empty tree has nothing to
 # commit, and it still passes so the daemon can re-run it safely).

@@ -177,8 +177,6 @@ omission is explicit, never silent (the coverage-matrix reconcile ledger,
 `docs/ledgers/coverage-matrix.md`, cross-references each to the archive-audit
 classification):
 
-- **box-shadow / text-shadow** — not implemented (no shadow parse, no shadow
-  paint). `box-shadow-paint` archived empty; re-dispatched as `tasks/shadow-paint`.
 - **outline** — not implemented; `paint-shapes` is archived PARTIAL and outline
   has no owning task.
 - **tables layout** — CSS 2.1 §17 table display values (`display:table*`) and the
@@ -186,8 +184,6 @@ classification):
   empty-cells) are parsed and computed, and UA table defaults land, but there is
   no table layout module (cell grid, border-collapse box model, spanning);
   charter §3 keeps tables out of v1. `tables-layout` is archived PARTIAL.
-- **calc(), min(), max(), clamp()** — not implemented; `css.ts` resolves lengths
-  but has no value-function resolver. Scheduled as `tasks/calc-values`.
 - **Custom properties / var()** — not implemented; `cascade-custom-props`
   archived EMPTY.
 - **Cascade layers / !important** — not implemented; `cascade-layers-important`
