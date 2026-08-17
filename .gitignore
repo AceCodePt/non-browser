@@ -5,3 +5,5 @@ build/
 *.log
 docs/reports/
 examples/output.png
+docs/review-honest-assessment.md
+docs/review-response.md

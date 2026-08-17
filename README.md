@@ -1,4 +1,4 @@
-# cascade-core
+# non-browser
 
 A server-side HTML/CSS renderer that produces a pixel buffer matching Chrome —
 **no DOM, no browser process, no Playwright or Puppeteer anywhere in the product.**
@@ -67,7 +67,7 @@ feeding an agent a sprawling API surface instead of an answer.
 This library replaces that whole pipeline with a function call:
 
 ```ts
-import { renderHtml } from 'cascade-core';
+import { renderHtml } from 'non-browser';
 
 const out = renderHtml(html, {
   width: 800,          // viewport — required, never inferred from content (§3)
