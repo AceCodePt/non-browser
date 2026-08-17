@@ -150,7 +150,7 @@ the charter and the corpus cannot silently diverge:
 | block/inline | inline-block (shrink-to-fit, baseline) | yes | corpus/inline-block | inline-block |
 | block/inline | vertical-align | yes | corpus/inline-block | vertical-align |
 | block/inline | min/max width/height | yes | corpus/flexbox | min-width |
-| block/inline | overflow (hidden clip / BFC) | yes | corpus/border-radius, corpus/flexbox | overflow |
+| block/inline | overflow (hidden clip / BFC) | yes | corpus/border-radius, corpus/flexbox, corpus/overflow | overflow |
 | text | white-space | yes | corpus/spine, corpus/white-space | white-space |
 | text | letter-spacing | yes | corpus/paint-text, corpus/measure-corpus | letter-spacing |
 | text | text-decoration | yes | corpus/paint-text | text-decoration |

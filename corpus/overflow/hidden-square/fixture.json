@@ -1,0 +1,26 @@
+{
+  "name": "hidden-square",
+  "note": "overflow:hidden on a square (no border-radius) box clips its subtree to the padding box: a child that pokes out of the right/bottom edges and a negative-margin child poking out the top/left are both cut. No border, so border and padding boxes coincide and the rect clip is pixel-exact against Chrome. overflow:hidden also establishes a BFC, so the negative-margin first child's top margin does not collapse through the box.",
+  "harvest": {
+    "viewport": {
+      "width": 300,
+      "height": 220
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"c\" style=\"position:relative;left:20px;top:20px;width:160px;height:100px;background:#f0f0f0;overflow:hidden\"><div id=\"neg\" style=\"width:70px;height:50px;background:#4060c0;margin-left:-30px;margin-top:-20px\"></div><div id=\"right\" style=\"width:240px;height:140px;background:#e06040;margin-left:40px;margin-top:30px\"></div></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "c",
+        "props": ["display", "overflow", "width", "height", "background-color"]
+      }
+    ],
+    "rects": ["c", "neg", "right"],
+    "textElements": [],
+    "measureText": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}
