@@ -29,7 +29,7 @@ import { initMeasurement } from './measure.js';
 import { fontVerticalMetrics, setActiveFontMetrics } from './fontmetrics.js';
 import type { ComputedStyle, Viewport } from './css.js';
 import type { P5Element } from './types.js';
-import type { Box } from '../harness/fixtures.js';
+import type { Box } from './types.js';
 import { setActiveBrowserConfig, type BrowserConfig } from '../config/browser-config.js';
 
 export interface ComputedStyleSpec {

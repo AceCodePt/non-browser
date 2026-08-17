@@ -1,24 +1,24 @@
 #!/usr/bin/env node
 /**
- * `npm run verify:four-layer`
+ * `npm run verify:overflow`
  *
- * Renders every corpus/spine fixture with the engine and diffs all four
- * layers against headless Chrome (Playwright):
- *   - layer-1 measureText    candidate engine vs Chrome canvas, sub-pixel
- *   - layer-2 computedStyle  exact string equality
- *   - layer-3 getBoundingClientRect  <= 0.5px per dimension
- *   - layer-4 screenshot     per-pixel delta-E <= 2 with <= 1% pixels exceeding
+ * Renders every corpus/overflow fixture with the engine, harvests the Chrome
+ * oracle quantities for the same HTML, and diffs layer-by-layer:
+ *   - layer-2 computedStyle  exact string equality (overflow parsing: hidden /
+ *     clip / auto compute to the authored keyword, not visible)
+ *   - layer-3 getBoundingClientRect  <= 0.5px per dimension (the clip box and
+ *     its overflowing children lay out identically)
+ *   - layer-4 screenshot  per-pixel delta-E <= 2 with <= 1% exceeding for
+ *     non-text pixels; text pixels compared under the documented text tier
+ *     (tolerances.json layers.screenshot.text) exactly like verify-four-layer
  *
- * Also exercises the Pretext seam: each fixture's text is run through
- * @chenglou/pretext prepare/layout over the Canvas interface (via the
- * OffscreenCanvas shim), and Pretext's line widths are diffed against Chrome's
- * line-fragment widths within the layer-1 sub-pixel tolerance. This proves
- * "Pretext prepare/layout over the Canvas interface's measureText" per fixture.
+ * This is the daemon's acceptance gate for the overflow corpus: it exits
+ * non-zero when corpus/overflow is missing or any fixture diverges from Chrome,
+ * so the session-idle *overflow* case cannot pass empty or divergent work.
  *
- * Writes reference.json/reference.png/mask.png (Chrome) and
+ * Writes reference.json/reference.png/mask.png/text-mask.png (Chrome) and
  * candidate.json/candidate.png (engine) into each fixture directory, then a
- * report under docs/reports/. Exits 0 only when every fixture passes every
- * layer and Pretext agrees with Chrome.
+ * report under docs/reports/. Exits 0 only when every fixture passes.
  */
 
 import { chromium } from 'playwright';
@@ -29,13 +29,16 @@ import { decodePng, encodePng } from '../dist/harness/png.js';
 import { evaluateFixture } from '../dist/harness/evaluate.js';
 import { buildReport, writeReport, renderMarkdown } from '../dist/harness/report.js';
 import { renderHtml } from '../dist/layout/render.js';
-import { installPretextMeasurement, prepareText, layoutLines } from '../dist/pretext/index.js';
-import { getMeasurementCanvas } from '../dist/layout/measure.js';
 
 const FONT_FILE = process.env.FONT_FILE ?? '/usr/share/fonts/google-noto/NotoSans-Regular.ttf';
 const FONT_FAMILY = process.env.FONT_FAMILY ?? 'Noto Sans';
 
-const corpus = resolve('corpus/spine');
+const corpus = resolve('corpus/overflow');
+
+if (!statSync(corpus, { throwIfNoEntry: false })?.isDirectory()) {
+  console.error(`verify:overflow: corpus directory missing: ${corpus}`);
+  process.exit(1);
+}
 
 function* fixtures() {
   for (const entry of readdirSync(corpus, { withFileTypes: true })) {
@@ -49,12 +52,8 @@ function* fixtures() {
 
 /**
  * Text-region mask = every pixel inside Chrome's text fragment rects that
- * either rasterizer paints as anything other than pure white — glyph ink, the
- * AA fringe, and Chrome's LCD/subpixel fringes that bleed past grayscale AA.
- * These are the pixels where text rasterization policy (hinting/AA) can
- * differ, so they are compared under the documented text tier
- * (tolerances.json layers.screenshot.text, justified by docs/ledgers/text-mask.md).
- * Pure-white pixels are not text and stay under the §10 band.
+ * either rasterizer paints as anything other than pure white. Compared under
+ * the documented text tier (docs/ledgers/text-mask.md), never excluded.
  */
 function textRegionMask(width, height, rects, refData, candData) {
   const mask = new Uint8Array(width * height);
@@ -77,12 +76,6 @@ function textRegionMask(width, height, rects, refData, candData) {
 const tolerances = loadTolerances(resolve('tolerances.json'));
 const browser = await chromium.launch();
 const results = [];
-const pretextResults = [];
-
-if (!statSync(corpus, { throwIfNoEntry: false })?.isDirectory()) {
-  console.error(`verify:four-layer: corpus directory missing: ${corpus}`);
-  process.exit(1);
-}
 
 try {
   for (const { dir, name, raw } of fixtures()) {
@@ -129,32 +122,21 @@ try {
       }
     }
 
-    // Chrome line fragments (used for the screenshot text mask and Pretext parity).
     const fragments = [];
-    const fragmentsById = {};
-    const textsById = {};
-    const widthsById = {};
-    const fontById = {};
     if (h.textElements && h.textElements.length > 0) {
       for (const id of h.textElements) {
-        const info = await page.evaluate((id) => {
+        const frags = await page.evaluate((id) => {
           const el = document.getElementById(id);
-          if (!el) return null;
+          if (!el) return [];
           const range = document.createRange();
           range.selectNodeContents(el);
-          const frags = [];
+          const out = [];
           for (const r of range.getClientRects()) {
-            frags.push({ x: r.x, y: r.y, width: r.width, height: r.height });
+            out.push({ x: r.x, y: r.y, width: r.width, height: r.height });
           }
-          const cs = getComputedStyle(el);
-          return { text: el.textContent, clientWidth: el.clientWidth, fontSize: cs.fontSize, fontFamily: cs.fontFamily, letterSpacing: cs.letterSpacing, frags };
+          return out;
         }, id);
-        if (!info) continue;
-        fragments.push(...info.frags);
-        fragmentsById[id] = info.frags.map((f) => f.width);
-        textsById[id] = info.text ?? '';
-        widthsById[id] = info.clientWidth;
-        fontById[id] = { fontSize: info.fontSize, fontFamily: info.fontFamily, letterSpacing: info.letterSpacing };
+        fragments.push(...frags);
       }
     }
 
@@ -184,66 +166,6 @@ try {
       }
     }
 
-    // --- Pretext seam: prepare/layout over the Canvas interface ---
-    // Proves the seam runs: Pretext's prepare/layout over the interface must
-    // break each text block into the same number of lines as Chrome, with line
-    // widths within the layer-1 sub-pixel (<=0.5px) tolerance. The seam is fed
-    // the fixture's real computed font-family, resolved through the active
-    // browser-config before measurement — the same resolution authority as the
-    // engine measure path. (Raw measureText parity is layer-1 above; Pretext's
-    // own width reporting rounds ~0.02px differently, so gating on the 0.5px
-    // band keeps this stable.)
-    let pretextPass = true;
-    let pretextDetail = 'no text elements';
-    const textIds = h.textElements ?? [];
-    if (textIds.length > 0) {
-      installPretextMeasurement(getMeasurementCanvas());
-      let maxDelta = 0;
-      let meanSum = 0;
-      let totalLines = 0;
-      for (const id of textIds) {
-        const text = textsById[id];
-        const maxWidth = widthsById[id] ?? viewport.width;
-        if (!text || !text.trim()) continue;
-        const f = fontById[id] ?? { fontSize: '16px', fontFamily: FONT_FAMILY, letterSpacing: 'normal' };
-        const fontSize = parseFloat(f.fontSize) || 16;
-        const family = f.fontFamily && f.fontFamily.trim() ? f.fontFamily.trim().replace(/^["']+|["']+$/g, '') : FONT_FAMILY;
-        const ls = f.letterSpacing && f.letterSpacing !== 'normal' ? parseFloat(f.letterSpacing) : 0;
-        const prepared = prepareText(text, `${fontSize}px '${family}'`, { letterSpacing: ls });
-        const res = layoutLines(prepared, maxWidth, 24);
-        const chromeWidths = fragmentsById[id] ?? [];
-        if (chromeWidths.length === 0) continue;
-        if (res.lines.length !== chromeWidths.length) {
-          pretextPass = false;
-          pretextDetail = `id ${id}: Chrome ${chromeWidths.length} lines vs Pretext ${res.lines.length}`;
-          break;
-        }
-        for (let i = 0; i < chromeWidths.length; i++) {
-          const d = Math.abs(chromeWidths[i] - res.lines[i].width);
-          meanSum += d;
-          if (d > maxDelta) maxDelta = d;
-          totalLines++;
-        }
-      }
-      if (pretextPass && totalLines > 0) {
-        const maxPx = tolerances.layers.measureText.maxPx;
-        const meanDelta = meanSum / totalLines;
-        // The mean is reported for drift visibility but must not gate: Pretext's
-        // own line-width reporting rounds ~0.02px against Chrome's fragment
-        // widths (see the seam comment above), below the layer-1 0.01px mean.
-        pretextPass = maxDelta <= maxPx;
-        pretextDetail = `mean Δ ${meanDelta.toFixed(4)}px, max Δ ${maxDelta.toFixed(4)}px over ${totalLines} lines (≤ ${maxPx}px)`;
-      }
-      pretextResults.push({ name, pass: pretextPass, detail: pretextDetail });
-    }
-
-    // --- screenshot masks: text-region mask (fragments) and exclusion mask
-    // (declared maskRects / maskElements only). Text pixels are NOT excluded
-    // any more: they are compared under the documented text tier
-    // (tolerances.json layers.screenshot.text), justified by
-    // scripts/probe-text-mask.mjs (docs/ledgers/text-mask.md). The exclusion
-    // mask covers only what the engine cannot reproduce (e.g. the Chrome
-    // broken-image icon on <img>) — every masked pixel is justified per fixture.
     const textMask = textRegionMask(width, height, fragments, refImg.data, candImg.data);
     const mask = new Uint8Array(width * height);
     for (const r of h.maskRects ?? []) {
@@ -255,8 +177,6 @@ try {
         for (let x = x0; x < x1; x++) mask[y * width + x] = 1;
       }
     }
-    // Replaced elements whose Chrome placeholder can't be reproduced by the
-    // engine (e.g. the broken-image icon on <img>) are masked by border box.
     for (const id of h.maskElements ?? []) {
       const r = referenceRects[id];
       if (!r) throw new Error(`fixture ${name}: maskElements '${id}' has no rect`);
@@ -295,8 +215,6 @@ try {
     if (mask.some((b) => b === 1)) writeMaskPng('mask.png', mask);
     if (textMask.some((b) => b === 1)) writeMaskPng('text-mask.png', textMask);
 
-    const textPixels = textMask.reduce((a, b) => a + b, 0);
-
     const fixture = {
       name,
       note: raw.note,
@@ -320,28 +238,20 @@ try {
     results.push(evaluateFixture(fixture));
     console.log(
       `verified ${name}: ${width}x${height}, ${fragments.length} text fragments, ` +
-        `${textPixels} text px compared, ${mask.reduce((a, b) => a + b, 0)} masked` +
-        (h.textElements && fragments.length > 0 ? `, pretext ${pretextPass ? 'PASS' : 'FAIL'} (${pretextDetail})` : ''),
+        `${mask.reduce((a, b) => a + b, 0)} masked`,
     );
   }
 } finally {
   await browser.close();
 }
 
-const report = buildReport(results, { fixtureSet: 'corpus/spine', tolerancesVersion: tolerances.version });
+const report = buildReport(results, { fixtureSet: 'corpus/overflow', tolerancesVersion: tolerances.version });
 if (results.length === 0) {
-  console.error(`verify:four-layer: no fixtures found under ${corpus}`);
+  console.error(`verify:overflow: no fixtures found under ${corpus}`);
   process.exit(1);
 }
 const outDir = writeReport(report);
 console.log(renderMarkdown(report));
-if (pretextResults.length > 0) {
-  const allPretext = pretextResults.every((r) => r.pass);
-  console.log(`Pretext seam (${pretextResults.length} fixtures): ${allPretext ? 'PASS' : 'FAIL'}`);
-  for (const r of pretextResults) {
-    console.log(`  ${r.name}: ${r.pass ? 'PASS' : 'FAIL'} — ${r.detail}`);
-  }
-}
-const ok = report.allChecksPass && pretextResults.every((r) => r.pass);
+const ok = report.allChecksPass;
 console.log(ok ? `PASS: report written to ${outDir}` : `FAIL: report written to ${outDir}`);
 process.exit(ok ? 0 : 1);

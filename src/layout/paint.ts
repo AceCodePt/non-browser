@@ -16,7 +16,7 @@ import { resolveEmLength, resolveLength } from './css.js';
 import { hasNonZeroRadius, innerRadii, resolveBorderRadius, traceRoundedRect, type Clip, type ResolvedRadii, type RoundedClip } from './radius.js';
 import type { OpacityGroup, PaintOp, RootLayout, ShadowPaint, TextDecorationPaint, ListMarker } from './block-inline.js';
 import { idOf } from './block-inline.js';
-import type { Box } from '../harness/fixtures.js';
+import type { Box } from './types.js';
 import { cssFontString, measureTextWidth } from './measure.js';
 import { fontVerticalMetrics, lineAscentContribution, roundedAscent, roundedDescent, type FontVerticalMetrics } from './fontmetrics.js';
 

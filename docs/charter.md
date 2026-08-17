@@ -132,9 +132,10 @@ the charter and the corpus cannot silently diverge:
 | grid | placement (grid-area/grid-column/grid-row, line names) | yes | corpus/grid | grid-area |
 | grid | auto / implicit tracks (grid-auto-rows/columns) | yes | corpus/grid | grid-auto-columns |
 | grid | item self-alignment (justify-self/align-self) | yes | corpus/grid | justify-self |
-| value functions | calc() | yes | corpus/calc | calc |
-| value functions | min()/max() | yes | corpus/calc | min |
-| value functions | clamp() | yes | corpus/calc | clamp |
+| value functions | calc() | yes | corpus/calc | calc( |
+| value functions | min() | yes | corpus/calc | min( |
+| value functions | max() | yes | corpus/calc | max( |
+| value functions | clamp() | yes | corpus/calc | clamp( |
 | block/inline | width | yes | corpus/spine, corpus/floats, corpus/positioning | width |
 | block/inline | height | yes | corpus/spine, corpus/positioning | height |
 | block/inline | margin | yes | corpus/spine, corpus/floats, corpus/positioning | margin |
@@ -150,7 +151,7 @@ the charter and the corpus cannot silently diverge:
 | block/inline | inline-block (shrink-to-fit, baseline) | yes | corpus/inline-block | inline-block |
 | block/inline | vertical-align | yes | corpus/inline-block | vertical-align |
 | block/inline | min/max width/height | yes | corpus/flexbox | min-width |
-| block/inline | overflow (hidden clip / BFC) | yes | corpus/border-radius, corpus/flexbox | overflow |
+| block/inline | overflow (hidden clip / BFC) | yes | corpus/border-radius, corpus/flexbox, corpus/overflow | overflow |
 | text | white-space | yes | corpus/spine, corpus/white-space | white-space |
 | text | letter-spacing | yes | corpus/paint-text, corpus/measure-corpus | letter-spacing |
 | text | text-decoration | yes | corpus/paint-text | text-decoration |

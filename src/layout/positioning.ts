@@ -14,7 +14,7 @@
 
 import { collectInlineText, layoutElementBox, type LayoutNode, type PaintOp } from './block-inline.js';
 import { borderPaddingBlock, borderPaddingInline, resolveLength, type ComputedStyle, type Length, type Viewport } from './css.js';
-import type { Box } from '../harness/fixtures.js';
+import type { Box } from './types.js';
 import { measureTextWidth } from './measure.js';
 import { getActiveBrowserConfig } from '../config/browser-config.js';
 import { FloatManager } from './floats.js';
