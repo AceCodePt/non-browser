@@ -8,6 +8,13 @@
  * implementation is the default factory, and Pretext's measurement is wired to
  * the same interface so the fonts a fixture is measured with are the fonts that
  * get drawn.
+ *
+ * The dependency chain is strict — parse → cascade → measure → layout → paint —
+ * so the entry functions below stop the pipeline at the stage their answer
+ * needs: `renderHtml` runs everything, `rectsOf` stops after layout (no canvas,
+ * no PNG), `computedStylesOf` stops after the cascade (no layout at all). All
+ * three share the `prepare` core so a selective answer is guaranteed to be the
+ * full path cut short, never a separate computation.
  */
 
 import { parse, type DefaultTreeAdapterTypes } from 'parse5';
@@ -22,6 +29,7 @@ import { initMeasurement } from './measure.js';
 import { fontVerticalMetrics, setActiveFontMetrics } from './fontmetrics.js';
 import type { ComputedStyle, Viewport } from './css.js';
 import type { P5Element } from './types.js';
+import type { Box } from '../harness/fixtures.js';
 import { setActiveBrowserConfig, type BrowserConfig } from '../config/browser-config.js';
 
 export interface ComputedStyleSpec {
@@ -61,13 +69,43 @@ export interface RenderHtmlOutput extends RenderOutput {
   computedStyles: Record<string, ComputedStyleProps>;
 }
 
-export function renderHtml(html: string, opts: RenderOptions): RenderHtmlOutput {
+/** Layer-3 answer: the border-box rects of every id-bearing element. */
+export interface RectsOutput {
+  width: number;
+  height: number;
+  rects: Record<string, Box>;
+}
+
+/** Layer-2 answer: computed-style strings for the requested specs. */
+export interface ComputedStylesOutput {
+  width: number;
+  height: number;
+  computedStyles: Record<string, ComputedStyleProps>;
+}
+
+interface Prepared {
+  body: P5Element;
+  styles: Map<P5Element, ComputedStyle>;
+  viewport: Viewport;
+  config: BrowserConfig;
+  factory: CanvasFactory;
+  /** ids of every id-bearing element in the body, for rect completeness asserts. */
+  ids: string[];
+}
+
+/**
+ * Shared pipeline core behind every entry function: parse, browser-config /
+ * font registration, measurement init, media cascade, resolveStyles. None of
+ * the later stages (layout/paint) exist here, which is what lets the selective
+ * entry functions stop before paying for them.
+ */
+function prepare(html: string, opts: RenderOptions, label: string): Prepared {
   const doc = parse(html);
   const htmlEl = (doc as unknown as { childNodes: DefaultTreeAdapterTypes.ChildNode[] }).childNodes.find(
     (n) => n.nodeName === 'html',
   ) as P5Element;
   const body = htmlEl?.childNodes.find((n) => n.nodeName === 'body') as P5Element;
-  if (!body) throw new Error('renderHtml: no <body> element in input');
+  if (!body) throw new Error(`${label}: no <body> element in input`);
 
   const factory = opts.canvasFactory ?? skiaCanvasFactory;
   const config: BrowserConfig = opts.browserConfig ?? {
@@ -115,34 +153,91 @@ export function renderHtml(html: string, opts: RenderOptions): RenderHtmlOutput 
     cascade.pseudo,
   );
 
-  const root = layoutRoot(body, styles, viewport);
-  const out = paint(root, opts.width, opts.height, Object.keys(collectIds(body)), config.defaultFile, factory, viewport, opts.textElements);
+  return { body, styles, viewport, config, factory, ids: Object.keys(collectIds(body)) };
+}
 
-  const computedStyles: Record<string, ComputedStyleProps> = {};
-  if (opts.computedStyle) {
-    const byId = new Map<string, P5Element>();
-    collectByElementId(body, byId);
-    for (const spec of opts.computedStyle) {
-      const el = byId.get(spec.id);
-      const elementStyle: ComputedStyle | undefined = el ? styles.get(el) : undefined;
-      if (!el || !elementStyle) {
-        throw new Error(`renderHtml: computedStyle requested for unknown id '${spec.id}'`);
-      }
-      let style: ComputedStyle = elementStyle;
-      if (spec.pseudo) {
-        const box = elementStyle[spec.pseudo];
-        if (!box) {
-          throw new Error(`renderHtml: computedStyle for '${spec.id}::${spec.pseudo}' but no rule targets that pseudo`);
-        }
-        style = box.style;
-      }
-      // Key by `${id}::${pseudo}` when a pseudo is queried so the same element
-      // can report its ::before and ::after styles without collision.
-      computedStyles[spec.pseudo ? `${spec.id}::${spec.pseudo}` : spec.id] = computedStyleFor(style, spec.props, opts.width, viewport);
-    }
+function assertIdsHaveRects(ids: string[], rects: Record<string, Box>): void {
+  const missing: string[] = [];
+  for (const id of ids) if (!rects[id]) missing.push(id);
+  if (missing.length > 0) {
+    throw new Error(`layout: no rect collected for id(s): ${missing.join(', ')}`);
   }
+}
 
-  return { ...out, computedStyles };
+/**
+ * The layer-2 oracle block: computedStyleFor(from style, requested props) for
+ * each spec, keyed by id (or `${id}::${pseudo}`) exactly as renderHtml reports
+ * them. Shared by renderHtml and computedStylesOf so both answer identically.
+ */
+function collectComputedStyles(
+  opts: RenderOptions,
+  body: P5Element,
+  styles: Map<P5Element, ComputedStyle>,
+  viewport: Viewport,
+  refWidth: number,
+  label: string,
+): Record<string, ComputedStyleProps> {
+  const computedStyles: Record<string, ComputedStyleProps> = {};
+  if (!opts.computedStyle) return computedStyles;
+  const byId = new Map<string, P5Element>();
+  collectByElementId(body, byId);
+  for (const spec of opts.computedStyle) {
+    const el = byId.get(spec.id);
+    const elementStyle: ComputedStyle | undefined = el ? styles.get(el) : undefined;
+    if (!el || !elementStyle) {
+      throw new Error(`${label}: computedStyle requested for unknown id '${spec.id}'`);
+    }
+    let style: ComputedStyle = elementStyle;
+    if (spec.pseudo) {
+      const box = elementStyle[spec.pseudo];
+      if (!box) {
+        throw new Error(`${label}: computedStyle for '${spec.id}::${spec.pseudo}' but no rule targets that pseudo`);
+      }
+      style = box.style;
+    }
+    // Key by `${id}::${pseudo}` when a pseudo is queried so the same element
+    // can report its ::before and ::after styles without collision.
+    computedStyles[spec.pseudo ? `${spec.id}::${spec.pseudo}` : spec.id] = computedStyleFor(style, spec.props, refWidth, viewport);
+  }
+  return computedStyles;
+}
+
+export function renderHtml(html: string, opts: RenderOptions): RenderHtmlOutput {
+  const prep = prepare(html, opts, 'renderHtml');
+  const root = layoutRoot(prep.body, prep.styles, prep.viewport);
+  const out = paint(root, opts.width, opts.height, prep.ids, prep.config.defaultFile, prep.factory, prep.viewport, opts.textElements);
+
+  return { ...out, computedStyles: collectComputedStyles(opts, prep.body, prep.styles, prep.viewport, opts.width, 'renderHtml') };
+}
+
+/**
+ * Snapshot of the geometry layer alone. Runs the cascade + layout and returns
+ * the per-id border-box rects without building a canvas or encoding a PNG —
+ * the answer "what does this element's border box occupy?" pays for no paint.
+ */
+export function rectsOf(html: string, opts: RenderOptions): RectsOutput {
+  const prep = prepare(html, opts, 'rectsOf');
+  const root = layoutRoot(prep.body, prep.styles, prep.viewport);
+  assertIdsHaveRects(prep.ids, root.rects);
+  return { width: opts.width, height: opts.height, rects: root.rects };
+}
+
+/**
+ * Snapshot of the computed-style layer alone. Resolves the cascade and reports
+ * computedStyleFor for `opts.computedStyle` — never lays out, never paints.
+ * This stays layout-free only because the reported values are computed/
+ * specified values (getComputedStyle serialization), never used values.
+ */
+export function computedStylesOf(html: string, opts: RenderOptions): ComputedStylesOutput {
+  if (!opts.computedStyle) {
+    throw new Error('computedStylesOf: computedStyle specs are required');
+  }
+  const prep = prepare(html, opts, 'computedStylesOf');
+  return {
+    width: opts.width,
+    height: opts.height,
+    computedStyles: collectComputedStyles(opts, prep.body, prep.styles, prep.viewport, opts.width, 'computedStylesOf'),
+  };
 }
 
 function collectStyleElements(node: unknown, out: P5Element[]): void {

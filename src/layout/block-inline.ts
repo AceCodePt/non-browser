@@ -366,6 +366,11 @@ export interface RootLayout {
   paints: PaintOp[];
   /** every opacity<1 composite, by id; paint.ts groups ops by PaintOp.group. */
   opacityGroups: Map<number, OpacityGroup>;
+  /**
+   * Border-box rect of every id-bearing element in the tree, collected here so
+   * rects-only callers (rectsOf) get the geometry without painting anything.
+   */
+  rects: Record<string, Box>;
 }
 
 // Layout is a single-threaded recursive descent, so module-level stacks are
@@ -608,6 +613,9 @@ export function layoutRoot(
   paints.push(...markerOps);
   paints.sort((a, b) => comparePaintKeys(a.key, b.key) || a.order - b.order);
 
+  const rects: Record<string, Box> = {};
+  collectRects(bodyNode, fm, rects);
+
   return {
     root: bodyNode,
     bodyHeight: bodyNode.borderHeight,
@@ -615,7 +623,31 @@ export function layoutRoot(
     floats: fm,
     paints,
     opacityGroups,
+    rects,
   };
+}
+
+function rectFor(node: LayoutNode): Box {
+  return { x: node.borderX, y: node.borderY, width: node.borderWidth, height: node.borderHeight };
+}
+
+export function idOf(el: LayoutNode['element']): string | null {
+  if (!el) return null;
+  const a = el.attrs.find((x) => x.name === 'id');
+  return a ? a.value : null;
+}
+
+function collectRects(rootNode: LayoutNode, floats: FloatManager, out: Record<string, Box>): void {
+  const walk = (node: LayoutNode): void => {
+    const id = idOf(node.element);
+    if (id && !out[id]) out[id] = rectFor(node);
+    for (const child of node.children) walk(child);
+  };
+  walk(rootNode);
+  for (const f of floats.floats) {
+    const id = idOf(f.element);
+    if (id && !out[id]) out[id] = { x: f.borderX, y: f.borderY, width: f.borderWidth, height: f.borderHeight };
+  }
 }
 
 function hasInlineContent(el: P5Element, styles: Map<P5Element, ComputedStyle>): boolean {
