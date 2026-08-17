@@ -95,9 +95,9 @@ function contentInlineSizes(
     const text = collectInlineText(el, styles).replace(/[ \t\r\n\f]+/g, ' ').trim();
     let widest = 0;
     for (const w of text.split(' ')) {
-      widest = Math.max(widest, measureTextWidth(w, style.fontSize, style.fontFamily));
+      widest = Math.max(widest, measureTextWidth(w, style.fontSize, style.fontFamily, style.letterSpacing));
     }
-    const full = measureTextWidth(text, style.fontSize, style.fontFamily);
+    const full = measureTextWidth(text, style.fontSize, style.fontFamily, style.letterSpacing);
     return { min: widest, max: full };
   }
   let min = 0;

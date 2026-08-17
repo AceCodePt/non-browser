@@ -756,7 +756,6 @@ export function layoutElementBox(
   const padL = resolveLength(style.padding.left, contentWidth, viewport) ?? 0;
   const padR = resolveLength(style.padding.right, contentWidth, viewport) ?? 0;
   const padBorderV = borderPaddingBlock(style, contentWidth, viewport);
-  const padBorderH = borderPaddingInline(style, contentWidth, viewport);
 
   // Positioned boxes push their paint key and containing block for the whole
   // subtree; their own background/border is keyed to the pushed level.
@@ -1009,7 +1008,6 @@ export function layoutElementBox(
   if (clipEntry) clipStack.pop();
   if (posPaint) popPositionedPaint(posPaint);
   popOpacityGroup(ownOpacityGroup);
-  void padBorderH;
   return node;
 }
 

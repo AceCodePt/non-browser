@@ -1,89 +1,101 @@
-# Honest Assessment — cascade-core (2026-08-17)
+# Code Review — cascade-core (2026-08-17, code-focused rewrite)
 
-Reviewer's note: every finding below was confirmed directly in the repo (file:line
-references included). Nothing here is speculation. Severity-ordered.
+Reviewer's note: rewritten per the owner's request to stick to the code. Every
+claim below was verified by direct reading of the cited lines. The earlier
+version of this file contained claims that direct reading refuted; those are
+recorded in the "Corrected" section so the record is straight.
 
-## What is genuinely good (confirmed)
+## What the code does well
 
-- **Verification is real, not a tautology.** Every engine-parity script harvests
-  Chrome oracle values fresh via Playwright on every run and diffs the engine
-  against them. The one self-comparison path (`scripts/harvest-oracle.mjs:68`
-  writes Chrome values to both `reference`/`candidate`) is a disclosed harness
-  self-test that even injects a deliberate divergence to prove the diff
-  machinery fires.
-- **Layers 1–3 are strict.** Spine rect Δ 0.0000px, measure mean ~0.0025px,
-  computedStyle exact. The numbers look believable.
-- **The ledgers are unusually candid** — `docs/ledgers/parity.md` has a real
-  "Honest Reading" section; a failed run is preserved in `docs/reports/`.
+- The parity seam is real: oracle values are harvested fresh from headless
+  Chrome on every run and diffed against the engine. Layers 1–3 are strict.
+- Where the code mirrors Chrome internals, it does so with named ports and the
+  source cited (`paint.ts` `Color::Light/Dark/BlendWithWhite`, the flexbox
+  baseline authority). The constants are Blink's, not invented.
+- `src/layout/types.ts:10–11` shows layering is an explicit concern: "Lives
+  here (not in the harness) so the renderer never depends on the test harness."
 
-## Problems, severity-ordered
+## Confirmed problems (severity-ordered)
 
-### 1. The charter contradicts itself, and the machine-check can't catch it
+### 1. Copy-paste that has already drifted into a behavioral divergence
 
-`docs/charter.md` §11 coverage matrix says calc/min/max/clamp and
-box-shadow/text-shadow are `implemented: yes, tested` (lines 135–137, 159–160) —
-but the same charter's Deferred section says "**box-shadow / text-shadow — not
-implemented**" (lines 180–181). `README.md:163` lists calc/opacity as "not in
-v1" while `src/layout/calc.ts` (383 lines) and `corpus/opacity/` exist and
-verify.
+The flex and grid modules carry near-verbatim copies of the inline-content
+sizing helpers — and the copies disagree:
 
-`scripts/check-charter.mjs` only parses the matrix table, not the Deferred list,
-so the project's core promise — "no silent absence, nothing can drift" — is
-exactly what's broken here. This is the most damaging finding: the docs are the
-product's credibility engine.
+- `flexbox.ts:133` `contentInlineSizes` measures with
+  `measureTextWidth(w, size, family, style.letterSpacing)` (letter-spacing
+  included).
+- `grid.ts:89` `contentInlineSizes` measures with
+  `measureTextWidth(w, size, family)` — **no letter-spacing**.
 
-### 2. `npm run verify` covers 127 of 288 fixtures (44%)
+Same text, same CSS, two different min/max content widths depending on whether
+the container is `display:flex` or `display:grid`. This is the exact bug class
+duplication breeds, and it is already present.
+- `hasInlineText` (`flexbox.ts:106` / `grid.ts:62`) and `collectInlineText`
+  (`flexbox.ts:119` / `grid.ts:75`) are byte-identical except that flexbox also
+  skips `display:flex` children — the one word that will quietly diverge next.
 
-The default gate runs only spine (5) + sweeps (110) + cross-family (6) +
-ua-styles (6). Every marquee claim — calc, opacity, box-shadow, border-radius,
-text-measure 96/96, text-align, white-space, lists, pseudo-elements — rests on
-separate `verify:<feature>` scripts **not in the gate**. `README.md:16` ("all
-numbers reproducible via `npm run verify`") overstates it.
+### 2. Byte-identical duplicate comparator
 
-### 3. Text pixels are effectively un-gated
+`compareNum` (`cascade/media.ts:223`) and `compare`
+(`cascade/phases/media-queries.ts:111`) are the same seven-case switch over
+`eq/min/max/lt/gt/lte/gte`. Two copies of media-op evaluation in two phases of
+the same subsystem.
 
-`tolerances.json` sets the text-region tolerance to `exceedPct: 97`; a spine run
-passes with 75–79% of glyph pixels over ΔE 2. "Pixel-parity with Chrome" is true
-only for non-text pixels. The ledgers disclose this honestly; the headline does
-not.
+### 3. Dead API surface and dead code
 
-### 4. Coverage-matrix enforcement is substring grep
+- `grid.ts:116` `inlineContributions` returns `{ min, max, minimum }`; grep
+  shows **zero readers** of `.minimum`. A third return field that no caller
+  uses invites a future caller to trust it.
+- `block-inline.ts:1012` `void padBorderH;` — computes
+  `borderPaddingInline(...)` at :759 then discards it.
+- `css.ts:532` `if (s === '0') return { px: 0, ... }` is unreachable: `'0'` is
+  already matched by the length regex at :506, whose `default` case returns the
+  same object.
 
-`scripts/check-charter.mjs:160` is `String.includes(token)` — the min()/max()
-row uses token `min`, which any `min-width` satisfies. A row can read
-"implemented" while nothing meaningful is exercised.
+### 4. Monolithic functions and modules
 
-### 5. Repo hygiene: 26 scratch files committed to root
+- `block-inline.ts` is 2438 lines carrying at least five responsibilities:
+  block layout, float layout, list markers/counter text, shadow/border paint-op
+  building, and the piece-based inline text engine (`buildPieces`/`walkLine`/
+  `pushTextPieces`/`layoutInlineContent`, :1734–:2438).
+- `makeStyle` (`css.ts:1159`) runs to the end of the 1820-line file — ~660
+  lines of computed-value assembly in one function.
 
-`probe-*.mjs` / `tmp-probe*.mjs` / `tmp-probe-rtl*.mjs` — including
-`probe-tmp.mjs` — were committed to the repo root by the daemon itself
-(`orch: session-idle verification passed` commits). That is the daemon
-committing its own scratch notes.
+### 5. Two line-fill implementations inside `measure.ts` alone
 
-### 6. Code-quality debt in `src/`
+`layoutTextLines` (:173) is the shipped block wrapper. It dispatches to either
+`pretextWordFill` (:332) or `fillWordLines` (:397) — two greedy/segment fill
+loops, the seam-vs-fallback split. That is the genuinely duplicated piece: two
+line-fill engines in one 455-line file, selected by a knob.
 
-- `src/layout/block-inline.ts` is 2317 lines across ≥5 responsibilities;
-  `src/layout/css.ts` `makeStyle` is a 617-line function (1148–1765).
-- **Two parallel text-layout engines** coexist (`src/layout/measure.ts` vs
-  `block-inline.ts:2007`), and the file itself admits it must keep them
-  parity-by-hand (`block-inline.ts:1603–1607`).
-- flexbox/grid are near-verbatim copies of sizing helpers
-  (`flexbox.ts:106–239` vs `grid.ts:62–189`); grid's `inlineContributions`
-  returns a `minimum` field no caller reads.
-- **Layering is inverted**: `render.ts:32`, `paint.ts:19`, `block-inline.ts:25`
-  import the core geometry type `Box` from `../harness/fixtures` — the renderer
-  depends on the test harness. Plus a cascade⇄layout import cycle
-  (`cascade/stylesheet.ts:16` ↔ `block-inline.ts:26–27`).
-- Dead code: unused `breakNextLine`/`prepareText` import (`measure.ts:16`),
-  `usePretextBreaker` knob written but never read (`measure.ts:39–57`),
-  `void padBorderH` (`block-inline.ts:991`), unreachable `s === '0'` branch
-  (`css.ts:526`).
+### 6. Runtime import cycle between cascade and layout
+
+- `layout/block-inline.ts:26–27` imports `resolveUaDecls` from
+  `cascade/ua.js` and `PseudoDecls` from `cascade/phases/media-queries.js`.
+- `cascade/stylesheet.ts:15–16` imports `parseDeclarationBlock` from
+  `layout/css.js` (a value import, not a type import).
+- `cascade/ua.ts:19–20` imports types from `layout/`.
+
+Some edges are `import type` (harmless), but `parseDeclarationBlock` and
+`resolveUaDecls` are runtime value imports — the claimed pipeline
+(parse → cascade → layout) is not reflected in the import graph.
+
+## Corrected — claims in the earlier version that direct reading refuted
+
+| Earlier claim | Reality |
+| --- | --- |
+| `Box` imported from `../harness/fixtures` (renderer depends on test harness) | `Box` is defined in `src/layout/types.ts:12`; no harness imports exist outside `src/harness/`. The claim was false. |
+| `breakNextLine`/`prepareText` import in `measure.ts:16` unused | Both are called at `measure.ts:348` and `:354` in `pretextWordFill`. |
+| `usePretextBreaker` knob "written but never read" | Called from `verify-four-layer.mjs:219`, `verify-breaker.mjs:219–232`, `bench-engine-vs-oracle.mjs:37–93`. |
+| `paint.ts` alpha table `[153,170,187,204]` is unexplained magic | A named port of Blink's `Color` blending with the source in the names/comments. |
+| "Two parallel text engines kept parity by hand" | `layoutInlineContent` delegates pure text to the flat path (`block-inline.ts:2110–2115`); one authority, not two rivals. |
 
 ## Bottom line
 
-The engine is serious, real work — the oracle-comparison discipline is genuinely
-harder than the layout code. What will sink it is the credibility machinery:
-the charter/README contradict the corpus, the "machine-checked" gate covers 44%
-of the corpus with grep-strength enforcement, and the daemon commits its own
-scratch files into the repo. For a project whose pitch is "trust these numbers,"
-stale docs that claim to be drift-proof are the highest-risk item.
+The code's structural risk is duplication, not cleverness: flex/grid helpers are
+copied and have already drifted (`letter-spacing`), media-op evaluation exists
+twice byte-for-byte, and a dead `minimum` field sits in a public return shape.
+The monoliths (`block-inline.ts`, `makeStyle`) concentrate the risk. The good
+news is the behavior is anchored by a live-Chrome oracle on every run — so the
+drift is latent, but the fix is factoring, not proof.

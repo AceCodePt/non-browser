@@ -529,7 +529,6 @@ export function parseLength(raw: string): Length {
         return { px: v, pct: null, vw: null, vh: null, vmin: null, vmax: null, em: null, auto: false };
     }
   }
-  if (s === '0') return { px: 0, pct: null, vw: null, vh: null, vmin: null, vmax: null, em: null, auto: false };
   return AUTO;
 }
 

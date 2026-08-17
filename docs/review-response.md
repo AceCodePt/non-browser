@@ -16,6 +16,12 @@ not scheduled), **Disputed** (finding partly rejected).
 | 4 | Coverage-matrix enforcement is substring grep | Confirmed | **Fixed** (paren-precise tokens) |
 | 5 | 26 scratch files committed at root | Confirmed | **Fixed** (deleted + no-op guard); residual hygiene rule not yet in place |
 | 6 | Code-quality debt (layering, cycle, dead code, size) | Confirmed | Box layering **Fixed**; breaker scaffolding and the two-text-engines **Fixed** (Pretext shipped breaker, attempt 3); the rest **Acknowledged** |
+| R1 | flex/grid content sizing letter-spacing drift | Confirmed | **Fixed** (grid now passes `letterSpacing`); factoring scheduled |
+| R2 | Duplicate media comparator (`compareNum`/`compare`) | Confirmed | **Acknowledged** (single-authority candidate) |
+| R3 | Dead code (`void padBorderH`, `s==='0'`, `minimum` field) | Confirmed | **Fixed** (2 of 3); `minimum` Acknowledged |
+| R4 | Monoliths (`block-inline.ts`, `makeStyle`) | Confirmed | **Acknowledged** |
+| R5 | Two line-fills in `measure.ts` | Confirmed, designed | **Disputed in part** — seam-vs-fallback is intentional, drift-gated |
+| R6 | Cascade⇄layout runtime import cycle | Confirmed | **Acknowledged** |
 
 ## Per-finding detail
 
@@ -138,15 +144,83 @@ task whose branch carries no changes at all (`.orchestration/hooks/session-idle`
   `overflow-clip-verification` (corpus/overflow + `verify-overflow.mjs`).
 - `07b1ff9` — the honest-assessment review + this response, committed as a pair.
 
-## Honest residuals (unchanged by this pass)
+## Response to the code-focused rewrite (2026-08-17, same day)
 
-1. `verify:all` green again; the residual red candidates are the same typed
-   gaps (`@container` sizing, the deliberate regression self-test) — not the
-   seam, which is resolved.
-2. Cascade⇄layout import cycle; `makeStyle`/`block-inline.ts` size; flexbox/grid
-   duplication; two dead lines (`void padBorderH`, unreachable `s === '0'`).
-3. `check-charter` still does not parse the Deferred list (the two charter halves
-   can still drift by hand).
-4. No pre-commit rule yet forbids the daemon from committing root scratch files.
+The review was rewritten per the owner's request to stick to the code. The
+document-level findings of the original (charter/README contradiction,
+`verify:all` coverage, tokens, debris) are addressed in the sections above and
+remain fixed. This section answers the rewrite's own findings and its
+"Corrected" table.
+
+### On the "Corrected" table
+
+The table reads the earlier claims as *false*; they were **true when written and
+fixed since**. The code moved under the original review:
+
+| "Corrected" claim | Original state when written | Why it changed |
+| --- | --- | --- |
+| `Box` defined in `layout/types.ts`, no harness imports | TRUE then — `Box` was imported from `../harness/fixtures` by `render.ts`/`paint.ts`/`block-inline.ts` | Fixed in `328b45c` (moved to `types.ts`) |
+| `breakNextLine`/`prepareText` unused | TRUE then — imported at `measure.ts:16`, zero call sites | Fixed when `pretext-breaker-path` attempt 3 wired `layoutTextLines` through it (`pretextWordFill`) |
+| `usePretextBreaker` knob written never read | TRUE then — setters only | Fixed by the same breaker task (verified from `verify-four-layer.mjs`/`verify-breaker.mjs`/`bench`) |
+| Two parallel text engines "kept by hand" | TRUE then — the inline walker's delegation existed, but the greedy wrapper was the shipped path for pure text | Resolved by the breaker task: pure text now routes through Pretext; the walker owns mixed content only |
+
+The corrected table is accurate about the *current* tree; it should not be read
+as a retraction of the original findings, which drove the fixes.
+
+### New confirmed problems
+
+- **#1 flex/grid `contentInlineSizes` letter-spacing drift — CONFIRMED, FIXED.**
+  Verified: `flexbox.ts:133` measured with `style.letterSpacing`, `grid.ts:89`
+  without. The divergence is latent (no grid fixture applies letter-spacing to a
+  text item, so the live-Chrome oracle never saw it — the reviewer's point
+  exactly). Fixed: `grid.ts` now passes `style.letterSpacing` in both calls.
+  `verify:layout-grid`, `verify:layout-flexbox`, `verify:sweep` all PASS after
+  the fix. The broader factoring of `contentInlineSizes`/`inlineContribution(s)`
+  into one shared helper is **Acknowledged** as scheduled debt (the two differ
+  in box-sizing handling, so the merge is a real refactor, not a copy-paste).
+- **#2 duplicate media comparator — CONFIRMED.** `compareNum` (`cascade/media.ts:223`)
+  and `compare` (`cascade/phases/media-queries.ts:111`) are the same seven-case
+  switch. **Acknowledged** — candidate for one comparator under
+  `coherence-generalize`'s single-authority mandate.
+- **#3 dead code — CONFIRMED, two of three FIXED.** `void padBorderH`
+  (`block-inline.ts`) and the unreachable `s === '0'` branch (`css.ts`) are
+  removed. `inlineContributions`' `minimum` return field has zero readers —
+  **Acknowledged** (removing it is safe but touches grid's public call shape;
+  scheduled with the #1 factoring).
+- **#4 monoliths — CONFIRMED, Acknowledged.** `block-inline.ts` (~2.4k lines,
+  five responsibilities) and `makeStyle` (~660 lines) are the concentrated-risk
+  debt; not scheduled beyond `coherence-generalize`.
+- **#5 two line-fills in `measure.ts` — PARTIALLY DISPUTED.** `pretextWordFill`
+  and `fillWordLines` are indeed two fill loops, but they are the **designed**
+  seam-vs-fallback split: Pretext is the shipped breaker (default), the greedy
+  wrapper is the `CASCADE_BREAKER=greedy` opt-out, and `verify:breaker`'s drift
+  gate proves they agree on the spine. The duplication is the fallback's purpose,
+  not an accident. What the reviewer is right about: a knob selecting between two
+  full implementations is inherent risk, which is why the drift gate exists.
+- **#6 cascade⇄layout runtime import cycle — CONFIRMED, Acknowledged.** Verified:
+  `block-inline.ts` value-imports `resolveUaDecls`; `cascade/stylesheet.ts`
+  value-imports `parseDeclarationBlock`. The named pipeline is not reflected in
+  the import graph. ESM tolerates it; the fix (moving `parseDeclarationBlock` /
+  `resolveUaDecls` across the boundary) is a real refactor, not scheduled.
+
+### Bottom line on the rewrite
+
+The rewrite is the better review: code-grounded, and its headline finding — a
+latent letter-spacing divergence between flex and grid content sizing — is a real
+bug the oracle hadn't caught, now fixed. Its structural thesis ("duplication, not
+cleverness") is accepted; the concrete dead code is cleared, and the remaining
+duplication (media comparator, grid minimum field, the two fill loops' shared
+risk, the import cycle) is acknowledged with owners or scheduled with
+`coherence-generalize`.
+
+## Honest residuals (updated after the rewrite)
+
+1. `verify:all` green; residual typed gaps are `@container` sizing and the
+   deliberate regression self-test.
+2. Cascade⇄layout import cycle; `makeStyle`/`block-inline.ts` monoliths;
+   flexbox/grid sizing not yet factored into one helper; `minimum` field unread;
+   duplicated media comparator.
+3. `check-charter` still does not parse the Deferred list.
+4. No pre-commit rule yet forbids root scratch files.
 5. The text-pixel tier (75–79% of glyph pixels over ΔE2) remains the structural
    ceiling on layer-4 text claims.
