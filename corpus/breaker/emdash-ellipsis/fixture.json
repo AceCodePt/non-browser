@@ -1,0 +1,11 @@
+{
+  "name": "emdash-ellipsis",
+  "category": "misc",
+  "note": "Em dashes and ellipsis inside a sentence: UAX#14 class B2/CB keep the dash with the following word, and the ellipsis never starts a line.",
+  "fonts": [{ "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" }],
+  "harvest": {
+    "viewport": { "width": 460, "height": 200 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"p\" style=\"font-family:'Noto Sans';font-size:16px;line-height:24px;width:150px\">The quick brown fox\u2014jumps over\u2014the lazy dog\u2026 and then\u2026 runs away.</div></body></html>",
+    "textElements": ["p"]
+  }
+}

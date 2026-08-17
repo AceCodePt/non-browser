@@ -1,0 +1,11 @@
+{
+  "name": "forced-preline",
+  "category": "forced-breaks",
+  "note": "white-space:pre-line: newlines are forced breaks but space runs collapse, so each segment wraps at single spaces.",
+  "fonts": [{ "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" }],
+  "harvest": {
+    "viewport": { "width": 460, "height": 240 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"p\" style=\"font-family:'Noto Sans';font-size:16px;line-height:24px;width:200px;white-space:pre-line\">alpha beta gamma\ndelta epsilon zeta\neta theta iota kappa lambda</div></body></html>",
+    "textElements": ["p"]
+  }
+}

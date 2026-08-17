@@ -1,0 +1,11 @@
+{
+  "name": "currency",
+  "category": "misc",
+  "note": "Currency and percentage runs: UAX#14 PR/PO/IS classes keep $1,234.56 and 12.5% unbreakable, which Pretext's numeric-run merge reproduces.",
+  "fonts": [{ "family": "Noto Sans", "file": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf" }],
+  "harvest": {
+    "viewport": { "width": 460, "height": 200 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"p\" style=\"font-family:'Noto Sans';font-size:16px;line-height:24px;width:170px\">Item costs $1,234.56 plus 12.5% tax. Total: $45,678.90.</div></body></html>",
+    "textElements": ["p"]
+  }
+}
