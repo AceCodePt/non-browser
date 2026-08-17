@@ -5,7 +5,7 @@
  */
 
 import { writeFileSync } from 'node:fs';
-import { renderHtml } from '../dist/layout/render.js';
+import { renderHtml } from '../dist/index.js';
 import { measureTextWidth } from '../dist/layout/measure.js';
 
 const HTML = `<!doctype html><html><head><style>

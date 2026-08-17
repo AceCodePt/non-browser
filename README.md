@@ -42,10 +42,11 @@ This library replaces that whole pipeline with a function call:
 import { renderHtml } from 'cascade-core';
 
 const out = renderHtml(html, {
-  width: 800,
+  width: 800,          // viewport — required, never inferred from content (§3)
   height: 600,
   fontFamily: 'Noto Sans',
   fontFile: '/path/to/NotoSans-Regular.ttf',
+  // browserConfig: getBrowserConfig('chrome'),  // target browser (§4); default: chrome
 });
 
 out.rgba           // layer 4: the painted page (PNG-encoded buffer)
@@ -54,13 +55,38 @@ out.computedStyles // layer 2: computed-style strings (getComputedStyle)
 // layer 1: text widths come from the same measurement engine the paint used
 ```
 
-> `renderHtml` lives today at `src/layout/render.ts` (exported by
-> `src/layout/index.ts`); the public module path and type surface are being
-> formalized as the `public-api-surface` task.
->
-> A runnable version of this exact flow — input, the four layers' output, and
-> a written PNG — lives in `examples/basic-render.mjs`
-> (`node examples/basic-render.mjs`).
+A runnable version of this exact flow — input, the four layers' output, and
+a written PNG — lives in `examples/basic-render.mjs`
+(`node examples/basic-render.mjs`).
+
+### The API contract
+
+`src/index.ts` is the entire public surface (`dist/index.js` in the built
+package; `exports` allows no other path for a package consumer). Everything
+else under `src/` is internal.
+
+- **Input (`§5`)** — one HTML string that carries its own CSS, either generic
+  corpus HTML or `@ace-code/shast` `renderComponent` output. Both are plain
+  strings through the identical code path; no DOM objects, no document state.
+- **Viewport (`§3`)** — `width` and `height` are required inputs. DPR is fixed
+  at 1; the engine draws into exactly the viewport you pass.
+- **Browser config (`§4`)** — pass a `browserConfig` (`getBrowserConfig('chrome' |
+  'firefox' | 'safari')`, or `chromeConfig` / `firefoxConfig` / `safariConfig`)
+  to select the target browser's font-fallback tables and font-registration
+  set. Omitted, the engine builds a `chrome` config from `fontFamily` /
+  `fontFile`, which name the font single-face measure/paint use. Chrome is the
+  default and the primary golden corpus.
+- **Output** — `rgba` is a **PNG-encoded `Buffer`** of the painted viewport;
+  `rects` maps every `id` in the input to that element's **border-box** rect
+  (`getBoundingClientRect` semantics, fractional-safe); `computedStyles` holds
+  layer-2 strings for the `computedStyle` specs you passed; `generatedTextRects`,
+  `textFragments`, and `listMarkers` are the layer-1/3/4 extras the parity
+  harness compares against the oracle. Passing `media` drives `@media`
+  resolution (`prefers-color-scheme`, `prefers-reduced-motion`, `dppx`).
+
+The four-layer parity claim is the §2 table in "Engine vs Chrome" below: for
+the corpus, every output quantity above matches the oracle within those
+tolerances.
 
 For an agent that needs to answer "does this card overflow?", "what is the width
 of `#header`?", "how tall is this paragraph at 640px?" — you call a function
