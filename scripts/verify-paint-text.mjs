@@ -10,16 +10,18 @@
  *   - layer-4 screenshot  per-pixel delta-E <= 2 with <= 1% exceeding
  *
  * Text glyph ink (and the text-decoration lines that sit inside the text
- * fragments) is masked (mask.png) exactly as in the floats/grid corpora; the
- * layout (line positions, sizes, letter-spacing-driven wrapping) is verified by
- * layer-3 and by the unmasked pixels on layer-4. A fixture opting into the text
- * tier (harvest.textTier) instead compares its text pixels under
- * tolerances.json layers.screenshot.text (docs/ledgers/text-mask.md) — the
- * mixed-script fixture — and its per-run painted advance positions are recorded
- * in candidate.json (paintRuns), summed against the shimmed widths by
+ * fragments) is compared under the documented text tier (tolerances.json
+ * layers.screenshot.text, docs/ledgers/text-mask.md) — each fixture reports
+ * its text-region pixels compared, mean/worst ΔE, and text-pixel mask share
+ * (text-mask.png). The layout (line positions, sizes,
+ * letter-spacing-driven wrapping) is verified by layer-3 and by the unmasked
+ * pixels on layer-4. Only declared maskRects/maskElements (e.g. the Chrome
+ * broken-image icon on <img>) stay masked (mask.png). The mixed-script
+ * fixture's per-run painted advance positions are recorded in candidate.json
+ * (paintRuns), summed against the shimmed widths by
  * scripts/verify-paint-fallback.mjs.
  *
- * Writes reference.json/reference.png/mask.png (Chrome) and
+ * Writes reference.json/reference.png/mask.png/text-mask.png (Chrome) and
  * candidate.json/candidate.png (engine) into each fixture directory, then a
  * report under docs/reports/. Exits 0 only when every fixture passes.
  */
@@ -39,7 +41,6 @@ import { chromeConfig, getActiveBrowserConfig, setActiveBrowserConfig } from '..
 
 const FONT_FILE = process.env.FONT_FILE ?? '/usr/share/fonts/google-noto/NotoSans-Regular.ttf';
 const FONT_FAMILY = process.env.FONT_FAMILY ?? 'Noto Sans';
-const MASK_PAD = 2;
 
 const corpus = resolve('corpus/paint-text');
 
@@ -53,27 +54,13 @@ function* fixtures() {
   }
 }
 
-function buildMask(width, height, fragments, pad) {
-  const mask = new Uint8Array(width * height);
-  for (const f of fragments) {
-    const x0 = Math.max(0, Math.floor(f.x) - pad);
-    const y0 = Math.max(0, Math.floor(f.y) - pad);
-    const x1 = Math.min(width, Math.ceil(f.x + f.width) + pad);
-    const y1 = Math.min(height, Math.ceil(f.y + f.height) + pad);
-    for (let y = y0; y < y1; y++) {
-      for (let x = x0; x < x1; x++) mask[y * width + x] = 1;
-    }
-  }
-  return mask;
-}
-
 /**
  * Text-region mask = every pixel inside Chrome's text fragment rects that
  * either rasterizer paints as anything other than pure white — glyph ink, the
- * AA fringe, and Chrome's LCD/subpixel fringes. These are the pixels compared
- * under the documented text tier (tolerances.json layers.screenshot.text,
- * docs/ledgers/text-mask.md) instead of being excluded. Pure-white pixels are
- * not text and stay under the §10 band.
+ * AA fringe, and Chrome's LCD/subpixel fringes that bleed past grayscale AA.
+ * These are the pixels compared under the documented text tier (tolerances.json
+ * layers.screenshot.text, docs/ledgers/text-mask.md) instead of being excluded.
+ * Pure-white pixels are not text and stay under the §10 band.
  */
 function textRegionMask(width, height, fragments, refData, candData) {
   const mask = new Uint8Array(width * height);
@@ -217,15 +204,37 @@ try {
       }
     }
 
-    // Text pixels: a fixture opting into the text tier (harvest.textTier) is
-    // compared under tolerances.json layers.screenshot.text instead of being
-    // blanket-masked — its screenshot reports text-region numbers. Other
-    // fixtures keep the blanket text mask as before.
-    const textTier = h.textTier === true;
-    const textMask = textTier ? textRegionMask(width, height, fragments, refImg.data, candImg.data) : null;
-    const mask = textTier
-      ? new Uint8Array(width * height)
-      : buildMask(width, height, fragments, MASK_PAD);
+    // --- text-region mask (fragments) and exclusion mask (declared
+    // maskRects / maskElements only). Text pixels are NOT excluded any more:
+    // they are compared under the documented text tier (tolerances.json
+    // layers.screenshot.text, justified by docs/ledgers/text-mask.md). The
+    // exclusion mask covers only what the engine cannot reproduce (e.g. the
+    // Chrome broken-image icon on <img>) — every masked pixel is justified per
+    // fixture.
+    const textMask = textRegionMask(width, height, fragments, refImg.data, candImg.data);
+    const mask = new Uint8Array(width * height);
+    for (const r of h.maskRects ?? []) {
+      const x0 = Math.max(0, Math.floor(r.x));
+      const y0 = Math.max(0, Math.floor(r.y));
+      const x1 = Math.min(width, Math.ceil(r.x + r.width));
+      const y1 = Math.min(height, Math.ceil(r.y + r.height));
+      for (let y = y0; y < y1; y++) {
+        for (let x = x0; x < x1; x++) mask[y * width + x] = 1;
+      }
+    }
+    // Replaced elements whose Chrome placeholder can't be reproduced by the
+    // engine (e.g. the broken-image icon on <img>) are masked by border box.
+    for (const id of h.maskElements ?? []) {
+      const r = referenceRects[id];
+      if (!r) throw new Error(`fixture ${name}: maskElements '${id}' has no rect`);
+      const x0 = Math.max(0, Math.floor(r.x));
+      const y0 = Math.max(0, Math.floor(r.y));
+      const x1 = Math.min(width, Math.ceil(r.x + r.width));
+      const y1 = Math.min(height, Math.ceil(r.y + r.height));
+      for (let y = y0; y < y1; y++) {
+        for (let x = x0; x < x1; x++) mask[y * width + x] = 1;
+      }
+    }
 
     writeFileSync(
       join(dir, 'reference.json'),
@@ -247,7 +256,7 @@ try {
       writeFileSync(join(dir, file), encodePng(width, height, rgba));
     };
     if (mask.some((b) => b === 1)) writeMaskPng('mask.png', mask);
-    if (textMask !== null && textMask.some((b) => b === 1)) writeMaskPng('text-mask.png', textMask);
+    if (textMask.some((b) => b === 1)) writeMaskPng('text-mask.png', textMask);
 
     const fixture = {
       name,
@@ -270,11 +279,11 @@ try {
     };
 
     results.push(evaluateFixture(fixture));
-    const textPixels = textMask !== null ? textMask.reduce((a, b) => a + b, 0) : 0;
+    const textPixels = textMask.reduce((a, b) => a + b, 0);
     const maskPixels = mask.reduce((a, b) => a + b, 0);
     console.log(
       `verified ${name}: ${width}x${height}, ${fragments.length} text fragments, ` +
-        `${textTier ? `${textPixels} text px under the tier, ` : ''}${maskPixels} masked`,
+        `${textPixels} text px compared, ${maskPixels} masked`,
     );
   }
 } finally {

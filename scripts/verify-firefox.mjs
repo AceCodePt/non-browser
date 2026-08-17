@@ -15,9 +15,13 @@
  * in this corpus are authored against the firefox-registered faces, including
  * firefox-specific font-fallback fixtures whose unregistered families resolve
  * through the firefox fallback table to registered faces Gecko measures
- * identically.
+ * identically. Text glyph pixels are compared under the documented text tier
+ * (tolerances.json layers.screenshot.text, docs/ledgers/text-mask.md) — each
+ * fixture reports its text-region pixels compared, mean/worst ΔE, and
+ * text-pixel mask share. Only declared maskRects/maskElements stay masked
+ * (mask.png).
  *
- * Writes reference.json/reference.png/mask.png (Firefox) and
+ * Writes reference.json/reference.png/mask.png/text-mask.png (Firefox) and
  * candidate.json/candidate.png (engine) into each fixture directory, then a
  * report under docs/reports/firefox-track/. Exits 0 only when every fixture
  * passes every layer.
@@ -38,7 +42,6 @@ import { setActiveBrowserConfig } from '../dist/config/browser-config.js';
 
 const FONT_FILE = firefoxConfig.defaultFile;
 const FONT_FAMILY = firefoxConfig.defaultFamily;
-const MASK_PAD = 2;
 
 const corpus = resolve('corpus/firefox-track');
 
@@ -52,15 +55,28 @@ function* fixtures() {
   }
 }
 
-function rectsToMask(width, height, rects, pad) {
+/**
+ * Text-region mask = every pixel inside Firefox's text fragment rects that
+ * either rasterizer paints as anything other than pure white — glyph ink, the
+ * AA fringe, and LCD/subpixel fringes that bleed past grayscale AA. These are
+ * the pixels where text rasterization policy (hinting/AA) can differ, so they
+ * are compared under the documented text tier (tolerances.json
+ * layers.screenshot.text, justified by docs/ledgers/text-mask.md). Pure-white
+ * pixels are not text and stay under the §10 band.
+ */
+function textRegionMask(width, height, rects, refData, candData) {
   const mask = new Uint8Array(width * height);
+  const isWhite = (d, o) => d[o] === 255 && d[o + 1] === 255 && d[o + 2] === 255;
   for (const r of rects) {
-    const x0 = Math.max(0, Math.floor(r.x) - pad);
-    const y0 = Math.max(0, Math.floor(r.y) - pad);
-    const x1 = Math.min(width, Math.ceil(r.x + r.width) + pad);
-    const y1 = Math.min(height, Math.ceil(r.y + r.height) + pad);
+    const x0 = Math.max(0, Math.floor(r.x));
+    const y0 = Math.max(0, Math.floor(r.y));
+    const x1 = Math.min(width, Math.ceil(r.x + r.width));
+    const y1 = Math.min(height, Math.ceil(r.y + r.height));
     for (let y = y0; y < y1; y++) {
-      for (let x = x0; x < x1; x++) mask[y * width + x] = 1;
+      for (let x = x0; x < x1; x++) {
+        const o = (y * width + x) * 4;
+        if (!isWhite(refData, o) || !isWhite(candData, o)) mask[y * width + x] = 1;
+      }
     }
   }
   return mask;
@@ -229,7 +245,14 @@ try {
       pretextResults.push({ name, pass: pretextPass, detail: pretextDetail });
     }
 
-    const mask = rectsToMask(width, height, fragments, MASK_PAD);
+    // --- text-region mask (fragments) and exclusion mask (declared
+    // maskRects / maskElements only). Text pixels are NOT excluded any more:
+    // they are compared under the documented text tier (tolerances.json
+    // layers.screenshot.text, justified by docs/ledgers/text-mask.md). The
+    // exclusion mask covers only what the engine cannot reproduce — every
+    // masked pixel is justified per fixture.
+    const textMask = textRegionMask(width, height, fragments, refImg.data, candImg.data);
+    const mask = new Uint8Array(width * height);
     for (const r of h.maskRects ?? []) {
       const x0 = Math.max(0, Math.floor(r.x));
       const y0 = Math.max(0, Math.floor(r.y));
@@ -269,11 +292,15 @@ try {
     );
     writeFileSync(join(dir, 'reference.png'), shot);
     writeFileSync(join(dir, 'candidate.png'), encodePng(candImg.width, candImg.height, candImg.data));
-    if (mask.some((b) => b === 1)) {
+    const writeMaskPng = (file, m) => {
       const rgba = Buffer.alloc(width * height * 4);
-      for (let i = 0; i < width * height; i++) if (mask[i] === 1) rgba[i * 4 + 3] = 255;
-      writeFileSync(join(dir, 'mask.png'), encodePng(width, height, rgba));
-    }
+      for (let i = 0; i < width * height; i++) if (m[i] === 1) rgba[i * 4 + 3] = 255;
+      writeFileSync(join(dir, file), encodePng(width, height, rgba));
+    };
+    if (mask.some((b) => b === 1)) writeMaskPng('mask.png', mask);
+    if (textMask.some((b) => b === 1)) writeMaskPng('text-mask.png', textMask);
+
+    const textPixels = textMask.reduce((a, b) => a + b, 0);
 
     const fixture = {
       name,
@@ -288,6 +315,7 @@ try {
       referenceRgba: refImg.data,
       candidateRgba: candImg.data,
       mask,
+      textMask,
       reference: { measureText: referenceMeasure, computedStyle: referenceComputed, rect: referenceRects },
       candidate: { measureText: candidateMeasure, computedStyle: out.computedStyles, rect: candidateRects },
       width,
@@ -297,7 +325,7 @@ try {
     results.push(evaluateFixture(fixture));
     console.log(
       `verified ${name}: ${width}x${height}, ${fragments.length} text fragments, ` +
-        `${mask.some((b) => b === 1) ? 'masked' : 'no mask'}` +
+        `${textPixels} text px compared, ${mask.reduce((a, b) => a + b, 0)} masked` +
         (h.textElements && fragments.length > 0 ? `, pretext ${pretextPass ? 'PASS' : 'FAIL'} (${pretextDetail})` : ''),
     );
   }
