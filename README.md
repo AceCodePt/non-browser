@@ -14,7 +14,7 @@ npm install
 npm run verify        # engine vs real Chrome, four layers, sub-pixel tolerances
 ```
 
-## At a glance (all numbers reproducible via `npm run verify` / `npm run bench:engine-vs-oracle`)
+## At a glance (every number below is reproduced by a `verify:<feature>` script; `npm run verify:all` runs the full gate)
 
 | Quantity | Result | What it means |
 | --- | --- | --- |
@@ -160,13 +160,13 @@ reading:
   silently excluded and not claimed as pixel-identical. Non-text pixels are
   strict.
 - **The green run proves parity for the verified corpus, not arbitrary HTML.**
-  The corpus is authored alongside the engine; features it doesn't exercise
-  (yet) are documented in the coverage matrix and `tasks/`, not implied to work:
-  `calc()`, opacity compositing, `direction: rtl` box layout, tables, and image
-  decoding are not in v1. box-shadow/text-shadow paint is corpus-covered
-  (`corpus/box-shadow/`, `npm run verify:shadow`): offset/blur/spread/color +
-  inset + multiple + text-shadow; blurred shadows with spread and blurred inset
-  remain unpainted (parsed and serialized, but skipped at paint time).
+  The corpus is authored alongside the engine; the coverage matrix and `tasks/`
+  are the ledger of what is and isn't claimed. `calc()`, opacity compositing,
+  and box-shadow/text-shadow paint are implemented and corpus-verified
+  (`corpus/calc`, `corpus/opacity`, `corpus/box-shadow`; see `verify:calc`,
+  `verify:opacity`, `verify:shadow`). `direction: rtl` box layout is an active
+  task (`rtl-direction-layout`); tables and image decoding are out of v1
+  (charter §3).
 - **The engine's shipped text wrapping is still narrower than the seam.**
   Break-parity with Chrome is proven for the Pretext-based seam; the shipped
   greedy wrapper for plain text is being unified onto it (`pretext-breaker-path`

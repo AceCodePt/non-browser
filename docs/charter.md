@@ -132,9 +132,10 @@ the charter and the corpus cannot silently diverge:
 | grid | placement (grid-area/grid-column/grid-row, line names) | yes | corpus/grid | grid-area |
 | grid | auto / implicit tracks (grid-auto-rows/columns) | yes | corpus/grid | grid-auto-columns |
 | grid | item self-alignment (justify-self/align-self) | yes | corpus/grid | justify-self |
-| value functions | calc() | yes | corpus/calc | calc |
-| value functions | min()/max() | yes | corpus/calc | min |
-| value functions | clamp() | yes | corpus/calc | clamp |
+| value functions | calc() | yes | corpus/calc | calc( |
+| value functions | min() | yes | corpus/calc | min( |
+| value functions | max() | yes | corpus/calc | max( |
+| value functions | clamp() | yes | corpus/calc | clamp( |
 | block/inline | width | yes | corpus/spine, corpus/floats, corpus/positioning | width |
 | block/inline | height | yes | corpus/spine, corpus/positioning | height |
 | block/inline | margin | yes | corpus/spine, corpus/floats, corpus/positioning | margin |
