@@ -1,0 +1,99 @@
+{
+  "measureText": {
+    "18px 'Noto Sans' | Site Header": 98.0999984741211,
+    "20px 'Noto Sans' | Main heading": 129.05999755859375,
+    "15px 'Noto Sans' | This Arabic-flavoured paragraph is set right-to-left, so its boxes and alignment mirror within this section while the page stays mostly left-to-right.": 1015.3699951171875,
+    "15px 'Noto Sans' | An LTR sentence sits inside the RTL section and flows left.": 402.1099853515625
+  },
+  "computedStyle": {
+    "head": {
+      "display": "block",
+      "background-color": "rgb(15, 42, 94)",
+      "font-size": "18px",
+      "font-weight": "700",
+      "padding-top": "12px"
+    },
+    "rtl": {
+      "display": "block",
+      "direction": "rtl",
+      "background-color": "rgb(255, 255, 255)",
+      "border-top-width": "1px",
+      "margin-top": "0px"
+    },
+    "rh": {
+      "display": "block",
+      "direction": "rtl",
+      "text-align": "right",
+      "font-size": "20px",
+      "color": "rgb(15, 42, 94)"
+    },
+    "plain": {
+      "display": "block",
+      "text-align": "left",
+      "color": "rgb(26, 34, 51)"
+    },
+    "c1": {
+      "display": "block",
+      "background-color": "rgb(232, 240, 255)",
+      "border-radius": "6px",
+      "color": "rgb(15, 42, 94)",
+      "padding-top": "8px"
+    }
+  },
+  "rect": {
+    "head": {
+      "x": 0,
+      "y": 0,
+      "width": 360,
+      "height": 47
+    },
+    "rtl": {
+      "x": 0,
+      "y": 47,
+      "width": 348,
+      "height": 267
+    },
+    "rh": {
+      "x": 21,
+      "y": 64,
+      "width": 306,
+      "height": 26
+    },
+    "rp": {
+      "x": 21,
+      "y": 98,
+      "width": 306,
+      "height": 92
+    },
+    "plain": {
+      "x": 21,
+      "y": 200,
+      "width": 306,
+      "height": 46
+    },
+    "row": {
+      "x": 21,
+      "y": 256,
+      "width": 306,
+      "height": 41
+    },
+    "c1": {
+      "x": 271.54999923706055,
+      "y": 256,
+      "width": 55.45000076293945,
+      "height": 41
+    },
+    "c2": {
+      "x": 204.63999938964844,
+      "y": 256,
+      "width": 54.90999984741211,
+      "height": 41
+    },
+    "c3": {
+      "x": 126.20999908447266,
+      "y": 256,
+      "width": 66.43000030517578,
+      "height": 41
+    }
+  }
+}

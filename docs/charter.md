@@ -112,19 +112,19 @@ the charter and the corpus cannot silently diverge:
 | flex | flex-grow | yes | corpus/flexbox | flex-grow |
 | flex | flex-shrink | yes | corpus/flexbox | flex-shrink |
 | flex | flex-basis | yes | corpus/flexbox | flex-basis |
-| flex | flex-direction | yes | corpus/flexbox | flex-direction |
+| flex | flex-direction | yes | corpus/flexbox, corpus/stress | flex-direction |
 | flex | flex-wrap | yes | corpus/flexbox, corpus/sweep-flexbox | flex-wrap |
-| flex | justify-content | yes | corpus/flexbox, corpus/sweep-flexbox | justify-content |
-| flex | align-items | yes | corpus/flexbox, corpus/sweep-flexbox | align-items |
+| flex | justify-content | yes | corpus/flexbox, corpus/sweep-flexbox, corpus/stress | justify-content |
+| flex | align-items | yes | corpus/flexbox, corpus/sweep-flexbox, corpus/stress | align-items |
 | flex | align-content | yes | corpus/flexbox | align-content |
 | flex | align-self | yes | corpus/flexbox | align-self |
-| flex | order | yes | corpus/flexbox | order |
-| flex | gap | yes | corpus/flexbox, corpus/sweep-flexbox, corpus/sweep-grid | gap |
-| grid | grid-template-columns | yes | corpus/grid, corpus/sweep-grid | grid-template-columns |
+| flex | order | yes | corpus/flexbox, corpus/stress | order |
+| flex | gap | yes | corpus/flexbox, corpus/sweep-flexbox, corpus/sweep-grid, corpus/stress | gap |
+| grid | grid-template-columns | yes | corpus/grid, corpus/sweep-grid, corpus/stress | grid-template-columns |
 | grid | grid-template-rows | yes | corpus/grid | grid-template-rows |
-| grid | fr tracks | yes | corpus/grid, corpus/sweep-grid | fr |
-| grid | minmax() | yes | corpus/grid, corpus/sweep-grid | minmax |
-| grid | repeat() | yes | corpus/grid, corpus/sweep-grid | repeat |
+| grid | fr tracks | yes | corpus/grid, corpus/sweep-grid, corpus/stress | fr |
+| grid | minmax() | yes | corpus/grid, corpus/sweep-grid, corpus/stress | minmax |
+| grid | repeat() | yes | corpus/grid, corpus/sweep-grid, corpus/stress | repeat |
 | grid | grid-auto-flow | yes | corpus/grid | grid-auto-flow |
 | grid | dense | yes | corpus/grid | dense |
 | grid | alignment | yes | corpus/grid | justify-items |
@@ -134,49 +134,49 @@ the charter and the corpus cannot silently diverge:
 | grid | item self-alignment (justify-self/align-self) | yes | corpus/grid | justify-self |
 | value functions | calc() | yes | corpus/calc | calc( |
 | value functions | min() | yes | corpus/calc | min( |
-| value functions | max() | yes | corpus/calc | max( |
+| value functions | max() | yes | corpus/calc, corpus/stress | max( |
 | value functions | clamp() | yes | corpus/calc | clamp( |
-| block/inline | width | yes | corpus/spine, corpus/floats, corpus/positioning | width |
-| block/inline | height | yes | corpus/spine, corpus/positioning | height |
-| block/inline | margin | yes | corpus/spine, corpus/floats, corpus/positioning | margin |
-| block/inline | padding | yes | corpus/spine, corpus/positioning | padding |
-| block/inline | border (width/style/color) | yes | corpus/spine, corpus/flexbox, corpus/border-radius | border |
-| block/inline | border-radius | yes | corpus/border-radius | border-radius |
-| block/inline | background-color | yes | corpus/spine, corpus/border-radius | background-color |
-| block/inline | float | yes | corpus/floats | float |
+| block/inline | width | yes | corpus/spine, corpus/floats, corpus/positioning, corpus/stress | width |
+| block/inline | height | yes | corpus/spine, corpus/positioning, corpus/stress | height |
+| block/inline | margin | yes | corpus/spine, corpus/floats, corpus/positioning, corpus/stress | margin |
+| block/inline | padding | yes | corpus/spine, corpus/positioning, corpus/stress | padding |
+| block/inline | border (width/style/color) | yes | corpus/spine, corpus/flexbox, corpus/border-radius, corpus/stress | border |
+| block/inline | border-radius | yes | corpus/border-radius, corpus/stress | border-radius |
+| block/inline | background-color | yes | corpus/spine, corpus/border-radius, corpus/stress | background-color |
+| block/inline | float | yes | corpus/floats, corpus/stress | float |
 | block/inline | clear | yes | corpus/floats | clear |
-| block/inline | position | yes | corpus/positioning | position |
-| block/inline | z-index | yes | corpus/positioning | z-index |
-| block/inline | box-sizing | yes | corpus/spine | box-sizing |
-| block/inline | inline-block (shrink-to-fit, baseline) | yes | corpus/inline-block | inline-block |
+| block/inline | position | yes | corpus/positioning, corpus/stress | position |
+| block/inline | z-index | yes | corpus/positioning, corpus/stress | z-index |
+| block/inline | box-sizing | yes | corpus/spine, corpus/stress | box-sizing |
+| block/inline | inline-block (shrink-to-fit, baseline) | yes | corpus/inline-block, corpus/stress | inline-block |
 | block/inline | vertical-align | yes | corpus/inline-block | vertical-align |
-| block/inline | min/max width/height | yes | corpus/flexbox | min-width |
+| block/inline | min/max width/height | yes | corpus/flexbox, corpus/stress | min-width |
 | block/inline | overflow (hidden clip / BFC) | yes | corpus/border-radius, corpus/flexbox, corpus/overflow | overflow |
-| text | white-space | yes | corpus/spine, corpus/white-space | white-space |
-| text | letter-spacing | yes | corpus/paint-text, corpus/measure-corpus | letter-spacing |
+| text | white-space | yes | corpus/spine, corpus/white-space, corpus/stress | white-space |
+| text | letter-spacing | yes | corpus/paint-text, corpus/measure-corpus, corpus/stress | letter-spacing |
 | text | text-decoration | yes | corpus/paint-text | text-decoration |
-| text | text-align | yes | corpus/text-align | text-align |
-| writing modes | direction (computed, inherited) | yes | corpus/rtl-layout | direction |
-| writing modes | logical margins/padding (inline-start/end per direction) | yes | corpus/rtl-layout | margin-inline-start |
+| text | text-align | yes | corpus/text-align, corpus/stress | text-align |
+| writing modes | direction (computed, inherited) | yes | corpus/rtl-layout, corpus/stress | direction |
+| writing modes | logical margins/padding (inline-start/end per direction) | yes | corpus/rtl-layout, corpus/stress | margin-inline-start |
 | writing modes | logical insets (inset-inline-start/end, §10.3.7 over-constraint) | yes | corpus/rtl-layout | inset-inline-start |
-| writing modes | text-align start/end used value per direction | yes | corpus/rtl-layout | text-align |
+| writing modes | text-align start/end used value per direction | yes | corpus/rtl-layout, corpus/stress | text-align |
 | writing modes | logical float placement (float:inline-start/end) | yes | corpus/rtl-layout | float:inline-start |
-| writing modes | flex row main axis / column cross axis under rtl | yes | corpus/rtl-layout | flex-direction |
-| writing modes | grid column lines under rtl | yes | corpus/rtl-layout | grid-template-columns |
-| text | color (fill) | yes | corpus/paint-text, corpus/spine | color |
+| writing modes | flex row main axis / column cross axis under rtl | yes | corpus/rtl-layout, corpus/stress | flex-direction |
+| writing modes | grid column lines under rtl | yes | corpus/rtl-layout, corpus/stress | grid-template-columns |
+| text | color (fill) | yes | corpus/paint-text, corpus/spine, corpus/stress | color |
 | text | text-shadow | yes | corpus/box-shadow | text-shadow |
-| paint | box-shadow | yes | corpus/box-shadow | box-shadow |
-| paint | opacity (subtree compositing + stacking context) | yes | corpus/opacity | opacity |
-| font | font-family (fallback tables) | yes | corpus/cross-family, corpus/firefox-track | font-family |
-| font | font-size | yes | corpus/paint-text, corpus/spine | font-size |
-| font | font-weight / font-style | yes | corpus/ua-styles | font-weight |
-| font | line-height | yes | corpus/spine, corpus/paint-text | line-height |
-| pseudo-elements | ::before/::after content | yes | corpus/pseudo-elements | content |
-| cascade | @media at-rule resolution | yes | corpus/media-queries | @media |
+| paint | box-shadow | yes | corpus/box-shadow, corpus/stress | box-shadow |
+| paint | opacity (subtree compositing + stacking context) | yes | corpus/opacity, corpus/stress | opacity |
+| font | font-family (fallback tables) | yes | corpus/cross-family, corpus/firefox-track, corpus/stress | font-family |
+| font | font-size | yes | corpus/paint-text, corpus/spine, corpus/stress | font-size |
+| font | font-weight / font-style | yes | corpus/ua-styles, corpus/stress | font-weight |
+| font | line-height | yes | corpus/spine, corpus/paint-text, corpus/stress | line-height |
+| pseudo-elements | ::before/::after content | yes | corpus/pseudo-elements, corpus/stress | content |
+| cascade | @media at-rule resolution | yes | corpus/media-queries, corpus/stress | @media |
 | cascade | @container container queries (inline-size) | yes | corpus/media-queries | @container |
 | ua-stylesheet | UA defaults at lowest cascade priority | yes | corpus/ua-styles | UA stylesheet |
-| lists | list-style-type markers | yes | corpus/lists, corpus/ua-styles | list-style-type |
-| lists | list-style-position | yes | corpus/lists | list-style-position |
+| lists | list-style-type markers | yes | corpus/lists, corpus/ua-styles, corpus/stress | list-style-type |
+| lists | list-style-position | yes | corpus/lists, corpus/stress | list-style-position |
 
 ### Deferred / Not in v1 (no silent absence)
 

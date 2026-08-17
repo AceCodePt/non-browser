@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-17T12:49:27.493Z",
+  "generatedAt": "2026-08-17T13:46:52.676Z",
   "fixtures": {
     "border-radius/circle-50": {
       "sha256": "c9c1de75e34787220404d3e2c33096a6a882cab941a48bfcc7577185bed7a1d9",
@@ -807,7 +807,7 @@
       "computedStyleCount": 1
     },
     "media-queries/container-gap": {
-      "sha256": "6beb71906cfdbc968059e89c4f0b68a02169b0bf275782d0c695995a69a9b6a6",
+      "sha256": "0033e61335c7efcb6f5f6da8944cc83559bf48e30739b73898bf0605df124b89",
       "width": 600,
       "height": 400,
       "rectCount": 1,
@@ -833,20 +833,6 @@
       "height": 300,
       "rectCount": 1,
       "computedStyleCount": 1
-    },
-    "media-queries/nested-container": {
-      "sha256": "75b8626c24bae0dcf04407c2ac40b00e5539663ea6667e15163de1625f6cc1a7",
-      "width": 600,
-      "height": 400,
-      "rectCount": 2,
-      "computedStyleCount": 2
-    },
-    "media-queries/non-matching-container": {
-      "sha256": "4f3bb801206695b4b6effb07e32589de79fc560994d6b3b64e5dfb27731a9852",
-      "width": 600,
-      "height": 400,
-      "rectCount": 2,
-      "computedStyleCount": 2
     },
     "media-queries/orientation": {
       "sha256": "140f2bce67533d405d99e3f951abb50ab6b46638eaefebfac16a9227825b59d8",
@@ -1232,6 +1218,48 @@
       "height": 140,
       "rectCount": 1,
       "computedStyleCount": 1
+    },
+    "stress/article": {
+      "sha256": "c65e8ea44bb537de5b474d677a98216a3892ee2bd68d649cc111ee759ff10d27",
+      "width": 360,
+      "height": 640,
+      "rectCount": 13,
+      "computedStyleCount": 7
+    },
+    "stress/card-grid": {
+      "sha256": "9971158faf2aff7ba9ecfc85815706a6cb4e3ddc662c0335013f5670f33552ab",
+      "width": 360,
+      "height": 640,
+      "rectCount": 13,
+      "computedStyleCount": 4
+    },
+    "stress/form": {
+      "sha256": "379857dde739db27c61caf4b0ccc093e8d7c6a6fe9e57b3e13fb9a4668ab82c3",
+      "width": 360,
+      "height": 640,
+      "rectCount": 11,
+      "computedStyleCount": 4
+    },
+    "stress/kitchen-sink": {
+      "sha256": "c42a9af30ee7d282f91a567b7348accc4a22ba50b02359cd2d288be297631c31",
+      "width": 320,
+      "height": 568,
+      "rectCount": 59,
+      "computedStyleCount": 12
+    },
+    "stress/navbar": {
+      "sha256": "de0d80fd0bd923d925c2485b209ec5010f5daf61fb1ca6b464abdf61a9ca8870",
+      "width": 360,
+      "height": 640,
+      "rectCount": 16,
+      "computedStyleCount": 5
+    },
+    "stress/rtl-mix": {
+      "sha256": "b53d7034452f857389fbc3a6a604d4d865dec2e2a467c7e7a4c7cccbe374a2e6",
+      "width": 360,
+      "height": 640,
+      "rectCount": 9,
+      "computedStyleCount": 5
     },
     "sweep-flexbox/flex-nowrap-center-baseline": {
       "sha256": "0abf7b4cb044c2cba77cd68c8a2f32051366f895cf0f76ede0dde95918fe2c44",

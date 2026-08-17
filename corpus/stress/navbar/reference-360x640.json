@@ -1,0 +1,122 @@
+{
+  "measureText": {
+    "16px 'Noto Sans' | Acme Corp": 82.28817749023438,
+    "14px 'Noto Sans' | Products": 58.18379211425781,
+    "14px 'Noto Sans' | About": 39.73185729980469,
+    "14px 'Noto Sans' | Sub Alpha": 66.26174926757812,
+    "20px 'Noto Sans' | Welcome": 86.31990051269531,
+    "12px 'Noto Sans' | New": 25.080184936523438
+  },
+  "computedStyle": {
+    "nav": {
+      "position": "fixed",
+      "z-index": "10",
+      "display": "block",
+      "background-color": "rgb(15, 42, 94)",
+      "height": "48px"
+    },
+    "menu": {
+      "display": "flex",
+      "list-style-type": "none",
+      "margin-top": "0px",
+      "padding-left": "0px"
+    },
+    "ma1": {
+      "display": "block",
+      "height": "20px",
+      "line-height": "20px",
+      "color": "rgb(207, 224, 255)"
+    },
+    "sub": {
+      "position": "absolute",
+      "z-index": "12",
+      "display": "block",
+      "background-color": "rgb(255, 255, 255)",
+      "border-top-width": "1px",
+      "top": "34px",
+      "width": "120px"
+    },
+    "badge": {
+      "position": "absolute",
+      "z-index": "5",
+      "background-color": "rgb(232, 240, 255)",
+      "border-radius": "12px",
+      "color": "rgb(15, 42, 94)",
+      "font-weight": "600"
+    }
+  },
+  "rect": {
+    "nav": {
+      "x": 0,
+      "y": 0,
+      "width": 360,
+      "height": 48
+    },
+    "logo": {
+      "x": 16,
+      "y": 13,
+      "width": 86.09375,
+      "height": 20
+    },
+    "menu": {
+      "x": 167.421875,
+      "y": 0,
+      "width": 176.578125,
+      "height": 48
+    },
+    "mi1": {
+      "x": 167.421875,
+      "y": 14,
+      "width": 58.1875,
+      "height": 20
+    },
+    "ma1": {
+      "x": 167.421875,
+      "y": 14,
+      "width": 58.1875,
+      "height": 20
+    },
+    "sub": {
+      "x": 167.421875,
+      "y": 48,
+      "width": 122,
+      "height": 70
+    },
+    "s1": {
+      "x": 168.421875,
+      "y": 55,
+      "width": 120,
+      "height": 28
+    },
+    "s2": {
+      "x": 168.421875,
+      "y": 83,
+      "width": 120,
+      "height": 28
+    },
+    "mi2": {
+      "x": 239.609375,
+      "y": 14,
+      "width": 39.734375,
+      "height": 20
+    },
+    "hero": {
+      "x": 16,
+      "y": 80,
+      "width": 328,
+      "height": 144
+    },
+    "hh": {
+      "x": 41,
+      "y": 105,
+      "width": 278,
+      "height": 26
+    },
+    "hp": {
+      "x": 41,
+      "y": 139,
+      "width": 278,
+      "height": 60
+    }
+  }
+}

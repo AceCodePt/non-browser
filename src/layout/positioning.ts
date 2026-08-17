@@ -205,18 +205,53 @@ export function solveAbsVertical(inp: AbsVerticalInput): AbsVerticalOutput {
 function maxContentOf(el: P5Element, styles: Map<P5Element, ComputedStyle>, refWidth: number): { max: number; min: number } {
   let max = 0;
   let min = 0;
+  const style = styles.get(el);
   const text = collectInlineText(el, styles).trim();
   if (text) {
-    const fontSize = styles.get(el)?.fontSize ?? 16;
-    const family = styles.get(el)?.fontFamily ?? getActiveBrowserConfig().defaultFamily;
-    const ls = styles.get(el)?.letterSpacing ?? 0;
-    max = measureTextWidth(text, fontSize, family, ls);
-    min = Math.max(0, ...text.split(/\s+/).map((w) => measureTextWidth(w, fontSize, family, ls)));
+    const fontSize = style?.fontSize ?? 16;
+    const family = style?.fontFamily ?? getActiveBrowserConfig().defaultFamily;
+    const ls = style?.letterSpacing ?? 0;
+    const weight = style?.fontWeight;
+    const fontStyle = style?.fontStyle;
+    max = measureTextWidth(text, fontSize, family, ls, weight, fontStyle);
+    min = Math.max(0, ...text.split(/\s+/).map((w) => measureTextWidth(w, fontSize, family, ls, weight, fontStyle)));
+  }
+  // A row flex container's intrinsic width is the SUM of its items plus the
+  // gaps between them, not the widest single item — otherwise a positioned
+  // flex menu (e.g. a nav bar) shrink-fits to its longest entry instead of the
+  // whole bar. (css-flexbox-1 §9.4.)
+  if (style && style.display === 'flex' && (style.flexDirection === 'row' || style.flexDirection === 'row-reverse')) {
+    let sumMax = 0;
+    let sumMin = 0;
+    let n = 0;
+    const gap = resolveLength(style.columnGap, refWidth) ?? 0;
+    for (const child of el.childNodes) {
+      if (child.nodeName === '#text' || child.nodeName === '#comment') continue;
+      const cs = styles.get(child as P5Element);
+      if (!cs || cs.display === 'none') continue;
+      if (cs.position === 'absolute' || cs.position === 'fixed') continue;
+      if (n > 0) {
+        sumMax += gap;
+        sumMin += gap;
+      }
+      n++;
+      const w = resolve(cs.width, refWidth);
+      if (w !== null) {
+        sumMax += w;
+        sumMin += w;
+      } else {
+        const sub = maxContentOf(child as P5Element, styles, refWidth);
+        sumMax += sub.max;
+        sumMin += sub.min;
+      }
+    }
+    return { max: Math.max(max, sumMax), min: Math.max(min, sumMin) };
   }
   for (const child of el.childNodes) {
     if (child.nodeName === '#text' || child.nodeName === '#comment') continue;
     const cs = styles.get(child as P5Element);
     if (!cs || cs.display === 'none') continue;
+    if (cs.position === 'absolute' || cs.position === 'fixed') continue;
     const w = resolve(cs.width, refWidth);
     if (w !== null) {
       max = Math.max(max, w);

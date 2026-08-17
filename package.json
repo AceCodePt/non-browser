@@ -33,6 +33,7 @@
     "verify:layout-positioning": "npm run build && node scripts/verify-layout-positioning.mjs",
     "verify:pseudo-elements": "npm run build && node scripts/verify-pseudo-elements.mjs",
     "verify:media-queries": "npm run build && node scripts/verify-media-queries.mjs",
+    "verify:stress": "npm run build && node scripts/verify-stress.mjs",
     "verify:paint-text": "npm run build && node scripts/verify-paint-text.mjs",
     "verify:shadow": "npm run build && node scripts/verify-shadow.mjs",
     "verify:opacity": "npm run build && node scripts/verify-opacity.mjs",

@@ -375,6 +375,13 @@ export interface RootLayout {
   bodyStyle: ComputedStyle;
   floats: FloatManager;
   paints: PaintOp[];
+  /**
+   * The propagated canvas background (css-backgrounds-3 §2.11.1): the root
+   * (html) element's background-color, else the body's when the root is
+   * transparent, else transparent. paint.ts fills the whole viewport with this
+   * before anything else, so a page background reaches the entire canvas.
+   */
+  canvasBackground: Color;
   /** every opacity<1 composite, by id; paint.ts groups ops by PaintOp.group. */
   opacityGroups: Map<number, OpacityGroup>;
   /**
@@ -629,6 +636,12 @@ export function layoutRoot(
   const rects: Record<string, Box> = {};
   collectRects(bodyNode, fm, rects);
 
+  const parentEl = body.parentNode as P5Element | null;
+  const rootStyle = parentEl ? styles.get(parentEl) : undefined;
+  const rootBg = rootStyle ? rootStyle.backgroundColor : undefined;
+  const propagatedBg =
+    rootBg && rootBg.a > 0 ? rootBg : style.backgroundColor.a > 0 ? style.backgroundColor : { r: 255, g: 255, b: 255, a: 1 };
+
   return {
     root: bodyNode,
     bodyHeight: bodyNode.borderHeight,
@@ -637,6 +650,7 @@ export function layoutRoot(
     paints,
     opacityGroups,
     rects,
+    canvasBackground: propagatedBg,
   };
 }
 
