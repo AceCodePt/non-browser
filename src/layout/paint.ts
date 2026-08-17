@@ -15,6 +15,7 @@ import type { Color, Side, Viewport } from './css.js';
 import { resolveEmLength, resolveLength } from './css.js';
 import { hasNonZeroRadius, innerRadii, resolveBorderRadius, traceRoundedRect, type Clip, type ResolvedRadii, type RoundedClip } from './radius.js';
 import type { OpacityGroup, PaintOp, RootLayout, ShadowPaint, TextDecorationPaint, ListMarker } from './block-inline.js';
+import { idOf } from './block-inline.js';
 import type { Box } from '../harness/fixtures.js';
 import { cssFontString, measureTextWidth } from './measure.js';
 import { fontVerticalMetrics, lineAscentContribution, roundedAscent, roundedDescent, type FontVerticalMetrics } from './fontmetrics.js';
@@ -475,8 +476,7 @@ export function paint(
   const scopeItems = buildPaintScene(root);
   renderSequence(canvas, scopeItems(null), factory, viewport, viewportWidth, viewportHeight, fontMetrics, scopeItems);
 
-  const rects: Record<string, Box> = {};
-  collectRects(root, rects);
+  const rects = root.rects;
   const generatedTextRects: Box[] = [];
   collectGeneratedTextRects(root, generatedTextRects);
   const textFragments: Record<string, Box[]> = {};
@@ -647,29 +647,6 @@ function collectListMarkers(root: RootLayout, out: Record<string, string | null>
     for (const child of node.children) walk(child);
   };
   walk(root.root);
-}
-
-function rectFor(node: RootLayout['root']): Box {
-  return { x: node.borderX, y: node.borderY, width: node.borderWidth, height: node.borderHeight };
-}
-
-function idOf(el: RootLayout['root']['element']): string | null {
-  if (!el) return null;
-  const a = el.attrs.find((x) => x.name === 'id');
-  return a ? a.value : null;
-}
-
-function collectRects(root: RootLayout, out: Record<string, Box>): void {
-  const walk = (node: RootLayout['root']): void => {
-    const id = idOf(node.element);
-    if (id && !out[id]) out[id] = rectFor(node);
-    for (const child of node.children) walk(child);
-  };
-  walk(root.root);
-  for (const f of root.floats.floats) {
-    const id = idOf(f.element);
-    if (id && !out[id]) out[id] = { x: f.borderX, y: f.borderY, width: f.borderWidth, height: f.borderHeight };
-  }
 }
 
 /**
