@@ -1,6 +1,6 @@
 {
   "name": "float-left",
-  "note": "A single left float followed by a paragraph. Lines overlapping the float's vertical extent are shortened by the float's margin box; the remaining lines use the full content width. Text pixels are masked (mask.png) because Chrome's Skia rasterizes glyphs slightly differently than @napi-rs/canvas; the line-box geometry itself is verified exactly by layer-3.",
+  "note": "A single left float followed by a paragraph. Lines overlapping the float's vertical extent are shortened by the float's margin box; the remaining lines use the full content width. Text pixels are compared under the text tier (text-mask.png) because Chrome's Skia rasterizes glyphs slightly differently than @napi-rs/canvas; the line-box geometry itself is verified exactly by layer-3.",
   "harvest": {
     "viewport": { "width": 320, "height": 160 },
     "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div style=\"width:280px;background:#f0f0f0;padding:10px\"><div id=\"fl\" style=\"float:left;width:80px;height:56px;background:#4a90d9\"></div><p id=\"p1\" style=\"margin:0;font-family:'Noto Sans';font-size:14px;line-height:20px;color:#333\">The quick brown fox jumps over the lazy dog and runs around the blue box on the left side of this paragraph.</p></div></body></html>",

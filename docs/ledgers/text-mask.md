@@ -78,6 +78,6 @@ share.
 
 The per-corpus verifiers that predate this decision
 (`verify:paint-text`, `verify:layout-{floats,grid,flexbox,positioning}`,
-`verify:firefox`) still blanket-mask their text fragments; porting the tiered
-mechanism there is follow-up. The four-layer diff — the charter §10 claim —
-is what this decision fixes.
+`verify:firefox`) now compare their text under the same tiered mechanism —
+each reports text-region pixels compared, mean/worst ΔE, and text-pixel mask
+share, with only declared masks staying excluded.
