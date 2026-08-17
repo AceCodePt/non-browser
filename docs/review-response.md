@@ -16,7 +16,7 @@ not scheduled), **Disputed** (finding partly rejected).
 | 4 | Coverage-matrix enforcement is substring grep | Confirmed | **Fixed** (paren-precise tokens) |
 | 5 | 26 scratch files committed at root | Confirmed | **Fixed** (deleted + no-op guard); residual hygiene rule not yet in place |
 | 6 | Code-quality debt (layering, cycle, dead code, size) | Confirmed | Box layering **Fixed**; breaker scaffolding and the two-text-engines **Fixed** (Pretext shipped breaker, attempt 3); the rest **Acknowledged** |
-| R1 | flex/grid content sizing letter-spacing drift | Confirmed | **Fixed** (grid now passes `letterSpacing`); factoring scheduled |
+| R1 | flex/grid inline-detection `display:flex` skip-list drift | Confirmed (final) | **Fixed** — grid now skips `display:flex` children like flexbox |
 | R2 | Duplicate media comparator (`compareNum`/`compare`) | Confirmed | **Acknowledged** (single-authority candidate) |
 | R3 | Dead code (`void padBorderH`, `s==='0'`, `minimum` field) | Confirmed | **Fixed** (2 of 3); `minimum` Acknowledged |
 | R4 | Monoliths (`block-inline.ts`, `makeStyle`) | Confirmed | **Acknowledged** |
@@ -169,15 +169,21 @@ as a retraction of the original findings, which drove the fixes.
 
 ### New confirmed problems
 
-- **#1 flex/grid `contentInlineSizes` letter-spacing drift — CONFIRMED, FIXED.**
-  Verified: `flexbox.ts:133` measured with `style.letterSpacing`, `grid.ts:89`
-  without. The divergence is latent (no grid fixture applies letter-spacing to a
-  text item, so the live-Chrome oracle never saw it — the reviewer's point
-  exactly). Fixed: `grid.ts` now passes `style.letterSpacing` in both calls.
-  `verify:layout-grid`, `verify:layout-flexbox`, `verify:sweep` all PASS after
-  the fix. The broader factoring of `contentInlineSizes`/`inlineContribution(s)`
-  into one shared helper is **Acknowledged** as scheduled debt (the two differ
-  in box-sizing handling, so the merge is a real refactor, not a copy-paste).
+- **#1 flex/grid inline-detection drift — CONFIRMED (as revised), FIXED.** The
+  reviewer's first-draft claim (grid omitted `letter-spacing` in `contentInlineSizes`)
+  was retracted in the final review after reading both call sites — and that
+  retraction is current-state accurate: after my earlier pass, `flexbox.ts:142/144`
+  and `grid.ts:98/100` both pass `style.letterSpacing`. The genuine, final
+  divergence is the `hasInlineText`/`collectInlineText` skip-list: flexbox skips a
+  child whose `display` is `block|grid|flex`; grid skipped only `block|grid`, so a
+  `display:flex` child's text was counted as inline content under a grid but not
+  under a flex container. Fixed: `grid.ts` now skips `display:flex` children too,
+  matching flexbox. Latent (no corpus fixture nests a flex child with inline text
+  inside a grid, so the oracle never saw it). `verify:layout-grid`,
+  `verify:layout-flexbox`, `verify:sweep` PASS after the fix. The deeper factoring
+  of the now-identical helpers into one shared function is **Acknowledged** as
+  scheduled debt (three `collectInlineText` variants exist; block-inline's carries
+  `::before`/`::after` and `list-item`, so they do not trivially merge).
 - **#2 duplicate media comparator — CONFIRMED.** `compareNum` (`cascade/media.ts:223`)
   and `compare` (`cascade/phases/media-queries.ts:111`) are the same seven-case
   switch. **Acknowledged** — candidate for one comparator under
@@ -205,13 +211,13 @@ as a retraction of the original findings, which drove the fixes.
 
 ### Bottom line on the rewrite
 
-The rewrite is the better review: code-grounded, and its headline finding — a
-latent letter-spacing divergence between flex and grid content sizing — is a real
-bug the oracle hadn't caught, now fixed. Its structural thesis ("duplication, not
-cleverness") is accepted; the concrete dead code is cleared, and the remaining
-duplication (media comparator, grid minimum field, the two fill loops' shared
-risk, the import cycle) is acknowledged with owners or scheduled with
-`coherence-generalize`.
+The rewrite is the better review: code-grounded, and its headline finding — the
+flex/grid inline-detection skip-list divergence — is a real latent bug the oracle
+hadn't caught, now fixed (grid matches flexbox on `display:flex` children). Its
+structural thesis ("duplication, not cleverness") is accepted; the concrete dead
+code is cleared, and the remaining duplication (media comparator, grid minimum
+field, the two fill loops' shared risk, the import cycle) is acknowledged with
+owners or scheduled with `coherence-generalize`.
 
 ## Honest residuals (updated after the rewrite)
 

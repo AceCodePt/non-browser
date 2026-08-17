@@ -65,7 +65,7 @@ function hasInlineText(el: P5Element, styles: Map<P5Element, ComputedStyle>): bo
       if (/\S/.test(child.value)) return true;
     } else if (isElementNode(child)) {
       const s = styles.get(child);
-      if (s && (s.display === 'block' || s.display === 'grid')) continue;
+      if (s && (s.display === 'block' || s.display === 'grid' || s.display === 'flex')) continue;
       return true;
     }
   }
@@ -79,7 +79,7 @@ function collectInlineText(el: P5Element, styles: Map<P5Element, ComputedStyle>)
       out += child.value;
     } else if (isElementNode(child)) {
       const s = styles.get(child);
-      if (s && (s.display === 'block' || s.display === 'grid')) continue;
+      if (s && (s.display === 'block' || s.display === 'grid' || s.display === 'flex')) continue;
       out += collectInlineText(child, styles);
     }
   }
