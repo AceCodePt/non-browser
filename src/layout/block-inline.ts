@@ -1135,11 +1135,17 @@ function layoutFloat(
   const bT = style.borderWidth.top;
   const bB = style.borderWidth.bottom;
 
+  const floatHasBlocks = hasBlockLevelChild(el, styles);
   const specW = resolveLength(style.width, contentWidth, viewport);
   const padBorderH = padL + padR + bL + bR;
   let borderBoxWidth: number;
   if (specW !== null) {
     borderBoxWidth = style.boxSizing === 'border-box' ? specW : specW + padBorderH;
+  } else if (floatHasBlocks) {
+    // Auto-width float with block-level content: approximate shrink-to-fit with
+    // the available inline width. A full max-content pass over block descendants
+    // is future work; explicit widths — the common case — are exact.
+    borderBoxWidth = Math.max(0, contentWidth - marginL - marginR);
   } else {
     const text = collectInlineText(el, styles).trim();
     const ls = style.letterSpacing;
@@ -1153,10 +1159,24 @@ function layoutFloat(
   }
   const floatContentWidth = Math.max(0, borderBoxWidth - bL - bR - padL - padR);
 
-  // Float content lays out in its own BFC (a fresh float list).
+  // Float content lays out in its own BFC (a fresh float list). Block-level
+  // children (including nested floats) go through the normal block-children
+  // path so they are sized, positioned, painted, and get rects; inline content
+  // uses the line layouter. A measurement pass sizes the float box here; the
+  // real positioned pass runs after placement (below) so the children paint
+  // above the float's own background.
   let contentHeight = 0;
   let lines: LineBox[] = [];
-  if (hasInlineContent(el, styles)) {
+  if (floatHasBlocks) {
+    const measFm = new FloatManager(0, floatContentWidth);
+    const measState: LayoutBlockInput = { fm: measFm, contentX: 0, contentWidth: floatContentWidth, y: 0, prevBottomMargin: 0, cbDirection: style.direction };
+    const snapshot = paints.length;
+    const meas = layoutBlockChildren(el, measState, styles, paints, nextOrder, viewport);
+    paints.length = snapshot;
+    contentHeight = meas.height;
+    const lowest = measFm.lowestFloatBottom('both');
+    if (Number.isFinite(lowest)) contentHeight = Math.max(contentHeight, lowest);
+  } else if (hasInlineContent(el, styles)) {
     const lineRes = layoutTextLines({
       text: collectInlineText(el, styles),
       x: 0,
@@ -1257,6 +1277,15 @@ function layoutFloat(
     });
   }
   pushBorders(paints, nextOrder, floatKey, style, placed.borderX, placed.borderY, borderBoxWidth, borderHeight);
+  if (floatHasBlocks) {
+    // Real, positioned block-children layout: at the placed content origin and
+    // after the float's background/border ops, so children paint on top. Their
+    // rects flow into the tree via node.children (collectRects walks it).
+    const childFm = new FloatManager(node.contentX, floatContentWidth);
+    const childState: LayoutBlockInput = { fm: childFm, contentX: node.contentX, contentWidth: floatContentWidth, y: node.contentY, prevBottomMargin: 0, cbDirection: style.direction };
+    const real = layoutBlockChildren(el, childState, styles, paints, nextOrder, viewport);
+    node.children.push(...real.nodes);
+  }
   if (lines.length > 0) {
     pushPaintOp(paints, {
       key: inFlowPaintKey(STEP_INLINE),
@@ -1803,6 +1832,33 @@ function isInlineBoxStyle(s: ComputedStyle): boolean {
   return s.display === 'inline-block' && s.float === 'none' && s.position === 'static';
 }
 
+/**
+ * Render-scoped memoization for atomic (inline-block) intrinsic sizing and
+ * measurement. Sizing an inline-block whose `width` is auto measures its whole
+ * subtree, and an atomic is measured once for line-breaking and again for
+ * placement — so with nested inline-blocks each level re-measures every level
+ * below it, twice, giving O(2^depth) work. Deeply nested inline-blocks (a real
+ * WPT flexbox reference, or the progressive nesting a stray self-closing
+ * `<div/>` produces in the HTML parser) then hang the engine outright.
+ *
+ * Both `atomicBoxSize` and `measureAtomic` are pure functions of
+ * `(element, width)` for a fixed render (styles/viewport are constant), so
+ * caching by width collapses the exponential to linear. Element objects are
+ * unique per `renderHtml` (each call re-parses), so a WeakMap keyed by element
+ * is inherently render-scoped and never yields a stale cross-render result.
+ */
+const atomicSizeMemo = new WeakMap<P5Element, Map<number, { borderWidth: number; contentWidth: number }>>();
+const measureAtomicMemo = new WeakMap<P5Element, Map<number, { borderHeight: number; baselineOffset: number | null }>>();
+
+function memoMapFor<V>(wm: WeakMap<P5Element, Map<number, V>>, el: P5Element): Map<number, V> {
+  let m = wm.get(el);
+  if (!m) {
+    m = new Map<number, V>();
+    wm.set(el, m);
+  }
+  return m;
+}
+
 function atomicBoxSize(
   el: P5Element,
   style: ComputedStyle,
@@ -1810,6 +1866,9 @@ function atomicBoxSize(
   refWidth: number,
   viewport: Viewport | undefined,
 ): { borderWidth: number; contentWidth: number } {
+  const memo = memoMapFor(atomicSizeMemo, el);
+  const hit = memo.get(refWidth);
+  if (hit) return hit;
   const padL = resolveLength(style.padding.left, refWidth, viewport) ?? 0;
   const padR = resolveLength(style.padding.right, refWidth, viewport) ?? 0;
   const bL = style.borderWidth.left;
@@ -1832,7 +1891,9 @@ function atomicBoxSize(
   const maxW = resolveLength(style.maxWidth, refWidth, viewport);
   if (minW !== null) borderWidth = Math.max(borderWidth, minW);
   if (maxW !== null) borderWidth = Math.min(borderWidth, maxW);
-  return { borderWidth, contentWidth: Math.max(0, borderWidth - padBorderH) };
+  const result = { borderWidth, contentWidth: Math.max(0, borderWidth - padBorderH) };
+  memo.set(refWidth, result);
+  return result;
 }
 
 function piecesContentSizes(pieces: InlinePiece[], style: ComputedStyle, ws: WhiteSpaceValue): { min: number; max: number } {
@@ -2042,6 +2103,14 @@ function measureAtomic(
   viewport: Viewport | undefined,
 ): MeasuredAtomic {
   const s = piece.style;
+  // Measurement is a throwaway layout (its paints are discarded below) that
+  // depends only on (element, contentWidth); memoize to avoid re-measuring the
+  // subtree once per line-break trial and once per placement (see
+  // atomicSizeMemo). Only the height/baseline are cached; the returned `piece`
+  // is the caller's current piece.
+  const memo = memoMapFor(measureAtomicMemo, piece.el);
+  const hit = memo.get(piece.contentWidth);
+  if (hit) return { piece, borderHeight: hit.borderHeight, baselineOffset: hit.baselineOffset };
   const padL = resolveLength(s.padding.left, piece.contentWidth, viewport) ?? 0;
   const padT = resolveLength(s.padding.top, piece.contentWidth, viewport) ?? 0;
   const bL = s.borderWidth.left;
@@ -2064,7 +2133,9 @@ function measureAtomic(
     viewport,
   );
   paints.length = snapshot;
-  return { piece, borderHeight: node.borderHeight, baselineOffset: atomicBaselineOffset(node, s) };
+  const measured = { borderHeight: node.borderHeight, baselineOffset: atomicBaselineOffset(node, s) };
+  memo.set(piece.contentWidth, measured);
+  return { piece, borderHeight: measured.borderHeight, baselineOffset: measured.baselineOffset };
 }
 
 /**
