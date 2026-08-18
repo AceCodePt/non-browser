@@ -1,6 +1,6 @@
 # Layers Ledger — selective render entry functions
 
-- Generated: 2026-08-18T17:51:12.022Z
+- Generated: 2026-08-18T18:25:07.095Z
 - Gate: `node scripts/verify-layers.mjs` (session-idle `*layers*` case)
 - Coverage: every corpus fixture with `harvest.html` + a viewport; each selective layer must equal the same layer from a full `renderHtml` call byte-identical.
 - Method: `computedStylesOf` = prepare (parse+cascade+resolveStyles), `rectsOf` = prepare+layout, `renderHtml` = prepare+layout+paint. The three entry calls run back-to-back per pass; layout = rectsOf − styles-only and paint = renderHtml − rectsOf are attributed within the same pass so noise shifts all three equally, and the minimum of 9 passes wins for each quantity. Milliseconds.
@@ -9,9 +9,9 @@
 
 | fixture | cascade ms | layout ms | paint ms | full ms |
 |---|---|---|---|---|
-| basic-text | 0.453 | -8.492 | -0.528 | 11.424 |
-| boxes | 0.395 | 0.305 | 3.763 | 8.776 |
-| inline-styles | 0.523 | -5.335 | 17.346 | 23.219 |
-| replaced-boxes | 0.56 | -1.449 | 4.479 | 10.167 |
-| wrapping | 0.426 | -2.901 | 2.727 | 10.23 |
+| basic-text | 0.592 | -1.244 | 6.206 | 20.24 |
+| boxes | 0.424 | -6.319 | 3.622 | 5.126 |
+| inline-styles | 0.615 | -7.661 | 10.7 | 19.401 |
+| replaced-boxes | 0.461 | -24.225 | 4.071 | 6.111 |
+| wrapping | 0.345 | 0.885 | 4.633 | 10.229 |
 
