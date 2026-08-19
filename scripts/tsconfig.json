@@ -1,0 +1,19 @@
+{
+  "//": "Type-checks the engine-only verify gates and their shared harness (npm run typecheck:scripts). checkJs brings the src/ strict safety net to the .mjs gates that pin the engine's behavior, without converting all of scripts/ at once. renderHtml options and RenderOutput fields are checked against dist/*.d.ts, so a mistyped option or a wrong rects field is caught before runtime. Add new engine-only gates and lib helpers to `include` as they land.",
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "noEmit": true,
+    "allowJs": true,
+    "checkJs": true,
+    "declaration": false,
+    "sourceMap": false
+  },
+  "include": [
+    "lib/render.mjs",
+    "verify-comments.mjs",
+    "verify-float-content.mjs",
+    "verify-atomic-perf.mjs"
+  ],
+  "exclude": []
+}

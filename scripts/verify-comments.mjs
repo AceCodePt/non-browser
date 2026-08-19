@@ -19,17 +19,10 @@
  */
 
 import assert from 'node:assert/strict';
-import { resolve } from 'node:path';
-import { renderHtml } from '../dist/index.js';
+import { render as renderAt, errorMessage } from './lib/render.mjs';
 
-const FONT_FILE = process.env.FONT_FILE ?? resolve('fonts/HackNerdFont-Regular.ttf');
-const FONT_FAMILY = process.env.FONT_FAMILY ?? 'Hack Nerd Font';
-
-const doc = (body, style = '') =>
-  `<!doctype html><html><head><style>body{margin:0;font:16px '${FONT_FAMILY}'}${style}</style></head><body>${body}</body></html>`;
-
-const render = (body, style) =>
-  renderHtml(doc(body, style), { width: 400, height: 300, fontFamily: FONT_FAMILY, fontFile: FONT_FILE });
+/** @param {string} body @param {string} [style] */
+const render = (body, style = '') => renderAt(body, { width: 400, height: 300, style });
 
 // Each case: [name, withoutComments, withComments, style]. The two markups must
 // lay out identically — the only difference is interleaved comment nodes.
@@ -61,6 +54,7 @@ const cases = [
 ];
 
 let pass = 0;
+/** @type {string[]} */
 const fails = [];
 
 // Property 1 + 2 over the matrix.
@@ -70,7 +64,7 @@ for (const [name, plain, commented, style] of cases) {
     base = render(plain, style);
     withc = render(commented, style);
   } catch (e) {
-    fails.push(`${name}: threw ${e.message}`);
+    fails.push(`${name}: threw ${errorMessage(e)}`);
     continue;
   }
   try {
@@ -86,7 +80,7 @@ try {
   render(`<!-- a comment --><p id="a">hi</p>`);
   pass++;
 } catch (e) {
-  fails.push(`original repro still throws: ${e.message}`);
+  fails.push(`original repro still throws: ${errorMessage(e)}`);
 }
 
 const total = cases.length + 1;
