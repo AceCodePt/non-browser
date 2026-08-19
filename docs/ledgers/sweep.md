@@ -12,7 +12,7 @@ Programmatic breadth for the charter §11 coverage matrix: `scripts/generate-swe
 
 ## Latest Run
 
-- Generated: 2026-08-19T00:08:09.233Z
+- Generated: 2026-08-19T00:42:10.293Z
 - Fixtures swept: 110
 - Passing: 110
 - Documented divergences (typed gaps, still diverging): 0
