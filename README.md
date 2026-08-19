@@ -82,7 +82,7 @@ const out = renderHtml(html, {
 });
 
 out.rgba           // layer 4: the painted page (PNG-encoded buffer)
-out.rects          // layer 3: per-id border-box rects (getBoundingClientRect)
+out.rects          // layer 3: per-id border-box rects (getBoundingClientRect; unrendered ids -> all-zero)
 out.computedStyles // layer 2: computed-style strings (getComputedStyle)
 // layer 1: text widths come from the same measurement engine the paint used
 ```
@@ -109,8 +109,11 @@ else under `src/` is internal.
   `fontFile`, which name the font single-face measure/paint use. Chrome is the
   default and the primary golden corpus.
 - **Output** — `rgba` is a **PNG-encoded `Buffer`** of the painted viewport;
-  `rects` maps every `id` in the input to that element's **border-box** rect
-  (`getBoundingClientRect` semantics, fractional-safe); `computedStyles` holds
+  `rects` maps every `id` present in the input DOM to that element's
+  **border-box** rect (`getBoundingClientRect` semantics, fractional-safe);
+  elements that are not rendered — `display:none` and their descendants, and
+  id'd `script`/`style` elements — map to an all-zero rect, matching
+  `getBoundingClientRect`; `computedStyles` holds
   layer-2 strings for the `computedStyle` specs you passed; `generatedTextRects`,
   `textFragments`, and `listMarkers` are the layer-1/3/4 extras the parity
   harness compares against the oracle. Passing `media` drives `@media`
@@ -204,7 +207,9 @@ reading:
   `corpus/opacity`, `corpus/box-shadow`, `corpus/rtl-layout`,
   `corpus/media-queries`, and the page-scale `corpus/stress`; see `verify:calc`,
   `verify:opacity`, `verify:shadow`, `verify:rtl`, `verify:media-queries`,
-  `verify:stress`). A property-coverage audit
+  `verify:stress`). The total rect map — every input id yields a rect, with
+  all-zero rects for unrendered ids — is itself gated by `verify:rect-contract`.
+  A property-coverage audit
   (`src/layout/property-coverage.ts`) reports which declared CSS properties the
   engine recognizes vs silently ignores, so unsupported properties can't slip
   past unseen. Tables and image decoding are out of v1 (charter §3).
