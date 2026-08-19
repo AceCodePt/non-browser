@@ -182,7 +182,7 @@ export function resolveStyles(
       whiteSpace: style.whiteSpace,
     };
     for (const child of el.childNodes) {
-      if (child.nodeName !== '#text') {
+      if (child.nodeName !== '#text' && child.nodeName !== '#comment') {
         const name = (child as P5Element).nodeName;
         if (name === 'style' || name === 'script' || name === 'head' || name === 'title') continue;
         walk(child as P5Element, childDefaults);
