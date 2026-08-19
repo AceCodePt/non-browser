@@ -15,21 +15,17 @@
  * the pre-fix engine could not complete depth 14 in two minutes.
  */
 import assert from 'node:assert/strict';
-import { resolve } from 'node:path';
-import { renderHtml } from '../dist/index.js';
+import { render, errorMessage } from './lib/render.mjs';
 
-const FONT_FILE = process.env.FONT_FILE ?? resolve('fonts/HackNerdFont-Regular.ttf');
-const FONT_FAMILY = process.env.FONT_FAMILY ?? 'Hack Nerd Font';
 const BUDGET_MS = Number(process.env.ATOMIC_BUDGET_MS ?? 5000); // generous; pre-fix hung > 120s at depth 14
-const render = (body) =>
-  renderHtml(`<!doctype html><html><head><style>body{margin:0;font:16px '${FONT_FAMILY}'}</style></head><body>${body}</body></html>`,
-    { width: 800, height: 600, fontFamily: FONT_FAMILY, fontFile: FONT_FILE });
 
 let pass = 0;
+/** @type {string[]} */
 const fails = [];
+/** @param {string} name @param {string} body */
 const timed = (name, body) => {
   const t = Date.now();
-  try { render(body); } catch (e) { fails.push(`${name}: threw ${e.message}`); return; }
+  try { render(body); } catch (e) { fails.push(`${name}: threw ${errorMessage(e)}`); return; }
   const ms = Date.now() - t;
   if (ms > BUDGET_MS) fails.push(`${name}: took ${ms}ms > ${BUDGET_MS}ms budget (exponential regression?)`);
   else { pass++; console.log(`  ${name}: ${ms}ms`); }
@@ -50,7 +46,7 @@ try {
   const r = render(`<span id="o" style="display:inline-block"><span id="i" style="display:inline-block;width:30px;height:12px"></span></span>`).rects;
   assert.ok(r.o && r.i && r.i.width === 30, 'nested inline-block rects wrong');
   pass++;
-} catch (e) { fails.push(`nested rect correctness: ${e.message}`); }
+} catch (e) { fails.push(`nested rect correctness: ${errorMessage(e)}`); }
 
 for (const f of fails) console.log(`FAIL ${f}`);
 console.log(`${pass}/${pass + fails.length} atomic-perf checks passed`);
