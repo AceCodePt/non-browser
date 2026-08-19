@@ -19,8 +19,11 @@ fixture with the engine and collects the same quantities from headless Chrome
   non-text pixels; text pixels compared under the tiered text-region tolerance
   (`tolerances.json` v2 — see `text-mask.md`).
 
-All numbers below are from a fresh run on `main`
-(2026-08-14, node 26.7.0 / icu 78.3, Chrome 151.0.7922.34, Playwright).
+All four-layer spine fixture numbers below are the latest recorded run
+(2026-08-14, node 26.7.0 / icu 78.3, Chrome 151.0.7922.34, Playwright); the
+full `npm run verify` (now including `verify:stress`) re-ran green on
+2026-08-17, exit 0, with the fresh four-layer and stress reports under
+`docs/reports/`.
 
 ## Latest Run
 

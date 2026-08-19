@@ -24,6 +24,7 @@ npm run verify        # engine vs real Chrome, four layers, sub-pixel tolerances
 | Box geometry (110-fixture flex/grid sweep) | **110/110 pass, rect max Δ 0.0104px** | every swept combo within the ≤ 0.5px band |
 | Computed style | exact string equality, 0 mismatches | `getComputedStyle` identical |
 | Screenshot, non-text pixels | **0 exceeding** on spine + layout/paint suites (ΔE ≤ 2, ≤ 1%) | paint matches Chrome on everything that isn't glyph-ink |
+| Stress corpus (page-scale, multi-viewport) | **6 fixtures, 13 fixture×viewport renders, four layers PASS** | `corpus/stress` packed kitchen-sink pages hold 100% parity at mobile + desktop |
 | Render speed | **2.1–3.6× faster than Chrome's own render** (engine takes 0.28–0.48× of Chrome's time) | engine beats Chrome rendering the same HTML |
 
 Every number above is a real measurement against headless Chrome, not an
@@ -33,15 +34,17 @@ estimate. The last section tells you exactly what they do *not* prove.
 
 The engine's parity against Chrome is not claimed — it is measured on every
 `verify:all` run, per fixture, per layer, against live headless Chrome. The
-latest full run (2026-08-17) wrote **22 separate reports covering every corpus
-fixture** and exited **0 (all green)**. Collapsed to one number per layer:
+latest full run (2026-08-17) wrote a report per verify script — spine,
+sweep, cross-family, UA styles, and page-scale stress — covering every corpus
+fixture, and exited **0 (all green)**. Collapsed to one number per layer:
 
 | Layer | Fixtures | Result | Parity |
 | --- | --- | --- | --- |
 | 1 · Text measurement | 96 strings pass-corpus | mean Δ 0.0025px, worst 0.0300px (≤ 0.5px) | **100%** |
 | 2 · Computed style | all fixture props | exact string equality, 0 mismatches | **100%** |
 | 3 · Box geometry (rect) | every box in every fixture | 0 FAIL rows; spine/sweep/layout/paint max Δ 0.0000–0.0104px | **100%** |
-| 4 · Paint, non-text pixels | every screenshot | 0 exceeding above ΔE 2 / 1%, 263 PASS rows | **100%** |
+| 4 · Paint, non-text pixels | every screenshot | 0 exceeding above ΔE 2 / 1%, all suites (spine + sweep + layout + stress) PASS | **100%** |
+| Stress corpus | 6 fixtures, 13 fixture×viewport renders | 0.0000–0.0231px rect Δ; non-text screenshot ≤ 1% exceeding; text under tiered 97% tier | **100%** |
 | Line breaking (breaker) | 22 fixtures | 21/22 at exact Chrome line-count parity (95.5%); 1 declared divergence | **95%*** |
 
 `*` the one breaker divergence (`long-word-default`, a Chrome/engine word-break
@@ -147,7 +150,9 @@ grid, text scripts (Latin/CJK/Thai/Arabic/emoji), white-space modes, text
 breaking (Pretext breaker, `corpus/breaker`), RTL box layout, value functions
 (`calc()`/`min()`/`max()`/`clamp()`), box-shadows, opacity compositing, lists,
 pseudo-elements, media queries incl. `@container` (inline-size), overflow
-clipping, and a 110-fixture generated sweep.
+clipping, a 110-fixture generated sweep, and a page-scale stress corpus
+(`corpus/stress`: kitchen-sink, navbar, card-grid, form, article, RTL/LTR mix)
+verified at small + desktop viewports.
 
 ### 2. Browser vs browser — the cross-browser probe (`npm run probe:browser-gap`)
 
@@ -197,8 +202,9 @@ reading:
   box-shadow/text-shadow paint, `direction: rtl` box layout, and `@container`
   queries (inline-size) are implemented and corpus-verified (`corpus/calc`,
   `corpus/opacity`, `corpus/box-shadow`, `corpus/rtl-layout`,
-  `corpus/media-queries`; see `verify:calc`, `verify:opacity`, `verify:shadow`,
-  `verify:rtl`, `verify:media-queries`). A property-coverage audit
+  `corpus/media-queries`, and the page-scale `corpus/stress`; see `verify:calc`,
+  `verify:opacity`, `verify:shadow`, `verify:rtl`, `verify:media-queries`,
+  `verify:stress`). A property-coverage audit
   (`src/layout/property-coverage.ts`) reports which declared CSS properties the
   engine recognizes vs silently ignores, so unsupported properties can't slip
   past unseen. Tables and image decoding are out of v1 (charter §3).
