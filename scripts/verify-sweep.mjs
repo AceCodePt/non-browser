@@ -61,7 +61,7 @@ try {
       await page.setContent(h.html);
       await page.evaluate(() => document.fonts.ready);
 
-      const referenceRects = {};
+      /** @type {Record<string, any>} */ const referenceRects = {};
       for (const id of h.rects ?? []) {
         referenceRects[id] = await page.$eval(`#${id}`, (el) => {
           const r = el.getBoundingClientRect();
@@ -112,10 +112,10 @@ try {
         height,
       };
 
-      const result = evaluateFixture(fixture);
+      const result = evaluateFixture(/** @type {import('../dist/harness/fixtures.js').Fixture} */ (fixture));
       results.push(result);
-      const rectLayer = result.layers.rect;
-      const shotLayer = result.layers.screenshot;
+      const rectLayer = /** @type {import('../dist/harness/evaluate.js').RectLayerResult} */ (result.layers.rect);
+      const shotLayer = /** @type {import('../dist/harness/evaluate.js').ScreenshotLayerResult} */ (result.layers.screenshot);
       const gapLayers = ['rect', 'screenshot'].filter((l) => isGapExpectation(raw.expected?.[l]));
       rows.push({
         fixture: name,

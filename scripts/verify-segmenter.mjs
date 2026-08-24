@@ -93,7 +93,7 @@ for (const { raw } of fixtureList) {
     try {
       skiaCanvasFactory.registerFont(f.file, f.family);
     } catch (err) {
-      failFast(`font registration failed for '${f.family}': ${err.message}`);
+      failFast(`font registration failed for '${f.family}': ${(/** @type {Error} */ (err)).message}`);
     }
     registeredFamilies.add(f.family);
   }
@@ -162,8 +162,8 @@ try {
       res.end('not found');
     }
   });
-  await new Promise((r) => server.listen(0, '127.0.0.1', r));
-  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  await new Promise((r) => server.listen(0, '127.0.0.1', () => r()));
+  const baseUrl = `http://127.0.0.1:${(/** @type {import('net').AddressInfo} */ (server.address())).port}`;
   await page.goto(`${baseUrl}/`);
 
   const layoutRequests = fixtureList.flatMap(({ raw }) =>

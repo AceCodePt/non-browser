@@ -149,7 +149,7 @@ try {
     await page.evaluate(() => document.fonts.ready);
 
     // --- Chrome oracle quantities ---
-    const referenceRects = {};
+    /** @type {Record<string, any>} */ const referenceRects = {};
     for (const id of h.rects ?? []) {
       referenceRects[id] = await page.$eval(`#${id}`, (el) => {
         const r = el.getBoundingClientRect();
@@ -157,7 +157,7 @@ try {
       });
     }
 
-    const referenceMeasure = {};
+    /** @type {Record<string, any>} */ const referenceMeasure = {};
     if (h.measureText) {
       for (const { text, font } of h.measureText) {
         referenceMeasure[`${font} | ${text}`] = await page.evaluate(
@@ -171,7 +171,7 @@ try {
       }
     }
 
-    const referenceComputed = {};
+    /** @type {Record<string, any>} */ const referenceComputed = {};
     if (h.computedStyle) {
       for (const { id, props } of h.computedStyle) {
         referenceComputed[id] = await page.evaluate(
@@ -224,7 +224,7 @@ try {
 
     const candidateRects = out.rects;
     const candidateComputed = out.computedStyles;
-    const candidateMeasure = {};
+    /** @type {Record<string, any>} */ const candidateMeasure = {};
     if (h.measureText) {
       const { measureTextWidth } = await import('../dist/layout/measure.js');
       for (const { text, font } of h.measureText) {

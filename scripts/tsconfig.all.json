@@ -1,0 +1,21 @@
+{
+  "//": "Broad type-check for the remaining scripts (npm run typecheck:scripts runs this after the strict gate config). checkJs against dist/*.d.ts catches the errors that matter for test code — a wrong renderHtml/BrowserConfig option, a wrong harness field or property — across the oracle/bench/generator scripts. noImplicitAny and strictNullChecks are relaxed here (the strict tier in tsconfig.json covers the engine-only gates): the oracle scripts run untyped browser-context code inside page.evaluate and build result objects dynamically, where per-parameter annotations and DOM null-guards are noise rather than signal. As scripts are hardened they can graduate to the strict tier.",
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "noEmit": true,
+    "allowJs": true,
+    "checkJs": true,
+    "declaration": false,
+    "sourceMap": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false
+  },
+  "include": ["**/*.mjs"],
+  "exclude": [
+    "lib/render.mjs",
+    "verify-comments.mjs",
+    "verify-float-content.mjs",
+    "verify-atomic-perf.mjs"
+  ]
+}

@@ -51,7 +51,7 @@ try {
     await page.setContent(h.html);
     await page.evaluate(() => document.fonts.ready);
 
-    const referenceRects = {};
+    /** @type {Record<string, any>} */ const referenceRects = {};
     for (const id of h.rects ?? []) {
       referenceRects[id] = await page.$eval(`#${id}`, (el) => {
         const r = el.getBoundingClientRect();
@@ -97,7 +97,7 @@ try {
       height,
     };
 
-    results.push(evaluateFixture(fixture));
+    results.push(evaluateFixture(/** @type {import('../dist/harness/fixtures.js').Fixture} */ (fixture)));
     console.log(`verified ${name}: ${width}x${height}`);
   }
 } finally {

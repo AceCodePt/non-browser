@@ -98,19 +98,19 @@ async function measureChromeRender(browser, raw) {
   const h = raw.harvest;
   const page = await browser.newPage({ viewport: { width: h.viewport.width, height: h.viewport.height } });
   await page.addInitScript(() => {
-    window.__paints = [];
+    (/** @type {any} */ (window)).__paints = [];
     try {
       new PerformanceObserver((list) => {
-        for (const e of list.getEntries()) window.__paints.push({ name: e.name, startTime: e.startTime });
+        for (const e of list.getEntries()) (/** @type {any} */ (window)).__paints.push({ name: e.name, startTime: e.startTime });
       }).observe({ type: 'paint' });
     } catch (e) {
-      window.__paints.push({ name: 'observer-error', startTime: 0 });
+      (/** @type {any} */ (window)).__paints.push({ name: 'observer-error', startTime: 0 });
     }
   });
   await page.goto('data:text/html;charset=utf-8,' + encodeURIComponent(h.html));
   await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(50);
-  const paints = await page.evaluate(() => window.__paints);
+  const paints = await page.evaluate(() => (/** @type {any} */ (window)).__paints);
   const fcp = paints.find((e) => e.name === 'first-contentful-paint') ?? paints.find((e) => e.name === 'first-paint');
   await page.close();
   if (!fcp) throw new Error(`fixture ${raw.name}: no paint timing entry observed`);

@@ -78,7 +78,7 @@ try {
     await page.setContent(h.html);
     await page.evaluate(() => document.fonts.ready);
 
-    const referenceRects = {};
+    /** @type {Record<string, any>} */ const referenceRects = {};
     for (const id of h.rects ?? []) {
       referenceRects[id] = await page.$eval(`#${id}`, (el) => {
         const r = el.getBoundingClientRect();
@@ -86,7 +86,7 @@ try {
       });
     }
 
-    const referenceComputed = {};
+    /** @type {Record<string, any>} */ const referenceComputed = {};
     if (h.computedStyle) {
       for (const { id, props } of h.computedStyle) {
         referenceComputed[id] = await page.evaluate(

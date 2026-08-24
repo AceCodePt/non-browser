@@ -67,7 +67,7 @@ try {
     const viewport = combo.viewport;
     const page = await browser.newPage({ viewport: { width: viewport.width, height: viewport.height } });
     await page.setContent(combo.html);
-    const referenceRects = {};
+    /** @type {Record<string, any>} */ const referenceRects = {};
     for (const id of combo.rects) {
       referenceRects[id] = await page.$eval(`#${id}`, (el) => {
         const r = el.getBoundingClientRect();
@@ -100,9 +100,9 @@ try {
       width: refImg.width,
       height: refImg.height,
     };
-    const harness = evaluateFixture(fixture);
-    const rectLayer = harness.layers.rect;
-    const shotLayer = harness.layers.screenshot;
+    const harness = evaluateFixture(/** @type {import('../dist/harness/fixtures.js').Fixture} */ (fixture));
+    const rectLayer = /** @type {import('../dist/harness/evaluate.js').RectLayerResult} */ (harness.layers.rect);
+    const shotLayer = /** @type {import('../dist/harness/evaluate.js').ScreenshotLayerResult} */ (harness.layers.screenshot);
 
     const expected = { measureText: 'pass', computedStyle: 'pass' };
     expected.rect = rectLayer.pass ? 'pass' : gapFor(combo.label);

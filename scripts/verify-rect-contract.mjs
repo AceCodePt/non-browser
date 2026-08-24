@@ -43,7 +43,7 @@ let out;
 try {
   out = renderHtml(HTML, opts);
 } catch (err) {
-  console.error(`FAIL: renderHtml threw — 'no rect collected' must not fire for DOM-present ids: ${err.message}`);
+  console.error(`FAIL: renderHtml threw — 'no rect collected' must not fire for DOM-present ids: ${(/** @type {Error} */ (err)).message}`);
   process.exit(1);
 }
 

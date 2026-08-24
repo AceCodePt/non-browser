@@ -98,6 +98,7 @@ if (fontsByFamily.size === 0) {
   console.error(`verify:breaker: no fixtures found under ${corpus}`);
   process.exit(1);
 }
+/** @type {import('../dist/index.js').BrowserConfig} */
 const config = {
   browser: 'chrome',
   fonts: [...fontsByFamily.values()],

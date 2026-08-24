@@ -101,7 +101,7 @@ try {
     await page.setContent(h.html);
     await page.evaluate(() => document.fonts.ready);
 
-    const referenceRects = {};
+    /** @type {Record<string, any>} */ const referenceRects = {};
     for (const id of h.rects ?? []) {
       referenceRects[id] = await page.$eval(`#${id}`, (el) => {
         const r = el.getBoundingClientRect();
@@ -109,7 +109,7 @@ try {
       });
     }
 
-    const referenceMeasure = {};
+    /** @type {Record<string, any>} */ const referenceMeasure = {};
     if (h.measureText) {
       for (const { text, font } of h.measureText) {
         referenceMeasure[`${font} | ${text}`] = await page.evaluate(
@@ -123,7 +123,7 @@ try {
       }
     }
 
-    const referenceComputed = {};
+    /** @type {Record<string, any>} */ const referenceComputed = {};
     if (h.computedStyle) {
       for (const { id, pseudo, props } of h.computedStyle) {
         const key = pseudo ? `${id}::${pseudo}` : id;
@@ -172,7 +172,7 @@ try {
     const candImg = decodePng(out.rgba);
 
     const candidateRects = out.rects;
-    const candidateMeasure = {};
+    /** @type {Record<string, any>} */ const candidateMeasure = {};
     if (h.measureText) {
       const { measureTextWidth } = await import('../dist/layout/measure.js');
       for (const { text, font } of h.measureText) {

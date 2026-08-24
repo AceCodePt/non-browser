@@ -61,7 +61,7 @@ const requires = [
 ];
 
 for (const [label, re] of requires) {
-  if (!re.test(charter)) fail(`charter.md missing: ${label}`);
+  if (!(/** @type {RegExp} */ (re)).test(charter)) fail(`charter.md missing: ${label}`);
 }
 
 // --- corpus gap-fixture schema (improvement-plan §4) ---
