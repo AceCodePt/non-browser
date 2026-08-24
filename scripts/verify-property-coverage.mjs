@@ -113,7 +113,7 @@ for (const f of fixturesToRender) {
     rectsOf(f.html, { width: 800, height: 600, fontFamily: FONT_FAMILY, fontFile: FONT_FILE });
     rendered++;
   } catch (err) {
-    console.error(`verify-property-coverage: fixture ${f.name} failed to render: ${err.message}`);
+    console.error(`verify-property-coverage: fixture ${f.name} failed to render: ${(/** @type {Error} */ (err)).message}`);
     process.exit(1);
   }
 }

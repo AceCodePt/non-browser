@@ -62,7 +62,7 @@ for (const { name, raw } of fixtures()) {
     try {
       skiaCanvasFactory.registerFont(f.file, f.family);
     } catch (err) {
-      console.error(`verify:text-measure: failed to register font '${f.family}' from ${f.file}: ${err.message}`);
+      console.error(`verify:text-measure: failed to register font '${f.family}' from ${f.file}: ${(/** @type {Error} */ (err)).message}`);
       process.exit(1);
     }
     registeredFamilies.add(f.family);
@@ -148,7 +148,7 @@ try {
 
     // Harness layer-1 runner decides tolerance on the pass corpus of this fixture.
     const fixture = { name, tolerances, candidate, reference };
-    const layer = evaluateMeasureText(fixture);
+    const layer = evaluateMeasureText(/** @type {import('../dist/harness/fixtures.js').Fixture} */ (fixture));
 
     let checkPass;
     let detail;
