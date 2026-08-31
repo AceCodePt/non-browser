@@ -1,0 +1,76 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "c": {
+      "display": "block",
+      "text-align": "-webkit-center"
+    },
+    "tt": {
+      "display": "inline",
+      "font-family": "monospace"
+    },
+    "dir": {
+      "display": "block",
+      "padding-left": "40px"
+    },
+    "menu": {
+      "display": "block",
+      "padding-left": "40px"
+    },
+    "font": {
+      "display": "inline"
+    },
+    "big": {
+      "display": "inline",
+      "font-size": "19.2px"
+    },
+    "strike": {
+      "display": "inline",
+      "text-decoration-line": "line-through"
+    }
+  },
+  "rect": {
+    "c": {
+      "x": 0,
+      "y": 0,
+      "width": 400,
+      "height": 18
+    },
+    "tt": {
+      "x": 0,
+      "y": 18,
+      "width": 62.625,
+      "height": 15
+    },
+    "dir": {
+      "x": 0,
+      "y": 49,
+      "width": 400,
+      "height": 18
+    },
+    "menu": {
+      "x": 0,
+      "y": 83,
+      "width": 400,
+      "height": 18
+    },
+    "font": {
+      "x": 0,
+      "y": 120,
+      "width": 53.765625,
+      "height": 17
+    },
+    "big": {
+      "x": 53.765625,
+      "y": 117,
+      "width": 58.09375,
+      "height": 21
+    },
+    "strike": {
+      "x": 111.859375,
+      "y": 120,
+      "width": 63.546875,
+      "height": 17
+    }
+  }
+}

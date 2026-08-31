@@ -195,11 +195,22 @@ classification):
   charter §3 keeps tables out of v1. `tables-layout` is archived PARTIAL.
 - **Custom properties / var()** — not implemented; `cascade-custom-props`
   archived EMPTY.
-- **Cascade layers / !important** — not implemented; `cascade-layers-important`
-  archived EMPTY.
+- **Cascade layers / !important** — intentionally **not supported by design**
+  (not a gap): `!important` and `@layer` are excluded from the compatibility
+  surface because they override the normal cascade in ways a deterministic
+  renderer must not silently accept; `cascade-layers-important` archived EMPTY.
 - **@import / @supports / @font-face** — not parsed; `parse-stylesheets` is
   archived PARTIAL (the stylesheet parser explicitly skips these at-rules).
 - **@container `size` / `block-size` containment** — `container-type: inline-size`
   is implemented (charter row above); the full `size` and `block-size`
   containment values parse but establish no container in v1, documented in
   `docs/ledgers/media-queries.md`.
+- **Legacy HTML elements and legacy CSS** — intentionally **not supported by
+  design** (not a gap): deprecated elements (`center`, `tt`, `dir`, `menu`,
+  `font`, `marquee`, `big`, `blink`, `strike`, `plaintext`, `xmp`, `nobr`),
+  presentational attributes, and vendor-prefixed properties get no UA rules and
+  render as generic boxes. The engine intentionally diverges from Chrome here —
+  a declared typed gap on `corpus/legacy-removal` — and the exclusions are
+  stated in the README and `docs/ledgers/legacy-removal.md`. Modern-only syntax
+  is the target; legacy comma `rgb()/rgba()` remains supported (current usage,
+  not treated as legacy).

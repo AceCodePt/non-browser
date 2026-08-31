@@ -49,6 +49,7 @@
     "verify:text-align": "npm run build && node scripts/verify-text-align.mjs",
     "verify:white-space": "npm run build && node scripts/verify-white-space.mjs",
     "verify:property-coverage": "npm run build && node scripts/verify-property-coverage.mjs",
+    "verify:legacy-removal": "npm run build && node scripts/verify-legacy-removal.mjs",
     "verify:breaker": "npm run build && node scripts/verify-breaker.mjs",
     "verify:comments": "npm run build && node scripts/verify-comments.mjs",
     "probe:browser-gap": "npm run build && node probes/probe-browser-gap.mjs",

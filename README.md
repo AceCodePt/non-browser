@@ -230,6 +230,33 @@ reading:
   container sizing) is deferred — inline-size `@container` is implemented. None
   are hidden.
 
+## Compatibility policy: the modern surface only
+
+The engine targets spec-current, non-legacy web platform features. Everything
+below is **intentionally unsupported by design** (documented, not a gap), and
+the engine deliberately diverges from Chrome on the legacy items because Chrome
+still renders them:
+
+- **Deprecated HTML elements** — `center`, `tt`, `dir`, `menu`, `font`,
+  `marquee`, `big`, `blink`, `strike`, `plaintext`, `xmp`, `nobr` get no UA
+  styling and render as generic block boxes (`corpus/legacy-removal`, gated by
+  `verify:legacy-removal`).
+- **Presentational attributes** — `align`, `bgcolor`, `vspace`, `hspace`,
+  `cellpadding`, `cellspacing`, table `width`/`height` are ignored (CSS only).
+- **Vendor-prefixed / legacy-only CSS** — `-webkit-*`, `-moz-*`, `-ms-*`,
+  `zoom`, `display: run-in`, and similar are not implemented.
+- **`!important` and `@layer`** — unsupported by design: they override the
+  normal cascade in ways a deterministic renderer must not silently accept.
+- **Chartered-out surfaces** — transforms/transitions/animations, SVG, filters,
+  image decoding, DPR scaling, and `@font-face` font loading stay out of scope
+  (charter §3) because a static pixel-buffer renderer has no better
+  representation for them.
+
+Two behaviors that look legacy are **kept as current-Chrome parity**, not
+excluded: the legacy comma `rgb()/rgba()` syntax (still widely used) and the
+quirky UA margin-collapse behavior that makes `<body><p>…` render exactly like
+Chrome. See `docs/ledgers/legacy-removal.md` for the full record.
+
 ## Where the numbers live
 
 Everything here is generated, not hand-written: `npm run verify` writes the

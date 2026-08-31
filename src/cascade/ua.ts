@@ -33,9 +33,9 @@ function descendantPairs(outer: string[], inner: string[]): string[] {
   return out;
 }
 
-const LIST = ['dir', 'dl', 'menu', 'ol', 'ul'];
-const LIST_INNER = ['dir', 'menu', 'ol', 'ul'];
-const MARKER_LIST = ['dir', 'menu', 'ol', 'ul'];
+const LIST = ['dl', 'ol', 'ul'];
+const LIST_INNER = ['ol', 'ul'];
+const MARKER_LIST = ['ol', 'ul'];
 
 /** A declaration value; `{ value, quirk }` marks the quirky UA margins
  * (Blink's `__qem` on heading/paragraph margin-block-start, which collapse
@@ -54,14 +54,17 @@ const qem = (v: string): DeclSpec => ({ value: v, quirk: true });
 
 /**
  * The UA rules in ascending-source-order (specificity ties break by source
- * order, like a stylesheet). Nested-list rules mirror Blink's `:is(dir, dl,
- * menu, ol, ul) ...` selectors, expanded to their constituent simple
- * selectors because the engine's selector matcher does not support `:is()`.
+ * order, like a stylesheet). Nested-list rules mirror Blink's `:is(dl, ol,
+ * ul) ...` selectors, expanded to their constituent simple selectors because
+ * the engine's selector matcher does not support `:is()`. Legacy elements
+ * (center, tt, dir, menu, font, marquee, big, blink, strike, plaintext, xmp,
+ * nobr) get no UA rules by design — they render as generic boxes per the
+ * modern-compat program (docs/ledgers/legacy-removal.md).
  */
 export const UA_STYLES: UaRule[] = [
   { selectors: ['html'], declarations: decls({ display: 'block' }) },
   { selectors: ['body'], declarations: decls({ display: 'block', margin: '8px' }) },
-  { selectors: ['div', 'article', 'aside', 'footer', 'header', 'hgroup', 'main', 'nav', 'section', 'figcaption', 'figure', 'center', 'form', 'dl', 'dt', 'dd', 'fieldset', 'legend'], declarations: decls({ display: 'block' }) },
+  { selectors: ['div', 'article', 'aside', 'footer', 'header', 'hgroup', 'main', 'nav', 'section', 'figcaption', 'figure', 'form', 'dl', 'dt', 'dd', 'fieldset', 'legend'], declarations: decls({ display: 'block' }) },
   { selectors: ['address'], declarations: decls({ display: 'block', 'font-style': 'italic' }) },
 
   { selectors: ['h1'], declarations: decls({ display: 'block', 'font-size': '2em', 'margin-block-start': qem('0.67em'), 'margin-block-end': '0.67em', 'font-weight': 'bold' }) },
@@ -74,16 +77,16 @@ export const UA_STYLES: UaRule[] = [
   { selectors: ['p'], declarations: decls({ display: 'block', 'margin-block-start': qem('1em'), 'margin-block-end': '1em' }) },
   { selectors: ['blockquote'], declarations: decls({ display: 'block', 'margin-block-start': qem('1em'), 'margin-block-end': '1em', 'margin-inline-start': '40px', 'margin-inline-end': '40px' }) },
 
-  { selectors: ['ul', 'menu', 'dir'], declarations: decls({ display: 'block', 'list-style-type': 'disc', 'margin-block-start': qem('1em'), 'margin-block-end': '1em', 'padding-inline-start': '40px' }) },
+  { selectors: ['ul'], declarations: decls({ display: 'block', 'list-style-type': 'disc', 'margin-block-start': qem('1em'), 'margin-block-end': '1em', 'padding-inline-start': '40px' }) },
   { selectors: ['ol'], declarations: decls({ display: 'block', 'list-style-type': 'decimal', 'margin-block-start': qem('1em'), 'margin-block-end': '1em', 'padding-inline-start': '40px' }) },
   { selectors: ['li'], declarations: decls({ display: 'list-item', 'text-align': 'match-parent' }) },
   // Any list nested inside a list resets its block margins (Blink's
-  // `:is(dir, dl, menu, ol, ul) :is(dir, dl, menu, ol, ul)` rule).
+  // `:is(dl, ol, ul) :is(ol, ul)` rule).
   { selectors: descendantPairs(LIST, LIST_INNER), declarations: decls({ 'margin-block-start': '0', 'margin-block-end': '0' }) },
-  // ul/menu/dir nested inside a list become circle markers; two levels deep
-  // become square.
-  { selectors: descendantPairs(MARKER_LIST, ['dir', 'menu', 'ul']), declarations: decls({ 'list-style-type': 'circle' }) },
-  { selectors: descendantPairs(MARKER_LIST, MARKER_LIST).flatMap((o) => descendantPairs([o], ['dir', 'menu', 'ul'])), declarations: decls({ 'list-style-type': 'square' }) },
+  // ul nested inside a list becomes circle markers; two levels deep becomes
+  // square.
+  { selectors: descendantPairs(MARKER_LIST, ['ul']), declarations: decls({ 'list-style-type': 'circle' }) },
+  { selectors: descendantPairs(MARKER_LIST, MARKER_LIST).flatMap((o) => descendantPairs([o], ['ul'])), declarations: decls({ 'list-style-type': 'square' }) },
 
   { selectors: ['strong', 'b'], declarations: decls({ 'font-weight': 'bolder' }) },
   { selectors: ['em', 'i', 'cite', 'var', 'dfn'], declarations: decls({ 'font-style': 'italic' }) },
@@ -92,7 +95,7 @@ export const UA_STYLES: UaRule[] = [
   // fixed-pitch font's default size (13px at the default 16px root); the
   // fixture corpus uses the default root, so pre encodes that as 0.8125em.
   { selectors: ['pre'], declarations: decls({ display: 'block', 'font-family': 'monospace', 'font-size': '0.8125em', 'white-space': 'pre', 'margin-block-start': qem('1em'), 'margin-block-end': '1em' }) },
-  { selectors: ['tt', 'code', 'kbd', 'samp'], declarations: decls({ 'font-family': 'monospace' }) },
+  { selectors: ['code', 'kbd', 'samp'], declarations: decls({ 'font-family': 'monospace' }) },
 
   { selectors: ['hr'], declarations: decls({ display: 'block', overflow: 'hidden', 'margin-block-start': '0.5em', 'margin-block-end': '0.5em', 'margin-inline-start': 'auto', 'margin-inline-end': 'auto', 'border-style': 'inset', 'border-width': '1px', color: 'gray' }) },
 

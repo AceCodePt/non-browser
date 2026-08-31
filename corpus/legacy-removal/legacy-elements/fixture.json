@@ -1,0 +1,36 @@
+{
+  "name": "legacy-elements",
+  "note": "Deprecated HTML elements get no UA styling by design (modern-compat legacy-removal policy, docs/ledgers/legacy-removal.md). The engine renders center/tt/dir/menu/font/big/strike as generic block boxes; Chrome still applies its UA stylesheet (center text-align center, tt inline+monospace, dir/menu 40px list padding, big inline+larger, strike inline+line-through), so every layer intentionally diverges and is declared as a typed gap. The verify script separately asserts the engine-side generic-box contract.",
+  "harvest": {
+    "viewport": { "width": 400, "height": 300 },
+    "html": "<style>html,body{margin:0;padding:0}</style><center id=\"c\">centered text</center><tt id=\"tt\">teletype</tt><dir id=\"dir\">dir text</dir><menu id=\"menu\">menu text</menu><font id=\"font\">font text</font><big id=\"big\">big text</big><strike id=\"strike\">strike text</strike>",
+    "computedStyle": [
+      { "id": "c", "props": ["display", "text-align"] },
+      { "id": "tt", "props": ["display", "font-family"] },
+      { "id": "dir", "props": ["display", "padding-left"] },
+      { "id": "menu", "props": ["display", "padding-left"] },
+      { "id": "font", "props": ["display"] },
+      { "id": "big", "props": ["display", "font-size"] },
+      { "id": "strike", "props": ["display", "text-decoration-line"] }
+    ],
+    "rects": ["c", "tt", "dir", "menu", "font", "big", "strike"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": {
+      "result": "fail",
+      "reason": "Engine renders deprecated elements as generic block boxes (center text-align start, tt display block + no monospace, dir/menu padding-left 0px, font/big/strike display block) while Chrome still applies its UA stylesheet (center text-align center, tt inline+monospace, dir/menu 40px padding, big inline+larger, strike inline+line-through). Intentional by design per the modern-compat policy.",
+      "sunset": "Permanent by design — legacy elements are never styled again; retire only if the policy is reversed and Chrome's legacy UA defaults are reproduced."
+    },
+    "rect": {
+      "result": "fail",
+      "reason": "Legacy elements stack as 400px-wide generic block boxes in the engine (one per line) while Chrome flows tt/font/big/strike inline and gives dir/menu 40px padding, so every id's border box diverges. Intentional by design.",
+      "sunset": "Permanent by design — same as the computedStyle gap; retire only if the policy is reversed."
+    },
+    "screenshot": {
+      "result": "fail",
+      "reason": "The whole layout differs (7 stacked blocks vs Chrome's mixed inline/block flow with centering and list padding), so non-text pixels massively exceed the <=1% band. Intentional by design.",
+      "sunset": "Permanent by design — same as the computedStyle gap; retire only if the policy is reversed."
+    }
+  }
+}

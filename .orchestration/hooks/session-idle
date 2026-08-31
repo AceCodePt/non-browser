@@ -45,6 +45,7 @@ case "${TASK_NAME:-}" in
   *spine*)            npm run verify:four-layer ;;
   *harness-tolerance*) npm run verify:report ;;
   *property-coverage*) npm run build && node scripts/verify-property-coverage.mjs && node scripts/check-charter.mjs ;;
+  *legacy-removal*)   npm run build && node scripts/verify-legacy-removal.mjs && node scripts/check-charter.mjs ;;
   *stress*)            npm run build && node scripts/verify-stress.mjs ;;
   *)                  npm run verify:all ;;
 esac
