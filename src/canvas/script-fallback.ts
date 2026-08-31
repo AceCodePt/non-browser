@@ -86,13 +86,22 @@ function isThaiCommon(cp: number): boolean {
  * clusters (spaces, punctuation, combining marks) attach to a group from their
  * codepoint range. Whitespace and control characters return `null` — they are
  * always measured in the primary face, matching Chrome keeping spaces and tab
- * stops in the primary font.
+ * stops in the primary font. Only the cluster's lead codepoint decides its
+ * group, so the single-face fast path can scan whole codepoints conservatively.
  */
 export function classifyCluster(cluster: string): ScriptGroup | null {
   const cp = cluster.codePointAt(0);
-  if (cp === undefined) return null;
-  if (isEmoji(cp)) return 'Emoji';
+  return cp === undefined ? null : classifyCodepoint(cp);
+}
+
+function classifyCodepoint(cp: number): ScriptGroup | null {
+  // Latin/Greek/Cyrillic first: the default family's text stays in the
+  // single-face fast path with one property test per codepoint.
   const ch = String.fromCodePoint(cp);
+  if (/\p{Script=Latin}/u.test(ch)) return 'Latn';
+  if (/\p{Script=Greek}/u.test(ch)) return 'Latn';
+  if (/\p{Script=Cyrillic}/u.test(ch)) return 'Latn';
+  if (isEmoji(cp)) return 'Emoji';
   if (/\p{Script=Han}/u.test(ch)) return 'Hani';
   if (/\p{Script=Hiragana}/u.test(ch)) return 'Hani';
   if (/\p{Script=Katakana}/u.test(ch)) return 'Hani';
@@ -101,9 +110,6 @@ export function classifyCluster(cluster: string): ScriptGroup | null {
   if (/\p{Script=Arabic}/u.test(ch)) return 'Arab';
   if (/\p{Script=Hebrew}/u.test(ch)) return 'Hebr';
   if (/\p{Script=Devanagari}/u.test(ch)) return 'Deva';
-  if (/\p{Script=Latin}/u.test(ch)) return 'Latn';
-  if (/\p{Script=Greek}/u.test(ch)) return 'Latn';
-  if (/\p{Script=Cyrillic}/u.test(ch)) return 'Latn';
   if (isWhitespaceOrControl(cp)) return null;
   if (isCjkCommon(cp)) return 'Hani';
   if (isArabicCommon(cp)) return 'Arab';
@@ -144,6 +150,43 @@ export interface FallbackRun {
   font: string;
 }
 
+/** Characters whose cluster stays in the primary face under a Latn-covered
+ * active face: ASCII (letters/digits/punct/control), Latin/Greek/Cyrillic, and
+ * any whitespace (whitespace classifies to `null`, so U+3000 and nbsp stay in
+ * the primary face too — whitespace is tested before the CJK-common ranges). */
+const LATIN_SAFE_RE = /^[\x00-\x7F\p{Script=Latin}\p{Script=Greek}\p{Script=Cyrillic}\s]+$/u;
+
+/** Whether a face change would occur for `group` (mirrors the per-cluster
+ * decision in resolveFallbackRuns: no named fallback, an unmeasurable one, or
+ * the active face itself keeps the cluster in the primary face). */
+function groupStaysActive(group: ScriptGroup, active: string, config: BrowserConfig, hasFamily: (family: string) => boolean): boolean {
+  const named = config.scriptFallback?.[group];
+  if (!named) return true;
+  if (!hasFamily(named)) return true;
+  if (named === active) return true;
+  return config.scriptCoverage?.[active]?.includes(group) ?? true;
+}
+
+/**
+ * Detect the single-face no-op cheaply, before segmentation. A cluster can only
+ * change face through its lead codepoint, so a whole-codepoint scan is
+ * conservative for the per-cluster decision: when every codepoint stays in the
+ * active face, every cluster does, and resolveFallbackRuns must return `null`.
+ */
+function singleFaceRun(text: string, active: string, config: BrowserConfig, hasFamily: (family: string) => boolean): boolean {
+  // The dominant case — Latin/Greek/Cyrillic text on a covering primary — is
+  // one whole-string test, so the per-codepoint scan below only runs for text
+  // that plausibly needs run resolution.
+  if (groupStaysActive('Latn', active, config, hasFamily) && LATIN_SAFE_RE.test(text)) return true;
+  for (const ch of text) {
+    const cp = ch.codePointAt(0);
+    if (cp === undefined) continue;
+    const group = classifyCodepoint(cp);
+    if (group !== null && !groupStaysActive(group, active, config, hasFamily)) return false;
+  }
+  return true;
+}
+
 /**
  * Resolve `text` into Chrome's per-glyph script-run fallback segments, or
  * `null` when the whole string stays in the single primary face (so callers'
@@ -176,6 +219,11 @@ export function resolveFallbackRuns(
     active = hasFamily(resolved) ? resolved : undefined;
   }
   if (!active) return null;
+
+  // The single-face no-op is decided before segmentation: the per-grapheme
+  // Intl.Segmenter split below is only worth paying when a run actually
+  // switches face, and a whole-codepoint scan detects that up front.
+  if (singleFaceRun(text, active, config, hasFamily)) return null;
 
   const fontFor = (family: string): string => `${prefix}${sizeToken} '${family}'`;
 

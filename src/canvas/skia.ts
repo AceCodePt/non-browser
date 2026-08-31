@@ -9,6 +9,7 @@
 import { createCanvas, GlobalFonts, type Canvas as NapiCanvas, type SKRSContext2D } from '@napi-rs/canvas';
 import type { CanvasColor, CanvasFactory, CanvasLike, CanvasTextMetrics } from './interface.js';
 import { getActiveBrowserConfig } from '../config/browser-config.js';
+import { cachedFamilyHas, cachedMetrics, invalidateMeasureCache } from './measure-cache.js';
 import { measureTextWithFallback, resolveFallbackRuns } from './script-fallback.js';
 import { measureTextWithTabs } from './tabs.js';
 
@@ -37,28 +38,43 @@ export class SkiaCanvas implements CanvasLike {
   }
 
   measureText(text: string, font: string): CanvasTextMetrics {
-    this.ctx.font = font;
-    const m = this.ctx.measureText(text);
-    const config = getActiveBrowserConfig();
-    const measure = (t: string, f: string): number => {
-      if (f !== this.ctx.font) this.ctx.font = f;
-      return this.ctx.measureText(t).width;
-    };
-    const hasFamily = (family: string): boolean => GlobalFonts.has(family);
-    // A tab-bearing string is measured by the tab shim (which applies the
-    // per-glyph fallback to each non-tab segment), so the whole-string
-    // script-run shim below only ever runs on tab-free text.
-    const tabbed = measureTextWithTabs(text, font, config, measure, hasFamily);
-    // Per-glyph script-run fallback (Chrome's fontconfig resolution), shared by
-    // the engine's measureTextWidth and Pretext's measurement context. Returns
-    // the plain single-face width when one registered face covers the string.
-    const shimmed = tabbed ?? measureTextWithFallback(text, font, config, measure, hasFamily);
+    // The width shim (tabs + script-run fallback) only runs on a cache miss;
+    // repeated break-candidate re-measures hit the memo instead. A fresh object
+    // is returned each call so callers cannot mutate the shared cache entry.
+    const cached = cachedMetrics(font, text, () => {
+      this.ctx.font = font;
+      const m = this.ctx.measureText(text);
+      const config = getActiveBrowserConfig();
+      const measure = (t: string, f: string): number => {
+        if (f !== this.ctx.font) this.ctx.font = f;
+        return this.ctx.measureText(t).width;
+      };
+      // GlobalFonts.has pays a native round-trip (~0.17ms); the family probe is
+      // memoized per font-registration epoch, so resolveFallbackRuns's
+      // per-grapheme hasFamily calls stop re-paying it.
+      const hasFamily = (family: string): boolean => cachedFamilyHas(family, (f) => GlobalFonts.has(f));
+      // A tab-bearing string is measured by the tab shim (which applies the
+      // per-glyph fallback to each non-tab segment), so the whole-string
+      // script-run shim below only ever runs on tab-free text.
+      const tabbed = measureTextWithTabs(text, font, config, measure, hasFamily);
+      // Per-glyph script-run fallback (Chrome's fontconfig resolution), shared by
+      // the engine's measureTextWidth and Pretext's measurement context. Returns
+      // the plain single-face width when one registered face covers the string.
+      const shimmed = tabbed ?? measureTextWithFallback(text, font, config, measure, hasFamily);
+      return {
+        width: shimmed ?? m.width,
+        actualBoundingBoxAscent: m.actualBoundingBoxAscent ?? 0,
+        actualBoundingBoxDescent: m.actualBoundingBoxDescent ?? 0,
+        actualBoundingBoxLeft: m.actualBoundingBoxLeft ?? 0,
+        actualBoundingBoxRight: m.actualBoundingBoxRight ?? 0,
+      };
+    });
     return {
-      width: shimmed ?? m.width,
-      actualBoundingBoxAscent: m.actualBoundingBoxAscent ?? 0,
-      actualBoundingBoxDescent: m.actualBoundingBoxDescent ?? 0,
-      actualBoundingBoxLeft: m.actualBoundingBoxLeft ?? 0,
-      actualBoundingBoxRight: m.actualBoundingBoxRight ?? 0,
+      width: cached.width,
+      actualBoundingBoxAscent: cached.actualBoundingBoxAscent,
+      actualBoundingBoxDescent: cached.actualBoundingBoxDescent,
+      actualBoundingBoxLeft: cached.actualBoundingBoxLeft,
+      actualBoundingBoxRight: cached.actualBoundingBoxRight,
     };
   }
 
@@ -69,7 +85,7 @@ export class SkiaCanvas implements CanvasLike {
 
   drawText(text: string, x: number, baselineY: number, font: string, color: CanvasColor): void {
     const config = getActiveBrowserConfig();
-    const hasFamily = (family: string): boolean => GlobalFonts.has(family);
+    const hasFamily = (family: string): boolean => cachedFamilyHas(family, (f) => GlobalFonts.has(f));
     // Paint the same per-run faces the measurement shim resolves, each run at
     // its accumulated advance, so painted glyphs match the measured width (and
     // Chrome's per-glyph fallback) instead of one face painting the whole
@@ -203,6 +219,9 @@ export class SkiaCanvasFactory implements CanvasFactory {
     if (key === null) {
       throw new Error(`skia: failed to register font from ${filePath}`);
     }
+    // A new font flips every cached family probe and width, so the measure
+    // epoch ends here (a stale cached width across registerFont is a bug).
+    invalidateMeasureCache();
   }
 }
 

@@ -10,6 +10,7 @@
  */
 
 import { chromeConfig } from './chrome.js';
+import { invalidateMeasureCache } from '../canvas/measure-cache.js';
 
 export type BrowserTarget = 'chrome' | 'firefox' | 'safari';
 
@@ -66,4 +67,7 @@ export function getActiveBrowserConfig(): BrowserConfig {
 
 export function setActiveBrowserConfig(config: BrowserConfig): void {
   activeConfig = config;
+  // A new config changes every fallback/coverage decision, so cached widths
+  // computed under the old one must not outlive it.
+  invalidateMeasureCache();
 }
