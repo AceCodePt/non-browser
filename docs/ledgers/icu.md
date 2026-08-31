@@ -7,7 +7,7 @@ Runtime pin record per the charter §6: every segmentation verification run reco
 | Component | Version |
 | --- | --- |
 | `process.versions.icu` (Node) | 78.3 |
-| Node | 26.7.0 |
+| Node | 26.8.1 |
 | Chrome (Playwright oracle) | 151.0.7922.34 |
 | Chrome ICU data (icudtl.dat UDataInfo) | CmnD format v1.0.0.0, data v3.0.0.0 |
 | Chrome ICU library | 78.2 (chromium deps/icu @ d578f2e8…, `U_ICU_VERSION`) |
@@ -16,7 +16,7 @@ Runtime pin record per the charter §6: every segmentation verification run reco
 
 ## Latest Run
 
-- Generated: 2026-08-19T08:33:41.857Z
+- Generated: 2026-08-31T18:40:59.603Z
 - Node ICU `78.3` vs Chrome 151.0.7922.34 ICU: **parity**
 - Strings segmented: 72 (72 pass corpus + 0 documented gaps)
 - Grapheme clusters: 182 (up to 13 in one string)
