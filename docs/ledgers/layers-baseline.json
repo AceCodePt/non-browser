@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-17T15:58:35.688Z",
+  "generatedAt": "2026-08-31T18:35:02.320Z",
   "fixtures": {
     "border-radius/circle-50": {
       "sha256": "c9c1de75e34787220404d3e2c33096a6a882cab941a48bfcc7577185bed7a1d9",
@@ -756,6 +756,13 @@
       "height": 160,
       "rectCount": 7,
       "computedStyleCount": 3
+    },
+    "legacy-removal/legacy-elements": {
+      "sha256": "e433aab81646c3ec23993f038e8ddd096b04effd76d79c937a83e8bf9e33e9a6",
+      "width": 400,
+      "height": 300,
+      "rectCount": 7,
+      "computedStyleCount": 7
     },
     "lists/basic-ol": {
       "sha256": "0e054b3ab6b4c77565ec44f706e20831051431f3d899bcd9c790968fd3078078",
