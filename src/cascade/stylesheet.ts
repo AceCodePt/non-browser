@@ -259,13 +259,30 @@ interface ParseState {
   containerGroups: ContainerGroup[];
 }
 
+/** parseStylesheet is a pure parse (stripComments → parseTopLevel), so the same
+ * CSS text always yields the same rule list; a scene cache per css string keeps
+ * repeated renders (and hasContainerRules vs resolveMediaCascade's separate
+ * parses of the same <style> block) from re-tokenizing identical text. The
+ * cached sheet's rules are read-only downstream (media gating + selector
+ * matching), never mutated. */
+const sheetCache = new Map<string, StyleSheet>();
+const SHEET_CACHE_CAP = 64;
+
 export function parseStylesheet(css: string): StyleSheet {
+  const hit = sheetCache.get(css);
+  if (hit) return hit;
   const text = stripComments(css);
   const rules: CascadeRule[] = [];
   let order = 0;
   const state: ParseState = { mediaGroups: [], containerGroups: [] };
   parseTopLevel(text, state, rules, () => order++);
-  return { rules };
+  const sheet: StyleSheet = { rules };
+  if (sheetCache.size >= SHEET_CACHE_CAP) {
+    const oldest = sheetCache.keys().next().value;
+    if (oldest !== undefined) sheetCache.delete(oldest);
+  }
+  sheetCache.set(css, sheet);
+  return sheet;
 }
 
 function parseTopLevel(css: string, inherited: ParseState, rules: CascadeRule[], nextOrder: () => number): void {

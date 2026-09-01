@@ -22,10 +22,20 @@ import type { CanvasTextMetrics } from './interface.js';
 
 const WIDTH_CAP = 2048;
 const FAMILY_CAP = 256;
+const RUNS_CAP = 2048;
 
 const widths = new Map<string, CanvasTextMetrics>();
 const families = new Map<string, boolean>();
+const runs = new Map<string, ResolvedRun[] | null>();
 let misses = 0;
+
+/** One script-run segment as paint consumes it: the text, the face, and the
+ * native width measured once per epoch. */
+export interface ResolvedRun {
+  text: string;
+  font: string;
+  width: number;
+}
 
 function setBounded<V>(map: Map<string, V>, cap: number, key: string, value: V): void {
   if (map.size >= cap) {
@@ -55,10 +65,30 @@ export function cachedFamilyHas(family: string, probe: (family: string) => boole
   return present;
 }
 
-/** Drop every cached width and family probe (new browser-config or font set). */
+/** The resolved script-run splits for (font, text) plus each run's native width,
+ * cached per epoch. Paint re-resolves the same runs layout already measured
+ * (see resolveFallbackRuns in script-fallback.ts) — memoizing them keeps a
+ * warm render from re-running shorthand parsing, script segmentation, and the
+ * per-run native measures, which are identical within an epoch. */
+export function cachedResolvedRuns(
+  font: string,
+  text: string,
+  compute: () => ResolvedRun[] | null,
+): ResolvedRun[] | null {
+  const key = `${font}\u0000${text}`;
+  const hit = runs.get(key);
+  if (hit !== undefined) return hit;
+  const resolved = compute();
+  setBounded(runs, RUNS_CAP, key, resolved);
+  return resolved;
+}
+
+/** Drop every cached width, family probe, and run split (new browser-config or
+ * font set). */
 export function invalidateMeasureCache(): void {
   widths.clear();
   families.clear();
+  runs.clear();
 }
 
 /** How many widths were computed since the last reset (one native canvas

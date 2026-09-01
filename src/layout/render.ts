@@ -107,6 +107,40 @@ interface Prepared {
   usesContainers: boolean;
 }
 
+/** parse(html) is a pure function of the html string, and nothing downstream
+ * mutates the tree (cascade/layout build Maps and LayoutNodes keyed by the
+ * elements, never writing element properties), so the parsed scene is shared
+ * across renders of the same html — repeated renders skip parse5 entirely.
+ * The cache is bounded; a server's distinct pages churn it like any LRU. */
+const SCENE_CACHE_CAP = 16;
+const sceneCache = new Map<string, ParsedScene>();
+
+interface ParsedScene {
+  body: P5Element;
+  styleElements: P5Element[];
+  ids: string[];
+}
+
+function getParsedScene(html: string, label: string): ParsedScene {
+  const hit = sceneCache.get(html);
+  if (hit) return hit;
+  const doc = parse(html);
+  const htmlEl = (doc as unknown as { childNodes: DefaultTreeAdapterTypes.ChildNode[] }).childNodes.find(
+    (n) => n.nodeName === 'html',
+  ) as P5Element;
+  const body = htmlEl?.childNodes.find((n) => n.nodeName === 'body') as P5Element;
+  if (!body) throw new Error(`${label}: no <body> element in input`);
+  const styleElements: P5Element[] = [];
+  collectStyleElements(doc, styleElements);
+  const scene: ParsedScene = { body, styleElements, ids: Object.keys(collectIds(body)) };
+  if (sceneCache.size >= SCENE_CACHE_CAP) {
+    const oldest = sceneCache.keys().next().value;
+    if (oldest !== undefined) sceneCache.delete(oldest);
+  }
+  sceneCache.set(html, scene);
+  return scene;
+}
+
 /**
  * Shared pipeline core behind every entry function: parse, browser-config /
  * font registration, measurement init, media cascade, resolveStyles. None of
@@ -114,12 +148,8 @@ interface Prepared {
  * entry functions stop before paying for them.
  */
 function prepare(html: string, opts: RenderOptions, label: string): Prepared {
-  const doc = parse(html);
-  const htmlEl = (doc as unknown as { childNodes: DefaultTreeAdapterTypes.ChildNode[] }).childNodes.find(
-    (n) => n.nodeName === 'html',
-  ) as P5Element;
-  const body = htmlEl?.childNodes.find((n) => n.nodeName === 'body') as P5Element;
-  if (!body) throw new Error(`${label}: no <body> element in input`);
+  const scene = getParsedScene(html, label);
+  const body = scene.body;
 
   const factory = opts.canvasFactory ?? skiaCanvasFactory;
   const config: BrowserConfig = opts.browserConfig ?? {
@@ -146,8 +176,7 @@ function prepare(html: string, opts: RenderOptions, label: string): Prepared {
     prefersReducedMotion: opts.media?.prefersReducedMotion,
     dppx: opts.media?.dppx,
   };
-  const styleElements: P5Element[] = [];
-  collectStyleElements(doc, styleElements);
+  const styleElements = scene.styleElements;
   const usesContainers = hasContainerRules(styleElements);
   const cascade = resolveMediaCascade(body, styleElements, mediaEnv);
 
@@ -169,7 +198,7 @@ function prepare(html: string, opts: RenderOptions, label: string): Prepared {
     cascade.pseudo,
   );
 
-  return { body, styles, viewport, config, factory, ids: Object.keys(collectIds(body)), styleElements, mediaEnv, styleDefaults, usesContainers };
+  return { body, styles, viewport, config, factory, ids: scene.ids, styleElements, mediaEnv, styleDefaults, usesContainers };
 }
 
 function assertIdsHaveRects(ids: string[], rects: Record<string, Box>): void {

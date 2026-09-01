@@ -9,7 +9,7 @@
 import { createCanvas, GlobalFonts, type Canvas as NapiCanvas, type SKRSContext2D } from '@napi-rs/canvas';
 import type { CanvasColor, CanvasFactory, CanvasLike, CanvasTextMetrics } from './interface.js';
 import { getActiveBrowserConfig } from '../config/browser-config.js';
-import { cachedFamilyHas, cachedMetrics, invalidateMeasureCache } from './measure-cache.js';
+import { cachedFamilyHas, cachedMetrics, cachedResolvedRuns, invalidateMeasureCache } from './measure-cache.js';
 import { measureTextWithFallback, resolveFallbackRuns } from './script-fallback.js';
 import { measureTextWithTabs } from './tabs.js';
 
@@ -86,26 +86,33 @@ export class SkiaCanvas implements CanvasLike {
   drawText(text: string, x: number, baselineY: number, font: string, color: CanvasColor): void {
     const config = getActiveBrowserConfig();
     const hasFamily = (family: string): boolean => cachedFamilyHas(family, (f) => GlobalFonts.has(f));
-    // Paint the same per-run faces the measurement shim resolves, each run at
-    // its accumulated advance, so painted glyphs match the measured width (and
-    // Chrome's per-glyph fallback) instead of one face painting the whole
-    // mixed-script string.
-    const runs = resolveFallbackRuns(text, font, config, hasFamily);
-    this.ctx.fillStyle = cssColor(color);
-    if (runs === null) {
-      this.ctx.font = font;
-      this.ctx.fillText(text, x, baselineY);
-      return;
-    }
     const measure = (t: string, f: string): number => {
       if (f !== this.ctx.font) this.ctx.font = f;
       return this.ctx.measureText(t).width;
     };
+    // Paint the same per-run faces the measurement shim resolves, each run at
+    // its accumulated advance, so painted glyphs match the measured width (and
+    // Chrome's per-glyph fallback) instead of one face painting the whole
+    // mixed-script string. The runs and their advances are memoized per epoch
+    // (cachedResolvedRuns), so a warm render re-paints identical split + widths
+    // without re-running shorthand parsing, script segmentation, or the native
+    // per-run measures.
+    const resolved = cachedResolvedRuns(font, text, () => {
+      const runs = resolveFallbackRuns(text, font, config, hasFamily);
+      if (runs === null) return null;
+      return runs.map((run) => ({ ...run, width: measure(run.text, run.font) }));
+    });
+    this.ctx.fillStyle = cssColor(color);
+    if (resolved === null) {
+      this.ctx.font = font;
+      this.ctx.fillText(text, x, baselineY);
+      return;
+    }
     let advance = 0;
-    for (const run of runs) {
+    for (const run of resolved) {
       this.ctx.font = run.font;
       this.ctx.fillText(run.text, x + advance, baselineY);
-      advance += measure(run.text, run.font);
+      advance += run.width;
     }
   }
 
