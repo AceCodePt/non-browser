@@ -381,6 +381,64 @@ same HTML* (the render work is where the win lives), and the earlier headline ra
 mostly exaggerated because it charged the verification harness's round-trips, page
 setup and screenshot against the engine's pure render.
 
+## Paint-stage perf: the raw-RGBA fast path and the paint-perf gate
+
+Task `paint-path-perf` closed the last renderHtml bottleneck. After
+`measure-fastpath-cache` the paint stage dominated `renderHtml` (paint marginal
+47–64ms at desktop viewports, 11–23ms at mobile), leaving the engine ~2.0–2.4x
+behind Chrome FCP on the page-scale fixtures.
+
+### The choice: raw-RGBA fast path, not a cheaper/lazier PNG
+
+PNG encode is the largest single paint cost at desktop — instrumented
+`canvas.toBuffer('image/png')` measures **~44ms at 1280x800** and **~9ms at
+320x568** (this run; see the `verify:paint-perf` printout). We
+chose to keep the PNG encoder exactly as it is and make it skippable, rather
+than cheapen it or defer it lazily:
+
+- `renderHtml(html, { encodePng: false })` returns **raw, unpremultiplied RGBA
+  pixels** (width\*height\*4 bytes) in `out.rgba` instead of a PNG — the canvas
+  surface's raw buffer, near-free (`~0.2ms` at 1280x800) compared to the
+  encoder's ~44ms.
+- The public **rgba-PNG contract is untouched for default consumers**:
+  `encodePng` defaults to `true`, so `out.rgba` stays the PNG-encoded buffer
+  every verify screenshot gate diffs. The gate itself asserts the contract once
+  per run (a default render emits real PNG magic bytes).
+- The perf bench and gate measure the raw path, with the encode share reported
+  per viewport so the number is never mistaken for "the engine skips paint".
+
+### Measured numbers (kitchen-sink, mean over 5, this host)
+
+| Viewport | renderHtml (PNG) | renderHtml (raw) | encode share | gate threshold |
+| --- | --- | --- | --- | --- |
+| 1280x800 | ~89ms | **~46ms** | ~44ms | < 60ms |
+| 320x568 | ~41ms | **~33ms** | ~9ms | < 48ms |
+
+Both thresholds pass with margin (`npm run verify:paint-perf`), putting the
+engine's full painted render within ~1.4x of Chrome's render-to-FCP on the
+page-scale fixtures (was ~2.0–2.4x).
+
+### Paint stopped re-measuring text that layout already measured
+
+Per-render instrumentation showed 727 `measureText` calls (~13.4ms), of which
+paint added ~60 fresh: the per-glyph prefix-advance measures `paintTextRun`
+made to place letter-spaced glyphs (e.g. the `.tracked` paragraph's ~58
+prefixes). Layout now precomputes each letter-spaced run's per-character
+x-offsets once (`letterSpacedOffsets` in `block-inline.ts`, stored on the run as
+`charXs`) and paint draws straight from them — glyph placement is byte-identical
+(verified against the old measure-in-paint path over all three kitchen-sink
+viewports), and paint itself performs no measurement.
+
+### What was not changed
+
+Layout geometry, computed styles, rects, and the measure seam are untouched and
+still gated by their own suites (`verify:measure-perf` passes). The screenshot
+parity gates stay green byte-for-byte: `verify:four-layer`, `verify:stress`,
+`verify:paint-text`, `verify:shadow`, `verify:opacity`, `verify:border-radius`,
+`verify:lists`, `verify:pseudo-elements`, `verify:media-queries`,
+`verify:overflow`, `verify:text-measure`, `verify:rect-contract`,
+`check-charter`.
+
 ## Corpus
 
 - Spine: `corpus/spine/` — basic-text, boxes, inline-styles, replaced-boxes,

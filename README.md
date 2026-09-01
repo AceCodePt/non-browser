@@ -118,6 +118,15 @@ else under `src/` is internal.
   `textFragments`, and `listMarkers` are the layer-1/3/4 extras the parity
   harness compares against the oracle. Passing `media` drives `@media`
   resolution (`prefers-color-scheme`, `prefers-reduced-motion`, `dppx`).
+- **`encodePng: false` (raw-RGBA fast path)** — by default `rgba` is a PNG
+  buffer. Passing `encodePng: false` returns the raw, unpremultiplied RGBA
+  pixels (width\*height\*4 bytes) instead, skipping the PNG encoder — the
+  largest single paint cost at desktop viewports (~44ms at 1280x800 vs the raw
+  buffer's ~0.2ms). The public PNG contract is unchanged for default consumers;
+  the perf gate (`npm run verify:paint-perf`) measures the raw path so the
+  engine's painted render is compared without paying the encoder, and the parity
+  gates keep diffing real PNGs. See `docs/ledgers/parity.md` for the measured
+  encode share.
 
 The four-layer parity claim is the §2 table in "Engine vs Chrome" below: for
 the corpus, every output quantity above matches the oracle within those

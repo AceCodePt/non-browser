@@ -64,6 +64,14 @@ export interface RenderOptions {
   computedStyle?: ComputedStyleSpec[];
   textElements?: string[];
   media?: MediaInput;
+  /**
+   * When `false`, `out.rgba` is the raw unpremultiplied RGBA pixel buffer
+   * (width*height*4 bytes) instead of the default PNG-encoded buffer. The PNG
+   * encoder is the largest single paint cost at desktop viewports, so the perf
+   * gate measures the render with `encodePng: false`; default consumers keep
+   * the PNG contract. See docs/ledgers/parity.md.
+   */
+  encodePng?: boolean;
 }
 
 export interface RenderHtmlOutput extends RenderOutput {
@@ -303,7 +311,7 @@ function collectComputedStyles(
 export function renderHtml(html: string, opts: RenderOptions): RenderHtmlOutput {
   const prep = prepare(html, opts, 'renderHtml');
   const { styles, root } = convergeLayout(prep);
-  const out = paint(root, opts.width, opts.height, prep.ids, prep.config.defaultFile, prep.factory, prep.viewport, opts.textElements);
+  const out = paint(root, opts.width, opts.height, prep.ids, prep.config.defaultFile, prep.factory, prep.viewport, opts.textElements, opts.encodePng ?? true);
 
   return { ...out, computedStyles: collectComputedStyles(opts, prep.body, styles, prep.viewport, opts.width, 'renderHtml') };
 }

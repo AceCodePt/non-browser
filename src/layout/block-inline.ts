@@ -341,6 +341,12 @@ export interface PaintOp {
       fontWeight?: number;
       fontStyle?: 'normal' | 'italic';
       decorationLines?: TextDecorationPaint | null;
+      /**
+       * Per-character x-offsets (from the run's x) for a letter-spaced run,
+       * precomputed during layout so paint reuses layout's advance data instead
+       * of re-measuring prefix advances. Absent when letterSpacing is 0.
+       */
+      charXs?: number[];
     }[];
     fontSize: number;
     family: string;
@@ -442,6 +448,58 @@ function pushPaintOp(paints: PaintOp[], op: PaintOp): void {
   const g = opacityStack[opacityStack.length - 1];
   if (g !== undefined) op.group = g;
   paints.push(op);
+}
+
+/**
+ * Per-character x-offsets (from the run's x) for a letter-spaced text run,
+ * matching paint's glyph placement exactly: each character sits at its shaped
+ * prefix advance (kerning preserved) plus the accumulated letter-spacing.
+ * Computing them here, once, at layout time is what lets paint draw letter-
+ * spaced runs without re-measuring prefix advances.
+ */
+function letterSpacedOffsets(
+  text: string,
+  fontSize: number,
+  family: string,
+  letterSpacing: number,
+  fontWeight?: number,
+  fontStyle?: 'normal' | 'italic',
+): number[] {
+  const chars = Array.from(text);
+  const xs = new Array<number>(chars.length);
+  let prefix = '';
+  for (let i = 0; i < chars.length; i++) {
+    xs[i] = measureTextWidth(prefix, fontSize, family, 0, fontWeight, fontStyle) + i * letterSpacing;
+    prefix += chars[i];
+  }
+  return xs;
+}
+
+/** Build a text op's runs from laid-out line boxes, resolving the per-line font
+ * and precomputing letter-spaced character offsets (see letterSpacedOffsets).
+ * `ox`/`oy` translate the lines into the element's absolute coordinate space. */
+function runsFromLines(lines: LineBox[], style: ComputedStyle, ox: number, oy: number): NonNullable<PaintOp['text']>['runs'] {
+  return lines.map((l) => {
+    const fontSize = l.fontSize ?? style.fontSize;
+    const family = l.family ?? style.fontFamily;
+    const letterSpacing = l.letterSpacing ?? style.letterSpacing;
+    return {
+      text: l.text,
+      x: ox + l.x,
+      y: oy + l.y,
+      width: l.width,
+      height: l.height,
+      baseline: oy + (l.baseline ?? l.y + lineAscentContribution(style.fontSize, style.lineHeight, activeFontMetrics())),
+      fontSize: l.fontSize,
+      family: l.family,
+      color: l.color,
+      letterSpacing: l.letterSpacing,
+      fontWeight: l.fontWeight,
+      fontStyle: l.fontStyle,
+      decorationLines: l.decorationLines ?? null,
+      charXs: letterSpacing !== 0 ? letterSpacedOffsets(l.text, fontSize, family, letterSpacing, l.fontWeight, l.fontStyle) : undefined,
+    };
+  });
 }
 
 function pushOpacityGroup(
@@ -968,21 +1026,7 @@ export function layoutElementBox(
       kind: 'text',
       box: { x: borderX, y: borderY, width: borderWidth, height: resolvedHeight },
       text: {
-        runs: lines.map((l) => ({
-          text: l.text,
-          x: l.x,
-          y: l.y,
-          width: l.width,
-          height: l.height,
-          baseline: l.baseline ?? l.y + lineAscentContribution(style.fontSize, style.lineHeight, activeFontMetrics()),
-          fontSize: l.fontSize,
-          family: l.family,
-          color: l.color,
-          letterSpacing: l.letterSpacing,
-          fontWeight: l.fontWeight,
-          fontStyle: l.fontStyle,
-          decorationLines: l.decorationLines ?? null,
-        })),
+        runs: runsFromLines(lines, style, 0, 0),
         fontSize: style.fontSize,
         family: style.fontFamily,
         color: style.color,
@@ -1278,21 +1322,7 @@ function layoutFloat(
       kind: 'text',
       box: { x: placed.borderX, y: placed.borderY, width: borderBoxWidth, height: borderHeight },
       text: {
-        runs: lines.map((l) => ({
-          text: l.text,
-          x: placed.borderX + l.x,
-          y: placed.borderY + l.y,
-          width: l.width,
-          height: l.height,
-          baseline: placed.borderY + (l.baseline ?? l.y + lineAscentContribution(style.fontSize, style.lineHeight, activeFontMetrics())),
-          fontSize: l.fontSize,
-          family: l.family,
-          color: l.color,
-          letterSpacing: l.letterSpacing,
-          fontWeight: l.fontWeight,
-          fontStyle: l.fontStyle,
-          decorationLines: l.decorationLines ?? null,
-        })),
+        runs: runsFromLines(lines, style, placed.borderX, placed.borderY),
         fontSize: style.fontSize,
         family: style.fontFamily,
         color: style.color,

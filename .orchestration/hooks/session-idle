@@ -47,6 +47,7 @@ case "${TASK_NAME:-}" in
   *property-coverage*) npm run build && node scripts/verify-property-coverage.mjs && node scripts/check-charter.mjs ;;
   *legacy-removal*)   npm run build && node scripts/verify-legacy-removal.mjs && node scripts/check-charter.mjs ;;
   *stress*)            npm run build && node scripts/verify-stress.mjs ;;
+  *paint-perf*)        npm run verify:paint-perf && npm run verify:all ;;
   *)                  npm run verify:all ;;
 esac
 
