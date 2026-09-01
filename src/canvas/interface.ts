@@ -100,6 +100,16 @@ export interface CanvasLike {
   drawImage(source: CanvasLike, alpha?: number): void;
 
   toBuffer(): Buffer;
+
+  /**
+   * The raw, unpremultiplied RGBA pixel buffer (width*height*4 bytes) of the
+   * painted surface, without PNG compression. The cheap half of `toBuffer`:
+   * the perf bench measures `renderHtml` with `encodePng: false`, which skips
+   * the PNG encoder entirely (the largest single paint cost at desktop
+   * viewports) while the public rgba-PNG contract stays untouched for default
+   * consumers.
+   */
+  toRawBuffer(): Buffer;
 }
 
 export interface CanvasFactory {

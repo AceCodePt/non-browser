@@ -54,6 +54,7 @@
     "verify:breaker": "npm run build && node scripts/verify-breaker.mjs",
     "verify:comments": "npm run build && node scripts/verify-comments.mjs",
     "verify:measure-perf": "npm run build && node scripts/verify-measure-perf.mjs",
+    "verify:paint-perf": "npm run build && node scripts/verify-paint-perf.mjs",
     "probe:browser-gap": "npm run build && node probes/probe-browser-gap.mjs",
     "bench:engine-vs-oracle": "npm run build && node scripts/bench-engine-vs-oracle.mjs",
     "test:probe": "npm run build && node --test probes/probe-gap-lib.test.mjs",

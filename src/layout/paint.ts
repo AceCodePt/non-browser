@@ -82,7 +82,7 @@ function paintTextShadows(
 
 function paintTextRun(
   canvas: { drawText(text: string, x: number, baseline: number, font: string, color: Color): void },
-  run: { text: string; x: number; baseline: number; fontWeight?: number; fontStyle?: 'normal' | 'italic' },
+  run: { text: string; x: number; baseline: number; charXs?: number[]; fontWeight?: number; fontStyle?: 'normal' | 'italic' },
   fontSize: number,
   family: string,
   color: Color,
@@ -93,11 +93,21 @@ function paintTextRun(
     canvas.drawText(run.text, run.x, run.baseline, font, color);
     return;
   }
+  // Layout precomputes the per-character positions for letter-spaced runs
+  // (layout's line/advance data, `run.charXs`), so paint never re-measures
+  // prefix advances. The fallback below keeps any run that reached paint
+  // without its offsets (e.g. a marker) rendering identically.
+  const chars = Array.from(run.text);
+  if (run.charXs) {
+    for (let i = 0; i < chars.length; i++) {
+      canvas.drawText(chars[i], run.x + run.charXs[i], run.baseline, font, color);
+    }
+    return;
+  }
   // Draw glyph-by-glyph, positioning each character at its shaped prefix
   // advance (kerning preserved) plus the accumulated letter-spacing. The
   // trailing letter-spacing after the last character is accounted for in the
   // run's layout width (decorations) but paints nothing here.
-  const chars = Array.from(run.text);
   let prefix = '';
   for (let i = 0; i < chars.length; i++) {
     const x = run.x + measureTextWidth(prefix, fontSize, family, 0, run.fontWeight, run.fontStyle) + i * letterSpacing;
@@ -467,6 +477,7 @@ export function paint(
   factory: CanvasFactory = skiaCanvasFactory,
   viewport?: Viewport | null,
   textElements?: string[],
+  encode: boolean = true,
 ): RenderOutput {
   const canvas = factory.create(viewportWidth, viewportHeight);
   canvas.fillRect(0, 0, viewportWidth, viewportHeight, root.canvasBackground);
@@ -491,7 +502,7 @@ export function paint(
   return {
     width: viewportWidth,
     height: viewportHeight,
-    rgba: canvas.toBuffer(),
+    rgba: encode ? canvas.toBuffer() : canvas.toRawBuffer(),
     rects,
     generatedTextRects,
     textFragments,

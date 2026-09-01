@@ -207,6 +207,10 @@ export class SkiaCanvas implements CanvasLike {
   toBuffer(): Buffer {
     return this.canvas.toBuffer('image/png');
   }
+
+  toRawBuffer(): Buffer {
+    return this.canvas.data();
+  }
 }
 
 export class SkiaCanvasFactory implements CanvasFactory {
