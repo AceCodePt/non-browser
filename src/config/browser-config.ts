@@ -65,9 +65,57 @@ export function getActiveBrowserConfig(): BrowserConfig {
   return activeConfig;
 }
 
+/** The registered font set, compared order-insensitively (registration order
+ * does not change what widths a config produces). */
+function sameFonts(a: FontRegistration[], b: FontRegistration[]): boolean {
+  if (a.length !== b.length) return false;
+  const ka = a.map((f) => `${f.family}\u0000${f.filePath}`).sort();
+  const kb = b.map((f) => `${f.family}\u0000${f.filePath}`).sort();
+  for (let i = 0; i < ka.length; i++) if (ka[i] !== kb[i]) return false;
+  return true;
+}
+
+function sameRecord(a: Record<string, string>, b: Record<string, string>): boolean {
+  const ak = Object.keys(a).sort();
+  const bk = Object.keys(b).sort();
+  if (ak.length !== bk.length) return false;
+  for (let i = 0; i < ak.length; i++) {
+    if (ak[i] !== bk[i] || a[ak[i]] !== b[ak[i]]) return false;
+  }
+  return true;
+}
+
+function sameCoverage(a: Record<string, string[]>, b: Record<string, string[]>): boolean {
+  const ak = Object.keys(a).sort();
+  const bk = Object.keys(b).sort();
+  if (ak.length !== bk.length) return false;
+  for (let i = 0; i < ak.length; i++) {
+    if (ak[i] !== bk[i]) return false;
+    const av = a[ak[i]];
+    const bv = b[ak[i]];
+    if (av.length !== bv.length) return false;
+    const as = [...av].sort();
+    const bs = [...bv].sort();
+    for (let j = 0; j < as.length; j++) if (as[j] !== bs[j]) return false;
+  }
+  return true;
+}
+
+/** Whether the two configs would produce identical measure/paint: the fields
+ * the cached widths and family probes are a pure function of. `browser` is
+ * deliberately excluded — it selects nothing these caches depend on. */
+function configsEqual(a: BrowserConfig, b: BrowserConfig): boolean {
+  if (a.defaultFamily !== b.defaultFamily) return false;
+  if (a.defaultFile !== b.defaultFile) return false;
+  if (!sameFonts(a.fonts, b.fonts)) return false;
+  if (!sameRecord(a.fallback, b.fallback)) return false;
+  if (!sameRecord(a.scriptFallback ?? {}, b.scriptFallback ?? {})) return false;
+  if (!sameCoverage(a.scriptCoverage ?? {}, b.scriptCoverage ?? {})) return false;
+  return true;
+}
+
 export function setActiveBrowserConfig(config: BrowserConfig): void {
+  const changed = !configsEqual(activeConfig, config);
   activeConfig = config;
-  // A new config changes every fallback/coverage decision, so cached widths
-  // computed under the old one must not outlive it.
-  invalidateMeasureCache();
+  if (changed) invalidateMeasureCache();
 }

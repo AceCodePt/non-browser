@@ -223,10 +223,20 @@ export class SkiaCanvasFactory implements CanvasFactory {
     if (key === null) {
       throw new Error(`skia: failed to register font from ${filePath}`);
     }
-    // A new font flips every cached family probe and width, so the measure
-    // epoch ends here (a stale cached width across registerFont is a bug).
+    // A genuinely new face flips every cached family probe and width, so the
+    // measure epoch ends here (a stale cached width across a real registration
+    // is a bug). Re-registering a pair render.ts already registered (every
+    // prepare() registers the whole config font set) is idempotent for the
+    // answers GlobalFonts returns, so it must not wipe the memo — that is what
+    // keeps the cache warm across repeated renders of the same config.
+    const pair = familyAlias === undefined ? `\u0000${filePath}` : `${familyAlias}\u0000${filePath}`;
+    if (registeredFonts.has(pair)) return;
+    registeredFonts.add(pair);
     invalidateMeasureCache();
   }
 }
+
+/** Pairs already registered into GlobalFonts this process (see registerFont). */
+const registeredFonts = new Set<string>();
 
 export const skiaCanvasFactory: CanvasFactory = new SkiaCanvasFactory();
