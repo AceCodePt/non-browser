@@ -1,0 +1,49 @@
+{
+  "name": "size-pos-repeat",
+  "note": "background-size (two-value, single percent), background-position (px offsets, center), and background-repeat (no-repeat, repeat-x, space, round) all shape the painted result: a sized gradient offset inside its box, a repeated stripe, a spaced tile run, and a round-scaled stripe.",
+  "harvest": {
+    "viewport": {
+      "width": 520,
+      "height": 260
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"a\" style=\"position:absolute;left:30px;top:30px;width:110px;height:90px;background:#e8e8e8;background-image:linear-gradient(to right, red, blue);background-size:60px 40px;background-position:20px 15px;background-repeat:no-repeat\"></div><div id=\"b\" style=\"position:absolute;left:170px;top:30px;width:110px;height:90px;background-image:linear-gradient(to bottom, black, white);background-size:30px 100%;background-repeat:repeat-x\"></div><div id=\"c\" style=\"position:absolute;left:310px;top:30px;width:180px;height:90px;background-image:radial-gradient(circle 15px at 50% 50%, red, blue);background-repeat:space\"></div><div id=\"d\" style=\"position:absolute;left:30px;top:150px;width:110px;height:80px;background-image:repeating-linear-gradient(to right, black 0 7px, white 7px 14px);background-repeat:round\"></div><div id=\"e\" style=\"position:absolute;left:170px;top:150px;width:110px;height:80px;background:#e8e8e8;background-image:linear-gradient(to right, purple, orange);background-size:50% 50%;background-position:center;background-repeat:no-repeat\"></div><div id=\"f\" style=\"position:absolute;left:310px;top:150px;width:180px;height:80px;background-image:linear-gradient(to right, teal, pink);background-size:auto 30px;background-repeat:repeat no-repeat\"></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "a",
+        "props": [
+          "background-size",
+          "background-position",
+          "background-repeat"
+        ]
+      },
+      {
+        "id": "e",
+        "props": [
+          "background-size",
+          "background-position"
+        ]
+      },
+      {
+        "id": "f",
+        "props": [
+          "background-size",
+          "background-repeat"
+        ]
+      }
+    ],
+    "rects": [
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+      "f"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

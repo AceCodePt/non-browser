@@ -13,14 +13,14 @@ import type { CanvasFactory, CanvasLike } from '../canvas/interface.js';
 import { skiaCanvasFactory } from '../canvas/skia.js';
 import type { Color, Side, Viewport } from './css.js';
 import { resolveEmLength, resolveLength } from './css.js';
-import { hasNonZeroRadius, innerRadii, resolveBorderRadius, traceRoundedRect, type Clip, type ResolvedRadii, type RoundedClip } from './radius.js';
+import { hasNonZeroRadius, innerRadii, resolveBorderRadius, traceRoundedRect, type Clip, type ResolvedRadii, type RoundedClip, type SideWidths } from './radius.js';
+import { canvasStops, linearEndpoints, radialGeometry, type BackgroundLayer, type BgRepeat, type BgSizeComponent, type BoxKeyword } from './background.js';
 import type { OpacityGroup, PaintOp, RootLayout, ShadowPaint, TextDecorationPaint, ListMarker } from './block-inline.js';
 import { idOf } from './block-inline.js';
 import type { Box } from './types.js';
 import { cssFontString, measureTextWidth } from './measure.js';
 import { fontVerticalMetrics, lineAscentContribution, roundedAscent, roundedDescent, type FontVerticalMetrics } from './fontmetrics.js';
 
-type SideWidths = Record<Side, number>;
 type SideColors = Record<Side, Color>;
 
 export interface RenderOutput {
@@ -257,14 +257,17 @@ function paintBorder(
   const lit = (side: Side): Color => insetEdgeColor(styles[side] ?? 'solid', side, colors[side]);
   const uniform = sameColor(lit('top'), lit('right')) && sameColor(lit('top'), lit('bottom')) && sameColor(lit('top'), lit('left'));
   if (uniform) {
+    // Non-overlapping bands: a semi-transparent border color must composite
+    // once per pixel (Chrome draws each border side once), so the left/right
+    // bands exclude the top/bottom bands instead of overlapping at corners.
     const sides: { side: Side; rect: Box }[] = [
       { side: 'top', rect: { x, y, width, height: widths.top } },
-      { side: 'right', rect: { x: x + width - widths.right, y, width: widths.right, height } },
       { side: 'bottom', rect: { x, y: y + height - widths.bottom, width, height: widths.bottom } },
-      { side: 'left', rect: { x, y, width: widths.left, height } },
+      { side: 'left', rect: { x, y: y + widths.top, width: widths.left, height: Math.max(0, height - widths.top - widths.bottom) } },
+      { side: 'right', rect: { x: x + width - widths.right, y: y + widths.top, width: widths.right, height: Math.max(0, height - widths.top - widths.bottom) } },
     ];
     for (const s of sides) {
-      if (widths[s.side] <= 0) continue;
+      if (widths[s.side] <= 0 || s.rect.width <= 0 || s.rect.height <= 0) continue;
       canvas.fillRect(s.rect.x, s.rect.y, s.rect.width, s.rect.height, lit(s.side));
     }
     return;
@@ -324,6 +327,222 @@ function paintRoundedBackground(
   canvas.beginPath();
   traceRoundedRect(canvas, op.box.x, op.box.y, op.box.width, op.box.height, radii);
   canvas.fillPath(op.color!);
+}
+
+// ===== background layers (css-backgrounds-3 §5-§9, css-images-3 §3) =====
+
+/** The border/padding/content box of a background layer, inset from the
+ * border box per the layer's box keyword. */
+function layerBox(box: Box, widths: SideWidths, padding: SideWidths, keyword: BoxKeyword): Box {
+  if (keyword === 'border-box') return box;
+  const left = keyword === 'padding-box' ? widths.left : widths.left + padding.left;
+  const right = keyword === 'padding-box' ? widths.right : widths.right + padding.right;
+  const top = keyword === 'padding-box' ? widths.top : widths.top + padding.top;
+  const bottom = keyword === 'padding-box' ? widths.bottom : widths.bottom + padding.bottom;
+  return {
+    x: box.x + left,
+    y: box.y + top,
+    width: Math.max(0, box.width - left - right),
+    height: Math.max(0, box.height - top - bottom),
+  };
+}
+
+function sizeComponentPx(c: BgSizeComponent, ref: number): number {
+  if (c.auto) return ref;
+  if (c.pct !== null) return (c.pct / 100) * ref;
+  return c.px ?? 0;
+}
+
+/**
+ * Tile origins for one axis. `repeat` extends from the positioned origin in
+ * both directions (tiles may straddle the positioning area edge). `round`
+ * rescales the tile so an integer count fits the positioning area; `space`
+ * distributes equal gaps between floor(span/tile) tiles — both anchored at
+ * the positioning-area origin (css-backgrounds-3 §6).
+ */
+function tileOrigins(
+  axis: BgRepeat['x'],
+  origin: number,
+  tile: number,
+  areaStart: number,
+  areaSpan: number,
+  clipStart: number,
+  clipSpan: number,
+): number[] {
+  if (tile <= 0) return [origin];
+  if (axis === 'no-repeat') return [origin];
+  if (axis === 'repeat') {
+    const out: number[] = [];
+    const kMin = Math.floor((clipStart - origin) / tile);
+    const kMax = Math.ceil((clipStart + clipSpan - origin) / tile);
+    for (let k = kMin; k <= kMax; k++) out.push(origin + k * tile);
+    return out;
+  }
+  if (axis === 'round') {
+    const n = Math.max(1, Math.round(areaSpan / tile));
+    const tile2 = areaSpan / n;
+    const out: number[] = [];
+    const kMin = Math.floor((clipStart - areaStart) / tile2);
+    const kMax = Math.ceil((clipStart + clipSpan - areaStart) / tile2);
+    for (let k = kMin; k <= kMax; k++) out.push(areaStart + k * tile2);
+    return out;
+  }
+  // space: fewer tiles, equal gaps; a single tile sits at the positioned origin
+  const n = Math.floor(areaSpan / tile);
+  if (n < 2) return [origin];
+  const gap = (areaSpan - n * tile) / (n - 1);
+  const out: number[] = [];
+  const step = tile + gap;
+  const kMin = Math.floor((clipStart - areaStart) / step);
+  const kMax = Math.ceil((clipStart + clipSpan - areaStart) / step);
+  for (let k = kMin; k <= kMax; k++) out.push(areaStart + k * step);
+  return out;
+}
+
+function fillGradientTile(canvas: CanvasLike, layer: BackgroundLayer, tile: Box): void {
+  if (tile.width <= 0 || tile.height <= 0) return;
+  const image = layer.image;
+  if (image.kind === 'linear') {
+    const e = linearEndpoints(image.gradient, tile.width, tile.height);
+    const stops = canvasStops(image.gradient, Math.hypot(e.x1 - e.x0, e.y1 - e.y0));
+    if (stops.length === 0) return;
+    canvas.fillGradientRect(tile.x, tile.y, tile.width, tile.height, {
+      type: 'linear',
+      x0: tile.x + e.x0,
+      y0: tile.y + e.y0,
+      x1: tile.x + e.x1,
+      y1: tile.y + e.y1,
+      stops,
+    });
+    return;
+  }
+  if (image.kind === 'radial') {
+    const g = radialGeometry(image.gradient, tile.width, tile.height);
+    if (g.rx <= 0 && g.ry <= 0) return;
+    // Percentage stops resolve against the ending radius (the horizontal one
+    // for an ellipse — the scaled-circle shader's unit distance).
+    const stops = canvasStops(image.gradient, Math.max(g.rx, 1e-6));
+    if (stops.length === 0) return;
+    canvas.fillGradientRect(tile.x, tile.y, tile.width, tile.height, {
+      type: 'radial',
+      cx: tile.x + g.cx,
+      cy: tile.y + g.cy,
+      rx: g.rx,
+      ry: g.ry,
+      stops,
+    });
+  }
+}
+
+/**
+ * Paint one background-image layer: size and position it in its positioning
+ * (origin) box, clip to its clip box (radii adjusted per box keyword), and
+ * fill every repeat tile. url() layers paint nothing (chartered-out raster
+ * decode, docs/ledgers/backgrounds.md). A `fixed` attachment positions the
+ * image in the viewport (the scroll-0 positioning area for a static renderer)
+ * while clipping to the element's clip box, per css-backgrounds-3 §6.
+ */
+function paintBackgroundLayer(
+  canvas: CanvasLike,
+  layer: BackgroundLayer,
+  borderBox: Box,
+  widths: SideWidths,
+  padding: SideWidths,
+  outerRadii: ResolvedRadii | null,
+  viewport: Viewport | null | undefined,
+): void {
+  if (layer.image.kind !== 'linear' && layer.image.kind !== 'radial') return;
+  const origin = layerBox(borderBox, widths, padding, layer.origin);
+  const clipBox = layerBox(borderBox, widths, padding, layer.clip);
+  const fixed = layer.attachment === 'fixed' && viewport;
+  const area = fixed ? { x: 0, y: 0, width: viewport!.width, height: viewport!.height } : origin;
+  const sw = layer.size.type === 'keywords' ? area.width : sizeComponentPx(layer.size.w, area.width);
+  const sh = layer.size.type === 'keywords' ? area.height : sizeComponentPx(layer.size.h, area.height);
+  const px = (layer.position.x.pct / 100) * (area.width - sw) + layer.position.x.px;
+  const py = (layer.position.y.pct / 100) * (area.height - sh) + layer.position.y.px;
+  const img = { x: area.x + px, y: area.y + py, width: sw, height: sh };
+
+  let clipRadii: ResolvedRadii | null = null;
+  if (outerRadii) {
+    if (layer.clip === 'padding-box') {
+      clipRadii = innerRadii(outerRadii, widths, borderBox.width, borderBox.height);
+    } else if (layer.clip === 'content-box') {
+      clipRadii = innerRadii(innerRadii(outerRadii, widths, borderBox.width, borderBox.height), padding, borderBox.width, borderBox.height);
+    } else {
+      clipRadii = outerRadii;
+    }
+  }
+
+  canvas.save();
+  canvas.beginPath();
+  if (clipRadii && hasResolvedRadius(clipRadii)) {
+    traceRoundedRect(canvas, clipBox.x, clipBox.y, clipBox.width, clipBox.height, clipRadii);
+  } else {
+    canvas.moveTo(clipBox.x, clipBox.y);
+    canvas.lineTo(clipBox.x + clipBox.width, clipBox.y);
+    canvas.lineTo(clipBox.x + clipBox.width, clipBox.y + clipBox.height);
+    canvas.lineTo(clipBox.x, clipBox.y + clipBox.height);
+    canvas.closePath();
+  }
+  canvas.clip();
+  const xs = tileOrigins(layer.repeat.x, img.x, img.width, area.x, area.width, clipBox.x, clipBox.width);
+  const ys = tileOrigins(layer.repeat.y, img.y, img.height, area.y, area.height, clipBox.y, clipBox.height);
+  for (const ty of ys) {
+    for (const tx of xs) {
+      fillGradientTile(canvas, layer, { x: tx, y: ty, width: img.width, height: img.height });
+    }
+  }
+  canvas.restore();
+}
+
+/**
+ * Paint one 'bg' op: the background color (rounded when the element has a
+ * border-radius), then the image layers last-to-first (the first layer paints
+ * on top, css-backgrounds-3 §9.1). The color paints within the LAST layer's
+ * background-clip region (css-backgrounds-3 §7.4: the color travels with the
+ * final layer's clip), radii-adjusted for that box.
+ */
+function paintBackgroundOp(canvas: CanvasLike, op: PaintOp, viewport?: Viewport | null): void {
+  const b = snapBox(op.box);
+  const radii =
+    op.borderRadius && hasNonZeroRadius(op.borderRadius)
+      ? resolveBorderRadius(op.borderRadius, op.box.width, op.box.height, viewport)
+      : null;
+  const bg = op.background;
+  if (op.color && op.color.a > 0) {
+    let colorClip: Box = b;
+    let colorRadii: ResolvedRadii | null = radii;
+    if (bg && bg.layers.length > 0) {
+      const last = bg.layers[bg.layers.length - 1];
+      if (last.clip !== 'border-box') {
+        colorClip = layerBox(b, bg.widths, bg.padding, last.clip);
+        if (radii) {
+          colorRadii =
+            last.clip === 'padding-box'
+              ? innerRadii(radii, bg.widths, b.width, b.height)
+              : innerRadii(innerRadii(radii, bg.widths, b.width, b.height), bg.padding, b.width, b.height);
+        }
+      }
+    }
+    canvas.save();
+    canvas.beginPath();
+    if (colorRadii && hasResolvedRadius(colorRadii)) {
+      traceRoundedRect(canvas, colorClip.x, colorClip.y, colorClip.width, colorClip.height, colorRadii);
+    } else {
+      canvas.moveTo(colorClip.x, colorClip.y);
+      canvas.lineTo(colorClip.x + colorClip.width, colorClip.y);
+      canvas.lineTo(colorClip.x + colorClip.width, colorClip.y + colorClip.height);
+      canvas.lineTo(colorClip.x, colorClip.y + colorClip.height);
+      canvas.closePath();
+    }
+    canvas.clip();
+    canvas.fillRect(colorClip.x, colorClip.y, colorClip.width, colorClip.height, op.color);
+    canvas.restore();
+  }
+  if (!bg) return;
+  for (let i = bg.layers.length - 1; i >= 0; i--) {
+    paintBackgroundLayer(canvas, bg.layers[i], b, bg.widths, bg.padding, radii, viewport);
+  }
 }
 
 /** Paint one list marker. Geometric markers use Blink's bullet box: a filled
@@ -669,12 +888,7 @@ function paintOp(canvas: CanvasLike, op: PaintOp, viewport: Viewport | null | un
     applyClip(canvas, op.clip!, viewport);
   }
   if (op.kind === 'bg') {
-    if (op.borderRadius && hasNonZeroRadius(op.borderRadius)) {
-      paintRoundedBackground(canvas, op, viewport);
-    } else {
-      const b = snapBox(op.box);
-      canvas.fillRect(b.x, b.y, b.width, b.height, op.color!);
-    }
+    paintBackgroundOp(canvas, op, viewport);
   } else if (op.kind === 'border') {
     if (op.borderRadius && hasNonZeroRadius(op.borderRadius)) {
       paintRoundedBorder(canvas, op, viewport);

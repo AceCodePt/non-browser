@@ -1,0 +1,45 @@
+{
+  "name": "shorthand",
+  "note": "The background shorthand full grammar: image + color + position/size + repeat + attachment + origin/clip box keywords in one declaration, and a second layer painting over it. The computed background string must serialize component-for-component like Chrome (color, image, repeat, attachment, position / size, origin, clip).",
+  "harvest": {
+    "viewport": {
+      "width": 480,
+      "height": 200
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"a\" style=\"position:absolute;left:30px;top:30px;width:190px;height:140px;background:#2244cc linear-gradient(to right, rgba(255,255,255,0.9), rgba(255,255,255,0)) no-repeat center / 80px 60px content-box padding-box\"></div><div id=\"b\" style=\"position:absolute;left:260px;top:30px;width:190px;height:140px;border:10px solid rgba(0,0,0,0.2);padding:12px;background:linear-gradient(to bottom, #ffd400, #ff3d00) 10px 20px / 50px 40px repeat-x fixed border-box border-box\"></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "a",
+        "props": [
+          "background",
+          "background-image",
+          "background-color",
+          "background-position",
+          "background-size",
+          "background-repeat",
+          "background-clip",
+          "background-origin",
+          "background-attachment"
+        ]
+      },
+      {
+        "id": "b",
+        "props": [
+          "background",
+          "background-attachment",
+          "background-origin"
+        ]
+      }
+    ],
+    "rects": [
+      "a",
+      "b"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

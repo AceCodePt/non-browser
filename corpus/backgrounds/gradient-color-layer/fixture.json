@@ -1,0 +1,36 @@
+{
+  "name": "gradient-color-layer",
+  "note": "A gradient layered over background-color: the semi-transparent gradient composites over the color underneath (background-color paints first, the image layers stack on top), plus a hard-stop band (red 25%, blue 25%) proving stop-position clamping rasterizes like Chrome.",
+  "harvest": {
+    "viewport": {
+      "width": 240,
+      "height": 220
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"a\" style=\"position:absolute;left:40px;top:30px;width:160px;height:80px;background-color:#ffdd00;background-image:linear-gradient(to bottom, rgba(255,0,0,0.7), rgba(0,0,255,0.7))\"></div><div id=\"b\" style=\"position:absolute;left:40px;top:130px;width:160px;height:60px;background-image:linear-gradient(90deg, red 25%, blue 25%)\"></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "a",
+        "props": [
+          "background-image",
+          "background-color"
+        ]
+      },
+      {
+        "id": "b",
+        "props": [
+          "background-image"
+        ]
+      }
+    ],
+    "rects": [
+      "a",
+      "b"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "a": {
+      "background-clip": "border-box",
+      "background-origin": "border-box"
+    },
+    "d": {
+      "background-clip": "content-box",
+      "background-origin": "border-box"
+    },
+    "e": {
+      "background-clip": "padding-box",
+      "background-origin": "padding-box",
+      "border-radius": "24px"
+    }
+  },
+  "rect": {
+    "a": {
+      "x": 30,
+      "y": 30,
+      "width": 162,
+      "height": 142
+    },
+    "b": {
+      "x": 190,
+      "y": 30,
+      "width": 162,
+      "height": 142
+    },
+    "c": {
+      "x": 350,
+      "y": 30,
+      "width": 162,
+      "height": 142
+    },
+    "d": {
+      "x": 30,
+      "y": 150,
+      "width": 162,
+      "height": 142
+    },
+    "e": {
+      "x": 190,
+      "y": 150,
+      "width": 162,
+      "height": 142
+    },
+    "f": {
+      "x": 350,
+      "y": 150,
+      "width": 162,
+      "height": 142
+    }
+  }
+}

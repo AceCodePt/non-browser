@@ -11,30 +11,28 @@
  */
 
 import type { Color, ComputedStyle, CornerRadii, Length, Shadow, Viewport } from './css.js';
+import {
+  backgroundImageString,
+  backgroundShorthandString,
+  bgPositionString,
+  bgRepeatString,
+  bgSizeString,
+  colorString,
+  type BackgroundLayer,
+} from './background.js';
 
 export type ComputedStyleProps = Record<string, string>;
 
-/**
- * CSSOM color serialization: an opaque color is `rgb(r, g, b)`; a
- * non-opaque alpha serializes with the fewest decimal places that still
- * quantizes back to the same 8-bit alpha byte (Chrome prints 0x88 as 0.533,
- * 0.25 as 0.25, 0.5 as 0.5).
- */
-function colorString(c: Color): string {
-  const byte = Math.round(Math.min(1, Math.max(0, c.a)) * 255);
-  if (byte >= 255) return `rgb(${c.r}, ${c.g}, ${c.b})`;
-  return `rgba(${c.r}, ${c.g}, ${c.b}, ${alphaString(byte)})`;
-}
-
-function alphaString(byte: number): string {
-  for (let d = 0; d <= 6; d++) {
-    const f = Math.round((byte / 255) * 10 ** d) / 10 ** d;
-    if (Math.round(f * 255) === byte) {
-      const s = f.toFixed(d);
-      return d === 0 ? s : s.replace(/0+$/, '').replace(/\.$/, '');
-    }
-  }
-  return String(byte / 255);
+function backgroundLayersOf(style: ComputedStyle): BackgroundLayer[] {
+  return style.backgroundImages.map((image, i) => ({
+    image,
+    position: style.backgroundPositions[i],
+    size: style.backgroundSizes[i],
+    repeat: style.backgroundRepeats[i],
+    clip: style.backgroundClips[i],
+    origin: style.backgroundOrigins[i],
+    attachment: style.backgroundAttachments[i],
+  }));
 }
 
 /**
@@ -184,6 +182,22 @@ export function computedStyleString(style: ComputedStyle, prop: string, refWidth
       return colorString(style.color);
     case 'background-color':
       return colorString(style.backgroundColor);
+    case 'background-image':
+      return style.backgroundImages.map(backgroundImageString).join(', ');
+    case 'background-position':
+      return style.backgroundPositions.map(bgPositionString).join(', ');
+    case 'background-size':
+      return style.backgroundSizes.map(bgSizeString).join(', ');
+    case 'background-repeat':
+      return style.backgroundRepeats.map(bgRepeatString).join(', ');
+    case 'background-clip':
+      return style.backgroundClips.join(', ');
+    case 'background-origin':
+      return style.backgroundOrigins.join(', ');
+    case 'background-attachment':
+      return style.backgroundAttachments.join(', ');
+    case 'background':
+      return backgroundShorthandString(backgroundLayersOf(style), style.backgroundColor);
     case 'opacity':
       // Chrome computes an alpha-value to its normalized number (0.5, 1, 0).
       return String(style.opacity);

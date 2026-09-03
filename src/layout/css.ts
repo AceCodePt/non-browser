@@ -12,6 +12,22 @@
 import { fontMetricsForFamily, roundedAscent, roundedDescent } from './fontmetrics.js';
 import { foldEmExpr, parseMathValue, resolveMathExpr, type MathExpr } from './calc.js';
 import { registerRecognizedProperty } from './property-coverage.js';
+import {
+  defaultLayer,
+  parseBackgroundImageOne,
+  parseBackgroundShorthand,
+  parseBgPosition,
+  parseBgRepeat,
+  parseBgSize,
+  parseBoxKeyword,
+  type BgAttachment,
+  type BackgroundImage,
+  type BackgroundLayer,
+  type BgPosition,
+  type BgRepeat,
+  type BgSize,
+  type BoxKeyword,
+} from './background.js';
 
 export interface Color {
   r: number;
@@ -340,6 +356,18 @@ export interface ComputedStyle {
   borderStyle: Record<Side, 'none' | 'solid' | 'inset' | 'outset'>;
   borderRadius: BorderRadius;
   backgroundColor: Color;
+  /**
+   * Background layer lists (css-backgrounds-3 §9), cycled to the image count
+   * (§9.1). url() layers are kept for computed-style truthfulness but paint
+   * nothing (chartered-out raster decode, docs/ledgers/backgrounds.md).
+   */
+  backgroundImages: BackgroundImage[];
+  backgroundPositions: BgPosition[];
+  backgroundSizes: BgSize[];
+  backgroundRepeats: BgRepeat[];
+  backgroundClips: BoxKeyword[];
+  backgroundOrigins: BoxKeyword[];
+  backgroundAttachments: BgAttachment[];
   color: Color;
   /** element-level opacity (css-transforms-1 §11): composites the whole subtree
    * against what's behind it and establishes a stacking context when < 1. */
@@ -931,8 +959,8 @@ function parseBorderRadius(decls: Declaration[]): BorderRadius {
   return out;
 }
 
-function splitTopLevel(value: string): string[] {
-  const out: string[] = [];
+/** Whitespace split at paren depth 0 (function arguments stay one token). */
+export function splitTopLevel(value: string): string[] {  const out: string[] = [];
   let depth = 0;
   let cur = '';
   for (const c of value) {
@@ -1027,7 +1055,8 @@ function parseTrackDef(tok: string): TrackDef {
   return bareTrackDef(parseTrackFunction(s));
 }
 
-function splitOnTopLevelComma(value: string): string[] {
+/** Comma split at paren depth 0 (gradient/layer lists). */
+export function splitOnTopLevelComma(value: string): string[] {
   const out: string[] = [];
   let depth = 0;
   let cur = '';
@@ -1739,6 +1768,55 @@ export function makeStyle(rawDecls: Declaration[], defaults: Defaults): Computed
   };
 
   const bgDecl = findDecl(decls, 'background-color') ?? findDecl(decls, 'background');
+
+  // --- background layers (css-backgrounds-3 §9): the shorthand seeds every
+  // layer longhand, then each longhand declaration overrides the whole list.
+  // A longhand value that fails to parse drops (Chrome's parse-error
+  // recovery) and keeps the shorthand/initial value; the lists cycle to the
+  // image count (§9.1). ---
+  const backgroundLayers = (() => {
+    let layers: BackgroundLayer[] = [defaultLayer({ kind: 'none' })];
+    const sh = findDecl(decls, 'background');
+    if (sh) {
+      const parsed = parseBackgroundShorthand(sh.value, elementColor);
+      if (parsed) layers = parsed.layers;
+    }
+    const override = <T>(name: string, parse: (v: string) => T | null, apply: (l: BackgroundLayer, v: T) => BackgroundLayer): void => {
+      const d = findDecl(decls, name);
+      if (!d) return;
+      const vals = splitOnTopLevelComma(d.value).map(parse);
+      if (vals.some((v) => v === null)) return;
+      layers = layers.map((l, i) => apply(l, vals[i % vals.length] as T));
+    };
+    // The image list defines the layer count (css-backgrounds-3 §9.1): a
+    // longer background-image expands the layer list (cycling the shorthand's
+    // layer attributes); the other longhands cycle to that count.
+    const imgDecl = findDecl(decls, 'background-image');
+    if (imgDecl) {
+      const imgs = splitOnTopLevelComma(imgDecl.value).map((v) => parseBackgroundImageOne(v, elementColor));
+      if (!imgs.some((v) => v === null)) {
+        layers = imgs.map((img, i) => ({ ...layers[i % layers.length], image: img as BackgroundImage }));
+      }
+    }
+    override('background-position', parseBgPosition, (l, v) => ({ ...l, position: v }));
+    override('background-size', parseBgSize, (l, v) => ({ ...l, size: v }));
+    override('background-repeat', parseBgRepeat, (l, v) => ({ ...l, repeat: v }));
+    override('background-clip', parseBoxKeyword, (l, v) => ({ ...l, clip: v }));
+    override('background-origin', parseBoxKeyword, (l, v) => ({ ...l, origin: v }));
+    const attach = findDecl(decls, 'background-attachment');
+    if (attach) {
+      const vals = splitOnTopLevelComma(attach.value).map((v) => {
+        const s = v.trim().toLowerCase();
+        return s === 'scroll' || s === 'fixed' || s === 'local' ? (s as BgAttachment) : null;
+      });
+      if (!vals.some((v) => v === null)) {
+        layers = layers.map((l, i) => ({ ...l, attachment: vals[i % vals.length] as BgAttachment }));
+      }
+    }
+    return layers;
+  })();
+  const cycleList = <T>(arr: T[]): T[] =>
+    arr.length === backgroundLayers.length ? arr : Array.from({ length: backgroundLayers.length }, (_, i) => arr[i % arr.length]);
 
   // --- font-family (needed before line-height/font-size-margin resolution) ---
   let fontFamily = defaults.fontFamily;
@@ -2454,9 +2532,26 @@ export function makeStyle(rawDecls: Declaration[], defaults: Defaults): Computed
     backgroundColor: (() => {
       if (!bgDecl) return transparentColor;
       const c = parseColorOrNull(bgDecl.value);
-      if (!c) return transparentColor;
+      if (!c) {
+        // `background: <color> url(...) ...` and friends: the shorthand's
+        // color slot (already parsed into backgroundLayers) carries the color
+        // when the raw value isn't a pure color.
+        const sh = findDecl(decls, 'background');
+        if (sh) {
+          const parsed = parseBackgroundShorthand(sh.value, elementColor);
+          if (parsed?.color) return parsed.color;
+        }
+        return transparentColor;
+      }
       return c.currentColor ? elementColor : c;
     })(),
+    backgroundImages: backgroundLayers.map((l) => l.image),
+    backgroundPositions: cycleList(backgroundLayers.map((l) => l.position)),
+    backgroundSizes: cycleList(backgroundLayers.map((l) => l.size)),
+    backgroundRepeats: cycleList(backgroundLayers.map((l) => l.repeat)),
+    backgroundClips: cycleList(backgroundLayers.map((l) => l.clip)),
+    backgroundOrigins: cycleList(backgroundLayers.map((l) => l.origin)),
+    backgroundAttachments: cycleList(backgroundLayers.map((l) => l.attachment)),
     color: elementColor,
     opacity,
     boxShadow,

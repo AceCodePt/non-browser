@@ -1,0 +1,55 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "b": {
+      "background-image": "radial-gradient(circle at 30% 30%, rgb(255, 255, 255), rgb(0, 0, 0))"
+    },
+    "c": {
+      "background-image": "radial-gradient(40px 60px, rgb(255, 255, 0), rgb(0, 0, 255))"
+    },
+    "e": {
+      "background-image": "radial-gradient(circle at 20px 25px, rgb(0, 200, 83), rgb(213, 0, 249))"
+    },
+    "f": {
+      "background-image": "repeating-radial-gradient(circle, rgb(255, 0, 0) 0px, rgb(255, 0, 0) 8px, rgb(0, 0, 255) 8px, rgb(0, 0, 255) 16px)"
+    }
+  },
+  "rect": {
+    "a": {
+      "x": 30,
+      "y": 30,
+      "width": 110,
+      "height": 90
+    },
+    "b": {
+      "x": 190,
+      "y": 30,
+      "width": 110,
+      "height": 90
+    },
+    "c": {
+      "x": 350,
+      "y": 30,
+      "width": 110,
+      "height": 90
+    },
+    "d": {
+      "x": 30,
+      "y": 150,
+      "width": 110,
+      "height": 90
+    },
+    "e": {
+      "x": 190,
+      "y": 150,
+      "width": 110,
+      "height": 90
+    },
+    "f": {
+      "x": 350,
+      "y": 150,
+      "width": 110,
+      "height": 90
+    }
+  }
+}

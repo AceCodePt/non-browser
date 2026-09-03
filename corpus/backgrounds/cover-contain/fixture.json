@@ -1,0 +1,49 @@
+{
+  "name": "cover-contain",
+  "note": "background-size keywords cover and contain (and the two-value forms alongside them). Gradients have no intrinsic size, so cover/contain resolve to the positioning area exactly like Chrome paints them; the computed background-size strings must match Chrome.",
+  "harvest": {
+    "viewport": {
+      "width": 420,
+      "height": 260
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"a\" style=\"position:absolute;left:30px;top:30px;width:160px;height:90px;background-image:linear-gradient(to right, red, blue);background-size:cover;background-repeat:no-repeat\"></div><div id=\"b\" style=\"position:absolute;left:230px;top:30px;width:160px;height:90px;background-image:linear-gradient(to right, red, blue);background-size:contain;background-repeat:no-repeat\"></div><div id=\"c\" style=\"position:absolute;left:30px;top:150px;width:160px;height:90px;background-image:linear-gradient(to right, green, yellow);background-size:100px 40px;background-position:30px 25px;background-repeat:no-repeat\"></div><div id=\"d\" style=\"position:absolute;left:230px;top:150px;width:160px;height:90px;background-image:linear-gradient(to bottom, green, yellow);background-size:70% 60%;background-position:10px 10px;background-repeat:no-repeat\"></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "a",
+        "props": [
+          "background-size"
+        ]
+      },
+      {
+        "id": "b",
+        "props": [
+          "background-size"
+        ]
+      },
+      {
+        "id": "c",
+        "props": [
+          "background-size"
+        ]
+      },
+      {
+        "id": "d",
+        "props": [
+          "background-size"
+        ]
+      }
+    ],
+    "rects": [
+      "a",
+      "b",
+      "c",
+      "d"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

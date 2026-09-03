@@ -1,0 +1,43 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "a": {
+      "background-size": "cover"
+    },
+    "b": {
+      "background-size": "contain"
+    },
+    "c": {
+      "background-size": "100px 40px"
+    },
+    "d": {
+      "background-size": "70% 60%"
+    }
+  },
+  "rect": {
+    "a": {
+      "x": 30,
+      "y": 30,
+      "width": 160,
+      "height": 90
+    },
+    "b": {
+      "x": 230,
+      "y": 30,
+      "width": 160,
+      "height": 90
+    },
+    "c": {
+      "x": 30,
+      "y": 150,
+      "width": 160,
+      "height": 90
+    },
+    "d": {
+      "x": 230,
+      "y": 150,
+      "width": 160,
+      "height": 90
+    }
+  }
+}

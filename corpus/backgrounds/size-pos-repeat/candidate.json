@@ -1,0 +1,56 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "a": {
+      "background-size": "60px 40px",
+      "background-position": "20px 15px",
+      "background-repeat": "no-repeat"
+    },
+    "e": {
+      "background-size": "50% 50%",
+      "background-position": "50% 50%"
+    },
+    "f": {
+      "background-size": "auto 30px",
+      "background-repeat": "repeat-x"
+    }
+  },
+  "rect": {
+    "a": {
+      "x": 30,
+      "y": 30,
+      "width": 110,
+      "height": 90
+    },
+    "b": {
+      "x": 170,
+      "y": 30,
+      "width": 110,
+      "height": 90
+    },
+    "c": {
+      "x": 310,
+      "y": 30,
+      "width": 180,
+      "height": 90
+    },
+    "d": {
+      "x": 30,
+      "y": 150,
+      "width": 110,
+      "height": 80
+    },
+    "e": {
+      "x": 170,
+      "y": 150,
+      "width": 110,
+      "height": 80
+    },
+    "f": {
+      "x": 310,
+      "y": 150,
+      "width": 180,
+      "height": 80
+    }
+  }
+}
