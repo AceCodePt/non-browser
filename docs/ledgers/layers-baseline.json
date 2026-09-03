@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-03T08:37:10.484Z",
+  "generatedAt": "2026-09-03T09:08:38.642Z",
   "fixtures": {
     "border-radius/circle-50": {
       "sha256": "c9c1de75e34787220404d3e2c33096a6a882cab941a48bfcc7577185bed7a1d9",
@@ -861,6 +861,34 @@
       "height": 100,
       "rectCount": 6,
       "computedStyleCount": 6
+    },
+    "media-modern/contrast-forced-gamut": {
+      "sha256": "7161ed5cf0d65649b435005c45f0b199d0249cca56a2e4ce86c424de8b9218f7",
+      "width": 300,
+      "height": 360,
+      "rectCount": 7,
+      "computedStyleCount": 7
+    },
+    "media-modern/defaults-compose": {
+      "sha256": "e521401462880f42396ef62c30ebc9c1e99e56f39c79abc2debd3ae4f4e15027",
+      "width": 300,
+      "height": 280,
+      "rectCount": 7,
+      "computedStyleCount": 7
+    },
+    "media-modern/hover-pointer": {
+      "sha256": "0e622f667f1f8d22ee6bb73383db406dc3d95641ff3005444eea397d408114b3",
+      "width": 300,
+      "height": 400,
+      "rectCount": 8,
+      "computedStyleCount": 8
+    },
+    "media-modern/range-syntax": {
+      "sha256": "c31cd82a0e094b5af1f3f3e24178c09bd8d00bc823109475c6809392a6200c4a",
+      "width": 300,
+      "height": 200,
+      "rectCount": 7,
+      "computedStyleCount": 7
     },
     "media-queries/aspect-ratio": {
       "sha256": "ab8373e99c1bfd5b8cfcc0eb615ef901a534af5d304effa278f8b42fd80eb7e7",

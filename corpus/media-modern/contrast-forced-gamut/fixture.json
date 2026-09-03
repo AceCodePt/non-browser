@@ -1,0 +1,29 @@
+{
+  "name": "contrast-forced-gamut",
+  "note": "Preference and output features against emulated environments: prefers-contrast more vs no-preference, forced-colors active vs none, color-gamut srgb vs p3 (rec2020 stays false for an srgb display), and an and-composition of contrast and forced-colors. Each viewport states the environment to both engines through CDP feature overrides and MediaEnvironment inputs. The matching rules size the boxes rather than paint them: forced-colors emulation overrides author colors (Chrome computes canvas colors), so background-color is not a comparable oracle under (forced-colors: active); width is untouched by forced-colors.",
+  "harvest": {
+    "viewports": [
+      { "width": 300, "height": 360 },
+      { "width": 300, "height": 360, "prefersContrast": "more", "forcedColors": "active" },
+      { "width": 300, "height": 360, "colorGamut": "p3" }
+    ],
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} body{background-color:rgb(238, 238, 238)} div{width:60px;height:30px;background-color:rgb(0, 0, 0)} @media (prefers-contrast: more) { #cm{width:90px} } @media (prefers-contrast: no-preference) { #cn{width:90px} } @media (forced-colors: active) { #fa{width:90px} } @media (forced-colors: none) { #fn{width:90px} } @media (color-gamut: p3) { #gp{width:90px} } @media (color-gamut: rec2020) { #gr{width:90px} } @media (prefers-contrast: more) and (forced-colors: active) { #both{width:90px} }</style></head><body><div id=\"cm\">1</div><div id=\"cn\">2</div><div id=\"fa\">3</div><div id=\"fn\">4</div><div id=\"gp\">5</div><div id=\"gr\">6</div><div id=\"both\">7</div></body></html>",
+    "computedStyle": [
+      { "id": "cm", "props": ["width"] },
+      { "id": "cn", "props": ["width"] },
+      { "id": "fa", "props": ["width"] },
+      { "id": "fn", "props": ["width"] },
+      { "id": "gp", "props": ["width"] },
+      { "id": "gr", "props": ["width"] },
+      { "id": "both", "props": ["width"] }
+    ],
+    "rects": ["cm", "cn", "fa", "fn", "gp", "gr", "both"],
+    "textElements": ["cm", "cn", "fa", "fn", "gp", "gr", "both"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

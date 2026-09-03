@@ -196,6 +196,8 @@ the charter and the corpus cannot silently diverge:
 | selectors | structural + root pseudo-classes (:root, :empty, first/last/only-child, :nth-child(An+B), :nth-last-child, first/last/only-of-type, :nth-of-type) | yes | corpus/selectors-structural | :nth-child( |
 | @supports | declaration conditions evaluated against the engine's real surface (unsupported → block drops, css-conditional-3 §4) | yes | corpus/supports | @supports |
 | @supports | not / and / or composition with precedence and nesting; @media inside and outside @supports | yes | corpus/supports | not |
+| media | mq4 range syntax in @media ((width >= 300px), two-sided (400px < width <= 800px), value-first flip, aspect-ratio/resolution ranges) | yes | corpus/media-modern | (width >= |
+| media | device-capability features (hover, any-hover, pointer, any-pointer, prefers-contrast, forced-colors, color-gamut, update) as explicit environment inputs | yes | corpus/media-modern | forced-colors |
 | ua-stylesheet | nested-list rules authored with :is() (Blink html.css parity) | yes | corpus/selectors | :is(dl, ol, ul) |
 
 ### Deferred / Not in v1 (no silent absence)

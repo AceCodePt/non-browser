@@ -1,0 +1,28 @@
+{
+  "name": "defaults-compose",
+  "note": "Headless-desktop defaults and composition with the existing surface: hover/any-hover/pointer/any-pointer match their desktop values, (update: fast) holds and (update: slow) drops (the desktop default the shell cannot un-emulate), and prefers-color-scheme composes with the new features via and/or/not in one query.",
+  "harvest": {
+    "viewports": [
+      { "width": 300, "height": 280 },
+      { "width": 300, "height": 280, "prefersColorScheme": "dark" }
+    ],
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} body{background-color:rgb(238, 238, 238)} div{width:60px;height:30px;background-color:rgb(0, 0, 0)} @media (hover: hover) { #d1{background-color:rgb(255, 0, 0)} } @media (pointer: fine) { #d2{background-color:rgb(0, 128, 0)} } @media (update: fast) { #d3{background-color:rgb(0, 0, 255)} } @media (update: slow) { #d4{background-color:rgb(128, 0, 128)} } @media ((pointer: fine) and (prefers-color-scheme: dark)) { #d5{background-color:rgb(255, 165, 0)} } @media ((hover: none) or (prefers-color-scheme: dark)) { #d6{background-color:rgb(0, 128, 128)} } @media not ((hover: none) and (pointer: fine)) { #d7{background-color:rgb(255, 0, 255)} }</style></head><body><div id=\"d1\">1</div><div id=\"d2\">2</div><div id=\"d3\">3</div><div id=\"d4\">4</div><div id=\"d5\">5</div><div id=\"d6\">6</div><div id=\"d7\">7</div></body></html>",
+    "computedStyle": [
+      { "id": "d1", "props": ["background-color"] },
+      { "id": "d2", "props": ["background-color"] },
+      { "id": "d3", "props": ["background-color"] },
+      { "id": "d4", "props": ["background-color"] },
+      { "id": "d5", "props": ["background-color"] },
+      { "id": "d6", "props": ["background-color"] },
+      { "id": "d7", "props": ["background-color"] }
+    ],
+    "rects": ["d1", "d2", "d3", "d4", "d5", "d6", "d7"],
+    "textElements": ["d1", "d2", "d3", "d4", "d5", "d6", "d7"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}
