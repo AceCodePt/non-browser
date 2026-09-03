@@ -1,0 +1,21 @@
+{
+  "name": "header",
+  "note": "css-position-3 §3.6 at scroll offset 0: a position: sticky header with top: 0 sits at its flow position (no shift when the constraint holds), a later sticky with top: 10px at flow y=80 also stays put, and sticky elements inside overflow scroll containers constrain against the container's scrollport — with the content already past the inset no shift occurs. Sticky keeps occupying flow space (mid pushes the scroller down). The fixtures use the overflow shorthand: the engine's single-axis overflow model parses `overflow` only (pre-existing).",
+  "harvest": {
+    "viewport": { "width": 400, "height": 400 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} body{background-color:rgb(255, 255, 255)} #head{position: sticky;top:0;height:30px;background-color:rgb(255, 0, 0)} #mid{position: sticky;top:10px;height:20px;background-color:rgb(0, 255, 0);margin-top:50px} #sc{overflow:scroll;height:100px;width:300px;border:5px solid rgb(0, 0, 0);margin-top:10px} #inner{position: sticky;top:10px;height:20px;background-color:rgb(255, 255, 0)} #scpad{overflow:auto;height:100px;width:300px;border:5px solid rgb(0, 0, 0);padding:10px;margin-top:10px} #inner2{position: sticky;top:30px;height:20px;background-color:rgb(0, 255, 255)} #big{height:300px}</style></head><body><div id=\"head\"></div><div id=\"mid\"></div><div id=\"sc\"><div id=\"big\"></div><div id=\"inner\"></div></div><div id=\"scpad\"><div id=\"big\"></div><div id=\"inner2\"></div></div></body></html>",
+    "computedStyle": [
+      { "id": "head", "props": ["position"] },
+      { "id": "mid", "props": ["position", "top"] },
+      { "id": "inner", "props": ["position"] }
+    ],
+    "rects": ["head", "mid", "sc", "inner", "scpad", "inner2"],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

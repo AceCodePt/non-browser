@@ -877,6 +877,14 @@ interface LayoutBlockInput {
    * over-constrained block against the containing block's direction, not the
    * block's own. */
   cbDirection: Direction;
+  /** The nearest ancestor scrollport (padding box of the nearest scroll
+   * container, else the initial containing block): sticky insets resolve
+   * against it at scroll offset 0 (css-position-3 §3.6). */
+  scrollport?: Box;
+  /** The parent block's content-box rect when its height is definite — the
+   * containing-block clamp for sticky shifts. Undefined when the parent's
+   * height is auto (the clamp needs a final height, unavailable mid-flow). */
+  cbClampRect?: Box;
   /**
    * When set, the child is the first in-flow block of a parent with no top
    * border/padding: its top margin collapses into the parent's top margin, so
@@ -913,6 +921,7 @@ export function layoutElementBox(
   nextOrder: () => number,
   viewport?: Viewport,
   forcedHeight?: number,
+  scrollport?: Box,
 ): LayoutNode {
   const children: LayoutNode[] = [];
   let lines: LineBox[] = [];
@@ -928,6 +937,40 @@ export function layoutElementBox(
   const padL = resolveLength(style.padding.left, contentWidth, viewport) ?? 0;
   const padR = resolveLength(style.padding.right, contentWidth, viewport) ?? 0;
   const padBorderV = borderPaddingBlock(style, contentWidth, viewport);
+
+  // Sticky-inset chain: this box's own scrollport if it is a scroll container,
+  // else the inherited one (the viewport's ICB at the root). The clamp rect is
+  // this box's content area when its height is definite (sticky children may
+  // not leave it); with an auto height no clamp is available mid-flow.
+  const incomingScrollport = scrollport ?? initialContainingBlock(viewport ?? { width: 0, height: 0 });
+  let childScrollport = incomingScrollport;
+  if (isScrollContainer(style.overflow)) {
+    const ownSpecH = resolveLength(style.height, contentWidth, viewport);
+    const ownBorderBoxH =
+      ownSpecH !== null ? (style.boxSizing === 'border-box' ? ownSpecH : ownSpecH + padBorderV) : null;
+    if (ownBorderBoxH !== null) {
+      childScrollport = {
+        x: borderX + bL,
+        y: borderY + bT,
+        width: Math.max(0, borderWidth - bL - bR),
+        height: Math.max(0, ownBorderBoxH - bT - bB),
+      };
+    }
+  }
+  const ownSpecH = resolveLength(style.height, contentWidth, viewport);
+  // Scroll-container parents never yield a y-clamp: their containing block
+  // extends over the full flowed content (Chrome keeps sticky children at
+  // their flow position even below the scroller's visible bottom), so the
+  // visible height would under-clamp.
+  const childCbClampRect =
+    ownSpecH !== null && !isScrollContainer(style.overflow)
+      ? {
+          x: contentX,
+          y: contentY,
+          width: contentWidth,
+          height: Math.max(0, style.boxSizing === 'border-box' ? ownSpecH - padBorderV : ownSpecH),
+        }
+      : undefined;
 
   // Positioned boxes push their paint key and containing block for the whole
   // subtree; their own background/border is keyed to the pushed level.
@@ -1076,7 +1119,16 @@ export function layoutElementBox(
     const hasBlocks = el.childNodes.some((c) => c.nodeName !== '#text' && c.nodeName !== '#comment');
     if (hasBlocks) {
       const childFm = new FloatManager(contentX, contentWidth);
-      const state: LayoutBlockInput = { fm: childFm, contentX, contentWidth, y: contentY, prevBottomMargin: 0, cbDirection: style.direction };
+      const state: LayoutBlockInput = {
+        fm: childFm,
+        contentX,
+        contentWidth,
+        y: contentY,
+        prevBottomMargin: 0,
+        cbDirection: style.direction,
+        scrollport: childScrollport,
+        cbClampRect: childCbClampRect,
+      };
       const { nodes, height, escapedBottom } = layoutBlockChildren(el, state, styles, paints, nextOrder, viewport);
       children.push(...nodes);
       contentHeight = height;
@@ -1296,6 +1348,41 @@ function layoutBlock(
     const offB = resolveLength(style.bottom, cbRect.height, viewport);
     paintX = borderX + (offL !== null ? offL : offR !== null ? -offR : 0);
     paintY = borderTop + (offT !== null ? offT : offB !== null ? -offB : 0);
+  } else if (style.position === 'sticky') {
+    // css-position-3 §3.6 at scroll offset 0: the box shifts minimally so its
+    // rect satisfies the insets against the nearest scrollport, clamped to its
+    // containing block. In-flow space is untouched (flowY stays borderTop).
+    const sp = ctx.scrollport ?? initialContainingBlock(viewport ?? { width: 0, height: 0 });
+    const offL = resolveLength(style.left, cbRect.width, viewport);
+    const offR = resolveLength(style.right, cbRect.width, viewport);
+    const offT = resolveLength(style.top, cbRect.height, viewport);
+    const offB = resolveLength(style.bottom, cbRect.height, viewport);
+    const ownPadT = resolveLength(style.padding.top, contentWidth, viewport) ?? 0;
+    const ownPadB = resolveLength(style.padding.bottom, contentWidth, viewport) ?? 0;
+    const ownSpecH = resolveLength(style.height, contentWidth, viewport);
+    const boxH =
+      ownSpecH !== null
+        ? style.boxSizing === 'border-box'
+          ? ownSpecH
+          : ownSpecH + ownPadT + ownPadB + style.borderWidth.top + style.borderWidth.bottom
+        : 0;
+    let shiftX = 0;
+    let shiftY = 0;
+    if (offT !== null) shiftY = Math.max(shiftY, sp.y + offT - borderTop);
+    else if (offB !== null) shiftY = Math.min(shiftY, sp.y + sp.height - offB - boxH - borderTop);
+    if (offL !== null) shiftX = Math.max(shiftX, sp.x + offL - borderX);
+    else if (offR !== null) shiftX = Math.min(shiftX, sp.x + sp.width - offR - borderBoxWidth - borderX);
+    // The containing-block clamp: horizontally the parent content box is
+    // always known (ctx.contentX/contentWidth); vertically only when the
+    // parent's height is definite (ctx.cbClampRect).
+    shiftX = Math.max(shiftX, ctx.contentX - borderX);
+    shiftX = Math.min(shiftX, ctx.contentX + ctx.contentWidth - borderBoxWidth - borderX);
+    if (ctx.cbClampRect) {
+      shiftY = Math.max(shiftY, ctx.cbClampRect.y - borderTop);
+      shiftY = Math.min(shiftY, ctx.cbClampRect.y + ctx.cbClampRect.height - boxH - borderTop);
+    }
+    paintX = borderX + shiftX;
+    paintY = borderTop + shiftY;
   }
 
   const node = layoutElementBox(
@@ -1312,6 +1399,8 @@ function layoutBlock(
     paints,
     nextOrder,
     viewport,
+    undefined,
+    ctx.scrollport,
   );
   node.marginTop = marginT;
   node.marginBottom = node.escapedMarginBottom === undefined ? marginB : node.escapedMarginBottom;

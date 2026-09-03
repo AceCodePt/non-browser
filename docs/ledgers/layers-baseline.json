@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-03T09:56:12.675Z",
+  "generatedAt": "2026-09-03T10:18:12.547Z",
   "fixtures": {
     "aspect-ratio/block-surface": {
       "sha256": "5d45b9b9ab2c56340a50cd75f738e67c96b080949461231c0e352638dd3b3567",
@@ -1435,6 +1435,27 @@
       "height": 140,
       "rectCount": 1,
       "computedStyleCount": 1
+    },
+    "sticky/abs-child-stacking": {
+      "sha256": "dbe7e36c2ec61f734972dcb9a672630fe4972ece0a6b4e0b0ab05b0034f0d884",
+      "width": 400,
+      "height": 400,
+      "rectCount": 5,
+      "computedStyleCount": 3
+    },
+    "sticky/constraints": {
+      "sha256": "17f37708c6db895b27059c713d6ffa50faa5deb1692e5068f9fe78e029e60f8b",
+      "width": 400,
+      "height": 400,
+      "rectCount": 8,
+      "computedStyleCount": 2
+    },
+    "sticky/header": {
+      "sha256": "8bc7413a2041afa567bed29ce35997a9eccf1b5aeded401b5dd2030e8bb1df03",
+      "width": 400,
+      "height": 400,
+      "rectCount": 7,
+      "computedStyleCount": 3
     },
     "stress/article": {
       "sha256": "c65e8ea44bb537de5b474d677a98216a3892ee2bd68d649cc111ee759ff10d27",

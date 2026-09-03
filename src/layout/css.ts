@@ -304,7 +304,9 @@ export interface ComputedStyle {
   /** css-sizing-4 §5: `auto` or the preferred ratio num/den (`autoRatio` marks
    * the `auto <ratio>` form, which prefers the natural ratio on replaced). */
   aspectRatio: AspectRatio;
-  position: 'static' | 'relative' | 'absolute' | 'fixed';
+  /** css-position-3: sticky is parsed and laid out in-flow like relative at
+   * scroll offset 0 (a static renderer has no scroll position). */
+  position: 'static' | 'relative' | 'sticky' | 'absolute' | 'fixed';
   direction: Direction;
   zIndex: number | null;
   top: Length;
@@ -1989,10 +1991,13 @@ export function makeStyle(rawDecls: Declaration[], defaults: Defaults): Computed
 
   const floatDecl = findDecl(decls, 'float');
   const positionDecl = findDecl(decls, 'position');
-  const position: 'static' | 'relative' | 'absolute' | 'fixed' = (() => {
+  const position: 'static' | 'relative' | 'sticky' | 'absolute' | 'fixed' = (() => {
     if (!positionDecl) return 'static';
     const v = positionDecl.value.trim();
     if (v === 'relative') return 'relative';
+    // position: sticky computes to its own keyword; the layout treatement
+    // (in-flow, constraint pass at scroll 0) lives in block-inline.ts.
+    if (v === 'sticky') return 'sticky';
     if (v === 'absolute') return 'absolute';
     if (v === 'fixed') return 'fixed';
     return 'static';
