@@ -1,0 +1,25 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "im": {
+      "display": "none"
+    },
+    "after": {
+      "background-color": "rgb(238, 238, 238)"
+    }
+  },
+  "rect": {
+    "im": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0
+    },
+    "after": {
+      "x": 0,
+      "y": 0,
+      "width": 400,
+      "height": 20
+    }
+  }
+}

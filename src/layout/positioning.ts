@@ -12,7 +12,7 @@
  * shrink-to-fit width used when `width: auto`.
  */
 
-import { collectInlineText, layoutElementBox, type LayoutNode, type PaintOp } from './block-inline.js';
+import { collectInlineText, expandContents, layoutElementBox, type LayoutNode, type PaintOp } from './block-inline.js';
 import { borderPaddingBlock, borderPaddingInline, resolveLength, type ComputedStyle, type Length, type Viewport } from './css.js';
 import type { Box } from './types.js';
 import { measureTextWidth } from './measure.js';
@@ -225,7 +225,7 @@ function maxContentOf(el: P5Element, styles: Map<P5Element, ComputedStyle>, refW
     let sumMin = 0;
     let n = 0;
     const gap = resolveLength(style.columnGap, refWidth) ?? 0;
-    for (const child of el.childNodes) {
+    for (const child of expandContents(el.childNodes, styles)) {
       if (child.nodeName === '#text' || child.nodeName === '#comment') continue;
       const cs = styles.get(child as P5Element);
       if (!cs || cs.display === 'none') continue;
@@ -247,7 +247,7 @@ function maxContentOf(el: P5Element, styles: Map<P5Element, ComputedStyle>, refW
     }
     return { max: Math.max(max, sumMax), min: Math.max(min, sumMin) };
   }
-  for (const child of el.childNodes) {
+  for (const child of expandContents(el.childNodes, styles)) {
     if (child.nodeName === '#text' || child.nodeName === '#comment') continue;
     const cs = styles.get(child as P5Element);
     if (!cs || cs.display === 'none') continue;

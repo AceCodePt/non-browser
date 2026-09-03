@@ -162,6 +162,10 @@ export function resolveStyles(
     style.before = computePseudoBox(el, style, pseudoDecls, 'before');
     style.after = computePseudoBox(el, style, pseudoDecls, 'after');
     applyReplacedSize(el, style);
+    // css-display-3 §2: replaced elements cannot be display:contents — Blink
+    // computes 'none' for them (probed: img with display:contents reports
+    // computed 'none' and a zero rect).
+    if (style.display === 'contents' && (el.nodeName === 'img' || el.nodeName === 'canvas')) style.display = 'none';
     map.set(el, style);
     const childDefaults: StyleDefaults = {
       fontFamily: style.fontFamily,
@@ -757,7 +761,13 @@ function hasInlineContent(el: P5Element, styles: Map<P5Element, ComputedStyle>):
       if (/\S/.test((child as P5Text).value)) return true;
     } else if (child.nodeName !== '#comment') {
       const s = styles.get(child as P5Element);
-      if (s && (s.display === 'block' || s.display === 'list-item' || s.display === 'grid' || s.display === 'flex' || s.float !== 'none')) continue;
+      if (!s) return true;
+      if (s.display === 'contents') {
+        // css-display-3 §2: no box — the children ARE the inline content.
+        if (hasInlineContent(child as P5Element, styles)) return true;
+        continue;
+      }
+      if (s.display === 'block' || s.display === 'list-item' || s.display === 'grid' || s.display === 'flex' || s.float !== 'none') continue;
       return true;
     }
   }
@@ -769,11 +779,42 @@ function hasBlockLevelChild(el: P5Element, styles: Map<P5Element, ComputedStyle>
     if (child.nodeName === '#text' || child.nodeName === '#comment') continue;
     const s = styles.get(child as P5Element);
     if (!s || s.display === 'none') continue;
+    if (s.display === 'contents') {
+      if (hasBlockLevelChild(child as P5Element, styles)) return true;
+      continue;
+    }
     if (s.display === 'block' || s.display === 'list-item' || s.display === 'grid' || s.display === 'flex' || s.float !== 'none' || s.position !== 'static') {
       return true;
     }
   }
   return false;
+}
+
+/**
+ * css-display-3 §2: a display:contents element generates no box — its children
+ * participate in the parent's formatting context. Replaces every contents
+ * element in a child sequence with its own (recursively expanded) children so
+ * block/inline/flex/grid child collection sees through it; text and comment
+ * nodes pass through untouched. A contents element's own margins, borders and
+ * background never contribute (it has no box), and its rect falls back to the
+ * all-zero total-map entry like any other box-less element.
+ */
+export function expandContents<T extends { nodeName: string; childNodes?: unknown[] }>(
+  children: T[],
+  styles: Map<P5Element, ComputedStyle>,
+): T[] {
+  let out: T[] | null = null;
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i];
+    const s = styles.get(child as unknown as P5Element);
+    if (!s || s.display !== 'contents') {
+      if (out) out.push(child);
+      continue;
+    }
+    if (!out) out = children.slice(0, i);
+    out.push(...expandContents((child.childNodes ?? []) as T[], styles));
+  }
+  return out ?? children;
 }
 
 export function collectInlineText(el: P5Element, styles: Map<P5Element, ComputedStyle>): string {
@@ -1399,22 +1440,30 @@ function qemChainBelow(
   }
   const ownTop = resolveLength(style.margin.top, contentWidth, viewport) ?? 0;
   if (style.margin.top.quirk === true) return ownTop;
-  for (const child of el.childNodes) {
-    if (child.nodeName === '#comment') continue;
-    if (child.nodeName === '#text') {
-      if (/\S/.test((child as P5Text).value)) return null;
-      continue;
+  const scan = (nodes: P5Element['childNodes'], ownTop: number): number | null => {
+    for (const child of nodes) {
+      if (child.nodeName === '#comment') continue;
+      if (child.nodeName === '#text') {
+        if (/\S/.test((child as P5Text).value)) return null;
+        continue;
+      }
+      const cs = styles.get(child as P5Element);
+      if (!cs || cs.display === 'none') continue;
+      if (cs.position === 'absolute' || cs.position === 'fixed' || cs.float !== 'none') continue;
+      // Inline content forms an anonymous block ahead of any block child, so
+      // no element child here is the first in-flow child.
+      if (cs.display.startsWith('inline')) return null;
+      if (cs.display === 'contents') {
+        // css-display-3 §2: no box — the chain continues through the contents
+        // element's children with no margin/border contribution from it.
+        return scan((child as P5Element).childNodes, ownTop);
+      }
+      const sub = qemChainBelow(child as P5Element, styles, contentWidth, viewport);
+      return sub === null ? null : collapseMargins(ownTop, sub);
     }
-    const cs = styles.get(child as P5Element);
-    if (!cs || cs.display === 'none') continue;
-    if (cs.position === 'absolute' || cs.position === 'fixed' || cs.float !== 'none') continue;
-    // Inline content forms an anonymous block ahead of any block child, so no
-    // element child here is the first in-flow child.
-    if (cs.display.startsWith('inline')) return null;
-    const sub = qemChainBelow(child as P5Element, styles, contentWidth, viewport);
-    return sub === null ? null : collapseMargins(ownTop, sub);
-  }
-  return null;
+    return null;
+  };
+  return scan(el.childNodes, ownTop);
 }
 
 function layoutBlockChildren(
@@ -1480,7 +1529,7 @@ function layoutBlockChildren(
     inlineRun = [];
   };
 
-  for (const child of parent.childNodes) {
+  for (const child of expandContents(parent.childNodes, styles)) {
     if (child.nodeName === '#comment') continue;
     if (child.nodeName === '#text') {
       if (/\S/.test((child as P5Text).value)) inlineRun.push(child as unknown as P5Element);
@@ -2048,7 +2097,7 @@ function buildPieces(
 ): InlinePiece[] {
   const out: InlinePiece[] = [];
   if (style.before) pushPseudoPieces(style.before, el, out, ws);
-  for (const child of el.childNodes) {
+  for (const child of expandContents(el.childNodes, styles)) {
     if (child.nodeName === '#text') {
       pushTextPieces((child as P5Text).value, runStyleOf(style), el, out, ws);
       continue;

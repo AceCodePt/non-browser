@@ -169,6 +169,8 @@ export function computedStyleString(style: ComputedStyle, prop: string, refWidth
     case 'opacity':
       // Chrome computes an alpha-value to its normalized number (0.5, 1, 0).
       return String(style.opacity);
+    case 'flex-grow':
+      return String(style.flexGrow);
     case 'width':
       return lengthString(style.width, refWidth, viewport);
     case 'height':

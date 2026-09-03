@@ -213,6 +213,7 @@ export const ZERO_BORDER_RADIUS: BorderRadius = {
 export type DisplayValue =
   | 'block'
   | 'none'
+  | 'contents'
   | 'grid'
   | 'inline-grid'
   | 'flex'
@@ -1957,6 +1958,7 @@ export function makeStyle(rawDecls: Declaration[], defaults: Defaults): Computed
     if (!displayDecl) return defaults.display;
     const v = displayDecl.value.trim();
     if (v === 'none') return 'none';
+    if (v === 'contents') return 'contents';
     if (v === 'grid') return 'grid';
     if (v === 'inline-grid') return 'grid';
     if (v === 'flex' || v === 'inline-flex') return 'flex';

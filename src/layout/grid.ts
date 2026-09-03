@@ -31,7 +31,7 @@ import {
   type Viewport,
 } from './css.js';
 import { layoutTextLines, measureTextWidth } from './measure.js';
-import { FloatManager, layoutElementBox, type LayoutNode, type PaintOp } from './block-inline.js';
+import { expandContents, FloatManager, layoutElementBox, type LayoutNode, type PaintOp } from './block-inline.js';
 import { isCommentNode, isElementNode, isTextNode, type P5Element, type P5Text } from './types.js';
 
 const EPS = 0.001;
@@ -60,7 +60,7 @@ function resolveTrackFn(fn: TrackFunction, containerSize: number | null, viewpor
 }
 
 function hasInlineText(el: P5Element, styles: Map<P5Element, ComputedStyle>): boolean {
-  for (const child of el.childNodes) {
+  for (const child of expandContents(el.childNodes, styles)) {
     if (isTextNode(child)) {
       if (/\S/.test(child.value)) return true;
     } else if (isElementNode(child)) {
@@ -74,7 +74,7 @@ function hasInlineText(el: P5Element, styles: Map<P5Element, ComputedStyle>): bo
 
 function collectInlineText(el: P5Element, styles: Map<P5Element, ComputedStyle>): string {
   let out = '';
-  for (const child of el.childNodes) {
+  for (const child of expandContents(el.childNodes, styles)) {
     if (isTextNode(child)) {
       out += child.value;
     } else if (isElementNode(child)) {
@@ -102,7 +102,7 @@ function contentInlineSizes(
   }
   let min = 0;
   let max = 0;
-  for (const child of el.childNodes) {
+  for (const child of expandContents(el.childNodes, styles)) {
     if (!isElementNode(child)) continue;
     const cs = styles.get(child);
     if (!cs || cs.display === 'none') continue;
@@ -163,7 +163,7 @@ function contentHeightAtWidth(
       : 0;
   let y = 0;
   let counted = 0;
-  for (const child of el.childNodes) {
+  for (const child of expandContents(el.childNodes, styles)) {
     if (!isElementNode(child)) continue;
     const cs = styles.get(child);
     if (!cs || cs.display === 'none') continue;
@@ -345,7 +345,7 @@ function collectGridItems(
     textBuf = [];
   };
 
-  for (const child of el.childNodes) {
+  for (const child of expandContents(el.childNodes, styles)) {
     if (isCommentNode(child)) continue;
     if (isTextNode(child)) {
       textBuf.push(child);

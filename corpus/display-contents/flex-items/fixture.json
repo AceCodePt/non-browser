@@ -1,0 +1,21 @@
+{
+  "name": "flex-items",
+  "note": "css-display-3 §2 + css-flexbox-1: children of a display:contents element become flex items of the grandparent flex container — a row container distributes their flex-grow like direct children (with the container's gap), and a column container stacks them. The contents wrapper itself contributes no item and keeps an all-zero rect.",
+  "harvest": {
+    "viewport": { "width": 400, "height": 240 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} body{background-color:rgb(255, 255, 255)} #fx{display:flex;width:300px;column-gap:10px;margin-bottom:20px} #fw{display:contents} #f1{flex-grow:1;height:20px;background-color:rgb(255, 0, 0)} #f2{flex-grow:2;height:20px;background-color:rgb(0, 0, 255)} #f3{width:50px;height:20px;background-color:rgb(0, 128, 0)} #fc{display:flex;flex-direction:column;width:300px;height:120px} #fwc{display:contents} #fc1{height:30px;background-color:rgb(128, 0, 128)} #fc2{height:40px;background-color:rgb(0, 128, 128)}</style></head><body><div id=\"fx\"><div id=\"fw\"><div id=\"f1\">1</div><div id=\"f2\">2</div></div><div id=\"f3\">3</div></div><div id=\"fc\"><div id=\"fwc\"><div id=\"fc1\">a</div><div id=\"fc2\">b</div></div></div></body></html>",
+    "computedStyle": [
+      { "id": "fw", "props": ["display"] },
+      { "id": "fwc", "props": ["display"] },
+      { "id": "f1", "props": ["flex-grow"] }
+    ],
+    "rects": ["fx", "fw", "f1", "f2", "f3", "fc", "fwc", "fc1", "fc2"],
+    "textElements": ["f1", "f2", "f3", "fc1", "fc2"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

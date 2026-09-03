@@ -1,0 +1,22 @@
+{
+  "name": "block-suppression",
+  "note": "css-display-3 §2: the display:contents element generates no box — its margin/padding/border/background paint nothing (a stray paint shows on the screenshot layer), its rect is the all-zero total-map entry, and its children lay out directly in the grandparent's block formatting context. A nested contents chain (outer > nested > deep) splices recursively, and an inline contents element inside a mixed run contributes its text to the parent's anonymous inline box. Pseudo-element boxes of a contents element (rendered by Chrome) are not produced by this engine — documented divergence, not exercised here.",
+  "harvest": {
+    "viewport": { "width": 400, "height": 300 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} body{background-color:rgb(255, 255, 255)} #wrap{width:200px} #dc{display:contents;margin:10px;padding:5px;border:2px solid rgb(255, 0, 0);background-color:rgb(0, 0, 255)} #c1{height:20px;background-color:rgb(0, 128, 0)} #c2{height:30px;background-color:rgb(255, 255, 0)} #deep{height:22px;background-color:rgb(128, 0, 128)} #mix{background-color:rgb(238, 238, 238)}</style></head><body><div id=\"wrap\"><div id=\"dc\"><div id=\"c1\">a</div><div id=\"c2\">b</div></div></div><div id=\"outer\"><div id=\"nested\" style=\"display:contents\"><div id=\"deep\">z</div></div></div><div id=\"mix\">hello <div id=\"mc\" style=\"display:contents\">inline world</div></div></body></html>",
+    "computedStyle": [
+      { "id": "dc", "props": ["display", "background-color"] },
+      { "id": "nested", "props": ["display"] },
+      { "id": "mc", "props": ["display"] },
+      { "id": "c1", "props": ["background-color"] }
+    ],
+    "rects": ["wrap", "dc", "c1", "c2", "outer", "nested", "deep", "mix", "mc"],
+    "textElements": ["c1", "c2", "deep", "mix"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}
