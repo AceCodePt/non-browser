@@ -1,0 +1,60 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "cb": {
+      "display": "inline-block",
+      "margin-top": "3px",
+      "margin-right": "3px",
+      "margin-bottom": "3px",
+      "margin-left": "4px",
+      "border-top-width": "0px",
+      "border-top-style": "none",
+      "background-color": "rgba(0, 0, 0, 0)",
+      "font-size": "13.3333px"
+    },
+    "cbc": {
+      "display": "inline-block",
+      "margin-left": "4px",
+      "border-top-width": "0px",
+      "background-color": "rgba(0, 0, 0, 0)"
+    },
+    "r": {
+      "display": "inline-block",
+      "margin-top": "3px",
+      "margin-right": "3px",
+      "margin-bottom": "0px",
+      "margin-left": "5px"
+    },
+    "rc": {
+      "display": "inline-block",
+      "margin-bottom": "0px",
+      "margin-left": "5px"
+    }
+  },
+  "rect": {
+    "cb": {
+      "x": 4,
+      "y": 3,
+      "width": 13,
+      "height": 13
+    },
+    "cbc": {
+      "x": 4,
+      "y": 22,
+      "width": 13,
+      "height": 13
+    },
+    "r": {
+      "x": 5,
+      "y": 41,
+      "width": 13,
+      "height": 13
+    },
+    "rc": {
+      "x": 5,
+      "y": 57,
+      "width": 13,
+      "height": 13
+    }
+  }
+}

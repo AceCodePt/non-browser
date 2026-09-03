@@ -1,0 +1,24 @@
+{
+  "name": "states",
+  "note": "Static form-state pseudo-classes (corpus/form-controls): :checked, :disabled and :enabled match from the element's attributes (Selectors §6.6.2/§6.6.4 for a static renderer) — proved by sibling combinators feeding author color to labels of a checked checkbox, a checked radio, a disabled input, an enabled input, and a div carrying a disabled attribute which must NOT match :disabled (divs are not enableable; Chrome leaves its label black and so must the engine).",
+  "harvest": {
+    "viewport": { "width": 480, "height": 200 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'}#cb:checked + span{color:rgb(4, 128, 4)}#rc:checked + span{color:rgb(4, 128, 4)}#tx:disabled + span{color:rgb(160, 0, 0)}#tx2:enabled + span{color:rgb(0, 0, 160)}#dv:disabled + span{color:rgb(160, 0, 0)}</style></head><body><div><input id=\"cb\" type=\"checkbox\" checked> <span id=\"s1\">checked box label</span></div><div><input id=\"rc\" type=\"radio\" checked> <span id=\"s2\">checked radio label</span></div><div><input id=\"tx\" type=\"text\" disabled> <span id=\"s3\">disabled label</span></div><div><input id=\"tx2\" type=\"text\"> <span id=\"s4\">enabled label</span></div><div><div id=\"dv\" disabled></div><span id=\"s5\">div label</span></div></body></html>",
+    "computedStyle": [
+      { "id": "tx", "props": ["display", "color", "border-top-color", "background-color"] },
+      { "id": "cb", "props": ["display", "color"] },
+      { "id": "s1", "props": ["color"] },
+      { "id": "s3", "props": ["color"] },
+      { "id": "s4", "props": ["color"] },
+      { "id": "s5", "props": ["color"] }
+    ],
+    "rects": ["cb", "rc", "tx", "tx2", "s1", "s2", "s3", "s4", "s5"],
+    "textElements": ["s1", "s2", "s3", "s4", "s5"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "hidden-disabled",
+  "note": "Hidden and disabled controls (corpus/form-controls): input[type=hidden] stays display:none with a zero rect like Chrome, and the disabled look — a disabled text input (border-color rgba(118,118,118,0.3), background rgba(239,239,239,0.3), color rgb(84,84,84)), a disabled select (border washed, color rgb(128,128,128), popup fill washed over the theme white) and a disabled button (fill rgb(238,238,238), washed frame and label) — computed styles, rects and paint against Chrome.",
+  "harvest": {
+    "viewport": { "width": 640, "height": 200 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'}</style></head><body><div><input id=\"h\" type=\"hidden\"></div><div><input id=\"tx\" type=\"text\" disabled></div><div id=\"srow\"><select id=\"s\" disabled><option>First</option></select></div><div><button id=\"b\" disabled>Go</button></div></body></html>",
+    "measureText": [
+      { "text": "Go", "font": "13.3333px 'Arial'" }
+    ],
+    "computedStyle": [
+      { "id": "h", "props": ["display"] },
+      { "id": "tx", "props": ["display", "border-top-color", "border-top-width", "border-top-style", "background-color", "color"] },
+      { "id": "s", "props": ["display", "border-top-color", "background-color", "color"] },
+      { "id": "b", "props": ["display", "border-top-color", "background-color", "color"] }
+    ],
+    "rects": ["h", "tx", "s", "b"],
+    "textElements": ["srow", "b"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "tx": {
+      "display": "inline-block",
+      "color": "rgb(84, 84, 84)",
+      "border-top-color": "rgba(118, 118, 118, 0.3)",
+      "background-color": "rgba(239, 239, 239, 0.3)"
+    },
+    "cb": {
+      "display": "inline-block",
+      "color": "rgb(0, 0, 0)"
+    },
+    "s1": {
+      "color": "rgb(4, 128, 4)"
+    },
+    "s3": {
+      "color": "rgb(160, 0, 0)"
+    },
+    "s4": {
+      "color": "rgb(0, 0, 160)"
+    },
+    "s5": {
+      "color": "rgb(0, 0, 0)"
+    }
+  },
+  "rect": {
+    "cb": {
+      "x": 4,
+      "y": 4,
+      "width": 13,
+      "height": 13
+    },
+    "rc": {
+      "x": 5,
+      "y": 26,
+      "width": 13,
+      "height": 13
+    },
+    "tx": {
+      "x": 0,
+      "y": 46,
+      "width": 185,
+      "height": 21
+    },
+    "tx2": {
+      "x": 0,
+      "y": 69,
+      "width": 185,
+      "height": 21
+    },
+    "s1": {
+      "x": 24.171875,
+      "y": 0,
+      "width": 133.765625,
+      "height": 22
+    },
+    "s2": {
+      "x": 25.171875,
+      "y": 22,
+      "width": 145.015625,
+      "height": 22
+    },
+    "s3": {
+      "x": 189.171875,
+      "y": 44,
+      "width": 103.703125,
+      "height": 22
+    },
+    "s4": {
+      "x": 189.171875,
+      "y": 67,
+      "width": 100.984375,
+      "height": 22
+    },
+    "s5": {
+      "x": 0,
+      "y": 90,
+      "width": 62.359375,
+      "height": 22
+    }
+  }
+}

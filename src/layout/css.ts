@@ -387,6 +387,14 @@ export interface ComputedStyle {
    * as 'normal', while layout uses the font-metric-derived px value). */
   lineHeightNormal: boolean;
   whiteSpace: WhiteSpaceValue;
+  /**
+   * Chrome's appearance:auto contract for form controls (input/select/
+   * textarea/button): with no author or inline declaration the control paints
+   * through the theme (layout/controls.ts) and sizes from its default
+   * metrics; any author/inline declaration switches the control to the normal
+   * CSS background/border painting. Undefined (falsy) for every other element.
+   */
+  appearanceAuto?: boolean;
   /** css-text-3 §2.1: uppercase/lowercase/capitalize/none (inherited). */
   textTransform: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
   /** css-text-3 §2.2: first-line indent (length/percentage), inherited raw so

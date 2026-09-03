@@ -1,0 +1,22 @@
+{
+  "name": "checkbox-radio",
+  "note": "Unstyled checkbox and radio (corpus/form-controls, form-control defaults): 13x13 geometric control boxes with the UA margins (checkbox 3px 3px 3px 4px, radio 3px 3px 0 5px), painted per checked state — white fill with 1px gray rounded frame unchecked, solid #0075ff fill with white checkmark (checkbox) / blue ring + dot (radio) checked. Computed styles, rects and the control art compared against Chrome.",
+  "harvest": {
+    "viewport": { "width": 400, "height": 160 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'}</style></head><body><div><input id=\"cb\" type=\"checkbox\"></div><div><input id=\"cbc\" type=\"checkbox\" checked></div><div><input id=\"r\" type=\"radio\"></div><div><input id=\"rc\" type=\"radio\" checked></div></body></html>",
+    "computedStyle": [
+      { "id": "cb", "props": ["display", "margin-top", "margin-right", "margin-bottom", "margin-left", "border-top-width", "border-top-style", "background-color", "font-size"] },
+      { "id": "cbc", "props": ["display", "margin-left", "border-top-width", "background-color"] },
+      { "id": "r", "props": ["display", "margin-top", "margin-right", "margin-bottom", "margin-left"] },
+      { "id": "rc", "props": ["display", "margin-bottom", "margin-left"] }
+    ],
+    "rects": ["cb", "cbc", "r", "rc"],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

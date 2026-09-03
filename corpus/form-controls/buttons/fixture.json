@@ -1,0 +1,28 @@
+{
+  "name": "buttons",
+  "note": "Unstyled button controls (corpus/form-controls, form-control defaults): <button> with label text and input[type=button|submit|reset] with their value label (UA defaults Submit/Reset when absent) — inline-block shrink-to-fit from the label, 2px outset border and #efefef button face computed, 1px rounded theme frame + label text centered (painted through the theme). <button> label fragments plus the input value-label content boxes (Chrome-derived; the value text has no DOM text node) compare under the text tier; rects/computed styles and the frames stay strict.",
+  "harvest": {
+    "viewport": { "width": 400, "height": 180 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'}</style></head><body><div><button id=\"b1\">Save changes</button></div><div><input id=\"b2\" type=\"button\" value=\"Cancel\"></div><div><input id=\"b3\" type=\"submit\"></div><div><input id=\"b4\" type=\"reset\"></div></body></html>",
+    "measureText": [
+      { "text": "Save changes", "font": "13.3333px 'Arial'" },
+      { "text": "Cancel", "font": "13.3333px 'Arial'" },
+      { "text": "Submit", "font": "13.3333px 'Arial'" }
+    ],
+    "computedStyle": [
+      { "id": "b1", "props": ["display", "box-sizing", "border-top-width", "border-top-style", "border-top-color", "padding-top", "padding-left", "background-color", "text-align", "font-family", "font-size", "line-height", "color", "white-space"] },
+      { "id": "b2", "props": ["display", "border-top-style", "background-color", "text-align", "white-space"] },
+      { "id": "b3", "props": ["display", "border-top-style", "background-color", "text-align"] },
+      { "id": "b4", "props": ["display", "border-top-style", "background-color", "text-align"] }
+    ],
+    "rects": ["b1", "b2", "b3", "b4"],
+    "textElements": ["b1"],
+    "maskContentBoxes": ["b2", "b3", "b4"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

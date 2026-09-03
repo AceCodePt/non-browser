@@ -8,7 +8,12 @@
  * full selector-list arguments (balanced-paren, string-aware parsing), the
  * structural and root pseudo-classes (:root, :empty, :first/last/only-child,
  * :nth-child(An+B), :nth-last-child, :first/last/only-of-type,
- * :nth-of-type(An+B), :nth-last-of-type), and ::before/::after. Specificity is
+ * :nth-of-type(An+B), :nth-last-of-type), ::before/::after, and the statically
+ * matchable form-state pseudo-classes :checked/:disabled/:enabled (HTML
+ * Selectors §6.6.2/§6.6.4: matched from the checked/selected/disabled
+ * *attributes* — a static renderer has no interaction state; :disabled/
+ * :enabled only ever match the enableable elements button, input, select,
+ * textarea, option, optgroup and fieldset). Specificity is
  * computed per CSS Selectors §9.2 with §3.2's functional rules: :is() and
  * :not() contribute the component-wise maximum of their arguments'
  * specificities, :where() contributes zero.
@@ -57,6 +62,8 @@ export interface CompoundSelector {
   attrs: AttrSelector[];
   functional: FunctionalPseudo[];
   structural: StructuralPseudo[];
+  /** Statically matched state pseudo-classes: checked / disabled / enabled. */
+  state: string[];
   pseudo: 'before' | 'after' | null;
 }
 
@@ -111,6 +118,36 @@ export function parseAnPlusB(text: string): { an: number; bn: number } | null {
   return null;
 }
 
+const STATE_PSEUDOS = new Set(['checked', 'disabled', 'enabled']);
+
+/** Elements :disabled/:enabled can ever match (HTML enableable elements); a
+ * `disabled` attribute on anything else is inert, matching Chrome. */
+const ENABLEABLE = new Set(['input', 'select', 'textarea', 'button', 'option', 'optgroup', 'fieldset']);
+
+function hasAttr(el: P5Element, name: string): boolean {
+  return el.attrs.some((a) => a.name === name);
+}
+
+/** Input types whose :checked reflects the checked attribute (a static
+ * renderer has no activation). `option[selected]` also matches :checked. */
+const CHECKABLE_TYPES = new Set(['checkbox', 'radio']);
+
+function matchStatePseudo(el: P5Element, name: string): boolean {
+  switch (name) {
+    case 'checked':
+      if (el.nodeName === 'input') {
+        const type = el.attrs.find((a) => a.name === 'type')?.value.toLowerCase() ?? 'text';
+        return CHECKABLE_TYPES.has(type) && hasAttr(el, 'checked');
+      }
+      return el.nodeName === 'option' && hasAttr(el, 'selected');
+    case 'disabled':
+      return ENABLEABLE.has(el.nodeName) && hasAttr(el, 'disabled');
+    case 'enabled':
+      return ENABLEABLE.has(el.nodeName) && !hasAttr(el, 'disabled');
+  }
+  return false;
+}
+
 function isIdentChar(c: string): boolean {
   return /[A-Za-z0-9_-]/.test(c);
 }
@@ -122,7 +159,7 @@ function startsSimple(c: string): boolean {
 }
 
 function emptyCompound(): CompoundSelector {
-  return { tag: null, id: null, classes: [], attrs: [], functional: [], structural: [], pseudo: null };
+  return { tag: null, id: null, classes: [], attrs: [], functional: [], structural: [], state: [], pseudo: null };
 }
 
 class SelectorParser {
@@ -308,9 +345,11 @@ class SelectorParser {
    * `:before`/`:after` set the compound's pseudo-element slot; `:not(...)` /
    * `:is(...)` / `:where(...)` parse a balanced argument block as a selector
    * list; structural/root pseudo-classes match per css-selectors-4 §6.5-§6.7,
-   * the nth-* ones parsing their An+B argument. Any other pseudo-class fails
-   * the selector — the engine does not match it (interaction states and
-   * form-control state are outside this surface).
+   * the nth-* ones parsing their An+B argument; the form-state pseudo-classes
+   * :checked/:disabled/:enabled match statically from the element's attributes
+   * (a static renderer has no interaction state to consult). Any other
+   * pseudo-class fails the selector — the engine does not match it
+   * (interaction states like :hover/:focus are outside this surface).
    */
   private parsePseudo(compound: CompoundSelector): boolean {
     this.i++; // ':'
@@ -349,6 +388,10 @@ class SelectorParser {
     }
     if (STRUCTURAL_PSEUDOS.has(name)) {
       compound.structural.push({ kind: name as StructuralPseudo['kind'], an: 0, bn: 0 });
+      return true;
+    }
+    if (STATE_PSEUDOS.has(name)) {
+      compound.state.push(name);
       return true;
     }
     return false;
@@ -544,6 +587,9 @@ function matchCompound(compound: CompoundSelector, el: P5Element): boolean {
   for (const st of compound.structural) {
     if (!matchStructural(st, el)) return false;
   }
+  for (const s of compound.state) {
+    if (!matchStatePseudo(el, s)) return false;
+  }
   for (const f of compound.functional) {
     if (!matchFunctional(f, el)) return false;
   }
@@ -631,7 +677,7 @@ function specificityOfFunctional(f: FunctionalPseudo): Specificity {
 
 function compoundSpecificity(compound: CompoundSelector): Specificity {
   let a = compound.id ? 1 : 0;
-  let b = compound.classes.length + compound.attrs.length + compound.structural.length;
+  let b = compound.classes.length + compound.attrs.length + compound.structural.length + compound.state.length;
   let c = (compound.tag ? 1 : 0) + (compound.pseudo ? 1 : 0);
   for (const f of compound.functional) {
     const s = specificityOfFunctional(f);

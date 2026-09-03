@@ -1,0 +1,62 @@
+{
+  "measureText": {
+    "13.3333px 'Arial' | Go": 17.780000686645508
+  },
+  "computedStyle": {
+    "h": {
+      "display": "none"
+    },
+    "tx": {
+      "display": "inline-block",
+      "border-top-color": "rgba(118, 118, 118, 0.3)",
+      "border-top-width": "2px",
+      "border-top-style": "inset",
+      "background-color": "rgba(239, 239, 239, 0.3)",
+      "color": "rgb(84, 84, 84)"
+    },
+    "s": {
+      "display": "inline-block",
+      "border-top-color": "rgba(118, 118, 118, 0.3)",
+      "background-color": "rgb(239, 239, 239)",
+      "color": "rgb(128, 128, 128)"
+    },
+    "b": {
+      "display": "inline-block",
+      "border-top-color": "rgba(118, 118, 118, 0.3)",
+      "background-color": "rgba(239, 239, 239, 0.3)",
+      "color": "rgba(16, 16, 16, 0.3)"
+    }
+  },
+  "rect": {
+    "tx": {
+      "x": 0,
+      "y": 0,
+      "width": 185,
+      "height": 21
+    },
+    "srow": {
+      "x": 0,
+      "y": 21,
+      "width": 640,
+      "height": 19
+    },
+    "s": {
+      "x": 0,
+      "y": 21,
+      "width": 48,
+      "height": 19
+    },
+    "b": {
+      "x": 0,
+      "y": 40,
+      "width": 33.78000068664551,
+      "height": 21
+    },
+    "h": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0
+    }
+  }
+}

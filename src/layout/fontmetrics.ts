@@ -17,6 +17,9 @@ export interface FontVerticalMetrics {
   descent: number;
   /** OS/2 sxHeight, in font units (used for `vertical-align: middle`). */
   sxHeight: number;
+  /** OS/2 xAvgCharWidth, in font units — Blink's AvgCharWidth source, which
+   * sizes text inputs from the `size` attribute (see layout/controls.ts). */
+  xAvgCharWidth: number;
   underlinePosition: number;
   underlineThickness: number;
 }
@@ -74,6 +77,7 @@ export function fontVerticalMetrics(filePath: string): FontVerticalMetrics {
     ascent: s16(buf, hhea + 4),
     descent: Math.abs(s16(buf, hhea + 6)),
     sxHeight: Math.max(s16(buf, os2 + 86), 1),
+    xAvgCharWidth: s16(buf, os2 + 2),
     underlinePosition: -s16(buf, post + 8),
     underlineThickness: s16(buf, post + 10),
   };

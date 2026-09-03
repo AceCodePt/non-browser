@@ -1,0 +1,96 @@
+{
+  "measureText": {
+    "13.3333px 'Arial' | 0123456789": 74.124755859375
+  },
+  "computedStyle": {
+    "t1": {
+      "display": "inline-block",
+      "box-sizing": "border-box",
+      "border-top-width": "2px",
+      "border-top-style": "inset",
+      "border-top-color": "rgb(118, 118, 118)",
+      "border-left-width": "2px",
+      "border-left-style": "inset",
+      "padding-top": "1px",
+      "padding-left": "2px",
+      "padding-bottom": "1px",
+      "padding-right": "2px",
+      "background-color": "rgb(255, 255, 255)",
+      "font-family": "Arial",
+      "font-size": "13.3333px",
+      "line-height": "normal",
+      "color": "rgb(0, 0, 0)",
+      "overflow": "clip"
+    },
+    "t2": {
+      "display": "inline-block",
+      "border-top-style": "inset",
+      "border-top-color": "rgb(118, 118, 118)",
+      "background-color": "rgb(255, 255, 255)",
+      "font-size": "13.3333px"
+    },
+    "t3": {
+      "display": "inline-block",
+      "border-top-style": "inset",
+      "padding-left": "2px",
+      "background-color": "rgb(255, 255, 255)",
+      "font-family": "Arial"
+    },
+    "t4": {
+      "display": "inline-block",
+      "border-top-style": "inset",
+      "background-color": "rgb(255, 255, 255)"
+    },
+    "t5": {
+      "display": "inline-block",
+      "border-top-style": "inset",
+      "background-color": "rgb(255, 255, 255)"
+    },
+    "t6": {
+      "display": "inline-block",
+      "border-top-style": "inset",
+      "border-top-width": "2px",
+      "background-color": "rgb(255, 255, 255)",
+      "font-size": "13.3333px",
+      "line-height": "normal"
+    }
+  },
+  "rect": {
+    "t1": {
+      "x": 0,
+      "y": 0,
+      "width": 185,
+      "height": 21
+    },
+    "t2": {
+      "x": 0,
+      "y": 21,
+      "width": 185,
+      "height": 21
+    },
+    "t3": {
+      "x": 0,
+      "y": 42,
+      "width": 185,
+      "height": 21
+    },
+    "t4": {
+      "x": 0,
+      "y": 63,
+      "width": 185,
+      "height": 21
+    },
+    "t5": {
+      "x": 0,
+      "y": 84,
+      "width": 185,
+      "height": 21
+    },
+    "t6": {
+      "x": 0,
+      "y": 105,
+      "width": 185,
+      "height": 21
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "name": "text-inputs",
+  "note": "Unstyled text-ish inputs (corpus/form-controls, form-control defaults): text, search, password, email, number and a typeless input at the UA defaults — inline-block border-box, 2px inset rgb(118,118,118) border, 1px 2px padding, white background, 13.3333px Arial control font, size-derived 185x21 box. Computed styles match Chrome exactly (the painted 1px theme frame is the theme's look, not these values); rects within 0.5px.",
+  "harvest": {
+    "viewport": { "width": 640, "height": 180 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'}</style></head><body><div><input id=\"t1\" type=\"text\"></div><div><input id=\"t2\" type=\"search\"></div><div><input id=\"t3\" type=\"password\"></div><div><input id=\"t4\" type=\"email\"></div><div><input id=\"t5\" type=\"number\"></div><div><input id=\"t6\"></div></body></html>",
+    "measureText": [
+      { "text": "0123456789", "font": "13.3333px 'Arial'" }
+    ],
+    "computedStyle": [
+      { "id": "t1", "props": ["display", "box-sizing", "border-top-width", "border-top-style", "border-top-color", "border-left-width", "border-left-style", "padding-top", "padding-left", "padding-bottom", "padding-right", "background-color", "font-family", "font-size", "line-height", "color", "overflow"] },
+      { "id": "t2", "props": ["display", "border-top-style", "border-top-color", "background-color", "font-size"] },
+      { "id": "t3", "props": ["display", "border-top-style", "padding-left", "background-color", "font-family"] },
+      { "id": "t4", "props": ["display", "border-top-style", "background-color"] },
+      { "id": "t5", "props": ["display", "border-top-style", "background-color"] },
+      { "id": "t6", "props": ["display", "border-top-style", "border-top-width", "background-color", "font-size", "line-height"] }
+    ],
+    "rects": ["t1", "t2", "t3", "t4", "t5", "t6"],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-03T13:01:38.891Z",
+  "generatedAt": "2026-09-03T13:54:55.276Z",
   "fixtures": {
     "aspect-ratio/block-surface": {
       "sha256": "5d45b9b9ab2c56340a50cd75f738e67c96b080949461231c0e352638dd3b3567",
@@ -819,6 +819,48 @@
       "height": 260,
       "rectCount": 3,
       "computedStyleCount": 0
+    },
+    "form-controls/buttons": {
+      "sha256": "562cccad4d600bce3e9f7c299d3295dfc060d613fd6016d8f6185cafbe945b5f",
+      "width": 400,
+      "height": 180,
+      "rectCount": 4,
+      "computedStyleCount": 4
+    },
+    "form-controls/checkbox-radio": {
+      "sha256": "8fb9329440e5182af805f642dea42a692d9ba2fc71504537f0294863d3e38909",
+      "width": 400,
+      "height": 160,
+      "rectCount": 4,
+      "computedStyleCount": 4
+    },
+    "form-controls/hidden-disabled": {
+      "sha256": "00add059962600e8aa0a398ffb0e5b3de1190614869f7cdc1d847803d7405076",
+      "width": 640,
+      "height": 200,
+      "rectCount": 5,
+      "computedStyleCount": 4
+    },
+    "form-controls/states": {
+      "sha256": "21e9daf7a5665265ff5614cee1209ea156e34f4b2d0f3f336bbb1a87320b4d9e",
+      "width": 480,
+      "height": 200,
+      "rectCount": 10,
+      "computedStyleCount": 6
+    },
+    "form-controls/text-inputs": {
+      "sha256": "241dedd220cd92138f9a926cc6517bb765f1d7dc08a773fad32f86c7bfecfd64",
+      "width": 640,
+      "height": 180,
+      "rectCount": 6,
+      "computedStyleCount": 6
+    },
+    "form-controls/textarea-select": {
+      "sha256": "022d2ac9b7f4503e753875fa2567985b8c5136e29597fe2922820bbeaf5dfe50",
+      "width": 480,
+      "height": 180,
+      "rectCount": 6,
+      "computedStyleCount": 3
     },
     "grid/alignment-content": {
       "sha256": "847e53ed48d1002aa426b82d26a7ad3ee9dc93db0bb50a70f8512afcd0d065cd",

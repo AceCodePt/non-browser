@@ -1,0 +1,70 @@
+{
+  "measureText": {
+    "13.3333px 'Arial' | Save changes": 84.47225952148438,
+    "13.3333px 'Arial' | Cancel": 41.48773193359375,
+    "13.3333px 'Arial' | Submit": 41.48121643066406
+  },
+  "computedStyle": {
+    "b1": {
+      "display": "inline-block",
+      "box-sizing": "border-box",
+      "border-top-width": "2px",
+      "border-top-style": "outset",
+      "border-top-color": "rgb(0, 0, 0)",
+      "padding-top": "1px",
+      "padding-left": "6px",
+      "background-color": "rgb(239, 239, 239)",
+      "text-align": "center",
+      "font-family": "Arial",
+      "font-size": "13.3333px",
+      "line-height": "normal",
+      "color": "rgb(0, 0, 0)",
+      "white-space": "normal"
+    },
+    "b2": {
+      "display": "inline-block",
+      "border-top-style": "outset",
+      "background-color": "rgb(239, 239, 239)",
+      "text-align": "center",
+      "white-space": "pre"
+    },
+    "b3": {
+      "display": "inline-block",
+      "border-top-style": "outset",
+      "background-color": "rgb(239, 239, 239)",
+      "text-align": "center"
+    },
+    "b4": {
+      "display": "inline-block",
+      "border-top-style": "outset",
+      "background-color": "rgb(239, 239, 239)",
+      "text-align": "center"
+    }
+  },
+  "rect": {
+    "b1": {
+      "x": 0,
+      "y": 0,
+      "width": 100.484375,
+      "height": 21
+    },
+    "b2": {
+      "x": 0,
+      "y": 21,
+      "width": 57.5,
+      "height": 21
+    },
+    "b3": {
+      "x": 0,
+      "y": 42,
+      "width": 57.484375,
+      "height": 21
+    },
+    "b4": {
+      "x": 0,
+      "y": 63,
+      "width": 50.828125,
+      "height": 21
+    }
+  }
+}
