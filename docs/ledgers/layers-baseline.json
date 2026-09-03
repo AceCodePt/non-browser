@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-03T14:40:07.244Z",
+  "generatedAt": "2026-09-03T16:24:18.463Z",
   "fixtures": {
     "aspect-ratio/block-surface": {
       "sha256": "5d45b9b9ab2c56340a50cd75f738e67c96b080949461231c0e352638dd3b3567",
@@ -569,7 +569,7 @@
       "computedStyleCount": 5
     },
     "custom-properties/inheritance": {
-      "sha256": "23ae8af86909e8c04507698ed9d50c123d58ba0c7265404a1ce496a8301edba3",
+      "sha256": "1ff29f9dc8c697682f09a519758fdad03ffcc67ae093b64e89c670c0e0e71783",
       "width": 300,
       "height": 260,
       "rectCount": 3,
@@ -1465,21 +1465,21 @@
       "computedStyleCount": 0
     },
     "pseudo-elements/after-suffix": {
-      "sha256": "83eb438a19826f6c9b35a391a02013ed98095cd817bd88c5a7b2f1979cb26710",
+      "sha256": "96747feaa9b904f10ec10c7f46086477ba10ac5fe17db2028b24a6da4ede70ec",
       "width": 320,
       "height": 90,
       "rectCount": 2,
       "computedStyleCount": 2
     },
     "pseudo-elements/before-prefix": {
-      "sha256": "f37ce8c3c32c12d3a18e2a3bda4dfd6347c941b4f2ef644a2bf30dffdf278fb3",
+      "sha256": "c54ac60b9506f4ebbca328ad96b7a1583fae16d3809659d101fa600a184c85df",
       "width": 320,
       "height": 90,
       "rectCount": 2,
       "computedStyleCount": 2
     },
     "pseudo-elements/block-pseudo": {
-      "sha256": "87add99bf702a12b31ce673746d08341530ba79a1eb8190716acd369fcce13fc",
+      "sha256": "2669950d4183b192a9d295814d5c77c0084f73b291bcd5c6c4a8ac3d18ebe060",
       "width": 320,
       "height": 90,
       "rectCount": 2,
@@ -1493,7 +1493,7 @@
       "computedStyleCount": 3
     },
     "pseudo-elements/styled-pseudo": {
-      "sha256": "92799944871868cc0f9755dccf57f5dfecce7ea42b7b42ccbaf6100aff4f12b6",
+      "sha256": "8ba5ec55dd76201a4da1a7fe1879527067d3e16b3575649e59a18356d6998be1",
       "width": 320,
       "height": 100,
       "rectCount": 2,
@@ -1654,7 +1654,7 @@
       "computedStyleCount": 3
     },
     "stress/article": {
-      "sha256": "c65e8ea44bb537de5b474d677a98216a3892ee2bd68d649cc111ee759ff10d27",
+      "sha256": "1338250e9c9810880a56954b15c75be01a8fc5a64bf1b40925f88d6963eef3d3",
       "width": 360,
       "height": 640,
       "rectCount": 13,
@@ -1675,7 +1675,7 @@
       "computedStyleCount": 4
     },
     "stress/kitchen-sink": {
-      "sha256": "6fb93f63e468f023b253b273a0979f5e33fb7b75b2018f3054d58aba14cc385e",
+      "sha256": "52f2da262cf006e4919f4814d7e980c541e526e24a0df22f0251d4008f46c29e",
       "width": 320,
       "height": 568,
       "rectCount": 59,
@@ -2577,6 +2577,27 @@
       "rectCount": 4,
       "computedStyleCount": 3
     },
+    "text-level-ua/details-summary": {
+      "sha256": "2c49bdbcb6044e70e79c589b4216623ac0e8e746f412869f6ac26a3b470c964a",
+      "width": 640,
+      "height": 200,
+      "rectCount": 5,
+      "computedStyleCount": 5
+    },
+    "text-level-ua/fieldset-legend": {
+      "sha256": "b437af048854c925bc180934feb9a6a93dc33dd1d33eccb2324fc93be5500048",
+      "width": 640,
+      "height": 200,
+      "rectCount": 3,
+      "computedStyleCount": 3
+    },
+    "text-level-ua/text-level-inline": {
+      "sha256": "b92121bb94975e4127ccda7b63000eac4c1725ae05f363a85dba97570f9d1e1e",
+      "width": 640,
+      "height": 200,
+      "rectCount": 11,
+      "computedStyleCount": 10
+    },
     "ua-styles/bare-headings": {
       "sha256": "df2b5d62f2cc8a3c560fb69d816381a4e27f3a4b8351a8a23f497ad14f60f7b8",
       "width": 640,
@@ -2606,7 +2627,7 @@
       "computedStyleCount": 7
     },
     "ua-styles/strong-em-pre-hr": {
-      "sha256": "56166c738f2cb0ab50b8a4591044d4968d68c33665c145b033f3c8450f6286d8",
+      "sha256": "c974757024fec1c1efa31535b27003bbee1c2df23a1f7078d7ee37658e86382d",
       "width": 460,
       "height": 200,
       "rectCount": 6,
@@ -2618,6 +2639,27 @@
       "height": 200,
       "rectCount": 7,
       "computedStyleCount": 7
+    },
+    "unicode-bidi/bdo-dir": {
+      "sha256": "f24bd19f921ca23bd6d50fb3e8dfc85f06bf7954edfcea726febcc41cee21e82",
+      "width": 520,
+      "height": 180,
+      "rectCount": 6,
+      "computedStyleCount": 4
+    },
+    "unicode-bidi/isolate": {
+      "sha256": "58d4e4efe497934696bdfeab23e90942695c93410a03c6b1eff4fa41810c784d",
+      "width": 520,
+      "height": 180,
+      "rectCount": 8,
+      "computedStyleCount": 7
+    },
+    "unicode-bidi/override": {
+      "sha256": "1c8e7daa3451d7a57e3a1bd89bdb8c81e5a9a8555f8a322fda17ec377df2d50b",
+      "width": 480,
+      "height": 200,
+      "rectCount": 7,
+      "computedStyleCount": 5
     },
     "white-space/computed-values": {
       "sha256": "a555bbbfd90d021867d0ab27d307b2ebe2a1d2cf2204484f4480a14b3f891ec5",

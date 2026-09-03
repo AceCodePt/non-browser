@@ -164,6 +164,7 @@ the charter and the corpus cannot silently diverge:
 | writing modes | logical float placement (float:inline-start/end) | yes | corpus/rtl-layout | float:inline-start |
 | writing modes | flex row main axis / column cross axis under rtl | yes | corpus/rtl-layout, corpus/stress | flex-direction |
 | writing modes | grid column lines under rtl | yes | corpus/rtl-layout, corpus/stress | grid-template-columns |
+| writing modes | unicode-bidi (computed per css-writing-modes-4 §3.1: normal/isolate/bidi-override/isolate-override/plaintext; UA isolate on block/[dir], isolate-override on bdo, plaintext on dir=auto pre/textarea; bdo dir feeding direction; no-UBA reordering boundary declared in docs/ledgers/unicode-bidi.md) | yes | corpus/unicode-bidi | unicode-bidi |
 | text | color (fill) | yes | corpus/paint-text, corpus/spine, corpus/stress | color |
 | text | text-shadow | yes | corpus/box-shadow | text-shadow |
 | paint | box-shadow | yes | corpus/box-shadow, corpus/stress | box-shadow |

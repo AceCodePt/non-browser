@@ -1,0 +1,24 @@
+{
+  "name": "override",
+  "note": "Author unicode-bidi: bidi-override (corpus/unicode-bidi, unicode-bidi feature): on block-level boxes with an explicit dir and text-align, the override forces the inline content's direction to the element's direction, so text-align:start/end resolves per that direction and the line boxes sit at the inline-start edge (o-ltr start=left, o-rtl start=right, o-ltr-end end=right, o-rtl-end end=left); on an inline span the box keeps its logical position in the line while its content direction is overridden. The engine resolves direction at the box level so these line-box rects and fragments match Chrome exactly; the per-glyph mirroring of the override runs is a declared no-UBA divergence under the text tier (docs/ledgers/unicode-bidi.md).",
+  "harvest": {
+    "viewport": { "width": 480, "height": 200 },
+    "html": "<body style=\"margin:0;font-family:'Noto Sans';font-size:16px;line-height:22px\"><div id=\"wrap\" style=\"width:360px;padding:8px\"><div id=\"o-ltr\" dir=\"ltr\" style=\"unicode-bidi:bidi-override;width:200px;height:40px;line-height:40px;background:#e0e0e0;text-align:start\">hello ABC</div><div id=\"o-rtl\" dir=\"rtl\" style=\"unicode-bidi:bidi-override;width:200px;height:40px;line-height:40px;background:#e0e0e0;text-align:start;margin-top:6px\">hello ABC</div><div id=\"o-ltr-end\" dir=\"ltr\" style=\"unicode-bidi:bidi-override;width:200px;height:40px;line-height:40px;background:#e0e0e0;text-align:end;margin-top:6px\">hello ABC</div><div id=\"o-rtl-end\" dir=\"rtl\" style=\"unicode-bidi:bidi-override;width:200px;height:40px;line-height:40px;background:#e0e0e0;text-align:end;margin-top:6px\">hello ABC</div><p id=\"span-p\" style=\"margin:10px 0 0 0\">abc <span id=\"ov-span\" dir=\"rtl\" style=\"unicode-bidi:bidi-override;background:#d9e2f3\">def</span> ghi</p></div></body>",
+    "computedStyle": [
+      { "id": "o-ltr", "props": ["unicode-bidi", "direction", "text-align"] },
+      { "id": "o-rtl", "props": ["unicode-bidi", "direction", "text-align"] },
+      { "id": "o-ltr-end", "props": ["unicode-bidi", "direction", "text-align"] },
+      { "id": "o-rtl-end", "props": ["unicode-bidi", "direction", "text-align"] },
+      { "id": "ov-span", "props": ["unicode-bidi", "direction"] }
+    ],
+    "rects": ["wrap", "o-ltr", "o-rtl", "o-ltr-end", "o-rtl-end", "span-p", "ov-span"],
+    "textElements": ["o-ltr", "o-rtl", "o-ltr-end", "o-rtl-end"],
+    "maskContentBoxes": ["span-p"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}
