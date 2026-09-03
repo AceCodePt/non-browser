@@ -20,11 +20,12 @@ import { layoutGridChildren } from './grid.js';
 import { layoutFlexChildren } from './flexbox.js';
 import { layoutPositionedChild, initialContainingBlock, type ContainingBlock } from './positioning.js';
 import { hasNonZeroRadius, type Clip } from './radius.js';
-import { activeFontMetrics, fallbackAscent, halfXHeight, lineAscentContribution, lineDescentContribution, roundedAscent, roundedDescent, type FontVerticalMetrics } from './fontmetrics.js';
+import { activeFontMetrics, fallbackAscent, fontMetricsForFamily, halfXHeight, lineAscentContribution, lineDescentContribution, roundedAscent, roundedDescent, type FontVerticalMetrics } from './fontmetrics.js';
 import type { P5Element, P5Text } from './types.js';
 import type { Box } from './types.js';
 import type { PseudoDecls } from '../cascade/phases/media-queries.js';
 import { resolveUaDecls } from '../cascade/ua.js';
+import { controlBorderBoxWidth, controlContentHeight, controlKindFor, controlLabel, themePaintSpec, type ControlKind, type ControlPaintSpec } from './controls.js';
 
 export { FloatManager };
 export type { FormattingContext };
@@ -166,6 +167,12 @@ export function resolveStyles(
     });
     style.before = computePseudoBox(el, style, pseudoDecls, 'before');
     style.after = computePseudoBox(el, style, pseudoDecls, 'after');
+    // appearance:auto (layout/controls.ts): an unstyled form control paints
+    // through the theme and sizes from its control metrics; any author or
+    // inline declaration switches it to the normal CSS painting path, which
+    // keeps explicitly-styled fixtures (corpus/stress form) authoritative.
+    style.appearanceAuto =
+      controlKindFor(el) !== null && (cascade === undefined || cascade.length === 0) && inline.length === 0;
     applyReplacedSize(
       el,
       style,
@@ -369,7 +376,7 @@ export interface PaintOp {
   /** stacking key: the paint-order path (CSS 2.1 Appendix E, linearized). */
   key: number[];
   order: number;
-  kind: 'bg' | 'border' | 'text' | 'marker' | 'shadow';
+  kind: 'bg' | 'border' | 'text' | 'marker' | 'shadow' | 'control';
   /**
    * The innermost opacity composite this op belongs to: the opacity<1 element
    * whose subtree opacities as one atomic surface. Absent = paints straight
@@ -385,6 +392,12 @@ export interface PaintOp {
   marker?: ListMarker;
   borderRadius?: BorderRadius;
   clip?: Clip;
+  /**
+   * appearance:auto form controls paint through the theme instead of the
+   * background/border ops (Chrome's NativeTheme); the spec carries the
+   * probed look (fill, frame, checkbox/radio state, select label + chevron).
+   */
+  control?: ControlPaintSpec;
   text?: {
     runs: {
       text: string;
@@ -799,6 +812,10 @@ function hasInlineContent(el: P5Element, styles: Map<P5Element, ComputedStyle>):
   // Generated ::before/::after text counts as inline content (an empty string
   // box is invisible and does not force a line box, matching Chrome).
   if (self && ((self.before && self.before.text) || (self.after && self.after.text))) return true;
+  // A button-ish input paints its value label through the inline path even
+  // though the void element has no children.
+  const kind = controlKindFor(el);
+  if (kind === 'button' && controlLabel(el, kind) !== null) return true;
   for (const child of el.childNodes) {
     if (child.nodeName === '#text') {
       if (/\S/.test((child as P5Text).value)) return true;
@@ -864,6 +881,11 @@ export function collectInlineText(el: P5Element, styles: Map<P5Element, Computed
   let out = '';
   const self = styles.get(el);
   const transform = self?.textTransform ?? 'none';
+  const kind = controlKindFor(el);
+  if (kind === 'button') {
+    const label = controlLabel(el, kind);
+    if (label !== null) return label;
+  }
   if (self?.before?.text) out += applyTextTransform(self.before.text, transform);
   for (const child of el.childNodes) {
     if (child.nodeName === '#text') {
@@ -1035,6 +1057,9 @@ export function layoutElementBox(
   // Placeholders (height 0) are pushed here and finalized after layout so the
   // order counter keeps them ahead of every child op. Outer shadows paint
   // below the background, inset shadows above it and below the border.
+  // An appearance:auto form control paints through the theme instead (Chrome's
+  // NativeTheme): its single 'control' op replaces the background and border.
+  const control: ControlKind | null = style.appearanceAuto ? controlKindFor(el) : null;
   const shadowOps = buildBoxShadowOps(style, borderX, borderY, borderWidth, contentWidth, viewport);
   const shadowPlaceholders: PaintOp[] = [];
   const pushShadow = (s: ShadowPaint): void => {
@@ -1045,7 +1070,7 @@ export function layoutElementBox(
   // CSS paints a shadow list front-to-back (first on top); with source-over the
   // last shadow must be painted first, so the list is traversed in reverse.
   for (let i = shadowOps.length - 1; i >= 0; i--) if (!shadowOps[i].inset) pushShadow(shadowOps[i]);
-  const ownBg = style.backgroundColor.a > 0
+  const ownBg = control === null && style.backgroundColor.a > 0
     ? {
         key: ownKey,
         order: nextOrder(),
@@ -1057,7 +1082,18 @@ export function layoutElementBox(
     : null;
   if (ownBg) pushPaintOp(paints, ownBg);
   for (let i = shadowOps.length - 1; i >= 0; i--) if (shadowOps[i].inset) pushShadow(shadowOps[i]);
-  const ownBorder = pushBorders(paints, nextOrder, ownKey, style, borderX, borderY, borderWidth, 0);
+  const ownBorder = control === null ? pushBorders(paints, nextOrder, ownKey, style, borderX, borderY, borderWidth, 0) : null;
+  let controlOp: PaintOp | null = null;
+  if (control !== null) {
+    controlOp = {
+      key: ownKey,
+      order: nextOrder(),
+      kind: 'control',
+      box: { x: borderX, y: borderY, width: borderWidth, height: 0 },
+      control: themePaintSpec(control, el, style, contentX, contentY, contentWidth, controlContentHeight(control, el, style.fontSize, style.fontFamily)),
+    };
+    pushPaintOp(paints, controlOp);
+  }
   // The composite's placement order is its own first paint op (its background,
   // else its first shadow), which seats the whole surface among same-level ops.
   updateOpacityOrder(
@@ -1079,7 +1115,12 @@ export function layoutElementBox(
   }
 
   const isGrid = style.display === 'grid' || style.display === 'inline-grid';
-  if (isGrid) {
+  if (control !== null && control !== 'button') {
+    // An appearance:auto control has no laid-out children (its label/arrow
+    // paint through the control op); its content height is the theme's
+    // control metric, not a line box.
+    contentHeight = controlContentHeight(control, el, style.fontSize, style.fontFamily);
+  } else if (isGrid) {
     const specH = resolveLength(style.height, contentWidth, viewport);
     const availableHeight =
       specH !== null
@@ -1207,6 +1248,7 @@ export function layoutElementBox(
 
   if (ownBg) ownBg.box.height = resolvedHeight;
   if (ownBorder) ownBorder.box.height = resolvedHeight;
+  if (controlOp) controlOp.box.height = resolvedHeight;
   for (const s of shadowPlaceholders) s.box.height = resolvedHeight;
   if (clipEntry) clipEntry.height = resolvedHeight;
   if (lines.length > 0) {
@@ -2208,13 +2250,21 @@ function atomicBoxSize(
   if (specW !== null) {
     borderWidth = style.boxSizing === 'border-box' ? specW : specW + padBorderH;
   } else {
-    const pieces = buildPieces(el, style, styles, refWidth, viewport, style.whiteSpace);
-    const sizes = piecesContentSizes(pieces, style, style.whiteSpace, resolveLength(style.wordSpacing, refWidth, viewport) ?? 0);
-    const mL = resolveLength(style.margin.left, refWidth, viewport) ?? 0;
-    const mR = resolveLength(style.margin.right, refWidth, viewport) ?? 0;
-    const available = Math.max(0, refWidth - mL - mR - padBorderH);
-    const contentW = Math.min(sizes.max, Math.max(sizes.min, available));
-    borderWidth = contentW + padBorderH;
+    // appearance:auto controls size from their control metrics (size/cols
+    // attributes, font-metric heights), not from intrinsic content.
+    const control = style.appearanceAuto ? controlKindFor(el) : null;
+    const controlW = control ? controlBorderBoxWidth(control, el, style.fontSize, style.fontFamily, padBorderH) : null;
+    if (controlW !== null) {
+      borderWidth = controlW;
+    } else {
+      const pieces = buildPieces(el, style, styles, refWidth, viewport, style.whiteSpace);
+      const sizes = piecesContentSizes(pieces, style, style.whiteSpace, resolveLength(style.wordSpacing, refWidth, viewport) ?? 0);
+      const mL = resolveLength(style.margin.left, refWidth, viewport) ?? 0;
+      const mR = resolveLength(style.margin.right, refWidth, viewport) ?? 0;
+      const available = Math.max(0, refWidth - mL - mR - padBorderH);
+      const contentW = Math.min(sizes.max, Math.max(sizes.min, available));
+      borderWidth = contentW + padBorderH;
+    }
   }
   const minW = resolveLength(style.minWidth, refWidth, viewport);
   const maxW = resolveLength(style.maxWidth, refWidth, viewport);
@@ -2280,6 +2330,16 @@ function buildPieces(
   ws: WhiteSpaceValue = style.whiteSpace,
 ): InlinePiece[] {
   const out: InlinePiece[] = [];
+  // A button-ish input's label is its `value` attribute (UA defaults Submit/
+  // Reset) — the void element carries no text children to build pieces from.
+  const kind = controlKindFor(el);
+  if (kind === 'button') {
+    const label = controlLabel(el, kind);
+    if (label !== null) {
+      pushTextPieces(label, runStyleOf(style), el, out, ws);
+      return out;
+    }
+  }
   if (style.before) pushPseudoPieces(style.before, el, out, ws, style.textTransform);
   for (const child of expandContents(el.childNodes, styles)) {
     if (child.nodeName === '#text') {
@@ -2472,8 +2532,27 @@ function measureAtomic(
 /**
  * css-inline-3 / CSS2.1 §10.8.1: an inline-block's baseline is the baseline of
  * its last line box (overflow visible) — else the bottom margin edge (null).
+ * Chrome aligns appearance:auto form controls differently (probed): a
+ * checkbox/radio sits with its bottom border edge on the baseline, and the
+ * single-line controls align by their internal text baseline (the control
+ * font's ascent inside the padded content box) — the text you see inside the
+ * control and the surrounding line text share one baseline.
  */
 function atomicBaselineOffset(node: LayoutNode, style: ComputedStyle): number | null {
+  if (style.appearanceAuto) {
+    const kind = node.element ? controlKindFor(node.element) : null;
+    if (kind === 'checkbox' || kind === 'radio') return node.borderHeight;
+    if (kind === 'select' || kind === 'textfield' || kind === 'textarea' || kind === 'button') {
+      const m = fontMetricsForFamily(style.fontFamily);
+      if (!m) return null;
+      const asc = roundedAscent(m, style.fontSize);
+      if (kind === 'select') {
+        const line = asc + roundedDescent(m, style.fontSize);
+        return node.contentY - node.borderY + (node.contentHeight - line) / 2 + asc;
+      }
+      return node.contentY - node.borderY + asc;
+    }
+  }
   if (isScrollContainer(style.overflow)) return null;
   const last = node.lines[node.lines.length - 1];
   if (!last) return null;

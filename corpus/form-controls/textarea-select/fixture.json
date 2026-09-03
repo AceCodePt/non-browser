@@ -1,0 +1,25 @@
+{
+  "name": "textarea-select",
+  "note": "Unstyled textarea and select (corpus/form-controls, form-control defaults): textarea at UA defaults (1px solid border, 2px padding, monospace control font, cols=20/rows=2 sized 182x36); select sized from the widest option (ceil(text)+20 chrome) showing the chosen option text (first, or the option with the selected attribute) with the theme chevron. Computed styles, rects and paint compared against Chrome.",
+  "harvest": {
+    "viewport": { "width": 480, "height": 180 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'}</style></head><body><div id=\"tarow\"><textarea id=\"ta\"></textarea></div><div id=\"s1row\"><select id=\"s1\"><option>First</option><option>Second choice</option></select></div><div id=\"s2row\"><select id=\"s2\"><option>Alpha</option><option selected>Beta chosen</option></select></div></body></html>",
+    "measureText": [
+      { "text": "0", "font": "13.3333px monospace" },
+      { "text": "Second choice", "font": "13.3333px 'Arial'" }
+    ],
+    "computedStyle": [
+      { "id": "ta", "props": ["display", "box-sizing", "border-top-width", "border-top-style", "border-top-color", "padding-top", "padding-left", "background-color", "font-family", "font-size", "white-space", "overflow"] },
+      { "id": "s1", "props": ["display", "border-top-width", "border-top-style", "border-top-color", "padding-top", "background-color", "font-family", "font-size", "white-space"] },
+      { "id": "s2", "props": ["display", "border-top-style", "background-color"] }
+    ],
+    "rects": ["ta", "s1", "s2"],
+    "textElements": ["tarow", "s1row", "s2row"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

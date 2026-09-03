@@ -1,0 +1,76 @@
+{
+  "measureText": {
+    "13.3333px monospace | 0": 8.020000457763672,
+    "13.3333px 'Arial' | Second choice": 87.43000030517578
+  },
+  "computedStyle": {
+    "ta": {
+      "display": "inline-block",
+      "box-sizing": "border-box",
+      "border-top-width": "1px",
+      "border-top-style": "solid",
+      "border-top-color": "rgb(118, 118, 118)",
+      "padding-top": "2px",
+      "padding-left": "2px",
+      "background-color": "rgb(255, 255, 255)",
+      "font-family": "monospace",
+      "font-size": "13.3333px",
+      "white-space": "pre-wrap",
+      "overflow": "auto"
+    },
+    "s1": {
+      "display": "inline-block",
+      "border-top-width": "1px",
+      "border-top-style": "solid",
+      "border-top-color": "rgb(118, 118, 118)",
+      "padding-top": "0px",
+      "background-color": "rgb(239, 239, 239)",
+      "font-family": "Arial",
+      "font-size": "13.3333px",
+      "white-space": "pre"
+    },
+    "s2": {
+      "display": "inline-block",
+      "border-top-style": "solid",
+      "background-color": "rgb(239, 239, 239)"
+    }
+  },
+  "rect": {
+    "tarow": {
+      "x": 0,
+      "y": 0,
+      "width": 480,
+      "height": 36
+    },
+    "ta": {
+      "x": 0,
+      "y": 0,
+      "width": 182,
+      "height": 36
+    },
+    "s1row": {
+      "x": 0,
+      "y": 36,
+      "width": 480,
+      "height": 19
+    },
+    "s1": {
+      "x": 0,
+      "y": 36,
+      "width": 110,
+      "height": 19
+    },
+    "s2row": {
+      "x": 0,
+      "y": 55,
+      "width": 480,
+      "height": 19
+    },
+    "s2": {
+      "x": 0,
+      "y": 55,
+      "width": 97,
+      "height": 19
+    }
+  }
+}

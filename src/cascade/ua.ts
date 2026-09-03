@@ -13,7 +13,9 @@
  * list margins, ul/ol `padding-inline-start: 40px` + disc/decimal markers,
  * nested-list margin/type changes, strong/b weight, em/i style, pre's
  * monospace face + `white-space: pre`, blockquote margins, hr's inset border,
- * and the default link color/underline.
+ * the default link color/underline, and the form-control defaults
+ * (input/select/textarea/button) including the statically matched
+ * :disabled state colors.
  */
 
 import type { P5Element } from '../layout/types.js';
@@ -87,6 +89,32 @@ export const UA_STYLES: UaRule[] = [
   { selectors: ['hr'], declarations: decls({ display: 'block', overflow: 'hidden', 'margin-block-start': '0.5em', 'margin-block-end': '0.5em', 'margin-inline-start': 'auto', 'margin-inline-end': 'auto', 'border-style': 'inset', 'border-width': '1px', color: 'gray' }) },
 
   { selectors: ['a'], declarations: decls({ color: 'rgb(0, 0, 238)', 'text-decoration': 'underline' }) },
+
+  // Form controls (Chrome UA defaults for appearance:auto, probed against
+  // headless Chrome; see docs/ledgers/form-controls.md): all inline-block
+  // border-box with the control font, hidden inputs display:none, and the
+  // per-control chrome (borders, padding, background). The painted look comes
+  // from the theme (layout/controls.ts), not these border values — Chrome
+  // computes a 2px inset border on text fields but paints a 1px frame.
+  { selectors: ['input', 'select', 'textarea', 'button'], declarations: decls({ display: 'inline-block', 'box-sizing': 'border-box', 'font-family': 'Arial', 'font-size': '13.3333px', 'line-height': 'normal', color: 'rgb(0, 0, 0)' }) },
+  { selectors: ['input[type=hidden]'], declarations: decls({ display: 'none' }) },
+  { selectors: ['input[type=text]', 'input[type=search]', 'input[type=password]', 'input[type=email]', 'input[type=number]', 'input[type=tel]', 'input[type=url]', 'input:not([type])'], declarations: decls({ 'border-width': '2px', 'border-style': 'inset', 'border-color': 'rgb(118, 118, 118)', padding: '1px 2px', 'background-color': 'rgb(255, 255, 255)', overflow: 'clip' }) },
+  { selectors: ['input[type=checkbox]'], declarations: decls({ 'margin-top': '3px', 'margin-right': '3px', 'margin-bottom': '3px', 'margin-left': '4px' }) },
+  { selectors: ['input[type=radio]'], declarations: decls({ 'margin-top': '3px', 'margin-right': '3px', 'margin-bottom': '0px', 'margin-left': '5px' }) },
+  { selectors: ['button', 'input[type=button]', 'input[type=submit]', 'input[type=reset]'], declarations: decls({ 'border-width': '2px', 'border-style': 'outset', 'border-color': 'rgb(0, 0, 0)', padding: '1px 6px', 'background-color': 'rgb(239, 239, 239)', 'text-align': 'center' }) },
+  { selectors: ['input[type=button]', 'input[type=submit]', 'input[type=reset]'], declarations: decls({ 'white-space': 'pre' }) },
+  { selectors: ['select'], declarations: decls({ 'border-width': '1px', 'border-style': 'solid', 'border-color': 'rgb(118, 118, 118)', padding: '0px', 'background-color': 'rgb(239, 239, 239)', 'white-space': 'pre' }) },
+  { selectors: ['textarea'], declarations: decls({ 'border-width': '1px', 'border-style': 'solid', 'border-color': 'rgb(118, 118, 118)', padding: '2px', 'background-color': 'rgb(255, 255, 255)', 'font-family': 'monospace', 'white-space': 'pre-wrap', overflow: 'auto' }) },
+
+  // The disabled look Chrome computes for form controls (the disabled
+  // controls' paint comes from the theme constants in layout/controls.ts;
+  // these declarations are what getComputedStyle reports). The (0,1,1)+
+  // specificities below outrank the per-control base rules above.
+  { selectors: ['input:disabled'], declarations: decls({ color: 'rgb(84, 84, 84)', 'border-color': 'rgb(84, 84, 84)' }) },
+  { selectors: ['input[type=text]:disabled', 'input[type=search]:disabled', 'input[type=password]:disabled', 'input[type=email]:disabled', 'input[type=number]:disabled', 'input[type=tel]:disabled', 'input[type=url]:disabled'], declarations: decls({ 'border-color': 'rgba(118, 118, 118, 0.3)', 'background-color': 'rgba(239, 239, 239, 0.3)' }) },
+  { selectors: ['textarea:disabled'], declarations: decls({ color: 'rgb(84, 84, 84)', 'border-color': 'rgba(118, 118, 118, 0.3)', 'background-color': 'rgba(239, 239, 239, 0.3)' }) },
+  { selectors: ['button:disabled'], declarations: decls({ color: 'rgba(16, 16, 16, 0.3)', 'border-color': 'rgba(118, 118, 118, 0.3)', 'background-color': 'rgba(239, 239, 239, 0.3)' }) },
+  { selectors: ['select:disabled'], declarations: decls({ color: 'rgb(128, 128, 128)', 'border-color': 'rgba(118, 118, 118, 0.3)' }) },
 ];
 
 const PARSED_UA = UA_STYLES.map((rule, order) => ({

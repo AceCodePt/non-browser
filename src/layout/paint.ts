@@ -12,7 +12,7 @@
 import type { CanvasFactory, CanvasLike } from '../canvas/interface.js';
 import { skiaCanvasFactory } from '../canvas/skia.js';
 import type { Color, Side, Viewport } from './css.js';
-import { resolveEmLength, resolveLength } from './css.js';
+import { parseColor, resolveEmLength, resolveLength } from './css.js';
 import { hasNonZeroRadius, innerRadii, resolveBorderRadius, traceRoundedRect, type Clip, type ResolvedRadii, type RoundedClip } from './radius.js';
 import type { OpacityGroup, PaintOp, RootLayout, ShadowPaint, TextDecorationPaint, ListMarker } from './block-inline.js';
 import { idOf } from './block-inline.js';
@@ -525,6 +525,101 @@ function snapBox(b: Box): Box {
   const y1 = Math.round(b.y + b.height);
   return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
 }
+
+/**
+ * Paint an appearance:auto form control the way Chrome's NativeTheme does:
+ * a theme fill covering the border box and a 1px frame inset half a pixel
+ * (Chrome paints the frame stroke at the box edge, so the stroke's inner half
+ * covers the outermost pixel row), plus the control's own art — the checkbox
+ * fill + checkmark, the radio ring + dot, and the select's chosen-option text
+ * and chevron. Geometry constants are probed against headless Chrome (see
+ * layout/controls.ts and docs/ledgers/form-controls.md).
+ */
+function paintControl(canvas: CanvasLike, op: PaintOp): void {
+  const c = op.control!;
+  const b = op.box;
+  const right = b.x + b.width;
+  const bottom = b.y + b.height;
+  if (c.kind === 'checkbox' || c.kind === 'radio') {
+    const cx = b.x + b.width / 2;
+    const cy = b.y + b.height / 2;
+    if (c.kind === 'checkbox') {
+      traceRoundedRectPath(canvas, b.x, b.y, b.width, b.height, 2);
+      canvas.fillPath(c.fill);
+      if (!c.checked) {
+        traceRoundedRectPath(canvas, b.x + 0.5, b.y + 0.5, b.width - 1, b.height - 1, 1.5);
+        canvas.strokePath(c.frame, 1);
+      } else {
+        // The checkmark: a short arm down to the valley, a long arm up to the
+        // top right, stroked through the fill (Chrome's theme check).
+        canvas.beginPath();
+        canvas.moveTo(b.x + 2.6, b.y + 6.8);
+        canvas.lineTo(b.x + 5.1, b.y + 9.3);
+        canvas.lineTo(b.x + 10.2, b.y + 3.4);
+        canvas.strokePath(parseColor('rgb(255, 255, 255)'), 1.8);
+      }
+      return;
+    }
+    traceCirclePath(canvas, cx, cy, b.width / 2 - 0.5);
+    canvas.fillPath(c.fill);
+    traceCirclePath(canvas, cx, cy, b.width / 2 - 0.5);
+    canvas.strokePath(c.frame, 1);
+    if (c.checked && c.dot) {
+      traceCirclePath(canvas, cx, cy, 3.5);
+      canvas.fillPath(c.dot);
+    }
+    return;
+  }
+  // textfield / textarea / button / select: theme fill + 1px edge frame. The
+  // button's frame is rounded like the checkbox's (probed: Chrome's button
+  // corner pixels lighten the same way); the field frames are square.
+  canvas.fillRect(b.x, b.y, b.width, b.height, c.fill);
+  if (c.kind === 'button') {
+    traceRoundedRectPath(canvas, b.x + 0.5, b.y + 0.5, b.width - 1, b.height - 1, 2);
+  } else {
+    canvas.beginPath();
+    canvas.moveTo(b.x + 0.5, b.y + 0.5);
+    canvas.lineTo(right - 0.5, b.y + 0.5);
+    canvas.lineTo(right - 0.5, bottom - 0.5);
+    canvas.lineTo(b.x + 0.5, bottom - 0.5);
+    canvas.closePath();
+  }
+  canvas.strokePath(c.frame, 1);
+  if (c.kind === 'select') {
+    if (c.label && c.label.text) canvas.drawText(c.label.text, c.label.x, c.label.baseline, c.label.font, c.label.color);
+    if (c.chevron) {
+      const v = c.chevron;
+      canvas.beginPath();
+      canvas.moveTo(v.x - 3.5, v.y - 5);
+      canvas.lineTo(v.x, v.y);
+      canvas.lineTo(v.x + 3.5, v.y - 5);
+      canvas.strokePath(v.color, 1.8);
+    }
+  }
+}
+
+/** Trace a closed rounded-rect path with circular corners of radius `r`. */
+function traceRoundedRectPath(canvas: CanvasLike, x: number, y: number, w: number, h: number, r: number): void {
+  const rr = Math.min(r, w / 2, h / 2);
+  canvas.beginPath();
+  canvas.moveTo(x + rr, y);
+  canvas.lineTo(x + w - rr, y);
+  canvas.ellipse(x + w - rr, y + rr, rr, rr, 0, -Math.PI / 2, 0);
+  canvas.lineTo(x + w, y + h - rr);
+  canvas.ellipse(x + w - rr, y + h - rr, rr, rr, 0, 0, Math.PI / 2);
+  canvas.lineTo(x + rr, y + h);
+  canvas.ellipse(x + rr, y + h - rr, rr, rr, 0, Math.PI / 2, Math.PI);
+  canvas.lineTo(x, y + rr);
+  canvas.ellipse(x + rr, y + rr, rr, rr, 0, Math.PI, (3 * Math.PI) / 2);
+  canvas.closePath();
+}
+
+/** Trace a closed full-circle path centered at (cx, cy). */
+function traceCirclePath(canvas: CanvasLike, cx: number, cy: number, r: number): void {
+  canvas.beginPath();
+  canvas.ellipse(cx, cy, r, r, 0, 0, 2 * Math.PI);
+  canvas.closePath();
+}
 export function paint(
   root: RootLayout,
   viewportWidth: number,
@@ -684,6 +779,8 @@ function paintOp(canvas: CanvasLike, op: PaintOp, viewport: Viewport | null | un
     }
   } else if (op.kind === 'shadow') {
     paintShadow(canvas, op, viewport);
+  } else if (op.kind === 'control') {
+    paintControl(canvas, op);
   } else if (op.kind === 'text') {
     const t = op.text!;
     for (const run of t.runs) {

@@ -205,6 +205,7 @@ the charter and the corpus cannot silently diverge:
 | text | word-break (break-all/keep-all) and overflow-wrap/word-wrap (break-word/anywhere incl. min-content) gating in-word break opportunities through the Pretext seam (css-text-3 §6) | yes | corpus/text-breaking | word-break:break-all |
 | text | text-transform (uppercase/lowercase/capitalize UAX-29 words), text-indent (length/percentage, hanging, each-line), word-spacing (length/percentage) feeding measurement and paint (css-text-3 §2, §8) | yes | corpus/text-formatting | word-spacing |
 | ua-stylesheet | nested-list rules authored with :is() (Blink html.css parity) | yes | corpus/selectors | :is(dl, ol, ul) |
+| form controls | default rendering of input/select/textarea/button: UA display/box-sizing/border/background/padding and the 13.3333px control font, size/cols-derived control sizing, checkbox/radio 13x13 geometry painted per checked state, select chosen-option text + chevron, theme-painted appearance:auto look, static :checked/:disabled/:enabled matching from attributes | yes | corpus/form-controls | :checked |
 
 ### Deferred / Not in v1 (no silent absence)
 
