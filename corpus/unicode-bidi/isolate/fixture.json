@@ -1,0 +1,26 @@
+{
+  "name": "isolate",
+  "note": "The isolation values of unicode-bidi (corpus/unicode-bidi, unicode-bidi feature): isolate, isolate-override and plaintext compute and serialize per css-writing-modes-4 §3.1 with getComputedStyle parity. An isolate span isolates its content like bdi (no visual change for single-direction content, so its box and rect match a plain span); an rtl isolate block resolves text-align:start to the right edge like any rtl block. No mixed-direction reordering is attempted — that boundary is declared in docs/ledgers/unicode-bidi.md.",
+  "harvest": {
+    "viewport": { "width": 520, "height": 180 },
+    "html": "<body style=\"margin:0;font-family:'Noto Sans';font-size:16px;line-height:22px\"><div id=\"wrap\" style=\"width:420px;padding:8px\"><p id=\"iso-p\" style=\"margin:0 0 10px 0\">abc <span id=\"iso\" style=\"unicode-bidi:isolate;background:#d9e2f3\">def</span> ghi</p><p id=\"ovr-p\" style=\"margin:0 0 10px 0\">abc <span id=\"iso-ovr\" style=\"unicode-bidi:isolate-override;background:#e6d9f3\">def</span> ghi</p><p id=\"plain-p\" style=\"margin:0 0 10px 0\">abc <span id=\"plain\" style=\"unicode-bidi:plaintext;background:#d9f3e6\">def</span> ghi</p><div id=\"iso-block\" dir=\"rtl\" style=\"unicode-bidi:isolate;width:200px;height:40px;line-height:40px;background:#e0e0e0;text-align:start\">hello ABC</div></div></body>",
+    "computedStyle": [
+      { "id": "iso-p", "props": ["unicode-bidi"] },
+      { "id": "iso", "props": ["unicode-bidi", "direction"] },
+      { "id": "ovr-p", "props": ["unicode-bidi"] },
+      { "id": "iso-ovr", "props": ["unicode-bidi"] },
+      { "id": "plain-p", "props": ["unicode-bidi"] },
+      { "id": "plain", "props": ["unicode-bidi"] },
+      { "id": "iso-block", "props": ["unicode-bidi", "direction", "text-align"] }
+    ],
+    "rects": ["wrap", "iso-p", "iso", "ovr-p", "iso-ovr", "plain-p", "plain", "iso-block"],
+    "textElements": ["iso-block"],
+    "maskContentBoxes": ["iso-p", "ovr-p", "plain-p"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

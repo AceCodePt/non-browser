@@ -148,6 +148,8 @@ export function computedStyleString(style: ComputedStyle, prop: string, refWidth
       return style.position;
     case 'direction':
       return style.direction;
+    case 'unicode-bidi':
+      return style.unicodeBidi;
     case 'z-index':
       return style.zIndex === null ? 'auto' : String(style.zIndex);
     case 'top':

@@ -1,0 +1,79 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "iso-p": {
+      "unicode-bidi": "isolate"
+    },
+    "iso": {
+      "unicode-bidi": "isolate",
+      "direction": "ltr"
+    },
+    "ovr-p": {
+      "unicode-bidi": "isolate"
+    },
+    "iso-ovr": {
+      "unicode-bidi": "isolate-override"
+    },
+    "plain-p": {
+      "unicode-bidi": "isolate"
+    },
+    "plain": {
+      "unicode-bidi": "plaintext"
+    },
+    "iso-block": {
+      "unicode-bidi": "isolate",
+      "direction": "rtl",
+      "text-align": "start"
+    }
+  },
+  "rect": {
+    "wrap": {
+      "x": 0,
+      "y": 0,
+      "width": 436,
+      "height": 152
+    },
+    "iso-p": {
+      "x": 8,
+      "y": 8,
+      "width": 420,
+      "height": 22
+    },
+    "iso": {
+      "x": 38.65625,
+      "y": 8,
+      "width": 24.375,
+      "height": 22
+    },
+    "ovr-p": {
+      "x": 8,
+      "y": 40,
+      "width": 420,
+      "height": 22
+    },
+    "iso-ovr": {
+      "x": 38.65625,
+      "y": 40,
+      "width": 24.375,
+      "height": 22
+    },
+    "plain-p": {
+      "x": 8,
+      "y": 72,
+      "width": 420,
+      "height": 22
+    },
+    "plain": {
+      "x": 38.65625,
+      "y": 72,
+      "width": 24.375,
+      "height": 22
+    },
+    "iso-block": {
+      "x": 8,
+      "y": 104,
+      "width": 200,
+      "height": 40
+    }
+  }
+}

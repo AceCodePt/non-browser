@@ -137,6 +137,14 @@ export const SIDES: Side[] = ['top', 'right', 'bottom', 'left'];
  * logical start/end resolves to along the inline axis. Inherited; initial ltr. */
 export type Direction = 'ltr' | 'rtl';
 
+/** The computed `unicode-bidi` (css-writing-modes-4 §3.1), the current spec's
+ * value set. The legacy `embed` keyword is deliberately absent (deprecated in
+ * §3.1). Not inherited; initial normal. The engine computes and reports these
+ * but does not run the Unicode BiDi Algorithm — bidi-override still forces the
+ * box's direction (already resolved at the box level), while mixed-run
+ * reordering stays a declared divergence (docs/ledgers/unicode-bidi.md). */
+export type UnicodeBidi = 'normal' | 'isolate' | 'bidi-override' | 'isolate-override' | 'plaintext';
+
 export type TrackFunction =
   | { type: 'fixed'; px: number }
   | { type: 'pct'; pct: number }
@@ -335,6 +343,7 @@ export interface ComputedStyle {
    * scroll offset 0 (a static renderer has no scroll position). */
   position: 'static' | 'relative' | 'sticky' | 'absolute' | 'fixed';
   direction: Direction;
+  unicodeBidi: UnicodeBidi;
   zIndex: number | null;
   top: Length;
   right: Length;
@@ -2004,7 +2013,20 @@ export function makeStyle(rawDecls: Declaration[], defaults: Defaults): Computed
   // cascade order with the properties it maps.
   const direction: Direction = (() => {
     const d = findDecl(decls, 'direction');
-    return d && d.value.trim() === 'rtl' ? 'rtl' : (defaults.directionInherited ?? 'ltr');
+    if (!d) return defaults.directionInherited ?? 'ltr';
+    // An explicit `direction: ltr` declaration overrides an inherited rtl —
+    // the ltr branch must not fall through to the inherited value.
+    return d.value.trim() === 'rtl' ? 'rtl' : 'ltr';
+  })();
+
+  // `unicode-bidi` (css-writing-modes-4 §3.1): not inherited; initial normal.
+  // Only the current spec's value set computes; `embed` and bare legacy forms
+  // are dropped to the initial value like Chrome's parse-error recovery.
+  const unicodeBidi: UnicodeBidi = (() => {
+    const d = findDecl(decls, 'unicode-bidi');
+    const v = d?.value.trim();
+    if (v === 'isolate' || v === 'bidi-override' || v === 'isolate-override' || v === 'plaintext') return v;
+    return 'normal';
   })();
 
   // --- margins: each physical side takes its cascade winner among the
@@ -2556,6 +2578,7 @@ export function makeStyle(rawDecls: Declaration[], defaults: Defaults): Computed
     display,
     position,
     direction,
+    unicodeBidi,
     zIndex,
     top: insetSide('top'),
     right: insetSide('right'),

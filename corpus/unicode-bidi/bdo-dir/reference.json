@@ -1,0 +1,54 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "ltr-p": {
+      "unicode-bidi": "isolate",
+      "direction": "ltr"
+    },
+    "bdo-r": {
+      "unicode-bidi": "isolate-override",
+      "direction": "rtl"
+    },
+    "bdo-l": {
+      "unicode-bidi": "isolate-override",
+      "direction": "ltr"
+    },
+    "bdo-block": {
+      "unicode-bidi": "isolate-override",
+      "direction": "rtl",
+      "text-align": "start"
+    }
+  },
+  "rect": {
+    "wrap": {
+      "x": 0,
+      "y": 0,
+      "width": 436,
+      "height": 120
+    },
+    "ltr-p": {
+      "x": 8,
+      "y": 8,
+      "width": 420,
+      "height": 22
+    },
+    "bdo-r": {
+      "x": 38.65625,
+      "y": 8,
+      "width": 24.375,
+      "height": 22
+    },
+    "bdo-l": {
+      "x": 38.65625,
+      "y": 40,
+      "width": 24.375,
+      "height": 22
+    },
+    "bdo-block": {
+      "x": 8,
+      "y": 72,
+      "width": 200,
+      "height": 40
+    }
+  }
+}

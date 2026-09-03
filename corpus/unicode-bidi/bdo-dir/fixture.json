@@ -1,0 +1,23 @@
+{
+  "name": "bdo-dir",
+  "note": "The bdo element (corpus/unicode-bidi, unicode-bidi feature): UA unicode-bidi: isolate-override (Chrome's computed value for Blink html.css's `bdo { unicode-bidi: isolate-override }`, matching the WHATWG bidi-rendering block) plus the dir attribute feeding direction. bdo dir=rtl and dir=ltr inside an LTR paragraph keep their logical box position while their content direction is overridden (the mirrored glyphs fall under the text tier); a block-level bdo dir=rtl resolves text-align:start to the right edge, with its line box at the inline-start edge. Mixed-direction run reordering (an LTR bdo inside an RTL paragraph) is a declared no-UBA divergence, so the corpus exercises each bdo in a matching-direction context.",
+  "harvest": {
+    "viewport": { "width": 520, "height": 180 },
+    "html": "<body style=\"margin:0;font-family:'Noto Sans';font-size:16px;line-height:22px\"><div id=\"wrap\" style=\"width:420px;padding:8px\"><p id=\"ltr-p\" style=\"margin:0 0 10px 0\">abc <bdo dir=\"rtl\" id=\"bdo-r\" style=\"background:#d9e2f3\">def</bdo> ghi</p><p id=\"ltr-p2\" style=\"margin:0 0 10px 0\">abc <bdo dir=\"ltr\" id=\"bdo-l\" style=\"background:#e6d9f3\">def</bdo> ghi</p><bdo dir=\"rtl\" id=\"bdo-block\" style=\"display:block;width:200px;height:40px;line-height:40px;background:#d9534f;color:#ffffff;text-align:start\">hello ABC</bdo></div></body>",
+    "computedStyle": [
+      { "id": "ltr-p", "props": ["unicode-bidi", "direction"] },
+      { "id": "bdo-r", "props": ["unicode-bidi", "direction"] },
+      { "id": "bdo-l", "props": ["unicode-bidi", "direction"] },
+      { "id": "bdo-block", "props": ["unicode-bidi", "direction", "text-align"] }
+    ],
+    "rects": ["wrap", "ltr-p", "bdo-r", "bdo-l", "bdo-block"],
+    "textElements": ["bdo-block"],
+    "maskContentBoxes": ["ltr-p", "ltr-p2"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

@@ -86,6 +86,16 @@ export const UA_STYLES: UaRule[] = [
   { selectors: ['pre'], declarations: decls({ display: 'block', 'font-family': 'monospace', 'font-size': '0.8125em', 'white-space': 'pre', 'margin-block-start': qem('1em'), 'margin-block-end': '1em' }) },
   { selectors: ['code', 'kbd', 'samp'], declarations: decls({ 'font-family': 'monospace' }) },
 
+  // Bidi rendering (the WHATWG HTML rendering spec's bidi block, mirrored from
+  // Blink html.css): every block container and [dir] element isolates its
+  // contents, bdo overrides+isolates, and dir=auto pre/textarea compute
+  // plaintext. The engine computes and reports these values (getComputedStyle
+  // parity with Chrome) but does not run the Unicode BiDi Algorithm; the
+  // reordering boundary is declared in docs/ledgers/unicode-bidi.md.
+  { selectors: ['address', 'blockquote', 'center', 'div', 'figure', 'figcaption', 'footer', 'form', 'header', 'hr', 'legend', 'listing', 'main', 'p', 'plaintext', 'pre', 'summary', 'xmp', 'article', 'aside', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hgroup', 'nav', 'section', 'search', 'table', 'caption', 'colgroup', 'col', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th', 'dir', 'dd', 'dl', 'dt', 'menu', 'ol', 'ul', 'li', 'bdi', 'output', '[dir=ltr i]', '[dir=rtl i]', '[dir=auto i]'], declarations: decls({ 'unicode-bidi': 'isolate' }) },
+  { selectors: ['bdo', 'bdo[dir]'], declarations: decls({ 'unicode-bidi': 'isolate-override' }) },
+  { selectors: ['textarea[dir=auto i]', 'pre[dir=auto i]'], declarations: decls({ 'unicode-bidi': 'plaintext' }) },
+
   { selectors: ['hr'], declarations: decls({ display: 'block', overflow: 'hidden', 'margin-block-start': '0.5em', 'margin-block-end': '0.5em', 'margin-inline-start': 'auto', 'margin-inline-end': 'auto', 'border-style': 'inset', 'border-width': '1px', color: 'gray' }) },
 
   { selectors: ['a'], declarations: decls({ color: 'rgb(0, 0, 238)', 'text-decoration': 'underline' }) },
