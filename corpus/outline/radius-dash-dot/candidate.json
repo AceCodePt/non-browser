@@ -1,0 +1,27 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "a": {
+      "outline-style": "dashed",
+      "outline-width": "4px"
+    },
+    "b": {
+      "outline-style": "dotted",
+      "outline-width": "2px"
+    }
+  },
+  "rect": {
+    "a": {
+      "x": 30,
+      "y": 30,
+      "width": 180,
+      "height": 90
+    },
+    "b": {
+      "x": 270,
+      "y": 30,
+      "width": 180,
+      "height": 90
+    }
+  }
+}

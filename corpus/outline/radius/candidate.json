@@ -1,0 +1,29 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "a": {
+      "outline-style": "solid",
+      "outline-width": "4px",
+      "border-radius": "24px"
+    },
+    "b": {
+      "outline-style": "solid",
+      "outline-width": "8px",
+      "border-radius": "30px"
+    }
+  },
+  "rect": {
+    "a": {
+      "x": 30,
+      "y": 30,
+      "width": 180,
+      "height": 90
+    },
+    "b": {
+      "x": 270,
+      "y": 30,
+      "width": 180,
+      "height": 90
+    }
+  }
+}

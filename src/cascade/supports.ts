@@ -308,6 +308,48 @@ const PROP_GROUPS: PropGroup[] = [
     validate: (v) => splitValue(v).every((p) => ['none', 'underline', 'overline', 'line-through'].includes(p.toLowerCase())),
   },
   { props: ['box-shadow', 'text-shadow'], validate: (v) => parseShadowList(v, BLACK) !== null },
+  {
+    props: ['outline-width'],
+    validate: (v) => isLength(v) || ['thin', 'medium', 'thick'].includes(v.trim().toLowerCase()),
+  },
+  {
+    props: ['outline-style'],
+    validate: (v) =>
+      ['dotted', 'dashed', 'solid', 'double', 'groove', 'ridge', 'inset', 'outset', 'auto', 'none', 'hidden'].includes(v.trim().toLowerCase()),
+  },
+  {
+    props: ['outline-color'],
+    validate: (v) => ['auto', 'invert'].includes(v.trim().toLowerCase()) || parseColorOrNull(v) !== null,
+  },
+  {
+    props: ['outline'],
+    validate: (v) => {
+      const parts = splitValue(v);
+      if (parts.length < 1 || parts.length > 3) return false;
+      let width = false;
+      let style = false;
+      let color = false;
+      for (const p of parts) {
+        const lower = p.toLowerCase();
+        // `hidden` is not in the shorthand's <outline-line-style> grammar.
+        if (lower === 'hidden') return false;
+        if (!style && ['dotted', 'dashed', 'solid', 'double', 'groove', 'ridge', 'inset', 'outset', 'auto', 'none'].includes(lower)) {
+          style = true;
+          continue;
+        }
+        if (!width && (isLength(p) || ['thin', 'medium', 'thick'].includes(lower))) {
+          width = true;
+          continue;
+        }
+        if (!color && (lower === 'auto' || lower === 'invert' || parseColorOrNull(p) !== null)) {
+          color = true;
+          continue;
+        }
+        return false;
+      }
+      return true;
+    },
+  },
   { props: ['content'], validate: (v) => v.trim().toLowerCase() === 'none' || /^(['"]).*\1$/.test(v.trim()) },
   { props: ['container-type'], validate: keywordSet('normal', 'inline-size') },
   { props: ['container-name'], validate: (v) => v.trim().length > 0 },

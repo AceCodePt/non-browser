@@ -75,7 +75,6 @@ the archive-audit classification so a reader can see the evidence:
 | url() raster backgrounds (image decode) | parsed + serialized, never painted (chartered-out) | explicit disposition, `docs/ledgers/backgrounds.md` | `corpus/backgrounds/url-unsupported` pins the contract |
 | per-element opacity (box-level compositing) | EMPTY archive | `opacity-compositing` EMPTY | `tasks/opacity-subtree-compositing` |
 | box-shadow / text-shadow | EMPTY archive | `box-shadow-paint` EMPTY | `tasks/shadow-paint` |
-| outline | never landed | `paint-shapes` PARTIAL (outline ownerless) | none |
 | tables layout (cell grid, border-collapse box model, spanning) | parse + UA defaults only | `tables-layout` PARTIAL; charter §3 out of v1 | none |
 | calc()/min()/max()/clamp() | never landed | not an archived task | `tasks/calc-values` |
 | custom properties / var() | EMPTY archive | `cascade-custom-props` EMPTY | none |
@@ -100,9 +99,11 @@ corpus token") — the tables-layout bullet captures that split explicitly.
   `font-size`, `line-height`, `text-decoration`.
 - Every EMPTY/PARTIAL archive is recorded deferred above with the audit's exact
   classification (box-shadow-paint, opacity-compositing, tables-layout,
-  paint-shapes/outline, cascade-custom-props, cascade-layers-important,
+  cascade-custom-props, cascade-layers-important,
   parse-stylesheets, text-font-fallback's non-local machinery is instead covered
-  by cross-family/firefox-track as the audit notes). No EMPTY archive is claimed
+  by cross-family/firefox-track as the audit notes). The paint-shapes outline
+  portion left the deferral list when its owning task landed (charter §11 row
+  `outline`, docs/ledgers/outline.md). No EMPTY archive is claimed
   as implemented, and no implemented feature is left without a row or a deferral.
 
 ## Verification

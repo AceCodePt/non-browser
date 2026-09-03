@@ -315,6 +315,23 @@ export type AspectRatio =
 
 export const ASPECT_AUTO: AspectRatio = { type: 'auto' };
 
+/**
+ * The computed `outline-style` (css-ui-4 §4). `hidden` is accepted like Chrome's
+ * shared border-style parser and computes to `none`; `auto` is the focus-ring
+ * keyword (parsed and computed, painted as a declared divergence).
+ */
+export type OutlineStyle =
+  | 'none'
+  | 'dotted'
+  | 'dashed'
+  | 'solid'
+  | 'double'
+  | 'groove'
+  | 'ridge'
+  | 'inset'
+  | 'outset'
+  | 'auto';
+
 export interface ComputedStyle {
   display: DisplayValue;
   /** css-sizing-4 §5: `auto` or the preferred ratio num/den (`autoRatio` marks
@@ -376,6 +393,16 @@ export interface ComputedStyle {
   boxShadow: Shadow[];
   /** text-shadows (inherited), first on top. */
   textShadow: Shadow[];
+  /**
+   * outline (css-ui-4 §4): width in px (negative clamps to 0), style keyword
+   * ('hidden' computes to 'none'), color with currentColor/auto/invert already
+   * resolved against the element color, and the offset in px (may be negative).
+   * Not inherited; paints outside the border box without affecting layout.
+   */
+  outlineWidth: number;
+  outlineStyle: OutlineStyle;
+  outlineColor: Color;
+  outlineOffset: number;
   fontFamily: string;
   fontSize: number;
   fontWeight: number;
@@ -1331,6 +1358,71 @@ function parseBorderColorShorthand(raw: string): Record<Side, Color> | null {
   if (parts.some((p) => p === null)) return null;
   const [t = parseColor('black'), r = t, b = t, l = r] = parts as Color[];
   return { top: t, right: r, bottom: b, left: l };
+}
+
+/**
+ * outline (css-ui-4 §4) parse helpers. The line styles are the border-style
+ * keywords minus `hidden` (which computes to `none`), plus `auto`.
+ */
+const OUTLINE_LINE_STYLES = new Set(['dotted', 'dashed', 'solid', 'double', 'groove', 'ridge', 'inset', 'outset']);
+
+function outlineColorOf(value: string, elementColor: Color): Color {
+  const s = value.trim().toLowerCase();
+  // `auto` and the removed `invert` keyword both compute to currentColor in
+  // modern Chrome (the element's color at computed-value time).
+  if (s === 'auto' || s === 'invert' || s === 'currentcolor') return elementColor;
+  const c = parseColorOrNull(s);
+  return c ? (c.currentColor ? elementColor : c) : elementColor;
+}
+
+const OUTLINE_WIDTH_KEYWORDS: Record<string, number> = { thin: 1, medium: 3, thick: 5 };
+
+/**
+ * Parse the `outline` shorthand (css-ui-4 §4.3): 1-3 components, each consumed
+ * by exactly one of width/style/color, in any order. An unparseable component
+ * invalidates the whole declaration (returns null — Chrome drops it and the
+ * longhands decide). Omitted components stay null so the caller keeps the
+ * longhand/initial values.
+ */
+function parseOutlineShorthand(
+  raw: string,
+  elementColor: Color,
+): { width: number | null; style: OutlineStyle | null; color: Color | null } | null {
+  let width: number | null = null;
+  let style: OutlineStyle | null = null;
+  let color: Color | null = null;
+  for (const p of splitTopLevel(raw.trim())) {
+    const lower = p.toLowerCase();
+    // `hidden` belongs to the longhand's border-style grammar but not to the
+    // shorthand's <outline-line-style> — Chrome drops the whole declaration
+    // (outline: hidden 3px red leaves all three longhands at their initials).
+    if (lower === 'hidden') return null;
+    if (OUTLINE_LINE_STYLES.has(lower) || lower === 'auto' || lower === 'none') {
+      if (style !== null) return null;
+      style = lower === 'auto' ? 'auto' : lower === 'none' ? 'none' : (lower as Exclude<OutlineStyle, 'none' | 'auto'>);
+      continue;
+    }
+    if (p in OUTLINE_WIDTH_KEYWORDS) {
+      if (width !== null) return null;
+      width = OUTLINE_WIDTH_KEYWORDS[p];
+      continue;
+    }
+    if (/^[-+\d.]/.test(p) || /^(?:calc|min|max|clamp)\(/i.test(p)) {
+      if (width !== null) return null;
+      const px = resolveLength(parseLength(p), 0);
+      if (px === null) return null;
+      width = Math.max(0, px);
+      continue;
+    }
+    if (color !== null) return null;
+    const s = lower;
+    if (s === 'auto' || s === 'invert' || parseColorOrNull(p)) {
+      color = outlineColorOf(p, elementColor);
+      continue;
+    }
+    return null;
+  }
+  return { width, style, color };
 }
 
 function parseFlexBasis(value: string | undefined): Length {
@@ -2325,6 +2417,53 @@ export function makeStyle(rawDecls: Declaration[], defaults: Defaults): Computed
     return parseShadowList(s, elementColor) ?? defaults.textShadow ?? [];
   })();
 
+  // --- outline (css-ui-4 §4): the shorthand accepts width/style/color in any
+  // order and resets them to their initials; outline-offset is a separate
+  // longhand the shorthand does not touch. outline-color's `auto`/`invert`
+  // compute to currentColor (Chrome's modern behavior — invert unsupported),
+  // outline-style's `hidden` computes to `none`, and a negative outline-width
+  // clamps to 0 at computed-value time. ---
+  const outlineWidthStyle = (() => {
+    const d = findDecl(decls, 'outline-width');
+    if (!d) return 3;
+    const s = d.value.trim().toLowerCase();
+    if (s === 'thin') return 1;
+    if (s === 'thick') return 5;
+    if (s === 'medium' || s === 'auto') return 3;
+    const px = resolveLength(parseLength(d.value), 0);
+    return Math.max(0, px ?? 0);
+  })();
+  const outlineStyleOnly = (() => {
+    const d = findDecl(decls, 'outline-style');
+    if (!d) return 'none' as const;
+    const s = d.value.trim().toLowerCase();
+    if (s === 'auto') return 'auto' as const;
+    if (OUTLINE_LINE_STYLES.has(s)) return s as OutlineStyle;
+    return 'none' as const;
+  })();
+  const outlineColorOnly = (() => {
+    const d = findDecl(decls, 'outline-color');
+    if (!d) return elementColor;
+    return outlineColorOf(d.value, elementColor);
+  })();
+  const outlineSh = findDecl(decls, 'outline');
+  let outlineWidth = outlineWidthStyle;
+  let outlineStyle = outlineStyleOnly;
+  let outlineColor = outlineColorOnly;
+  if (outlineSh) {
+    const parts = parseOutlineShorthand(outlineSh.value, elementColor);
+    if (parts) {
+      if (parts.width !== null) outlineWidth = parts.width;
+      if (parts.style !== null) outlineStyle = parts.style;
+      if (parts.color !== null) outlineColor = parts.color;
+    }
+  }
+  const outlineOffset = (() => {
+    const d = findDecl(decls, 'outline-offset');
+    if (!d) return 0;
+    return resolveEmLength(parseLength(d.value), fontSize).px ?? 0;
+  })();
+
   const decl = (name: string) => findDecl(decls, name)?.value;
 
   // em inside a track-size Length (calc() or fit-content()) folds against the
@@ -2556,6 +2695,10 @@ export function makeStyle(rawDecls: Declaration[], defaults: Defaults): Computed
     opacity,
     boxShadow,
     textShadow,
+    outlineWidth,
+    outlineStyle,
+    outlineColor,
+    outlineOffset,
     fontFamily,
     fontSize,
     fontWeight,

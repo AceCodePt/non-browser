@@ -77,7 +77,12 @@ function collectDeclared(html, declared) {
 
 /** The ignored properties of `ignored` that are not accounted for. */
 function unaccounted(ignored, accounted) {
-  return ignored.filter((p) => !(p in accounted));
+  // Custom properties (css-variables-1, commit 6654c40) are captured into the
+  // var() store and substituted before paint; they never traverse makeStyle's
+  // lookup table, so the lookup-based audit classifies every declared `--*` as
+  // ignored by construction. That is the pipeline working, not a declaration
+  // being silently dropped.
+  return ignored.filter((p) => !(p in accounted) && !p.startsWith('--'));
 }
 
 function* fixtures() {

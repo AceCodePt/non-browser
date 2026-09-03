@@ -1,0 +1,31 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "a": {
+      "outline-offset": "6px",
+      "outline-width": "2px",
+      "outline-style": "solid",
+      "outline-color": "rgb(0, 150, 60)"
+    },
+    "b": {
+      "outline-offset": "-4px",
+      "outline-width": "3px",
+      "outline-style": "solid",
+      "outline-color": "rgb(255, 0, 0)"
+    }
+  },
+  "rect": {
+    "a": {
+      "x": 30,
+      "y": 30,
+      "width": 180,
+      "height": 90
+    },
+    "b": {
+      "x": 270,
+      "y": 30,
+      "width": 188,
+      "height": 98
+    }
+  }
+}
