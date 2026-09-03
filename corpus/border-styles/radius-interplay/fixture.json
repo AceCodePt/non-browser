@@ -1,0 +1,16 @@
+{
+  "name": "radius-interplay",
+  "note": "dashed border composing with border-radius: the dash pattern follows the rounded corner path rather than being clipped at the corner join (the border-styles slice's radius-interplay requirement).",
+  "harvest": {
+    "viewport": { "width": 220, "height": 220 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"d\" style=\"position:relative;left:30px;top:30px;width:160px;height:120px;background:#ffffff;border:6px dashed #3355aa;border-radius:24px\"></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "d",
+        "props": ["border-top-style", "border-top-width", "border-top-color", "border-radius", "border-top-left-radius"]
+      }
+    ],
+    "rects": ["d"]
+  },
+  "expected": { "measureText": "pass", "computedStyle": "pass", "rect": "pass", "screenshot": "pass" }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "hidden",
+  "note": "hidden border: computes to 'hidden', used border-width is 0 (layout equivalent to none), and nothing paints. The rect therefore excludes the border, matching Chrome.",
+  "harvest": {
+    "viewport": { "width": 220, "height": 220 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"d\" style=\"position:relative;left:30px;top:30px;width:160px;height:120px;background:#ffffff;border:8px hidden #000\"></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "d",
+        "props": ["border-top-style", "border-top-width", "border-top-color", "border-right-style", "border-right-width", "border-bottom-style", "border-bottom-width", "border-left-style", "border-left-width"]
+      }
+    ],
+    "rects": ["d"]
+  },
+  "expected": { "measureText": "pass", "computedStyle": "pass", "rect": "pass", "screenshot": "pass" }
+}

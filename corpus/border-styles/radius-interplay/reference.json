@@ -1,0 +1,20 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "d": {
+      "border-top-style": "dashed",
+      "border-top-width": "6px",
+      "border-top-color": "rgb(51, 85, 170)",
+      "border-radius": "24px",
+      "border-top-left-radius": "24px"
+    }
+  },
+  "rect": {
+    "d": {
+      "x": 30,
+      "y": 30,
+      "width": 172,
+      "height": 132
+    }
+  }
+}

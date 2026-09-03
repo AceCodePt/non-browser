@@ -1,0 +1,24 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "d": {
+      "border-top-style": "hidden",
+      "border-top-width": "0px",
+      "border-top-color": "rgb(0, 0, 0)",
+      "border-right-style": "hidden",
+      "border-right-width": "0px",
+      "border-bottom-style": "hidden",
+      "border-bottom-width": "0px",
+      "border-left-style": "hidden",
+      "border-left-width": "0px"
+    }
+  },
+  "rect": {
+    "d": {
+      "x": 30,
+      "y": 30,
+      "width": 160,
+      "height": 120
+    }
+  }
+}

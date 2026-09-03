@@ -1,0 +1,16 @@
+{
+  "name": "double-thin",
+  "note": "double border at 2px: css-backgrounds-3 §4.2 renders double as solid when border-width < 3px, because the two lines plus gap cannot fit.",
+  "harvest": {
+    "viewport": { "width": 220, "height": 220 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"d\" style=\"position:relative;left:30px;top:30px;width:160px;height:120px;background:#ffffff;border:2px double #446688\"></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "d",
+        "props": ["border-top-style", "border-top-width", "border-top-color", "border-right-style", "border-right-width", "border-right-color", "border-bottom-style", "border-bottom-width", "border-bottom-color", "border-left-style", "border-left-width", "border-left-color"]
+      }
+    ],
+    "rects": ["d"]
+  },
+  "expected": { "measureText": "pass", "computedStyle": "pass", "rect": "pass", "screenshot": "pass" }
+}

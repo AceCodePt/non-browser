@@ -1,0 +1,16 @@
+{
+  "name": "dashed",
+  "note": "dashed border at 6px: dash and gap lengths scale from border-width (css-backgrounds-3 §4.2), and Chrome rasterizes the dash pattern along each edge, closing at the corners. No border-radius, so the dashes are straight per edge.",
+  "harvest": {
+    "viewport": { "width": 220, "height": 220 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"d\" style=\"position:relative;left:30px;top:30px;width:160px;height:120px;background:#ffffff;border:6px dashed #3355aa\"></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "d",
+        "props": ["border-top-style", "border-top-width", "border-top-color", "border-right-style", "border-right-width", "border-right-color", "border-bottom-style", "border-bottom-width", "border-bottom-color", "border-left-style", "border-left-width", "border-left-color"]
+      }
+    ],
+    "rects": ["d"]
+  },
+  "expected": { "measureText": "pass", "computedStyle": "pass", "rect": "pass", "screenshot": "pass" }
+}

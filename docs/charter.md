@@ -142,6 +142,7 @@ the charter and the corpus cannot silently diverge:
 | block/inline | padding | yes | corpus/spine, corpus/positioning, corpus/stress | padding |
 | block/inline | border (width/style/color) | yes | corpus/spine, corpus/flexbox, corpus/border-radius, corpus/stress | border |
 | block/inline | border-radius | yes | corpus/border-radius, corpus/stress | border-radius |
+| block/inline | border-styles (dashed/dotted/double/groove/ridge/hidden) — dash/dot scaling, double gap with solid fallback below 3px, groove/ridge edge shading, hidden computing to used width 0, radius interplay | yes | corpus/border-styles | dashed |
 | block/inline | background-color | yes | corpus/spine, corpus/border-radius, corpus/stress | background-color |
 | block/inline | float | yes | corpus/floats, corpus/stress | float |
 | block/inline | clear | yes | corpus/floats | clear |

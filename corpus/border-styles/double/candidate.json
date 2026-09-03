@@ -1,0 +1,27 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "d": {
+      "border-top-style": "double",
+      "border-top-width": "10px",
+      "border-top-color": "rgb(68, 102, 136)",
+      "border-right-style": "double",
+      "border-right-width": "10px",
+      "border-right-color": "rgb(68, 102, 136)",
+      "border-bottom-style": "double",
+      "border-bottom-width": "10px",
+      "border-bottom-color": "rgb(68, 102, 136)",
+      "border-left-style": "double",
+      "border-left-width": "10px",
+      "border-left-color": "rgb(68, 102, 136)"
+    }
+  },
+  "rect": {
+    "d": {
+      "x": 30,
+      "y": 30,
+      "width": 180,
+      "height": 140
+    }
+  }
+}

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-03T14:19:03.433Z",
+  "generatedAt": "2026-09-03T14:40:07.244Z",
   "fixtures": {
     "aspect-ratio/block-surface": {
       "sha256": "5d45b9b9ab2c56340a50cd75f738e67c96b080949461231c0e352638dd3b3567",
@@ -124,6 +124,69 @@
       "sha256": "df9c3013bb49519516586da82f6675421cfd2b5cf16737f30fa5502edee3d708",
       "width": 260,
       "height": 120,
+      "rectCount": 1,
+      "computedStyleCount": 1
+    },
+    "border-styles/dashed": {
+      "sha256": "9a63d3e1f9e82da9a6953333952f6dd7e723e6ff046f23b748ca7af44cfcf6df",
+      "width": 220,
+      "height": 220,
+      "rectCount": 1,
+      "computedStyleCount": 1
+    },
+    "border-styles/dashed-thin": {
+      "sha256": "8a091712447cbc6319de1c55aace49045a8ea87a82b848fa038b1a9572736dc8",
+      "width": 220,
+      "height": 220,
+      "rectCount": 1,
+      "computedStyleCount": 1
+    },
+    "border-styles/dotted": {
+      "sha256": "2ad4e17f2aff0761c4f9f7d5453c5c45e7f961e3260c2fc2940dc7560a26b1eb",
+      "width": 220,
+      "height": 220,
+      "rectCount": 1,
+      "computedStyleCount": 1
+    },
+    "border-styles/double": {
+      "sha256": "2d7920dbcde83f499df1f8bf1923b5a560a5d7ed0dca8878dd631224470b4c40",
+      "width": 220,
+      "height": 220,
+      "rectCount": 1,
+      "computedStyleCount": 1
+    },
+    "border-styles/double-thin": {
+      "sha256": "aab817dd297e9019daf128cc2cd2568374db50292ef091b6b9e178bcf8e71236",
+      "width": 220,
+      "height": 220,
+      "rectCount": 1,
+      "computedStyleCount": 1
+    },
+    "border-styles/groove": {
+      "sha256": "1f25199efc34a6744eed7ce741b2ba77760296b03fb1d9a2d6ac833be6391865",
+      "width": 220,
+      "height": 220,
+      "rectCount": 1,
+      "computedStyleCount": 1
+    },
+    "border-styles/hidden": {
+      "sha256": "76143e11855df0a695cb6d3dc417b94a5589e97a2d1c8cf587418e5a6f23888e",
+      "width": 220,
+      "height": 220,
+      "rectCount": 1,
+      "computedStyleCount": 1
+    },
+    "border-styles/radius-interplay": {
+      "sha256": "a062228392cf1451831d39a028b3f4d2439e5579e057bcec6283e44e5684e6de",
+      "width": 220,
+      "height": 220,
+      "rectCount": 1,
+      "computedStyleCount": 1
+    },
+    "border-styles/ridge": {
+      "sha256": "21b341e33b5c89dd0cd229c22e3927bb2030a3aee96fda0702fb5a7cb22e8fa7",
+      "width": 220,
+      "height": 220,
       "rectCount": 1,
       "computedStyleCount": 1
     },

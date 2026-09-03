@@ -1,0 +1,16 @@
+{
+  "name": "groove",
+  "note": "groove border at 8px: Chrome's edge shading makes the top/left faces darker and the bottom/right lighter (a carved look), inverse of ridge. Compared strictly as non-text pixels.",
+  "harvest": {
+    "viewport": { "width": 220, "height": 220 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"d\" style=\"position:relative;left:30px;top:30px;width:160px;height:120px;background:#ffffff;border:8px groove #8899aa\"></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "d",
+        "props": ["border-top-style", "border-top-width", "border-top-color", "border-right-style", "border-right-width", "border-right-color", "border-bottom-style", "border-bottom-width", "border-bottom-color", "border-left-style", "border-left-width", "border-left-color"]
+      }
+    ],
+    "rects": ["d"]
+  },
+  "expected": { "measureText": "pass", "computedStyle": "pass", "rect": "pass", "screenshot": "pass" }
+}
