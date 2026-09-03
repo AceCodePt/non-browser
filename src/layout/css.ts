@@ -359,6 +359,16 @@ export interface ComputedStyle {
    * as 'normal', while layout uses the font-metric-derived px value). */
   lineHeightNormal: boolean;
   whiteSpace: WhiteSpaceValue;
+  /** css-text-3 §2.1: uppercase/lowercase/capitalize/none (inherited). */
+  textTransform: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
+  /** css-text-3 §2.2: first-line indent (length/percentage), inherited raw so
+   * percentages resolve per element; hanging/each-line keep Chrome's keyword-
+   * preserving computed value. */
+  textIndent: Length;
+  textIndentHanging: boolean;
+  textIndentEachLine: boolean;
+  /** css-text-3 §8: extra advance per word-separator character (inherited). */
+  wordSpacing: Length;
   /** css-text-3 §6.1: break-all allows breaks between any characters;
    * keep-all suppresses breaks within CJK runs. */
   wordBreak: 'normal' | 'break-all' | 'keep-all';
@@ -1541,6 +1551,11 @@ interface Defaults {
    * 'center'/'justify'), resolved against the element's own direction. */
   textAlignInheritedKeyword?: string;
   whiteSpaceDefault?: WhiteSpaceValue;
+  textTransformInherited?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
+  textIndentInherited?: Length;
+  textIndentHangingInherited?: boolean;
+  textIndentEachLineInherited?: boolean;
+  wordSpacingInherited?: Length;
   borderCollapseDefault?: 'separate' | 'collapse';
   borderSpacingDefault?: number;
   borderSpacingVDefault?: number;
@@ -2132,6 +2147,41 @@ export function makeStyle(rawDecls: Declaration[], defaults: Defaults): Computed
   // css-text-3 §6: word-break (word-wrap is a legacy alias for overflow-wrap,
   // so both names feed the same cascade winner). Invalid keywords fall back to
   // the initial value like Chrome's computed-value fallback.
+  // css-text-3 §2/§8: text-transform, text-indent (with the hanging/each-line
+  // keywords Chrome keeps in the computed value) and word-spacing (the legacy
+  // 'normal' computes to 0px). All three inherit.
+  const textTransformDecl = findDecl(decls, 'text-transform');
+  const textTransformRaw = textTransformDecl?.value.trim();
+  const textTransform: 'none' | 'uppercase' | 'lowercase' | 'capitalize' =
+    textTransformRaw === 'uppercase' || textTransformRaw === 'lowercase' || textTransformRaw === 'capitalize'
+      ? textTransformRaw
+      : defaults.textTransformInherited ?? 'none';
+  const textIndentDecl = findDecl(decls, 'text-indent');
+  let textIndent = defaults.textIndentInherited ?? pxLength(0);
+  let textIndentHanging = defaults.textIndentHangingInherited ?? false;
+  let textIndentEachLine = defaults.textIndentEachLineInherited ?? false;
+  if (textIndentDecl) {
+    const tokens = textIndentDecl.value.trim().split(/\s+/).filter(Boolean);
+    const lengthTokens = tokens.filter((t) => t !== 'hanging' && t !== 'each-line');
+    if (lengthTokens.length === 1) {
+      const l = parseLength(lengthTokens[0]);
+      if (l.px !== null || l.pct !== null || l.em !== null) textIndent = resolveEmLength(l, fontSize);
+      else if (l.auto) textIndent = pxLength(0);
+      textIndentHanging = tokens.includes('hanging');
+      textIndentEachLine = tokens.includes('each-line');
+    }
+  }
+  const wordSpacingDecl = findDecl(decls, 'word-spacing');
+  const wordSpacingRaw = wordSpacingDecl?.value.trim();
+  const wordSpacing: Length =
+    wordSpacingRaw && wordSpacingRaw !== 'normal'
+      ? (() => {
+          const l = parseLength(wordSpacingRaw);
+          if (l.pct !== null) return pxLength((l.pct / 100) * fontSize);
+          return l.px !== null || l.em !== null ? resolveEmLength(l, fontSize) : pxLength(0);
+        })()
+      : wordSpacingDecl ? pxLength(0) : defaults.wordSpacingInherited ?? pxLength(0);
+
   const wordBreakDecl = findDecl(decls, 'word-break');
   const wordBreakRaw = wordBreakDecl?.value.trim();
   const wordBreak: 'normal' | 'break-all' | 'keep-all' =
@@ -2363,6 +2413,11 @@ export function makeStyle(rawDecls: Declaration[], defaults: Defaults): Computed
     })(),
     wordBreak,
     overflowWrap,
+    textTransform,
+    textIndent,
+    textIndentHanging,
+    textIndentEachLine,
+    wordSpacing,
     display,
     position,
     direction,
@@ -2455,4 +2510,32 @@ export function makeStyle(rawDecls: Declaration[], defaults: Defaults): Computed
     containerName,
     customProps,
   };
+}
+
+const wordSegmenter = new Intl.Segmenter(undefined, { granularity: 'word' });
+const graphemeSegmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+
+/**
+ * css-text-3 §2.1 case mapping with the default (locale-less) Unicode
+ * mappings: uppercase/lowercase map the whole text; capitalize uppercases the
+ * first grapheme of each UAX-29 word when it has an uppercase mapping (digits
+ * and punctuation stay put — probe-verified: '123abc' keeps its case).
+ */
+export function applyTextTransform(text: string, transform: 'none' | 'uppercase' | 'lowercase' | 'capitalize'): string {
+  if (transform === 'uppercase') return text.toUpperCase();
+  if (transform === 'lowercase') return text.toLowerCase();
+  if (transform === 'capitalize') {
+    let out = '';
+    for (const s of wordSegmenter.segment(text)) {
+      if (s.isWordLike === true && s.segment) {
+        const first = [...graphemeSegmenter.segment(s.segment)][0]?.segment ?? '';
+        const rest = s.segment.slice(first.length);
+        out += first.toUpperCase() + rest;
+      } else {
+        out += s.segment;
+      }
+    }
+    return out;
+  }
+  return text;
 }

@@ -1,0 +1,22 @@
+{
+  "name": "indent",
+  "note": "css-text-3 §2.2 first-line indentation: the default indents only the first formatted line (20px), hanging indents every line except the first, each-line indents the first line and every line after a forced break, and a 10% indent resolves against the containing block width (200px → 20px). The second lines' x positions are pinned by the rect layer through the overflowing-line geometry and the screenshot band.",
+  "harvest": {
+    "viewport": { "width": 400, "height": 300 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} p{margin:0;font-size:16px;width:200px;background-color:rgb(245, 245, 245)} #i2{text-indent:20px hanging;margin-top:10px} #i3{text-indent:20px each-line;margin-top:10px} #i4{text-indent:10%;margin-top:10px}</style></head><body><p id=\"i1\" style=\"text-indent:20px\">first line<br>second line</p><p id=\"i2\">first line<br>second line</p><p id=\"i3\">first line<br>second line</p><p id=\"i4\">first line<br>second line</p></body></html>",
+    "computedStyle": [
+      { "id": "i1", "props": ["text-indent"] },
+      { "id": "i2", "props": ["text-indent"] },
+      { "id": "i3", "props": ["text-indent"] },
+      { "id": "i4", "props": ["text-indent"] }
+    ],
+    "rects": ["i1", "i2", "i3", "i4"],
+    "textElements": ["i1", "i2", "i3", "i4"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

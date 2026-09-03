@@ -185,6 +185,9 @@ export function layoutTextLines(opts: {
   /** css-text-3 §6 inputs feeding the breaker's in-word breakability. */
   wordBreak?: 'normal' | 'break-all' | 'keep-all';
   overflowWrap?: 'normal' | 'break-word' | 'anywhere';
+  /** css-text-3 §2.2/§8: first-line indent (resolved px) and word-spacing. */
+  textIndent?: { amount: number; hanging: boolean; eachLine: boolean };
+  wordSpacing?: number;
   available: (top: number, bottom: number) => { x: number; width: number };
 }): { lines: LineBox[]; height: number } {
   const { text, y, lineHeight, fontSize, family, available } = opts;
@@ -231,7 +234,7 @@ export function layoutTextLines(opts: {
       return { lines, height: lineTop - y };
     }
     if (usePretextBreaker) {
-      lineTop = pretextWordFill(collapsed, lines, lineTop, available, measure, align, fontSize, family, letterSpacing, lineHeight, 'normal', false, rtl, { cssWordBreak: opts.wordBreak, overflowWrap: opts.overflowWrap });
+      lineTop = pretextWordFill(collapsed, lines, lineTop, available, measure, align, fontSize, family, letterSpacing, lineHeight, 'normal', false, rtl, { cssWordBreak: opts.wordBreak, overflowWrap: opts.overflowWrap, wordSpacing: opts.wordSpacing }, segIndent(opts.textIndent, 0, 1));
     } else {
       lineTop = fillWordLines(collapsed.split(' '), lines, lineTop, available, measure, align, fontSize, family, letterSpacing, lineHeight, rtl);
     }
@@ -241,7 +244,8 @@ export function layoutTextLines(opts: {
   if (ws === 'pre-line') {
     let segments = text.split('\n');
     if (segments[segments.length - 1] === '') segments.pop();
-    for (const seg of segments) {
+    for (let si = 0; si < segments.length; si++) {
+      const seg = segments[si]!;
       const collapsed = seg.replace(/[ \t\r\n\f]+/g, ' ').trim();
       if (collapsed === '') {
         const av = available(lineTop, lineTop + lineHeight);
@@ -250,7 +254,7 @@ export function layoutTextLines(opts: {
         continue;
       }
       if (usePretextBreaker) {
-        lineTop = pretextWordFill(collapsed, lines, lineTop, available, measure, align, fontSize, family, letterSpacing, lineHeight, 'normal', false, rtl, { cssWordBreak: opts.wordBreak, overflowWrap: opts.overflowWrap });
+        lineTop = pretextWordFill(collapsed, lines, lineTop, available, measure, align, fontSize, family, letterSpacing, lineHeight, 'normal', false, rtl, { cssWordBreak: opts.wordBreak, overflowWrap: opts.overflowWrap, wordSpacing: opts.wordSpacing }, segIndent(opts.textIndent, si, segments.length));
       } else {
         lineTop = fillWordLines(collapsed.split(' '), lines, lineTop, available, measure, align, fontSize, family, letterSpacing, lineHeight, rtl);
       }
@@ -259,7 +263,7 @@ export function layoutTextLines(opts: {
   }
 
   if (usePretextBreaker) {
-    lineTop = pretextWordFill(text, lines, lineTop, available, measure, align, fontSize, family, letterSpacing, lineHeight, 'pre-wrap', true, rtl, { cssWordBreak: opts.wordBreak, overflowWrap: opts.overflowWrap });
+    lineTop = pretextWordFill(text, lines, lineTop, available, measure, align, fontSize, family, letterSpacing, lineHeight, 'pre-wrap', true, rtl, { cssWordBreak: opts.wordBreak, overflowWrap: opts.overflowWrap, wordSpacing: opts.wordSpacing }, segIndent(opts.textIndent, 0, 1));
     return { lines, height: lineTop - y };
   }
 
@@ -334,6 +338,19 @@ export function layoutTextLines(opts: {
  */
 type BreakOptions = EngineBreakOptions;
 
+/** css-text-3 §2.1: the indent for a segment's first line under the
+ * default/hanging/each-line modes (soft-wrapped lines never indent). */
+function segIndent(
+  ti: { amount: number; hanging: boolean; eachLine: boolean } | undefined,
+  segmentIndex: number,
+  segmentCount: number,
+): number {
+  if (!ti || ti.amount === 0) return 0;
+  if (ti.hanging) return segmentIndex === 0 ? 0 : ti.amount;
+  if (ti.eachLine) return ti.amount;
+  return segmentIndex === 0 ? ti.amount : 0;
+}
+
 /**
  * css-text-3 §6.2: overflow-wrap:anywhere makes every grapheme a break
  * opportunity, so min-content sizing sees the widest grapheme instead of the
@@ -378,7 +395,9 @@ function pretextWordFill(
   hungSpace: boolean,
   rtl = false,
   breaks: BreakOptions = {},
+  indent = 0,
 ): number {
+  let firstLine = true;
   let lineTop = startTop;
   const prepared = prepareText(text, cssFontString(fontSize, family), {
     whiteSpace: prepareWs,
@@ -390,7 +409,9 @@ function pretextWordFill(
   const totalSegments = prepared.segments.length;
   let cursor = { segmentIndex: 0, graphemeIndex: 0 };
   while (true) {
-    const av = available(lineTop, lineTop + lineHeight);
+    const avRaw = available(lineTop, lineTop + lineHeight);
+    const av = firstLine && indent !== 0 ? { x: avRaw.x + indent, width: Math.max(0, avRaw.width - indent) } : avRaw;
+    firstLine = false;
     const availWidth = Math.max(0, av.width);
     const broke = breakNextLine(prepared, cursor, availWidth);
     if (broke === null) break;

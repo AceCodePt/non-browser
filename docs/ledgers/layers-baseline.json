@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-03T11:04:53.866Z",
+  "generatedAt": "2026-09-03T11:42:22.509Z",
   "fixtures": {
     "aspect-ratio/block-surface": {
       "sha256": "5d45b9b9ab2c56340a50cd75f738e67c96b080949461231c0e352638dd3b3567",
@@ -1500,7 +1500,7 @@
       "computedStyleCount": 4
     },
     "stress/form": {
-      "sha256": "379857dde739db27c61caf4b0ccc093e8d7c6a6fe9e57b3e13fb9a4668ab82c3",
+      "sha256": "50dfbabd4b24882c7d5a083be48db843cae01377200befd119ebfd030b38e6c5",
       "width": 360,
       "height": 640,
       "rectCount": 11,
@@ -2387,6 +2387,27 @@
       "height": 300,
       "rectCount": 5,
       "computedStyleCount": 4
+    },
+    "text-formatting/indent": {
+      "sha256": "8439fcc2377d526354b82aa556e46ec4de43a4cae2775ba81b0fda2fb4fb119d",
+      "width": 400,
+      "height": 300,
+      "rectCount": 4,
+      "computedStyleCount": 4
+    },
+    "text-formatting/transform": {
+      "sha256": "9d65c80bf29d0edf721b280b124021ff68caaeb7aad27c8cbba56b7063d07ad6",
+      "width": 600,
+      "height": 200,
+      "rectCount": 3,
+      "computedStyleCount": 3
+    },
+    "text-formatting/word-spacing": {
+      "sha256": "2aae140d15ffdec3f714366a86f96b2dd903af12a1ede614481df085af2dd341",
+      "width": 600,
+      "height": 200,
+      "rectCount": 4,
+      "computedStyleCount": 3
     },
     "ua-styles/bare-headings": {
       "sha256": "df2b5d62f2cc8a3c560fb69d816381a4e27f3a4b8351a8a23f497ad14f60f7b8",

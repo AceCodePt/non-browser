@@ -213,7 +213,8 @@ function maxContentOf(el: P5Element, styles: Map<P5Element, ComputedStyle>, refW
     const ls = style?.letterSpacing ?? 0;
     const weight = style?.fontWeight;
     const fontStyle = style?.fontStyle;
-    max = measureTextWidth(text, fontSize, family, ls, weight, fontStyle);
+    const ws = style ? resolveLength(style.wordSpacing, refWidth) ?? 0 : 0;
+    max = measureTextWidth(text, fontSize, family, ls, weight, fontStyle) + ws * (text.match(/ /g)?.length ?? 0);
     min = style?.overflowWrap === 'anywhere'
       ? minTextWidth(text, fontSize, family, ls, true, weight, fontStyle)
       : Math.max(0, ...text.split(/\s+/).map((w) => measureTextWidth(w, fontSize, family, ls, weight, fontStyle)));

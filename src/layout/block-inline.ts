@@ -13,7 +13,7 @@
  * swap in a different FormattingContext and the same block/inline layout runs.
  */
 
-import { borderPaddingBlock, borderPaddingInline, clipsContent, isScrollContainer, parseStyleAttribute, pxLength, resolveEmLength, resolveLength, makeStyle, type BorderRadius, type ComputedStyle, type Color, type Declaration, type DecorationLine, type Direction, type DisplayValue, type ListStyleType, type PseudoBox, type Shadow, type TextAlign, type VerticalAlign, type Viewport, type WhiteSpaceValue } from './css.js';
+import { borderPaddingBlock, borderPaddingInline, applyTextTransform, clipsContent, isScrollContainer, parseStyleAttribute, pxLength, resolveEmLength, resolveLength, makeStyle, type BorderRadius, type ComputedStyle, type Color, type Declaration, type DecorationLine, type Direction, type DisplayValue, type ListStyleType, type PseudoBox, type Shadow, type TextAlign, type VerticalAlign, type Viewport, type WhiteSpaceValue } from './css.js';
 import { layoutTextLines, measureTextWidth, minTextWidth, type LineBox } from './measure.js';
 import { FloatManager, type FormattingContext } from './floats.js';
 import { layoutGridChildren } from './grid.js';
@@ -54,6 +54,11 @@ export interface StyleDefaults {
   textAlignInheritedKeyword?: string;
   direction?: import('./css.js').Direction;
   whiteSpace?: WhiteSpaceValue;
+  textTransformInherited?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
+  textIndentInherited?: import('./css.js').Length;
+  textIndentHangingInherited?: boolean;
+  textIndentEachLineInherited?: boolean;
+  wordSpacingInherited?: import('./css.js').Length;
   borderCollapse?: 'separate' | 'collapse';
   borderSpacing?: number;
   borderSpacingV?: number;
@@ -192,6 +197,11 @@ export function resolveStyles(
       listStyleType: style.listStyleType,
       listStylePosition: style.listStylePosition,
       whiteSpace: style.whiteSpace,
+      textTransformInherited: style.textTransform,
+      textIndentInherited: style.textIndent,
+      textIndentHangingInherited: style.textIndentHanging,
+      textIndentEachLineInherited: style.textIndentEachLine,
+      wordSpacingInherited: style.wordSpacing,
       customProps: style.customProps,
     };
     for (const child of el.childNodes) {
@@ -853,17 +863,18 @@ export function expandContents<T extends { nodeName: string; childNodes?: unknow
 export function collectInlineText(el: P5Element, styles: Map<P5Element, ComputedStyle>): string {
   let out = '';
   const self = styles.get(el);
-  if (self?.before?.text) out += self.before.text;
+  const transform = self?.textTransform ?? 'none';
+  if (self?.before?.text) out += applyTextTransform(self.before.text, transform);
   for (const child of el.childNodes) {
     if (child.nodeName === '#text') {
-      out += (child as P5Text).value;
+      out += applyTextTransform((child as P5Text).value, transform);
     } else if (child.nodeName !== '#comment') {
       const s = styles.get(child as P5Element);
       if (s && (s.display === 'block' || s.display === 'list-item' || s.display === 'grid' || s.display === 'flex')) continue;
       out += collectInlineText(child as P5Element, styles);
     }
   }
-  if (self?.after?.text) out += self.after.text;
+  if (self?.after?.text) out += applyTextTransform(self.after.text, transform);
   return out;
 }
 
@@ -922,6 +933,7 @@ export function layoutElementBox(
   viewport?: Viewport,
   forcedHeight?: number,
   scrollport?: Box,
+  textIndentPx?: number,
 ): LayoutNode {
   const children: LayoutNode[] = [];
   let lines: LineBox[] = [];
@@ -1111,7 +1123,7 @@ export function layoutElementBox(
     children.push(...res.children);
     contentHeight = res.height;
   } else if (hasInlineContent(el, styles) && !hasBlockLevelChild(el, styles)) {
-    const inlineRes = layoutInlineContent(el, style, styles, fm, contentX, contentY, contentWidth, paints, nextOrder, viewport);
+    const inlineRes = layoutInlineContent(el, style, styles, fm, contentX, contentY, contentWidth, paints, nextOrder, viewport, textIndentPx);
     lines = inlineRes.lines;
     children.push(...inlineRes.children);
     contentHeight = inlineRes.contentHeight;
@@ -1401,6 +1413,7 @@ function layoutBlock(
     viewport,
     undefined,
     ctx.scrollport,
+    resolveLength(style.textIndent, contentWidth, viewport) ?? 0,
   );
   node.marginTop = marginT;
   node.marginBottom = node.escapedMarginBottom === undefined ? marginB : node.escapedMarginBottom;
@@ -1664,7 +1677,13 @@ function layoutBlockChildren(
     const anon: P5Element = { nodeName: '#anon', tagName: '#anon', attrs: [], childNodes: inlineRun } as unknown as P5Element;
     const anonStyle = styles.get(parent)!;
     const anonFm = new FloatManager(ctx.contentX, ctx.contentWidth);
-    const inlineRes = layoutInlineContent(anon, anonStyle, styles, anonFm, ctx.contentX, y, ctx.contentWidth, paints, nextOrder, viewport);
+    const indentPx =
+      firstInFlow
+        ? resolveLength(anonStyle.textIndent, ctx.contentWidth, viewport) ?? 0
+        : anonStyle.textIndentHanging || anonStyle.textIndentEachLine
+          ? resolveLength(anonStyle.textIndent, ctx.contentWidth, viewport) ?? 0
+          : 0;
+    const inlineRes = layoutInlineContent(anon, anonStyle, styles, anonFm, ctx.contentX, y, ctx.contentWidth, paints, nextOrder, viewport, indentPx);
     nodes.push({
       element: anon,
       style: anonStyle,
@@ -2190,7 +2209,7 @@ function atomicBoxSize(
     borderWidth = style.boxSizing === 'border-box' ? specW : specW + padBorderH;
   } else {
     const pieces = buildPieces(el, style, styles, refWidth, viewport, style.whiteSpace);
-    const sizes = piecesContentSizes(pieces, style, style.whiteSpace);
+    const sizes = piecesContentSizes(pieces, style, style.whiteSpace, resolveLength(style.wordSpacing, refWidth, viewport) ?? 0);
     const mL = resolveLength(style.margin.left, refWidth, viewport) ?? 0;
     const mR = resolveLength(style.margin.right, refWidth, viewport) ?? 0;
     const available = Math.max(0, refWidth - mL - mR - padBorderH);
@@ -2204,7 +2223,7 @@ function atomicBoxSize(
   return { borderWidth, contentWidth: Math.max(0, borderWidth - padBorderH) };
 }
 
-function piecesContentSizes(pieces: InlinePiece[], style: ComputedStyle, ws: WhiteSpaceValue): { min: number; max: number } {
+function piecesContentSizes(pieces: InlinePiece[], style: ComputedStyle, ws: WhiteSpaceValue, wordSpacing = 0): { min: number; max: number } {
   const preserve = ws === 'pre' || ws === 'pre-wrap';
   let min = 0;
   let max = 0;
@@ -2213,7 +2232,9 @@ function piecesContentSizes(pieces: InlinePiece[], style: ComputedStyle, ws: Whi
     if (p.kind === 'break' || p.kind === 'wbr') continue;
     if (p.kind === 'space') {
       if (preserve) {
-        max += measureTextWidth(p.text, style.fontSize, style.fontFamily, style.letterSpacing);
+        max += measureTextWidth(p.text, style.fontSize, style.fontFamily, style.letterSpacing) + wordSpacing * p.text.length;
+      } else {
+        max += measureTextWidth(' ', style.fontSize, style.fontFamily, style.letterSpacing) + wordSpacing;
       }
       prevWasSpace = true;
       continue;
@@ -2223,7 +2244,7 @@ function piecesContentSizes(pieces: InlinePiece[], style: ComputedStyle, ws: Whi
         ? measureTextWidth(p.text, p.style.fontSize, p.style.family, p.style.letterSpacing, p.style.fontWeight, p.style.fontStyle)
         : p.marginLeft + p.borderWidth + p.marginRight;
     min = Math.max(min, p.kind === 'word' ? minTextWidth(p.text, p.style.fontSize, p.style.family, p.style.letterSpacing, style.overflowWrap === 'anywhere', p.style.fontWeight, p.style.fontStyle) : w);
-    if (prevWasSpace && !preserve) max += measureTextWidth(' ', style.fontSize, style.fontFamily, style.letterSpacing);
+    if (prevWasSpace && !preserve) max += measureTextWidth(' ', style.fontSize, style.fontFamily, style.letterSpacing) + wordSpacing;
     max += w;
     prevWasSpace = false;
   }
@@ -2235,13 +2256,13 @@ function piecesContentSizes(pieces: InlinePiece[], style: ComputedStyle, ws: Whi
  * pieces styled with the pseudo's computed style. An empty content string still
  * produces a box (a zero-width piece) so it is not conflated with none/normal.
  */
-function pushPseudoPieces(box: PseudoBox, owner: P5Element, out: InlinePiece[], ws: WhiteSpaceValue): void {
+function pushPseudoPieces(box: PseudoBox, owner: P5Element, out: InlinePiece[], ws: WhiteSpaceValue, transform: 'none' | 'uppercase' | 'lowercase' | 'capitalize' = 'none'): void {
   if (box.text === null) return;
   if (box.text === '') {
     out.push({ kind: 'word', text: '', style: runStyleOf(box.style), owner });
     return;
   }
-  pushTextPieces(box.text, runStyleOf(box.style), owner, out, ws);
+  pushTextPieces(applyTextTransform(box.text, box.style.textTransform ?? transform), runStyleOf(box.style), owner, out, ws);
 }
 
 /**
@@ -2261,10 +2282,10 @@ function buildPieces(
   ws: WhiteSpaceValue = style.whiteSpace,
 ): InlinePiece[] {
   const out: InlinePiece[] = [];
-  if (style.before) pushPseudoPieces(style.before, el, out, ws);
+  if (style.before) pushPseudoPieces(style.before, el, out, ws, style.textTransform);
   for (const child of expandContents(el.childNodes, styles)) {
     if (child.nodeName === '#text') {
-      pushTextPieces((child as P5Text).value, runStyleOf(style), el, out, ws);
+      pushTextPieces(applyTextTransform((child as P5Text).value, style.textTransform), runStyleOf(style), el, out, ws);
       continue;
     }
     if (child.nodeName === '#comment') continue;
@@ -2308,7 +2329,7 @@ function buildPieces(
     }
     for (const p of buildPieces(childEl, s, styles, refWidth, viewport, s.whiteSpace)) out.push(p);
   }
-  if (style.after) pushPseudoPieces(style.after, el, out, ws);
+  if (style.after) pushPseudoPieces(style.after, el, out, ws, style.textTransform);
   return out;
 }
 
@@ -2332,7 +2353,7 @@ interface WalkedLine {
  * grow by exactly `stretch × spaceCount`, so the line fills the available
  * width the same way Chrome distributes the surplus across spaces.
  */
-function walkLine(pieces: InlinePiece[], style: ComputedStyle, stretch = 0, ws: WhiteSpaceValue = 'normal'): WalkedLine {
+function walkLine(pieces: InlinePiece[], style: ComputedStyle, stretch = 0, ws: WhiteSpaceValue = 'normal', wordSpacing = 0): WalkedLine {
   const preserve = ws === 'pre' || ws === 'pre-wrap';
   const runs: WalkedLine['runs'] = [];
   const atomics: WalkedLine['atomics'] = [];
@@ -2352,7 +2373,7 @@ function walkLine(pieces: InlinePiece[], style: ComputedStyle, stretch = 0, ws: 
     runStyle = null;
     runOwner = null;
   };
-  const spaceW = (s: TextRunStyle): number => measureTextWidth(' ', s.fontSize, s.family, s.letterSpacing, s.fontWeight, s.fontStyle) + stretch;
+  const spaceW = (s: TextRunStyle): number => measureTextWidth(' ', s.fontSize, s.family, s.letterSpacing, s.fontWeight, s.fontStyle) + stretch + wordSpacing;
   for (const p of pieces) {
     if (p.kind === 'space') {
       prevWasSpace = true;
@@ -2475,9 +2496,15 @@ function layoutInlineContent(
   paints: PaintOp[],
   nextOrder: () => number,
   viewport: Viewport | undefined,
+  indentAmount?: number,
 ): InlineLayoutResult {
   const metrics = activeFontMetrics();
   const ws = style.whiteSpace;
+  const wordSpacingPx = resolveLength(style.wordSpacing, contentWidth, viewport) ?? 0;
+  const indent =
+    indentAmount || style.textIndentHanging || style.textIndentEachLine
+      ? { amount: indentAmount ?? 0, hanging: style.textIndentHanging, eachLine: style.textIndentEachLine }
+      : null;
   // Snapshot the staged inside-marker advance before any nested layout (e.g.
   // inline-block atomic measurement) runs, since that can clear the module
   // state; the shift applies to the first line below.
@@ -2506,6 +2533,8 @@ function layoutInlineContent(
       whiteSpace: ws,
       wordBreak: style.wordBreak,
       overflowWrap: style.overflowWrap,
+      wordSpacing: wordSpacingPx,
+      textIndent: indent ?? undefined,
       available: (top, bottom) => {
         const av = fm.floatIntrusion(top, bottom);
         return { x: contentX + av.left, width: Math.max(0, contentWidth - av.left - av.right) };
@@ -2537,6 +2566,19 @@ function layoutInlineContent(
   segments.push(cur);
   if (hasBreak && segments[segments.length - 1].length === 0) segments.pop();
 
+  // css-text-3 §2.1: the indent applies to the first formatted line (default),
+  // to the first line of every segment after forced breaks (each-line), or to
+  // every line except the first (hanging). `segmentIndex`/`segFirstLine`
+  // distinguish forced-break line starts from soft wraps.
+  let globalLineIndex = 0;
+  let segmentIndex = 0;
+  const lineIndent = (isSegmentStart: boolean, isFirstFormatted: boolean): number => {
+    if (!indent || indent.amount === 0) return 0;
+    if (indent.hanging) return isFirstFormatted ? 0 : indent.amount;
+    if (indent.eachLine) return isSegmentStart ? indent.amount : 0;
+    return isFirstFormatted ? indent.amount : 0;
+  };
+
   const collapseTrim = ws === 'normal' || ws === 'nowrap' || ws === 'pre-line';
   const noWrap = ws === 'pre' || ws === 'nowrap';
   const justifyAllowed = ws === 'normal' || ws === 'pre-line';
@@ -2560,15 +2602,20 @@ function layoutInlineContent(
         endWord: 1,
         baseline: y + lineAscentContribution(style.fontSize, style.lineHeight, metrics),
       });
+      globalLineIndex++;
       y += style.lineHeight;
       continue;
     }
     let idx = 0;
+    let segFirstLine = true;
     while (idx < seg.length) {
+      const indentAmount = lineIndent(segFirstLine, globalLineIndex === 0 && segmentIndex === 0);
       const av = fm.floatIntrusion(y, y + style.lineHeight);
-      const availLeft = contentX + av.left;
-      const availWidth = Math.max(0, contentWidth - av.left - av.right);
+      const rawAvailLeft = contentX + av.left;
+      const availLeft = rawAvailLeft + (rtl ? 0 : indentAmount);
+      const availWidth = Math.max(0, contentWidth - av.left - av.right - indentAmount);
       const availRight = availLeft + availWidth;
+      segFirstLine = false;
 
       const onLine: InlinePiece[] = [];
       let lastBreak = -1;
@@ -2597,17 +2644,15 @@ function layoutInlineContent(
             lastBreakWasSpace = false;
             continue;
           }
-          const trial = walkLine([...onLine, p], style, 0, ws).width;
+          const trial = walkLine([...onLine, p], style, 0, ws, wordSpacingPx).width;
           if (lineHasContent && trial > availWidth) {
-            if (lastBreak >= 0) {
-              if (ws === 'pre-wrap' && lastBreakWasSpace) {
-                // A preserved space run at the wrap point collapses to one hung
-                // space on the line (Chrome keeps a single space, no ink).
-                onLine.length = lastBreak;
-                onLine.push({ kind: 'space', text: ' ' });
-              } else {
-                onLine.length = lastBreak;
-              }
+            // Every already-pushed piece fits, so the line keeps them all and
+            // the break happens before the overflowing piece. Only pre-wrap's
+            // preserved run needs the collapse-to-one-hung-space treatment
+            // (Chrome keeps a single space, no ink, at the wrap point).
+            if (ws === 'pre-wrap' && lastBreakWasSpace && lastBreak >= 0) {
+              onLine.length = lastBreak;
+              onLine.push({ kind: 'space', text: ' ' });
             }
             break;
           }
@@ -2620,7 +2665,7 @@ function layoutInlineContent(
         if (onLine.length > 0 && onLine[onLine.length - 1].kind === 'space') onLine.pop();
       }
 
-      const natural = walkLine(onLine, style, 0, ws);
+      const natural = walkLine(onLine, style, 0, ws, wordSpacingPx);
       const isLastLine = i >= seg.length;
       const align = style.textAlign;
       // The layout origin is where run x=0 sits: the text's left edge under
@@ -2645,7 +2690,7 @@ function layoutInlineContent(
         const spaceCount = onLine.filter((p) => p.kind === 'space').length;
         if (spaceCount > 0 && natural.width < availWidth) stretch = (availWidth - natural.width) / spaceCount;
       }
-      const walked = stretch !== 0 ? walkLine(onLine, style, stretch, ws) : natural;
+      const walked = stretch !== 0 ? walkLine(onLine, style, stretch, ws, wordSpacingPx) : natural;
 
       const measured = new Map<AtomicPiece, MeasuredAtomic>();
       for (const a of walked.atomics) measured.set(a.piece, measureAtomic(a.piece, styles, paints, nextOrder, viewport));
@@ -2788,7 +2833,9 @@ function layoutInlineContent(
 
       y += lineHeight;
       idx = i;
+      globalLineIndex++;
     }
+    segmentIndex++;
   }
 
   // Inline elements (spans) have no box of their own, but getBoundingClientRect

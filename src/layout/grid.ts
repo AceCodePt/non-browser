@@ -30,6 +30,7 @@ import {
   type TrackFunction,
   type Viewport,
 } from './css.js';
+import { applyTextTransform } from './css.js';
 import { layoutTextLines, measureTextWidth, minTextWidth } from './measure.js';
 import { expandContents, FloatManager, layoutElementBox, type LayoutNode, type PaintOp } from './block-inline.js';
 import { isCommentNode, isElementNode, isTextNode, type P5Element, type P5Text } from './types.js';
@@ -74,9 +75,11 @@ function hasInlineText(el: P5Element, styles: Map<P5Element, ComputedStyle>): bo
 
 function collectInlineText(el: P5Element, styles: Map<P5Element, ComputedStyle>): string {
   let out = '';
+  const self = styles.get(el);
+  const transform = self?.textTransform ?? 'none';
   for (const child of expandContents(el.childNodes, styles)) {
     if (isTextNode(child)) {
-      out += child.value;
+      out += applyTextTransform(child.value, transform);
     } else if (isElementNode(child)) {
       const s = styles.get(child);
       if (s && (s.display === 'block' || s.display === 'grid' || s.display === 'flex')) continue;
@@ -94,7 +97,8 @@ function contentInlineSizes(
   if (hasInlineText(el, styles)) {
     const text = collectInlineText(el, styles).replace(/[ \t\r\n\f]+/g, ' ').trim();
     const widest = minTextWidth(text, style.fontSize, style.fontFamily, style.letterSpacing, style.overflowWrap === 'anywhere');
-    const full = measureTextWidth(text, style.fontSize, style.fontFamily, style.letterSpacing);
+    const ws = resolveLength(style.wordSpacing, 0) ?? 0;
+    const full = measureTextWidth(text, style.fontSize, style.fontFamily, style.letterSpacing) + ws * (text.match(/ /g)?.length ?? 0);
     return { min: widest, max: full };
   }
   let min = 0;

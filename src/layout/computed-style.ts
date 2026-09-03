@@ -129,6 +129,14 @@ export function computedStyleString(style: ComputedStyle, prop: string, refWidth
       return String(style.fontWeight);
     case 'word-break':
       return String(style.wordBreak);
+    case 'text-transform':
+      return String(style.textTransform);
+    case 'text-indent': {
+      const l = lengthString(style.textIndent, refWidth, viewport);
+      return `${l}${style.textIndentHanging ? ' hanging' : ''}${style.textIndentEachLine ? ' each-line' : ''}`.trim();
+    }
+    case 'word-spacing':
+      return lengthString(style.wordSpacing, refWidth, viewport);
     case 'overflow-wrap':
     case 'word-wrap':
       return String(style.overflowWrap);

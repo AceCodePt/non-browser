@@ -1,0 +1,34 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "up": {
+      "text-transform": "none"
+    },
+    "lo": {
+      "text-transform": "none"
+    },
+    "cap": {
+      "text-transform": "none"
+    }
+  },
+  "rect": {
+    "up": {
+      "x": 0,
+      "y": 0,
+      "width": 118.46999931335449,
+      "height": 22
+    },
+    "lo": {
+      "x": 118.46999931335449,
+      "y": 0,
+      "width": 118.46999931335449,
+      "height": 22
+    },
+    "cap": {
+      "x": 236.93999862670898,
+      "y": 0,
+      "width": 260.09000396728516,
+      "height": 22
+    }
+  }
+}

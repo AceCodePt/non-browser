@@ -40,6 +40,9 @@ export type { PrepareOptions };
 export interface EngineBreakOptions {
   cssWordBreak?: 'normal' | 'break-all' | 'keep-all';
   overflowWrap?: 'normal' | 'break-word' | 'anywhere';
+  /** css-text-3 §8: extra advance per space segment, applied to the prepared
+   * widths so line breaking and line widths see it. */
+  wordSpacing?: number;
 }
 
 /**
@@ -161,6 +164,27 @@ export function prepareText(
       if (core.kinds[i] === 'text' && core.breakableFitAdvances[i] !== null) {
         core.breakableFitAdvances[i] = null;
         core.breakablePreferredBreaks[i] = null;
+      }
+    }
+  }
+  const ws = options?.wordSpacing ?? 0;
+  if (ws !== 0) {
+    // css-text-3 §8: every word-separator (space) segment gains the extra
+    // advance; its per-grapheme fit entries gain it per space so pre-wrap
+    // preserved runs break and measure consistently.
+    const core = prepared as PreparedTextWithSegments & {
+      kinds: string[];
+      widths: number[];
+      breakableFitAdvances: (number[] | null)[];
+      segments: string[];
+    };
+    for (let i = 0; i < core.kinds.length; i++) {
+      const kind = core.kinds[i];
+      if (kind !== 'space' && kind !== 'preserved-space') continue;
+      core.widths[i] += ws * core.segments[i].length;
+      const entries = core.breakableFitAdvances[i];
+      if (entries) {
+        for (let j = 0; j < entries.length; j++) entries[j] += ws * (j + 1);
       }
     }
   }
