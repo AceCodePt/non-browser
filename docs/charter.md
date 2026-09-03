@@ -172,6 +172,7 @@ the charter and the corpus cannot silently diverge:
 | text | color (fill) | yes | corpus/paint-text, corpus/spine, corpus/stress | color |
 | text | text-shadow | yes | corpus/box-shadow | text-shadow |
 | paint | box-shadow | yes | corpus/box-shadow, corpus/stress | box-shadow |
+| paint | outline (outline-width/style/color/offset + shorthand, css-ui-4 §4; outline-style: auto computes but paints no focus ring — declared divergence in docs/ledgers/outline.md) | yes | corpus/outline | outline-width |
 | paint | background-image gradients (linear/radial-gradient: angles, side/corner keywords, stops incl. lengths/percentages/hard stops/double positions, repeating forms, radial ending shapes) | yes | corpus/backgrounds | linear-gradient |
 | paint | background layers (comma-list stacking, background-size/position/repeat incl. cover/contain/round/space, background-clip/background-origin incl. border-radius, full background shorthand; url() raster backgrounds chartered-out per docs/ledgers/backgrounds.md) | yes | corpus/backgrounds | background-clip |
 | paint | opacity (subtree compositing + stacking context) | yes | corpus/opacity, corpus/stress | opacity |
@@ -225,8 +226,6 @@ omission is explicit, never silent (the coverage-matrix reconcile ledger,
 `docs/ledgers/coverage-matrix.md`, cross-references each to the archive-audit
 classification):
 
-- **outline** — not implemented; `paint-shapes` is archived PARTIAL and outline
-  has no owning task.
 - **tables layout (border-collapse: collapse)** — the separate-borders table
   model is implemented (charter §11 tables row, `corpus/tables/`,
   `docs/ledgers/tables.md`); the collapsing-borders box model is the follow-on
@@ -240,7 +239,7 @@ classification):
   archived PARTIAL (the stylesheet parser explicitly skips these at-rules).
 - **@supports selector() / font-tech() / font-format() conditions** — not
   evaluated (general-enclosed → false). Declaration conditions over features
-  Chrome supports but this engine lacks (e.g. filter, outline) evaluate false
+  Chrome supports but this engine lacks (e.g. filter) evaluate false
   here: the engine cannot truthfully honor the queried declaration, so such
   blocks drop where Chrome applies them (see docs/ledgers/supports.md and the
   decl-conditions fixture note).

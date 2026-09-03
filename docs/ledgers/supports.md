@@ -29,11 +29,13 @@ inclusion). Corpus: `corpus/supports/`. Verification:
 ## Documented divergences (explicit, not silent)
 
 - Conditions over features Chrome supports but the engine lacks (e.g.
-  `filter`, `outline`, `background: url(...)`, `display: contents`) evaluate
+  `filter`, `background: url(...)`, `display: contents`) evaluate
   false: Chrome applies those blocks, this engine drops them. This is the
   truthful feature-query semantics for this engine — each such surface has an
   owning pending slice, and when it lands the condition flips to true with no
   parser change (the validator table reuses the live parsers).
+  (`outline` has since landed: its conditions now evaluate true via the
+  outline validators in `src/cascade/supports.ts` — see docs/ledgers/outline.md.)
 - Units parseLength does not resolve (cm, mm, in, pt, pc, ex, ch, q) evaluate
   false for length conditions even though Chrome supports them.
 - `@supports selector(...)`, `font-tech()`, `font-format()` are treated as

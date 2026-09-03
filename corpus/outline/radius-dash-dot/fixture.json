@@ -1,0 +1,37 @@
+{
+  "name": "radius-dash-dot",
+  "note": "Dashed outline over rounded corners: Chrome strokes the rounded center path as one continuous fitted dash chain starting at the top-left arc; the second box pins dotted squares at width 2.",
+  "harvest": {
+    "viewport": {
+      "width": 480,
+      "height": 160
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"a\" style=\"position:absolute;left:30px;top:30px;width:180px;height:90px;border-radius:16px;outline:4px dashed rgb(200,30,30)\"></div><div id=\"b\" style=\"position:absolute;left:270px;top:30px;width:180px;height:90px;outline:2px dotted rgb(16,96,208)\"></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "a",
+        "props": [
+          "outline-style",
+          "outline-width"
+        ]
+      },
+      {
+        "id": "b",
+        "props": [
+          "outline-style",
+          "outline-width"
+        ]
+      }
+    ],
+    "rects": [
+      "a",
+      "b"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

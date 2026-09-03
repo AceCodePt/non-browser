@@ -13,7 +13,7 @@
  * swap in a different FormattingContext and the same block/inline layout runs.
  */
 
-import { borderPaddingBlock, borderPaddingInline, applyTextTransform, clipsContent, isScrollContainer, parseStyleAttribute, pxLength, resolveEmLength, resolveLength, makeStyle, type BorderRadius, type BorderStyleKeyword, type ComputedStyle, type Color, type Declaration, type DecorationLine, type Direction, type DisplayValue, type ListStyleType, type PseudoBox, type Shadow, type TextAlign, type VerticalAlign, type Viewport, type WhiteSpaceValue } from './css.js';
+import { borderPaddingBlock, borderPaddingInline, applyTextTransform, clipsContent, isScrollContainer, parseStyleAttribute, pxLength, resolveEmLength, resolveLength, makeStyle, type BorderRadius, type BorderStyleKeyword, type ComputedStyle, type Color, type Declaration, type DecorationLine, type Direction, type DisplayValue, type ListStyleType, type OutlineStyle, type PseudoBox, type Shadow, type TextAlign, type VerticalAlign, type Viewport, type WhiteSpaceValue } from './css.js';
 import { layoutTextLines, measureTextWidth, minTextWidth, type LineBox } from './measure.js';
 import { FloatManager, type FormattingContext } from './floats.js';
 import { layoutGridChildren } from './grid.js';
@@ -395,7 +395,7 @@ export interface PaintOp {
   /** stacking key: the paint-order path (CSS 2.1 Appendix E, linearized). */
   key: number[];
   order: number;
-  kind: 'bg' | 'border' | 'text' | 'marker' | 'shadow' | 'control';
+  kind: 'bg' | 'border' | 'text' | 'marker' | 'shadow' | 'control' | 'outline';
   /**
    * The innermost opacity composite this op belongs to: the opacity<1 element
    * whose subtree opacities as one atomic surface. Absent = paints straight
@@ -415,6 +415,14 @@ export interface PaintOp {
     padding: Record<Side, number>;
   };
   shadow?: ShadowPaint;
+  /**
+   * Outline paint data (css-ui-4 §4): the resolved width/offset in px, the
+   * style keyword, and the resolved color. The box is the element's border
+   * box; the outline paints at [offset, offset+width] outside it and is never
+   * clipped by the element's own overflow clip (only ancestor clips apply,
+   * via pushPaintOp — the op is pushed before the clip entry is).
+   */
+  outline?: { width: number; style: OutlineStyle; color: Color; offset: number };
   borderWidths?: Record<'top' | 'right' | 'bottom' | 'left', number>;
   borderColors?: Record<'top' | 'right' | 'bottom' | 'left', Color>;
   borderStyles?: Record<'top' | 'right' | 'bottom' | 'left', BorderStyleKeyword>;
@@ -1185,7 +1193,9 @@ export function layoutElementBox(
   // border excluded) to its border-box rect — a rounded rect when the box has
   // border-radius, a plain rect otherwise. The clip box is a shared mutable
   // object: ops reference it, and its height is finalized once the border-box
-  // height is known below.
+  // height is known below. The outline op (pushed after the subtree, below)
+  // must stay subject to ancestor clips only, so the pre-clip entry is saved.
+  const outlineAncestorClip = clipStack.length > 0 ? clipStack[clipStack.length - 1] : null;
   let clipEntry: Clip | null = null;
   if (clipsContent(style.overflow)) {
     clipEntry = hasNonZeroRadius(style.borderRadius)
@@ -1449,6 +1459,30 @@ export function layoutElementBox(
         textShadow: style.textShadow,
       },
     });
+  }
+
+  // The outline paints after the element's own foreground (Chrome's kOutline
+  // phase) at [offset, offset+width] outside the border box — never clipped by
+  // the element's own overflow clip. The border box is final here, so no
+  // placeholder pass is needed.
+  if (style.outlineStyle !== 'none' && style.outlineStyle !== 'auto' && style.outlineWidth > 0) {
+    const op: PaintOp = {
+      key: ownKey,
+      order: nextOrder(),
+      kind: 'outline',
+      box: { x: borderX, y: borderY, width: borderWidth, height: resolvedHeight },
+      outline: {
+        width: style.outlineWidth,
+        style: style.outlineStyle,
+        color: style.outlineColor,
+        offset: style.outlineOffset,
+      },
+      borderRadius: style.borderRadius,
+    };
+    if (outlineAncestorClip) op.clip = outlineAncestorClip;
+    const g = opacityStack[opacityStack.length - 1];
+    if (g !== undefined) op.group = g;
+    paints.push(op);
   }
 
   // A positioned element is the containing block for its out-of-flow

@@ -1,0 +1,14 @@
+{
+  "name": "solid",
+  "note": "Solid outlines at widths 3 and 5. The second box carries a background and a 2px border to prove the outline paints as a separate pass outside the border box without disturbing either.",
+  "harvest": {
+    "viewport": { "width": 480, "height": 140 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"a\" style=\"position:absolute;left:20px;top:20px;width:180px;height:90px;outline:3px solid rgb(255,0,0)\"></div><div id=\"b\" style=\"position:absolute;left:260px;top:20px;width:180px;height:90px;background:#ffffd0;border:2px solid rgb(0,140,60);outline:5px solid rgb(0,110,255)\"></div></body></html>",
+    "computedStyle": [
+      { "id": "a", "props": ["outline-width", "outline-style", "outline-color", "outline-offset", "outline"] },
+      { "id": "b", "props": ["outline-width", "outline-style", "outline-color", "outline-offset"] }
+    ],
+    "rects": ["a", "b"]
+  },
+  "expected": { "measureText": "pass", "computedStyle": "pass", "rect": "pass", "screenshot": "pass" }
+}

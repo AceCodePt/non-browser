@@ -1,0 +1,14 @@
+{
+  "name": "dashed",
+  "note": "Dashed outlines at widths 2 and 4: Chrome restarts the fitted dash pattern per edge and extends each edge into the corners; both boxes must raster within the pixel band.",
+  "harvest": {
+    "viewport": { "width": 480, "height": 140 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"a\" style=\"position:absolute;left:20px;top:20px;width:180px;height:90px;outline:2px dashed rgb(200,30,30)\"></div><div id=\"b\" style=\"position:absolute;left:260px;top:20px;width:180px;height:90px;outline:4px dashed rgb(16,96,208)\"></div></body></html>",
+    "computedStyle": [
+      { "id": "a", "props": ["outline-style", "outline-width"] },
+      { "id": "b", "props": ["outline-style", "outline-width"] }
+    ],
+    "rects": ["a", "b"]
+  },
+  "expected": { "measureText": "pass", "computedStyle": "pass", "rect": "pass", "screenshot": "pass" }
+}

@@ -48,7 +48,7 @@ paint-run-fallback) are included for completeness.
 | opacity-compositing | EMPTY | `orch: archive opacity-compositing` (`7f394b5`) is a task.md move; no merge — engine greps zero for box-level opacity; redone as `tasks/opacity-subtree-compositing` |
 | orch-verify-hook | EXECUTED | merge `c718f7e` landed a real executable committed-on-base `.orchestration/hooks/session-idle` dispatching feature verify subsets by TASK_NAME |
 | paint-run-fallback | EXECUTED | merge `9b18fff` landed shared run-resolution authority (`src/canvas/script-fallback.ts` used by both measure+drawText), `verify-paint-fallback.mjs`, mixed-script paint-text fixture un-masked |
-| paint-shapes | PARTIAL | merge `af12f34` landed only `probe-shadow.mjs`/`2`/`3`/`4`; background/border paint exists in `src/layout/paint.ts` but via spine/floats work, not this task; box-shadow and outline never landed (shadow = `tasks/shadow-paint` redo, outline ownerless); no `corpus/shapes`, no `verify:paint-shapes` |
+| paint-shapes | PARTIAL | merge `af12f34` landed only `probe-shadow.mjs`/`2`/`3`/`4`; background/border paint exists in `src/layout/paint.ts` but via spine/floats work, not this task; box-shadow and outline never landed by this archive (shadow = `tasks/shadow-paint` redo, outline since claimed by its own task — see docs/ledgers/outline.md); no `corpus/shapes`, no `verify:paint-shapes` |
 | paint-text | EXECUTED | merge `429c2cc` landed correct-baseline text paint, text-decoration, letter-spacing at paint (`src/layout/paint.ts`), `corpus/paint-text/`, `verify-paint-text.mjs`, `paint-text.md` |
 | parse-stylesheets | PARTIAL | a stylesheet parser IS live (`src/cascade/stylesheet.ts`) but was authored under the media-queries accept (`116faa1`) and explicitly skips `@import`/`@supports`/`@font-face`; parse-stylesheets' own merge `a1e1a53` = `probe-csstree2/3.mjs` + an unused `css-tree` dependency; no `corpus/stylesheets`, no `verify:stylesheets` |
 | perf-engine-vs-oracle | EXECUTED | merge `696ee11` landed `scripts/bench-engine-vs-oracle.mjs` + honest engine-vs-Chrome-render-vs-harness split in `parity.md` |
@@ -94,7 +94,7 @@ to a live matrix row.
 | text-breaker-parity | EMPTY | **yes** — `tasks/pretext-breaker-path` | — |
 | box-shadow-paint | EMPTY | **yes** — `tasks/shadow-paint` | — |
 | opacity-compositing | EMPTY | **yes** — `tasks/opacity-subtree-compositing` | — |
-| paint-shapes (outline portion) | PARTIAL | **partial** — box-shadow part ⇒ `tasks/shadow-paint`; outline has no owner; background/border paint exists via sibling work | — |
+| paint-shapes (outline portion) | PARTIAL | **yes** — outline claimed: parse/compute/serialize + paint landed, corpus/outline + `verify:outline` (see docs/ledgers/outline.md) | outline-width |
 | cascade-custom-props | EMPTY | **none** — no task, no `var()` support | no row |
 | cascade-layers-important | EMPTY | **none** — no task, no `@layer`/`!important` support | no row |
 | corpus-expansion | EMPTY | **none** — no `verify:all`, no CI task | no row |

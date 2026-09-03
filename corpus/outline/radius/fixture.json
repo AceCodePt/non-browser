@@ -1,0 +1,14 @@
+{
+  "name": "radius",
+  "note": "Solid outlines follow the border-radius contour: the ring expands each corner radius by the outset it sits at (radius 24 with width 4, radius 30 with width 8).",
+  "harvest": {
+    "viewport": { "width": 480, "height": 160 },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"a\" style=\"position:absolute;left:30px;top:30px;width:180px;height:90px;border-radius:24px;outline:4px solid rgb(255,0,0)\"></div><div id=\"b\" style=\"position:absolute;left:270px;top:30px;width:180px;height:90px;border-radius:30px;outline:8px solid rgb(16,96,208)\"></div></body></html>",
+    "computedStyle": [
+      { "id": "a", "props": ["outline-style", "outline-width", "border-radius"] },
+      { "id": "b", "props": ["outline-style", "outline-width", "border-radius"] }
+    ],
+    "rects": ["a", "b"]
+  },
+  "expected": { "measureText": "pass", "computedStyle": "pass", "rect": "pass", "screenshot": "pass" }
+}

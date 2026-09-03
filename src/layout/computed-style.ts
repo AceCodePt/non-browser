@@ -271,6 +271,18 @@ export function computedStyleString(style: ComputedStyle, prop: string, refWidth
       return shadowListString(style.boxShadow, refWidth, viewport, false);
     case 'text-shadow':
       return shadowListString(style.textShadow, refWidth, viewport, true);
+    case 'outline-width':
+      return `${style.outlineWidth}px`;
+    case 'outline-style':
+      return style.outlineStyle;
+    case 'outline-color':
+      return colorString(style.outlineColor);
+    case 'outline-offset':
+      return `${style.outlineOffset}px`;
+    case 'outline':
+      // Chrome's CSSOM serializes the shorthand color-first, then style, then
+      // width; outline-offset is not part of the shorthand serialization.
+      return `${colorString(style.outlineColor)} ${style.outlineStyle} ${style.outlineWidth}px`;
     case 'border-top-left-radius':
       return cornerRadiusString(style.borderRadius.topLeft, refWidth, viewport);
     case 'border-top-right-radius':
