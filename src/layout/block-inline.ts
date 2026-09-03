@@ -2233,8 +2233,6 @@ function piecesContentSizes(pieces: InlinePiece[], style: ComputedStyle, ws: Whi
     if (p.kind === 'space') {
       if (preserve) {
         max += measureTextWidth(p.text, style.fontSize, style.fontFamily, style.letterSpacing) + wordSpacing * p.text.length;
-      } else {
-        max += measureTextWidth(' ', style.fontSize, style.fontFamily, style.letterSpacing) + wordSpacing;
       }
       prevWasSpace = true;
       continue;
