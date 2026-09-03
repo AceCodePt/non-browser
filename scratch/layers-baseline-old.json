@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-03T13:34:09.947Z",
+  "generatedAt": "2026-09-03T11:49:06.584Z",
   "fixtures": {
     "aspect-ratio/block-surface": {
       "sha256": "5d45b9b9ab2c56340a50cd75f738e67c96b080949461231c0e352638dd3b3567",
@@ -2438,7 +2438,7 @@
       "computedStyleCount": 7
     },
     "ua-styles/strong-em-pre-hr": {
-      "sha256": "56166c738f2cb0ab50b8a4591044d4968d68c33665c145b033f3c8450f6286d8",
+      "sha256": "8c1e0bed79659b825ba78af7e7fb544aac41e65d549681fc4be3cca5d57395dc",
       "width": 460,
       "height": 200,
       "rectCount": 6,

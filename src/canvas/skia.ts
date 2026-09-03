@@ -171,10 +171,21 @@ export class SkiaCanvas implements CanvasLike {
     this.ctx.fill(fillRule);
   }
 
-  strokePath(color: CanvasColor, lineWidth: number): void {
+  strokePath(color: CanvasColor, lineWidth: number, dash?: { segments: [number, number]; phase?: number; cap?: 'butt' | 'round' }): void {
     this.ctx.strokeStyle = cssColor(color);
     this.ctx.lineWidth = lineWidth;
+    if (dash) {
+      this.ctx.setLineDash([dash.segments[0], dash.segments[1]]);
+      this.ctx.lineDashOffset = dash.phase ?? 0;
+      this.ctx.lineCap = dash.cap ?? 'butt';
+    } else {
+      this.ctx.setLineDash([]);
+      this.ctx.lineDashOffset = 0;
+      this.ctx.lineCap = 'butt';
+    }
     this.ctx.stroke();
+    this.ctx.setLineDash([]);
+    this.ctx.lineDashOffset = 0;
   }
 
   shadowPath(offsetX: number, offsetY: number, blurRadius: number, color: CanvasColor): void {
