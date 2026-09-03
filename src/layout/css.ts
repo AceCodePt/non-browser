@@ -293,8 +293,17 @@ export interface PseudoBox {
   style: ComputedStyle;
 }
 
+export type AspectRatio =
+  | { type: 'auto' }
+  | { type: 'ratio'; num: number; den: number; autoRatio?: boolean };
+
+export const ASPECT_AUTO: AspectRatio = { type: 'auto' };
+
 export interface ComputedStyle {
   display: DisplayValue;
+  /** css-sizing-4 §5: `auto` or the preferred ratio num/den (`autoRatio` marks
+   * the `auto <ratio>` form, which prefers the natural ratio on replaced). */
+  aspectRatio: AspectRatio;
   position: 'static' | 'relative' | 'absolute' | 'fixed';
   direction: Direction;
   zIndex: number | null;
@@ -2299,6 +2308,8 @@ export function makeStyle(rawDecls: Declaration[], defaults: Defaults): Computed
   const orderDecl = decl('order');
   const order = orderDecl && /^-?\d+$/.test(orderDecl.trim()) ? parseInt(orderDecl, 10) : 0;
 
+  const aspectRatioDecl = findDecl(decls, 'aspect-ratio');
+
   const containerTypeDecl = findDecl(decls, 'container-type');
   const containerType: 'normal' | 'inline-size' | 'size' | 'block-size' = (() => {
     const v = containerTypeDecl?.value.trim();
@@ -2312,6 +2323,16 @@ export function makeStyle(rawDecls: Declaration[], defaults: Defaults): Computed
   })();
 
   return {
+    aspectRatio: (() => {
+      if (!aspectRatioDecl) return ASPECT_AUTO;
+      const v = aspectRatioDecl.value.trim();
+      if (v === 'auto') return ASPECT_AUTO;
+      const m = /^(auto\s+)?(\d+(?:\.\d+)?)\s*(?:\/\s*(\d+(?:\.\d+)?))?$/.exec(v);
+      if (!m) return ASPECT_AUTO;
+      const den = m[3] !== undefined ? parseFloat(m[3]) : 1;
+      if (den === 0) return ASPECT_AUTO;
+      return { type: 'ratio' as const, num: parseFloat(m[2]), den, autoRatio: m[1] !== undefined };
+    })(),
     display,
     position,
     direction,

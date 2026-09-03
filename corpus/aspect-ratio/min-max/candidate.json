@@ -1,0 +1,44 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "d": {
+      "aspect-ratio": "16 / 9",
+      "max-height": "100px"
+    },
+    "n": {
+      "min-width": "250px"
+    }
+  },
+  "rect": {
+    "d": {
+      "x": 0,
+      "y": 0,
+      "width": 320,
+      "height": 100
+    },
+    "e": {
+      "x": 0,
+      "y": 100,
+      "width": 160,
+      "height": 126
+    },
+    "m": {
+      "x": 0,
+      "y": 226,
+      "width": 150,
+      "height": 100
+    },
+    "n": {
+      "x": 0,
+      "y": 326,
+      "width": 250,
+      "height": 100
+    },
+    "o": {
+      "x": 0,
+      "y": 426,
+      "width": 160,
+      "height": 200
+    }
+  }
+}

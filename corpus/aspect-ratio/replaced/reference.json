@@ -1,0 +1,44 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "i1": {
+      "aspect-ratio": "auto"
+    },
+    "i2": {
+      "aspect-ratio": "1 / 1"
+    },
+    "i3": {
+      "aspect-ratio": "4 / 1"
+    },
+    "i4": {
+      "aspect-ratio": "1 / 1",
+      "width": "80px"
+    }
+  },
+  "rect": {
+    "i1": {
+      "x": 0,
+      "y": 0,
+      "width": 200,
+      "height": 100
+    },
+    "i2": {
+      "x": 0,
+      "y": 100,
+      "width": 100,
+      "height": 100
+    },
+    "i3": {
+      "x": 0,
+      "y": 200,
+      "width": 200,
+      "height": 50
+    },
+    "i4": {
+      "x": 0,
+      "y": 250,
+      "width": 80,
+      "height": 100
+    }
+  }
+}

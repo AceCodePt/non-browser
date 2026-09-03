@@ -1,6 +1,27 @@
 {
-  "generatedAt": "2026-09-03T09:33:51.147Z",
+  "generatedAt": "2026-09-03T09:56:12.675Z",
   "fixtures": {
+    "aspect-ratio/block-surface": {
+      "sha256": "5d45b9b9ab2c56340a50cd75f738e67c96b080949461231c0e352638dd3b3567",
+      "width": 400,
+      "height": 700,
+      "rectCount": 6,
+      "computedStyleCount": 5
+    },
+    "aspect-ratio/min-max": {
+      "sha256": "f283f913e8a217e4ff812ebb21aae260be4fe5e095dbb8f9a2939e0424012695",
+      "width": 400,
+      "height": 700,
+      "rectCount": 5,
+      "computedStyleCount": 2
+    },
+    "aspect-ratio/replaced": {
+      "sha256": "ab013d92402b398ac5877fde4018ba264338df4b8cfa2184a5999d31e0291e7d",
+      "width": 400,
+      "height": 200,
+      "rectCount": 4,
+      "computedStyleCount": 4
+    },
     "border-radius/circle-50": {
       "sha256": "c9c1de75e34787220404d3e2c33096a6a882cab941a48bfcc7577185bed7a1d9",
       "width": 220,

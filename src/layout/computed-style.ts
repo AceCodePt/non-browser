@@ -120,6 +120,11 @@ export function computedStyleString(style: ComputedStyle, prop: string, refWidth
       const d = style.display;
       return d === 'inline-grid' ? 'grid' : d;
     }
+    case 'aspect-ratio': {
+      const ar = style.aspectRatio;
+      if (ar.type === 'auto') return 'auto';
+      return `${ar.autoRatio ? 'auto ' : ''}${ar.num} / ${ar.den}`;
+    }
     case 'font-weight':
       return String(style.fontWeight);
     case 'font-style':
@@ -175,6 +180,14 @@ export function computedStyleString(style: ComputedStyle, prop: string, refWidth
       return lengthString(style.width, refWidth, viewport);
     case 'height':
       return lengthString(style.height, refWidth, viewport);
+    case 'min-width':
+      return lengthString(style.minWidth, refWidth, viewport);
+    case 'max-width':
+      return lengthString(style.maxWidth, refWidth, viewport);
+    case 'min-height':
+      return lengthString(style.minHeight, refWidth, viewport);
+    case 'max-height':
+      return lengthString(style.maxHeight, refWidth, viewport);
     case 'margin-top':
       return lengthString(style.margin.top, refWidth, viewport);
     case 'margin-right':

@@ -199,6 +199,7 @@ the charter and the corpus cannot silently diverge:
 | media | mq4 range syntax in @media ((width >= 300px), two-sided (400px < width <= 800px), value-first flip, aspect-ratio/resolution ranges) | yes | corpus/media-modern | (width >= |
 | media | device-capability features (hover, any-hover, pointer, any-pointer, prefers-contrast, forced-colors, color-gamut, update) as explicit environment inputs | yes | corpus/media-modern | forced-colors |
 | display | display: contents box suppression — children (block/flex/grid) join the grandparent's formatting context, no box, zero rect; replaced elements compute 'none' (css-display-3 §2) | yes | corpus/display-contents | display:contents |
+| sizing | aspect-ratio property — ratio-derived auto dimension on block surfaces (content-box/border-box), min/max clamping, replaced-element natural-ratio transfer with attribute hints (css-sizing-4 §5) | yes | corpus/aspect-ratio | aspect-ratio |
 | ua-stylesheet | nested-list rules authored with :is() (Blink html.css parity) | yes | corpus/selectors | :is(dl, ol, ul) |
 
 ### Deferred / Not in v1 (no silent absence)

@@ -161,7 +161,12 @@ export function resolveStyles(
     });
     style.before = computePseudoBox(el, style, pseudoDecls, 'before');
     style.after = computePseudoBox(el, style, pseudoDecls, 'after');
-    applyReplacedSize(el, style);
+    applyReplacedSize(
+      el,
+      style,
+      decls.some((d) => d.property === 'width'),
+      decls.some((d) => d.property === 'height'),
+    );
     // css-display-3 §2: replaced elements cannot be display:contents — Blink
     // computes 'none' for them (probed: img with display:contents reports
     // computed 'none' and a zero rect).
@@ -206,20 +211,48 @@ export function resolveStyles(
  * attributes when no CSS size is set — the "empty replaced box at layout size"
  * contract from the charter (no image decoding in v1; the box is laid out but
  * paints nothing unless it has a background/border). `<canvas>` without
- * attributes defaults to 300x150 per the HTML spec.
+ * attributes defaults to 300x150 per the HTML spec. The attributes are
+ * presentational hints: author CSS overrides them (even `width: auto`), and an
+ * explicit aspect-ratio transfers through whichever dimension is actually
+ * specified (css-sizing-4 §5.3, probe-verified against Chrome).
  */
-function applyReplacedSize(el: P5Element, style: ComputedStyle): void {
+function applyReplacedSize(el: P5Element, style: ComputedStyle, cssWidthDecl: boolean, cssHeightDecl: boolean): void {
   const tag = el.nodeName;
   if (tag !== 'img' && tag !== 'canvas') return;
   const attr = (name: string): string | undefined => el.attrs.find((a) => a.name === name)?.value;
   const numeric = (v: string | undefined): number | null => (v !== undefined && /^\d+$/.test(v) ? parseInt(v, 10) : null);
-  if (style.width.auto) {
-    const w = numeric(attr('width'));
-    style.width = pxLength(w ?? (tag === 'canvas' ? 300 : 0));
+  const attrW = numeric(attr('width'));
+  const attrH = numeric(attr('height'));
+  const natW = attrW ?? (tag === 'canvas' ? 300 : 0);
+  const natH = attrH ?? (tag === 'canvas' ? 150 : 0);
+  // Capture the pre-fill auto state: the attr fill below overwrites it.
+  const widthAutoBefore = style.width.auto;
+  const heightAutoBefore = style.height.auto;
+  if (widthAutoBefore) {
+    style.width = pxLength(natW);
   }
-  if (style.height.auto) {
-    const h = numeric(attr('height'));
-    style.height = pxLength(h ?? (tag === 'canvas' ? 150 : 0));
+  if (heightAutoBefore) {
+    style.height = pxLength(natH);
+  }
+  // A dimension is "specified" for the ratio transfer when author CSS gives a
+  // definite size, or when the attribute hint stands (no author declaration).
+  const widthSpecified = !widthAutoBefore || (!cssWidthDecl && attrW !== null);
+  const heightSpecified = !heightAutoBefore || (!cssHeightDecl && attrH !== null);
+  const ar = style.aspectRatio;
+  if (ar.type === 'ratio' && !ar.autoRatio) {
+    const r = ar.num / ar.den;
+    if (widthSpecified && !heightSpecified && style.width.px !== null) {
+      style.height = pxLength(Math.max(0, style.width.px / r));
+    } else if (!widthSpecified && heightSpecified && style.height.px !== null) {
+      style.width = pxLength(Math.max(0, style.height.px * r));
+    } else if (!widthSpecified && !heightSpecified && natH > 0 && natW > 0) {
+      // Both dimensions unspecified: the natural size maps through the new
+      // ratio, keeping the dimension whose transfer yields the smaller box
+      // (probed: img 200x100 with ratio 1/1 → 100x100, with 4/1 → 200x50).
+      const naturalRatio = natW / natH;
+      if (r > naturalRatio) style.height = pxLength(Math.max(0, natW / r));
+      else if (r < naturalRatio) style.width = pxLength(Math.max(0, natH * r));
+    }
   }
 }
 
@@ -1054,8 +1087,23 @@ export function layoutElementBox(
     }
   }
 
+  // css-sizing-4 §5: with a definite width and auto height the aspect ratio
+  // derives the height on the box's own surface (content-box or border-box per
+  // box-sizing, probed); §5.2 clamps the derived size by min/max-height —
+  // content overflows instead of stretching the box, like Chrome.
+  let ratioDerivedHeight = false;
+  if (style.aspectRatio.type === 'ratio') {
+    const specWpx = resolveLength(style.width, contentWidth, viewport);
+    if (specWpx !== null && resolveLength(style.height, contentWidth, viewport) === null && forcedHeight === undefined) {
+      const r = style.aspectRatio.num / style.aspectRatio.den;
+      contentHeight =
+        style.boxSizing === 'border-box' ? Math.max(0, borderWidth / r - padBorderV) : Math.max(0, contentWidth / r);
+      ratioDerivedHeight = true;
+    }
+  }
+
   const specH = resolveLength(style.height, contentWidth, viewport);
-  const resolvedHeight =
+  let resolvedHeight =
     forcedHeight !== undefined
       ? forcedHeight
       : specH !== null
@@ -1063,6 +1111,15 @@ export function layoutElementBox(
           ? specH
           : specH + padBorderV
         : contentHeight + padBorderV;
+  if (ratioDerivedHeight) {
+    const minH = resolveLength(style.minHeight, contentWidth, viewport);
+    const maxH = resolveLength(style.maxHeight, contentWidth, viewport);
+    const floor = minH !== null ? Math.max(0, minH - (style.boxSizing === 'border-box' ? padBorderV : 0)) : 0;
+    const ceil = maxH !== null ? Math.max(0, maxH - (style.boxSizing === 'border-box' ? padBorderV : 0)) : Infinity;
+    // CSS 2.1 §10.7 order: max clamps first, then min — a conflicting min wins.
+    contentHeight = Math.max(Math.min(Math.max(contentHeight, 0), ceil), floor);
+    resolvedHeight = contentHeight + padBorderV;
+  }
 
   const node: LayoutNode = {
     element: el,
@@ -1166,12 +1223,28 @@ function layoutBlock(
   const specW = resolveLength(style.width, contentWidth, viewport);
   const padBorderH = padL + padR + bL + bR;
   const autoWidth = Math.max(0, contentWidth - marginL - marginR);
-  const borderBoxWidth =
+  let borderBoxWidth =
     specW !== null
       ? style.boxSizing === 'border-box'
         ? specW
         : specW + padBorderH
       : autoWidth;
+  // css-sizing-4 §5: with a definite height and auto width the aspect ratio
+  // derives the width in place of the block's stretch size (probed: block with
+  // height 100px and aspect-ratio 2 computes a 200px width, not the parent's).
+  if (specW === null && style.aspectRatio.type === 'ratio') {
+    const specHpx = resolveLength(style.height, contentWidth, viewport);
+    if (specHpx !== null) {
+      const r = style.aspectRatio.num / style.aspectRatio.den;
+      const contentW =
+        style.boxSizing === 'border-box' ? Math.max(0, specHpx * r - padBorderH) : Math.max(0, specHpx * r);
+      borderBoxWidth = contentW + padBorderH;
+      const maxWpx = resolveLength(style.maxWidth, contentWidth, viewport);
+      const minWpx = resolveLength(style.minWidth, contentWidth, viewport);
+      if (maxWpx !== null) borderBoxWidth = Math.min(borderBoxWidth, maxWpx + (style.boxSizing === 'border-box' ? 0 : padBorderH));
+      if (minWpx !== null) borderBoxWidth = Math.max(borderBoxWidth, minWpx + (style.boxSizing === 'border-box' ? 0 : padBorderH));
+    }
+  }
 
   // Vertical: margin collapsing with the previous sibling, then clearance. A
   // first-child whose top margin collapses into the parent sits flush with the
