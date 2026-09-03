@@ -29,6 +29,15 @@ export class SkiaCanvas implements CanvasLike {
     this.ctx.textBaseline = 'alphabetic';
   }
 
+  /** Return this surface to its freshly-created state (all-transparent), so a
+   * pooled canvas can be repainted without the previous frame's pixels showing
+   * through a translucent background fill. A fresh napi canvas starts fully
+   * transparent, so clear() makes a pooled surface byte-equivalent to a new
+   * one before the render paints over it. */
+  clear(): void {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+  }
+
   get width(): number {
     return this.canvas.width;
   }
@@ -220,9 +229,33 @@ export class SkiaCanvas implements CanvasLike {
   }
 }
 
+/** Reusing a surface across renders skips the native first-readback cost a
+ * fresh canvas pays (the pixels are materialized on the first `data()` call),
+ * and `data()` after repainting is far cheaper than on a fresh surface. The
+ * caller paints a full-viewport background every render, and create() clears
+ * the pooled surface back to transparent first, so the repainted pixels are
+ * byte-identical to a fresh canvas. The pool is bounded and keyed by size; the
+ * engine's render path is synchronous, so a pooled surface is never touched by
+ * two renders at once. */
+const POOL_CAP = 8;
+
 export class SkiaCanvasFactory implements CanvasFactory {
+  private readonly pool = new Map<string, SkiaCanvas>();
+
   create(width: number, height: number): CanvasLike {
-    return new SkiaCanvas(createCanvas(width, height));
+    const key = `${width}x${height}`;
+    const pooled = this.pool.get(key);
+    if (pooled) {
+      pooled.clear();
+      return pooled;
+    }
+    const canvas = new SkiaCanvas(createCanvas(width, height));
+    if (this.pool.size >= POOL_CAP) {
+      const oldest = this.pool.keys().next().value;
+      if (oldest !== undefined) this.pool.delete(oldest);
+    }
+    this.pool.set(key, canvas);
+    return canvas;
   }
 
   registerFont(filePath: string, familyAlias?: string): void {
