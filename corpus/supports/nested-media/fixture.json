@@ -1,0 +1,22 @@
+{
+  "name": "nested-media",
+  "note": "@supports nests inside @media and @media nests inside @supports with the existing flattening: rules inside both apply when the media query matches the viewport and the condition holds, a failing @supports drops its block inside a passing @media, and a passing @supports inside a non-matching @media stays gated by the media query.",
+  "harvest": {
+    "viewport": { "width": 300, "height": 280 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} body{background-color:rgb(238, 238, 238)} div{width:60px;height:30px} @media (min-width: 100px) { @supports (display: grid) { .ms{background-color:rgb(255, 0, 0)} } @supports (color: bogus) { .msbad{background-color:rgb(0, 128, 0)} } } @supports (display: grid) { @media (min-width: 100px) { .sm{background-color:rgb(0, 0, 255)} } } @supports (display: grid) { @media (min-width: 900px) { .mf{background-color:rgb(128, 0, 128)} } }</style></head><body><div id=\"ms\" class=\"ms\">1</div><div id=\"msbad\" class=\"msbad\">2</div><div id=\"sm\" class=\"sm\">3</div><div id=\"mf\" class=\"mf\">4</div></body></html>",
+    "computedStyle": [
+      { "id": "ms", "props": ["background-color"] },
+      { "id": "msbad", "props": ["background-color"] },
+      { "id": "sm", "props": ["background-color"] },
+      { "id": "mf", "props": ["background-color"] }
+    ],
+    "rects": ["ms", "msbad", "sm", "mf"],
+    "textElements": ["ms", "msbad", "sm", "mf"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

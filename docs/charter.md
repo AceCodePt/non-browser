@@ -194,6 +194,8 @@ the charter and the corpus cannot silently diverge:
 | selectors | :not() / :is() / :where() with selector-list arguments | yes | corpus/selectors | :where( |
 | selectors | :is() takes max argument specificity; :where() contributes zero | yes | corpus/selectors | :is( |
 | selectors | structural + root pseudo-classes (:root, :empty, first/last/only-child, :nth-child(An+B), :nth-last-child, first/last/only-of-type, :nth-of-type) | yes | corpus/selectors-structural | :nth-child( |
+| @supports | declaration conditions evaluated against the engine's real surface (unsupported → block drops, css-conditional-3 §4) | yes | corpus/supports | @supports |
+| @supports | not / and / or composition with precedence and nesting; @media inside and outside @supports | yes | corpus/supports | not |
 | ua-stylesheet | nested-list rules authored with :is() (Blink html.css parity) | yes | corpus/selectors | :is(dl, ol, ul) |
 
 ### Deferred / Not in v1 (no silent absence)
@@ -215,8 +217,14 @@ classification):
   (not a gap): `!important` and `@layer` are excluded from the compatibility
   surface because they override the normal cascade in ways a deterministic
   renderer must not silently accept; `cascade-layers-important` archived EMPTY.
-- **@import / @supports / @font-face** — not parsed; `parse-stylesheets` is
+- **@import / @font-face / @keyframes** — not parsed; `parse-stylesheets` is
   archived PARTIAL (the stylesheet parser explicitly skips these at-rules).
+- **@supports selector() / font-tech() / font-format() conditions** — not
+  evaluated (general-enclosed → false). Declaration conditions over features
+  Chrome supports but this engine lacks (e.g. filter, outline) evaluate false
+  here: the engine cannot truthfully honor the queried declaration, so such
+  blocks drop where Chrome applies them (see docs/ledgers/supports.md and the
+  decl-conditions fixture note).
 - **@container `size` / `block-size` containment** — `container-type: inline-size`
   is implemented (charter row above); the full `size` and `block-size`
   containment values parse but establish no container in v1, documented in

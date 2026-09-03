@@ -1,0 +1,43 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "ms": {
+      "background-color": "rgb(255, 0, 0)"
+    },
+    "msbad": {
+      "background-color": "rgba(0, 0, 0, 0)"
+    },
+    "sm": {
+      "background-color": "rgb(0, 0, 255)"
+    },
+    "mf": {
+      "background-color": "rgba(0, 0, 0, 0)"
+    }
+  },
+  "rect": {
+    "ms": {
+      "x": 0,
+      "y": 0,
+      "width": 60,
+      "height": 30
+    },
+    "msbad": {
+      "x": 0,
+      "y": 30,
+      "width": 60,
+      "height": 30
+    },
+    "sm": {
+      "x": 0,
+      "y": 60,
+      "width": 60,
+      "height": 30
+    },
+    "mf": {
+      "x": 0,
+      "y": 90,
+      "width": 60,
+      "height": 30
+    }
+  }
+}

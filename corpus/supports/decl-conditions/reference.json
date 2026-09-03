@@ -1,0 +1,61 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "sup": {
+      "background-color": "rgb(255, 0, 0)"
+    },
+    "unsup": {
+      "background-color": "rgba(0, 0, 0, 0)"
+    },
+    "badval": {
+      "background-color": "rgba(0, 0, 0, 0)"
+    },
+    "cust": {
+      "background-color": "rgb(128, 0, 128)"
+    },
+    "zero": {
+      "background-color": "rgb(255, 165, 0)"
+    },
+    "rgbv": {
+      "background-color": "rgb(0, 128, 128)"
+    }
+  },
+  "rect": {
+    "sup": {
+      "x": 0,
+      "y": 0,
+      "width": 60,
+      "height": 30
+    },
+    "unsup": {
+      "x": 0,
+      "y": 30,
+      "width": 60,
+      "height": 30
+    },
+    "badval": {
+      "x": 0,
+      "y": 60,
+      "width": 60,
+      "height": 30
+    },
+    "cust": {
+      "x": 0,
+      "y": 90,
+      "width": 60,
+      "height": 30
+    },
+    "zero": {
+      "x": 0,
+      "y": 120,
+      "width": 60,
+      "height": 30
+    },
+    "rgbv": {
+      "x": 0,
+      "y": 150,
+      "width": 60,
+      "height": 30
+    }
+  }
+}

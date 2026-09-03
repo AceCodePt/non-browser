@@ -1,0 +1,61 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "bd": {
+      "background-color": "rgb(255, 0, 0)"
+    },
+    "fl": {
+      "background-color": "rgb(0, 128, 0)"
+    },
+    "fn": {
+      "background-color": "rgb(0, 0, 255)"
+    },
+    "mg": {
+      "background-color": "rgb(128, 0, 128)"
+    },
+    "calc": {
+      "background-color": "rgb(255, 165, 0)"
+    },
+    "calcbad": {
+      "background-color": "rgba(0, 0, 0, 0)"
+    }
+  },
+  "rect": {
+    "bd": {
+      "x": 0,
+      "y": 0,
+      "width": 60,
+      "height": 30
+    },
+    "fl": {
+      "x": 0,
+      "y": 30,
+      "width": 60,
+      "height": 30
+    },
+    "fn": {
+      "x": 0,
+      "y": 60,
+      "width": 60,
+      "height": 30
+    },
+    "mg": {
+      "x": 0,
+      "y": 90,
+      "width": 60,
+      "height": 30
+    },
+    "calc": {
+      "x": 0,
+      "y": 120,
+      "width": 60,
+      "height": 30
+    },
+    "calcbad": {
+      "x": 0,
+      "y": 150,
+      "width": 60,
+      "height": 30
+    }
+  }
+}
