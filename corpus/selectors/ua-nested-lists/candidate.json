@@ -1,0 +1,57 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "u1": {
+      "list-style-type": "disc",
+      "margin-top": "16px",
+      "margin-bottom": "16px"
+    },
+    "u2": {
+      "list-style-type": "circle",
+      "margin-top": "0px",
+      "margin-bottom": "0px"
+    },
+    "u3": {
+      "list-style-type": "square",
+      "margin-top": "0px",
+      "margin-bottom": "0px"
+    },
+    "o2": {
+      "list-style-type": "decimal",
+      "margin-top": "0px",
+      "margin-bottom": "0px"
+    }
+  },
+  "rect": {
+    "u1": {
+      "x": 0,
+      "y": 0,
+      "width": 300,
+      "height": 66
+    },
+    "u2": {
+      "x": 40,
+      "y": 22,
+      "width": 260,
+      "height": 44
+    },
+    "u3": {
+      "x": 80,
+      "y": 44,
+      "width": 220,
+      "height": 22
+    },
+    "o1": {
+      "x": 0,
+      "y": 82,
+      "width": 300,
+      "height": 44
+    },
+    "o2": {
+      "x": 40,
+      "y": 104,
+      "width": 260,
+      "height": 22
+    }
+  }
+}

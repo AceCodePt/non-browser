@@ -14,9 +14,27 @@ import type { Color, ComputedStyle, CornerRadii, Length, Shadow, Viewport } from
 
 export type ComputedStyleProps = Record<string, string>;
 
+/**
+ * CSSOM color serialization: an opaque color is `rgb(r, g, b)`; a
+ * non-opaque alpha serializes with the fewest decimal places that still
+ * quantizes back to the same 8-bit alpha byte (Chrome prints 0x88 as 0.533,
+ * 0.25 as 0.25, 0.5 as 0.5).
+ */
 function colorString(c: Color): string {
-  if (c.a >= 1) return `rgb(${c.r}, ${c.g}, ${c.b})`;
-  return `rgba(${c.r}, ${c.g}, ${c.b}, ${c.a})`;
+  const byte = Math.round(Math.min(1, Math.max(0, c.a)) * 255);
+  if (byte >= 255) return `rgb(${c.r}, ${c.g}, ${c.b})`;
+  return `rgba(${c.r}, ${c.g}, ${c.b}, ${alphaString(byte)})`;
+}
+
+function alphaString(byte: number): string {
+  for (let d = 0; d <= 6; d++) {
+    const f = Math.round((byte / 255) * 10 ** d) / 10 ** d;
+    if (Math.round(f * 255) === byte) {
+      const s = f.toFixed(d);
+      return d === 0 ? s : s.replace(/0+$/, '').replace(/\.$/, '');
+    }
+  }
+  return String(byte / 255);
 }
 
 /**
@@ -94,13 +112,34 @@ function shadowListString(shadows: Shadow[], refWidth: number, viewport?: Viewpo
  * property is not computed by the engine (so it cannot be compared).
  */
 export function computedStyleString(style: ComputedStyle, prop: string, refWidth: number, viewport?: Viewport | null): string | null {
+  // Custom properties serialize as their computed token stream; Chrome reports
+  // '' for undefined and guaranteed-invalid names alike.
+  if (prop.startsWith('--')) return style.customProps[prop] ?? '';
   switch (prop) {
     case 'display': {
       const d = style.display;
       return d === 'inline-grid' ? 'grid' : d;
     }
+    case 'aspect-ratio': {
+      const ar = style.aspectRatio;
+      if (ar.type === 'auto') return 'auto';
+      return `${ar.autoRatio ? 'auto ' : ''}${ar.num} / ${ar.den}`;
+    }
     case 'font-weight':
       return String(style.fontWeight);
+    case 'word-break':
+      return String(style.wordBreak);
+    case 'text-transform':
+      return String(style.textTransform);
+    case 'text-indent': {
+      const l = lengthString(style.textIndent, refWidth, viewport);
+      return `${l}${style.textIndentHanging ? ' hanging' : ''}${style.textIndentEachLine ? ' each-line' : ''}`.trim();
+    }
+    case 'word-spacing':
+      return lengthString(style.wordSpacing, refWidth, viewport);
+    case 'overflow-wrap':
+    case 'word-wrap':
+      return String(style.overflowWrap);
     case 'font-style':
       return style.fontStyle;
     case 'list-style-type':
@@ -148,10 +187,20 @@ export function computedStyleString(style: ComputedStyle, prop: string, refWidth
     case 'opacity':
       // Chrome computes an alpha-value to its normalized number (0.5, 1, 0).
       return String(style.opacity);
+    case 'flex-grow':
+      return String(style.flexGrow);
     case 'width':
       return lengthString(style.width, refWidth, viewport);
     case 'height':
       return lengthString(style.height, refWidth, viewport);
+    case 'min-width':
+      return lengthString(style.minWidth, refWidth, viewport);
+    case 'max-width':
+      return lengthString(style.maxWidth, refWidth, viewport);
+    case 'min-height':
+      return lengthString(style.minHeight, refWidth, viewport);
+    case 'max-height':
+      return lengthString(style.maxHeight, refWidth, viewport);
     case 'margin-top':
       return lengthString(style.margin.top, refWidth, viewport);
     case 'margin-right':
@@ -184,6 +233,14 @@ export function computedStyleString(style: ComputedStyle, prop: string, refWidth
       return style.borderStyle.bottom;
     case 'border-left-style':
       return style.borderStyle.left;
+    case 'border-top-color':
+      return colorString(style.borderColor.top);
+    case 'border-right-color':
+      return colorString(style.borderColor.right);
+    case 'border-bottom-color':
+      return colorString(style.borderColor.bottom);
+    case 'border-left-color':
+      return colorString(style.borderColor.left);
     case 'border-color': {
       const { top, right, bottom, left } = style.borderColor;
       const s = (c: Color) => colorString(c);

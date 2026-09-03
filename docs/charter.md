@@ -177,6 +177,34 @@ the charter and the corpus cannot silently diverge:
 | ua-stylesheet | UA defaults at lowest cascade priority | yes | corpus/ua-styles | UA stylesheet |
 | lists | list-style-type markers | yes | corpus/lists, corpus/ua-styles, corpus/stress | list-style-type |
 | lists | list-style-position | yes | corpus/lists, corpus/stress | list-style-position |
+| colors | hsl()/hsla() (comma + space + hue units + /alpha) | yes | corpus/colors | hsl |
+| colors | modern space-separated rgb()/rgba() with /alpha | yes | corpus/colors | rgb( |
+| colors | 4/8-digit hex alpha | yes | corpus/colors | hex |
+| colors | full CSS named-color set | yes | corpus/colors | rebeccapurple |
+| colors | currentColor in every color-consuming position | yes | corpus/colors | currentcolor |
+| colors | invalid color drops the declaration (parse-error recovery) | yes | corpus/colors | parse-error recovery |
+| custom properties | --* declarations parse, cascade, inherit, serialize | yes | corpus/custom-properties | var( |
+| custom properties | var() fallback (nested, empty, guaranteed-invalid) | yes | corpus/custom-properties | fallback |
+| custom properties | cycles / undefined refs → guaranteed-invalid, consumers drop | yes | corpus/custom-properties | guaranteed-invalid |
+| custom properties | var() inside calc() and shorthands | yes | corpus/custom-properties | calc( |
+| custom properties | media-scoped custom-property redefinitions | yes | corpus/custom-properties | @media |
+| selectors | attribute selectors: =, word-list, hyphen-prefix, prefix, suffix, substring operators, presence | yes | corpus/selectors | ~= |
+| selectors | attribute case flags i / s | yes | corpus/selectors | case-insensitive |
+| selectors | combinators: descendant, > (child), + (adjacent), ~ (sibling) | yes | corpus/selectors | > |
+| selectors | :not() / :is() / :where() with selector-list arguments | yes | corpus/selectors | :where( |
+| selectors | :is() takes max argument specificity; :where() contributes zero | yes | corpus/selectors | :is( |
+| selectors | structural + root pseudo-classes (:root, :empty, first/last/only-child, :nth-child(An+B), :nth-last-child, first/last/only-of-type, :nth-of-type) | yes | corpus/selectors-structural | :nth-child( |
+| @supports | declaration conditions evaluated against the engine's real surface (unsupported → block drops, css-conditional-3 §4) | yes | corpus/supports | @supports |
+| @supports | not / and / or composition with precedence and nesting; @media inside and outside @supports | yes | corpus/supports | not |
+| media | mq4 range syntax in @media ((width >= 300px), two-sided (400px < width <= 800px), value-first flip, aspect-ratio/resolution ranges) | yes | corpus/media-modern | (width >= |
+| media | device-capability features (hover, any-hover, pointer, any-pointer, prefers-contrast, forced-colors, color-gamut, update) as explicit environment inputs | yes | corpus/media-modern | forced-colors |
+| display | display: contents box suppression — children (block/flex/grid) join the grandparent's formatting context, no box, zero rect; replaced elements compute 'none' (css-display-3 §2) | yes | corpus/display-contents | display:contents |
+| sizing | aspect-ratio property — ratio-derived auto dimension on block surfaces (content-box/border-box), min/max clamping, replaced-element natural-ratio transfer with attribute hints (css-sizing-4 §5) | yes | corpus/aspect-ratio | aspect-ratio |
+| positioning | position: sticky — in-flow at static position, scroll-0 constraint pass against the nearest scrollport with containing-block clamp, CB for abs descendants, z-index stacking (css-position-3 §3.6) | yes | corpus/sticky | position: sticky |
+| text | forced line breaks: <br> closes the line box in every white-space mode, <wbr> is a zero-width soft wrap opportunity; empty interior lines, text-align edges, list markers (css-text-3 §5.1) | yes | corpus/br-wbr | <wbr> |
+| text | word-break (break-all/keep-all) and overflow-wrap/word-wrap (break-word/anywhere incl. min-content) gating in-word break opportunities through the Pretext seam (css-text-3 §6) | yes | corpus/text-breaking | word-break:break-all |
+| text | text-transform (uppercase/lowercase/capitalize UAX-29 words), text-indent (length/percentage, hanging, each-line), word-spacing (length/percentage) feeding measurement and paint (css-text-3 §2, §8) | yes | corpus/text-formatting | word-spacing |
+| ua-stylesheet | nested-list rules authored with :is() (Blink html.css parity) | yes | corpus/selectors | :is(dl, ol, ul) |
 
 ### Deferred / Not in v1 (no silent absence)
 
@@ -193,14 +221,18 @@ classification):
   empty-cells) are parsed and computed, and UA table defaults land, but there is
   no table layout module (cell grid, border-collapse box model, spanning);
   charter §3 keeps tables out of v1. `tables-layout` is archived PARTIAL.
-- **Custom properties / var()** — not implemented; `cascade-custom-props`
-  archived EMPTY.
 - **Cascade layers / !important** — intentionally **not supported by design**
   (not a gap): `!important` and `@layer` are excluded from the compatibility
   surface because they override the normal cascade in ways a deterministic
   renderer must not silently accept; `cascade-layers-important` archived EMPTY.
-- **@import / @supports / @font-face** — not parsed; `parse-stylesheets` is
+- **@import / @font-face / @keyframes** — not parsed; `parse-stylesheets` is
   archived PARTIAL (the stylesheet parser explicitly skips these at-rules).
+- **@supports selector() / font-tech() / font-format() conditions** — not
+  evaluated (general-enclosed → false). Declaration conditions over features
+  Chrome supports but this engine lacks (e.g. filter, outline) evaluate false
+  here: the engine cannot truthfully honor the queried declaration, so such
+  blocks drop where Chrome applies them (see docs/ledgers/supports.md and the
+  decl-conditions fixture note).
 - **@container `size` / `block-size` containment** — `container-type: inline-size`
   is implemented (charter row above); the full `size` and `block-size`
   containment values parse but establish no container in v1, documented in

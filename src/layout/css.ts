@@ -18,6 +18,10 @@ export interface Color {
   g: number;
   b: number;
   a: number;
+  /** currentColor sentinel (css-color-4 §4.4): parseColorOrNull returns it and
+   * every color-consuming position resolves it against the element's computed
+   * color at computed-value time; it never reaches serialization or paint. */
+  currentColor?: boolean;
 }
 
 /**
@@ -209,6 +213,7 @@ export const ZERO_BORDER_RADIUS: BorderRadius = {
 export type DisplayValue =
   | 'block'
   | 'none'
+  | 'contents'
   | 'grid'
   | 'inline-grid'
   | 'flex'
@@ -288,9 +293,20 @@ export interface PseudoBox {
   style: ComputedStyle;
 }
 
+export type AspectRatio =
+  | { type: 'auto' }
+  | { type: 'ratio'; num: number; den: number; autoRatio?: boolean };
+
+export const ASPECT_AUTO: AspectRatio = { type: 'auto' };
+
 export interface ComputedStyle {
   display: DisplayValue;
-  position: 'static' | 'relative' | 'absolute' | 'fixed';
+  /** css-sizing-4 §5: `auto` or the preferred ratio num/den (`autoRatio` marks
+   * the `auto <ratio>` form, which prefers the natural ratio on replaced). */
+  aspectRatio: AspectRatio;
+  /** css-position-3: sticky is parsed and laid out in-flow like relative at
+   * scroll offset 0 (a static renderer has no scroll position). */
+  position: 'static' | 'relative' | 'sticky' | 'absolute' | 'fixed';
   direction: Direction;
   zIndex: number | null;
   top: Length;
@@ -343,6 +359,22 @@ export interface ComputedStyle {
    * as 'normal', while layout uses the font-metric-derived px value). */
   lineHeightNormal: boolean;
   whiteSpace: WhiteSpaceValue;
+  /** css-text-3 §2.1: uppercase/lowercase/capitalize/none (inherited). */
+  textTransform: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
+  /** css-text-3 §2.2: first-line indent (length/percentage), inherited raw so
+   * percentages resolve per element; hanging/each-line keep Chrome's keyword-
+   * preserving computed value. */
+  textIndent: Length;
+  textIndentHanging: boolean;
+  textIndentEachLine: boolean;
+  /** css-text-3 §8: extra advance per word-separator character (inherited). */
+  wordSpacing: Length;
+  /** css-text-3 §6.1: break-all allows breaks between any characters;
+   * keep-all suppresses breaks within CJK runs. */
+  wordBreak: 'normal' | 'break-all' | 'keep-all';
+  /** css-text-3 §6.2 (word-wrap is a legacy alias): anywhere also feeds
+   * min-content sizing; break-word only wraps when a line cannot fit. */
+  overflowWrap: 'normal' | 'break-word' | 'anywhere';
 
   letterSpacing: number;
   /** active text-decoration lines, in the order they should paint. */
@@ -388,6 +420,13 @@ export interface ComputedStyle {
   containerType: 'normal' | 'inline-size' | 'size' | 'block-size';
   /** css-contain-3 §3.2: the query-container names this element answers to. */
   containerName: string[];
+  /**
+   * The element's computed custom properties (css-variables-1 §3): resolved
+   * token streams after var() substitution, keyed by the case-sensitive
+   * '--name'. Guaranteed-invalid names are absent (they serialize like
+   * undefined, and do not inherit to descendants).
+   */
+  customProps: Record<string, string>;
 }
 
 /**
@@ -413,54 +452,322 @@ export function borderPaddingBlock(style: ComputedStyle, ref: number, viewport?:
   );
 }
 
+/**
+ * The CSS named-color set (css-color-4 §4.3), with the sRGB values the oracle
+ * resolves them to. `transparent` and `currentcolor` are handled before this
+ * table since their behavior differs (alpha 0 / used-value substitution).
+ */
 const NAMED_COLORS: Record<string, Color> = {
-  transparent: { r: 0, g: 0, b: 0, a: 0 },
-  white: { r: 255, g: 255, b: 255, a: 1 },
+  aliceblue: { r: 240, g: 248, b: 255, a: 1 },
+  antiquewhite: { r: 250, g: 235, b: 215, a: 1 },
+  aqua: { r: 0, g: 255, b: 255, a: 1 },
+  aquamarine: { r: 127, g: 255, b: 212, a: 1 },
+  azure: { r: 240, g: 255, b: 255, a: 1 },
+  beige: { r: 245, g: 245, b: 220, a: 1 },
+  bisque: { r: 255, g: 228, b: 196, a: 1 },
   black: { r: 0, g: 0, b: 0, a: 1 },
-  red: { r: 255, g: 0, b: 0, a: 1 },
+  blanchedalmond: { r: 255, g: 235, b: 205, a: 1 },
   blue: { r: 0, g: 0, b: 255, a: 1 },
-  green: { r: 0, g: 128, b: 0, a: 1 },
+  blueviolet: { r: 138, g: 43, b: 226, a: 1 },
+  brown: { r: 165, g: 42, b: 42, a: 1 },
+  burlywood: { r: 222, g: 184, b: 135, a: 1 },
+  cadetblue: { r: 95, g: 158, b: 160, a: 1 },
+  chartreuse: { r: 127, g: 255, b: 0, a: 1 },
+  chocolate: { r: 210, g: 105, b: 30, a: 1 },
+  coral: { r: 255, g: 127, b: 80, a: 1 },
+  cornflowerblue: { r: 100, g: 149, b: 237, a: 1 },
+  cornsilk: { r: 255, g: 248, b: 220, a: 1 },
+  crimson: { r: 220, g: 20, b: 60, a: 1 },
+  cyan: { r: 0, g: 255, b: 255, a: 1 },
+  darkblue: { r: 0, g: 0, b: 139, a: 1 },
+  darkcyan: { r: 0, g: 139, b: 139, a: 1 },
+  darkgoldenrod: { r: 184, g: 134, b: 11, a: 1 },
+  darkgray: { r: 169, g: 169, b: 169, a: 1 },
+  darkgreen: { r: 0, g: 100, b: 0, a: 1 },
+  darkgrey: { r: 169, g: 169, b: 169, a: 1 },
+  darkkhaki: { r: 189, g: 183, b: 107, a: 1 },
+  darkmagenta: { r: 139, g: 0, b: 139, a: 1 },
+  darkolivegreen: { r: 85, g: 107, b: 47, a: 1 },
+  darkorange: { r: 255, g: 140, b: 0, a: 1 },
+  darkorchid: { r: 153, g: 50, b: 204, a: 1 },
+  darkred: { r: 139, g: 0, b: 0, a: 1 },
+  darksalmon: { r: 233, g: 150, b: 122, a: 1 },
+  darkseagreen: { r: 143, g: 188, b: 143, a: 1 },
+  darkslateblue: { r: 72, g: 61, b: 139, a: 1 },
+  darkslategray: { r: 47, g: 79, b: 79, a: 1 },
+  darkslategrey: { r: 47, g: 79, b: 79, a: 1 },
+  darkturquoise: { r: 0, g: 206, b: 209, a: 1 },
+  darkviolet: { r: 148, g: 0, b: 211, a: 1 },
+  deeppink: { r: 255, g: 20, b: 147, a: 1 },
+  deepskyblue: { r: 0, g: 191, b: 255, a: 1 },
+  dimgray: { r: 105, g: 105, b: 105, a: 1 },
+  dimgrey: { r: 105, g: 105, b: 105, a: 1 },
+  dodgerblue: { r: 30, g: 144, b: 255, a: 1 },
+  firebrick: { r: 178, g: 34, b: 34, a: 1 },
+  floralwhite: { r: 255, g: 250, b: 240, a: 1 },
+  forestgreen: { r: 34, g: 139, b: 34, a: 1 },
+  fuchsia: { r: 255, g: 0, b: 255, a: 1 },
+  gainsboro: { r: 220, g: 220, b: 220, a: 1 },
+  ghostwhite: { r: 248, g: 248, b: 255, a: 1 },
+  gold: { r: 255, g: 215, b: 0, a: 1 },
+  goldenrod: { r: 218, g: 165, b: 32, a: 1 },
   gray: { r: 128, g: 128, b: 128, a: 1 },
+  green: { r: 0, g: 128, b: 0, a: 1 },
+  greenyellow: { r: 173, g: 255, b: 47, a: 1 },
   grey: { r: 128, g: 128, b: 128, a: 1 },
+  honeydew: { r: 240, g: 255, b: 240, a: 1 },
+  hotpink: { r: 255, g: 105, b: 180, a: 1 },
+  indianred: { r: 205, g: 92, b: 92, a: 1 },
+  indigo: { r: 75, g: 0, b: 130, a: 1 },
+  ivory: { r: 255, g: 255, b: 240, a: 1 },
+  khaki: { r: 240, g: 230, b: 140, a: 1 },
+  lavender: { r: 230, g: 230, b: 250, a: 1 },
+  lavenderblush: { r: 255, g: 240, b: 245, a: 1 },
+  lawngreen: { r: 124, g: 252, b: 0, a: 1 },
+  lemonchiffon: { r: 255, g: 250, b: 205, a: 1 },
+  lightblue: { r: 173, g: 216, b: 230, a: 1 },
+  lightcoral: { r: 240, g: 128, b: 128, a: 1 },
+  lightcyan: { r: 224, g: 255, b: 255, a: 1 },
+  lightgoldenrodyellow: { r: 250, g: 250, b: 210, a: 1 },
+  lightgray: { r: 211, g: 211, b: 211, a: 1 },
+  lightgreen: { r: 144, g: 238, b: 144, a: 1 },
+  lightgrey: { r: 211, g: 211, b: 211, a: 1 },
+  lightpink: { r: 255, g: 182, b: 193, a: 1 },
+  lightsalmon: { r: 255, g: 160, b: 122, a: 1 },
+  lightseagreen: { r: 32, g: 178, b: 170, a: 1 },
+  lightskyblue: { r: 135, g: 206, b: 250, a: 1 },
+  lightslategray: { r: 119, g: 136, b: 153, a: 1 },
+  lightslategrey: { r: 119, g: 136, b: 153, a: 1 },
+  lightsteelblue: { r: 176, g: 196, b: 222, a: 1 },
+  lightyellow: { r: 255, g: 255, b: 224, a: 1 },
+  lime: { r: 0, g: 255, b: 0, a: 1 },
+  limegreen: { r: 50, g: 205, b: 50, a: 1 },
+  linen: { r: 250, g: 240, b: 230, a: 1 },
+  magenta: { r: 255, g: 0, b: 255, a: 1 },
+  maroon: { r: 128, g: 0, b: 0, a: 1 },
+  mediumaquamarine: { r: 102, g: 205, b: 170, a: 1 },
+  mediumblue: { r: 0, g: 0, b: 205, a: 1 },
+  mediumorchid: { r: 186, g: 85, b: 211, a: 1 },
+  mediumpurple: { r: 147, g: 112, b: 219, a: 1 },
+  mediumseagreen: { r: 60, g: 179, b: 113, a: 1 },
+  mediumslateblue: { r: 123, g: 104, b: 238, a: 1 },
+  mediumspringgreen: { r: 0, g: 250, b: 154, a: 1 },
+  mediumturquoise: { r: 72, g: 209, b: 204, a: 1 },
+  mediumvioletred: { r: 199, g: 21, b: 133, a: 1 },
+  midnightblue: { r: 25, g: 25, b: 112, a: 1 },
+  mintcream: { r: 245, g: 255, b: 250, a: 1 },
+  mistyrose: { r: 255, g: 228, b: 225, a: 1 },
+  moccasin: { r: 255, g: 228, b: 181, a: 1 },
+  navajowhite: { r: 255, g: 222, b: 173, a: 1 },
+  navy: { r: 0, g: 0, b: 128, a: 1 },
+  oldlace: { r: 253, g: 245, b: 230, a: 1 },
+  olive: { r: 128, g: 128, b: 0, a: 1 },
+  olivedrab: { r: 107, g: 142, b: 35, a: 1 },
+  orange: { r: 255, g: 165, b: 0, a: 1 },
+  orangered: { r: 255, g: 69, b: 0, a: 1 },
+  orchid: { r: 218, g: 112, b: 214, a: 1 },
+  palegoldenrod: { r: 238, g: 232, b: 170, a: 1 },
+  palegreen: { r: 152, g: 251, b: 152, a: 1 },
+  paleturquoise: { r: 175, g: 238, b: 238, a: 1 },
+  palevioletred: { r: 219, g: 112, b: 147, a: 1 },
+  papayawhip: { r: 255, g: 239, b: 213, a: 1 },
+  peachpuff: { r: 255, g: 218, b: 185, a: 1 },
+  peru: { r: 205, g: 133, b: 63, a: 1 },
+  pink: { r: 255, g: 192, b: 203, a: 1 },
+  plum: { r: 221, g: 160, b: 221, a: 1 },
+  powderblue: { r: 176, g: 224, b: 230, a: 1 },
+  purple: { r: 128, g: 0, b: 128, a: 1 },
+  rebeccapurple: { r: 102, g: 51, b: 153, a: 1 },
+  red: { r: 255, g: 0, b: 0, a: 1 },
+  rosybrown: { r: 188, g: 143, b: 143, a: 1 },
+  royalblue: { r: 65, g: 105, b: 225, a: 1 },
+  saddlebrown: { r: 139, g: 69, b: 19, a: 1 },
+  salmon: { r: 250, g: 128, b: 114, a: 1 },
+  sandybrown: { r: 244, g: 164, b: 96, a: 1 },
+  seagreen: { r: 46, g: 139, b: 87, a: 1 },
+  seashell: { r: 255, g: 245, b: 238, a: 1 },
+  sienna: { r: 160, g: 82, b: 45, a: 1 },
+  silver: { r: 192, g: 192, b: 192, a: 1 },
+  skyblue: { r: 135, g: 206, b: 235, a: 1 },
+  slateblue: { r: 106, g: 90, b: 205, a: 1 },
+  slategray: { r: 112, g: 128, b: 144, a: 1 },
+  slategrey: { r: 112, g: 128, b: 144, a: 1 },
+  snow: { r: 255, g: 250, b: 250, a: 1 },
+  springgreen: { r: 0, g: 255, b: 127, a: 1 },
+  steelblue: { r: 70, g: 130, b: 180, a: 1 },
+  tan: { r: 210, g: 180, b: 140, a: 1 },
+  teal: { r: 0, g: 128, b: 128, a: 1 },
+  thistle: { r: 216, g: 191, b: 216, a: 1 },
+  tomato: { r: 255, g: 99, b: 71, a: 1 },
+  turquoise: { r: 64, g: 224, b: 208, a: 1 },
+  violet: { r: 238, g: 130, b: 238, a: 1 },
+  wheat: { r: 245, g: 222, b: 179, a: 1 },
+  white: { r: 255, g: 255, b: 255, a: 1 },
+  whitesmoke: { r: 245, g: 245, b: 245, a: 1 },
+  yellow: { r: 255, g: 255, b: 0, a: 1 },
+  yellowgreen: { r: 154, g: 205, b: 50, a: 1 },
 };
 
-export function parseColor(input: string): Color {
+/**
+ * css-color-4 color parsing. Returns null for anything the grammar rejects so
+ * the caller drops the declaration like Chrome's parse-error recovery — never
+ * the black fallback. `currentcolor` parses to the sentinel resolved by the
+ * caller against the element's computed color.
+ */
+export function parseColorOrNull(input: string): Color | null {
   const s = input.trim().toLowerCase();
+  if (s === 'currentcolor') return { r: 0, g: 0, b: 0, a: 1, currentColor: true };
+  if (s === 'transparent') return { r: 0, g: 0, b: 0, a: 0 };
   if (s.startsWith('#')) {
     const hex = s.slice(1);
-    if (hex.length === 3) {
-      return {
-        r: parseInt(hex[0] + hex[0], 16),
-        g: parseInt(hex[1] + hex[1], 16),
-        b: parseInt(hex[2] + hex[2], 16),
-        a: 1,
-      };
+    if (!/^[0-9a-f]+$/.test(hex)) return null;
+    if (hex.length === 3 || hex.length === 4) {
+      const [r, g, b, a] = hex.split('').map((h) => parseInt(h + h, 16));
+      return { r, g, b, a: a !== undefined ? a / 255 : 1 };
     }
-    if (hex.length === 6) {
-      return {
-        r: parseInt(hex.slice(0, 2), 16),
-        g: parseInt(hex.slice(2, 4), 16),
-        b: parseInt(hex.slice(4, 6), 16),
-        a: 1,
-      };
+    if (hex.length === 6 || hex.length === 8) {
+      const r = parseInt(hex.slice(0, 2), 16);
+      const g = parseInt(hex.slice(2, 4), 16);
+      const b = parseInt(hex.slice(4, 6), 16);
+      const a = hex.length === 8 ? parseInt(hex.slice(6, 8), 16) / 255 : 1;
+      return { r, g, b, a };
+    }
+    return null;
+  }
+  const fn = s.match(/^(rgba?|hsla?)\(([^)]*)\)$/);
+  if (!fn) {
+    const named = NAMED_COLORS[s];
+    return named ? { ...named } : null;
+  }
+  const kind = fn[1].startsWith('hsl') ? 'hsl' : 'rgb';
+  const body = fn[2];
+  // Legacy comma form: exactly 3 color args + optional 4th alpha, all
+  // comma-separated (kept — current-Chrome parity, not legacy exclusion).
+  // Modern form: whitespace-separated args + optional `/ alpha`.
+  let args: string[];
+  let alphaRaw: string | null = null;
+  if (body.includes(',')) {
+    const parts = splitOnTopLevelComma(body);
+    if (parts.length === 4) {
+      args = parts.slice(0, 3);
+      alphaRaw = parts[3];
+    } else if (parts.length === 3) {
+      args = parts;
+    } else {
+      return null;
+    }
+    for (const p of args) if (/\s/.test(p.trim())) return null;
+  } else {
+    const slash = splitTopLevelBy(body, '/');
+    if (slash.length > 2) return null;
+    args = splitTopLevel(slash[0] ?? '');
+    if (slash.length === 2) {
+      if (args.length !== 3) return null;
+      alphaRaw = slash[1];
+    } else if (args.length !== 3) {
+      return null;
     }
   }
-  const m = s.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([0-9.]+))?\s*\)$/);
-  if (m) {
-    return {
-      r: clamp255(parseInt(m[1], 10)),
-      g: clamp255(parseInt(m[2], 10)),
-      b: clamp255(parseInt(m[3], 10)),
-      a: m[4] !== undefined ? Math.max(0, Math.min(1, parseFloat(m[4]))) : 1,
-    };
+  let a = 1;
+  if (alphaRaw !== null) {
+    // Alpha is a number in [0,1] or a percentage (css-color-4 §4.2) — the
+    // scale is independent of the rgb()/hsl() function kind.
+    const alpha = parseColorComponent(alphaRaw.trim(), 1);
+    if (alpha === null) return null;
+    a = Math.max(0, Math.min(1, alpha));
   }
-  const named = NAMED_COLORS[s];
-  if (named) return { ...named };
-  return { r: 0, g: 0, b: 0, a: 1 };
+  if (kind === 'rgb') {
+    if (args.length !== 3) return null;
+    const c: number[] = [];
+    for (const rawArg of args) {
+      const v = parseColorComponent(rawArg.trim(), 255);
+      if (v === null) return null;
+      c.push(Math.round(Math.max(0, Math.min(255, v))));
+    }
+    return { r: c[0], g: c[1], b: c[2], a };
+  }
+  if (args.length !== 3) return null;
+  const hue = parseHue(args[0].trim());
+  if (hue === null) return null;
+  const ch = (rawArg: string): number | null => {
+    const m = rawArg.match(/^([+-]?[\d.]+(?:e[+-]?\d+)?)%?$/);
+    if (!m) return null;
+    return Math.max(0, Math.min(100, parseFloat(m[1])));
+  };
+  const sat = ch(args[1].trim());
+  const light = ch(args[2].trim());
+  if (sat === null || light === null) return null;
+  const { r, g, b } = hslToRgb(hue, sat, light);
+  return { r, g, b, a };
 }
 
-function clamp255(v: number): number {
-  return Math.max(0, Math.min(255, v));
+/**
+ * One rgb() component: a number resolved against `scale` (255 for channels,
+ * 1 for alpha) or a percentage resolved against 100 then scaled (css-color-4
+ * §4.2). Returns the clamped-to-range value; null on unparseable input.
+ */
+function parseColorComponent(raw: string, scale: number): number | null {
+  const m = raw.match(/^([+-]?[\d.]+(?:e[+-]?\d+)?)(%)?$/);
+  if (!m) return null;
+  const v = parseFloat(m[1]);
+  if (!Number.isFinite(v)) return null;
+  return m[2] ? (v / 100) * scale : v;
+}
+
+/** Hue angle: unitless degrees or deg/rad/grad/turn, normalized mod 360. */
+function parseHue(raw: string): number | null {
+  const m = raw.match(/^([+-]?[\d.]+(?:e[+-]?\d+)?)(deg|rad|grad|turn)?$/);
+  if (!m) return null;
+  const v = parseFloat(m[1]);
+  if (!Number.isFinite(v)) return null;
+  const unit = m[2] ?? 'deg';
+  const deg = unit === 'rad' ? (v * 180) / Math.PI : unit === 'grad' ? v * 0.9 : unit === 'turn' ? v * 360 : v;
+  return ((deg % 360) + 360) % 360;
+}
+
+function hslToRgb(hDeg: number, sPct: number, lPct: number): { r: number; g: number; b: number } {
+  const h = hDeg / 360;
+  const s = sPct / 100;
+  const l = lPct / 100;
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h * 6) % 2) - 1));
+  const m = l - c / 2;
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  if (h < 1 / 6) {
+    r = c;
+    g = x;
+  } else if (h < 2 / 6) {
+    r = x;
+    g = c;
+  } else if (h < 3 / 6) {
+    g = c;
+    b = x;
+  } else if (h < 4 / 6) {
+    g = x;
+    b = c;
+  } else if (h < 5 / 6) {
+    r = x;
+    b = c;
+  } else {
+    r = c;
+    b = x;
+  }
+  return {
+    r: Math.round(Math.max(0, Math.min(1, r + m)) * 255),
+    g: Math.round(Math.max(0, Math.min(1, g + m)) * 255),
+    b: Math.round(Math.max(0, Math.min(1, b + m)) * 255),
+  };
+}
+
+export function parseColor(input: string): Color {
+  return parseColorOrNull(input) ?? { r: 0, g: 0, b: 0, a: 1 };
+}
+
+/** Resolve the currentColor sentinel against the element's computed color. */
+export function resolveCurrentColor(c: Color, elementColor: Color): Color {
+  return c.currentColor ? elementColor : c;
 }
 
 /**
@@ -469,8 +776,10 @@ function clamp255(v: number): number {
  * item's tokens are `inset? && <length>{2,4} && <color>?` with the color
  * allowed anywhere; a missing color is `currentColor` (the element's color).
  * text-shadow shares the grammar minus `inset` and the 4th (spread) length.
+ * Returns null when any token fails to parse (an unparseable color or length
+ * invalidates the whole declaration, like Chrome's parse-error recovery).
  */
-export function parseShadowList(value: string, currentColor: Color): Shadow[] {
+export function parseShadowList(value: string, currentColor: Color): Shadow[] | null {
   const parts = splitOnTopLevelComma(value);
   const out: Shadow[] = [];
   for (const part of parts) {
@@ -483,11 +792,16 @@ export function parseShadowList(value: string, currentColor: Color): Shadow[] {
         inset = true;
         continue;
       }
-      if (/^#|^rgba?\(|^hsla?\(|^[a-zA-Z]/.test(t) && !/^-?[\d.]/.test(t)) {
-        color = t.toLowerCase() === 'currentcolor' ? currentColor : parseColor(t);
+      const parsed = parseColorOrNull(t);
+      if (parsed) {
+        color = resolveCurrentColor(parsed, currentColor);
         continue;
       }
-      lenses.push(t);
+      if (/^(calc|min|max|clamp)\(/i.test(t) || /^[-+\d.]/.test(t)) {
+        lenses.push(t);
+        continue;
+      }
+      return null;
     }
     const lens = lenses.map((t) => parseLength(t));
     out.push({
@@ -934,6 +1248,47 @@ function parseBoxShorthand(raw: string): Record<Side, Length> {
 
 type BorderStyleKeyword = 'none' | 'solid' | 'inset' | 'outset';
 
+const BORDER_WIDTH_KEYWORDS: Record<string, number> = { thin: 1, medium: 3, thick: 5 };
+
+/**
+ * Tokenize a border shorthand's value into width/style/color. Tokens split
+ * paren-aware so a modern `rgb(10 20 30)` color survives. Returns null when
+ * any token is unparseable — an invalid component invalidates the whole
+ * shorthand like Chrome (the declaration drops entirely, not token-by-token).
+ */
+function parseBorderShorthandParts(
+  raw: string,
+  defaultColor: Color,
+): { width: number; style: BorderStyleKeyword; color: Color } | null {
+  let width = 0;
+  let style: BorderStyleKeyword = 'solid';
+  let color: Color | null = null;
+  let sawWidth = false;
+  for (const p of splitTopLevel(raw.trim())) {
+    if (p === 'solid' || p === 'none' || p === 'inset' || p === 'outset') {
+      style = p;
+      continue;
+    }
+    if (/^-?[\d.]+px$/.test(p)) {
+      width = parseFloat(p);
+      sawWidth = true;
+      continue;
+    }
+    if (!sawWidth && p in BORDER_WIDTH_KEYWORDS) {
+      width = BORDER_WIDTH_KEYWORDS[p];
+      sawWidth = true;
+      continue;
+    }
+    const c = parseColorOrNull(p);
+    if (c) {
+      color = c;
+      continue;
+    }
+    return null;
+  }
+  return { width, style, color: color ? resolveCurrentColor(color, defaultColor) : defaultColor };
+}
+
 function parseBorderStyleShorthand(raw: string): Record<Side, BorderStyleKeyword> {
   const kw = (v: string): BorderStyleKeyword =>
     v === 'inset' ? 'inset' : v === 'outset' ? 'outset' : v === 'solid' ? 'solid' : 'none';
@@ -942,9 +1297,10 @@ function parseBorderStyleShorthand(raw: string): Record<Side, BorderStyleKeyword
   return { top: t, right: r, bottom: b, left: l };
 }
 
-function parseBorderColorShorthand(raw: string): Record<Side, Color> {
-  const parts = raw.trim().split(/\s+/).map(parseColor);
-  const [t = parseColor('black'), r = t, b = t, l = r] = parts;
+function parseBorderColorShorthand(raw: string): Record<Side, Color> | null {
+  const parts = splitTopLevel(raw.trim()).map(parseColorOrNull);
+  if (parts.some((p) => p === null)) return null;
+  const [t = parseColor('black'), r = t, b = t, l = r] = parts as Color[];
   return { top: t, right: r, bottom: b, left: l };
 }
 
@@ -988,13 +1344,30 @@ function parseFlexShorthand(value: string): { grow: number; shrink: number; basi
   return { grow, shrink, basis };
 }
 
-/** Split a declaration block on top-level semicolons (no strings with ';' expected). */
+/** Split a declaration block on top-level semicolons (quote-aware; a ';' inside
+ * a string never splits). */
 function splitDeclarations(block: string): string[] {
   const out: string[] = [];
   let depth = 0;
   let cur = '';
+  let quote: string | null = null;
   for (let i = 0; i < block.length; i++) {
     const c = block[i];
+    if (quote) {
+      cur += c;
+      if (c === '\\' && i + 1 < block.length) {
+        cur += block[i + 1];
+        i++;
+      } else if (c === quote) {
+        quote = null;
+      }
+      continue;
+    }
+    if (c === '"' || c === "'") {
+      quote = c;
+      cur += c;
+      continue;
+    }
     if (c === '(') depth++;
     else if (c === ')') depth--;
     if (c === ';' && depth === 0) {
@@ -1020,8 +1393,11 @@ export function parseDeclarationBlock(block: string): Declaration[] {
     .map((d) => {
       const idx = d.indexOf(':');
       if (idx < 0) return null;
+      const name = d.slice(0, idx).trim();
+      // Custom property names are case-sensitive (css-variables-1 §2) and must
+      // not fold; regular property names are ASCII case-insensitive.
       return {
-        property: d.slice(0, idx).trim().toLowerCase(),
+        property: name.startsWith('--') ? name : name.toLowerCase(),
         value: d.slice(idx + 1).trim(),
       };
     })
@@ -1136,8 +1512,9 @@ function parseDecorationShorthand(value: string): {
       const m = tok.match(/^(-?[\d.]+)(px)?$/);
       if (m) {
         thickness = { px: parseFloat(m[1]) };
-      } else if (color === null && /^[#a-zA-Z]/.test(tok)) {
-        color = parseColor(tok);
+      } else if (color === null) {
+        const c = parseColorOrNull(tok);
+        if (c) color = c;
       }
     }
   }
@@ -1174,6 +1551,11 @@ interface Defaults {
    * 'center'/'justify'), resolved against the element's own direction. */
   textAlignInheritedKeyword?: string;
   whiteSpaceDefault?: WhiteSpaceValue;
+  textTransformInherited?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
+  textIndentInherited?: Length;
+  textIndentHangingInherited?: boolean;
+  textIndentEachLineInherited?: boolean;
+  wordSpacingInherited?: Length;
   borderCollapseDefault?: 'separate' | 'collapse';
   borderSpacingDefault?: number;
   borderSpacingVDefault?: number;
@@ -1181,15 +1563,182 @@ interface Defaults {
   captionSideDefault?: 'top' | 'bottom';
   /** inherited `direction` (direction inherits; initial ltr). */
   directionInherited?: Direction;
+  /**
+   * The parent's computed custom properties (css-variables-1 §3): custom
+   * properties inherit as resolved token streams, and var() substitution at
+   * computed-value time reads this map (the element's own declarations win
+   * per name).
+   */
+  customPropsInherited?: Record<string, string>;
 }
-export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedStyle {
+
+/**
+ * Substitute every top-level var() reference in a css-variables-1 §3 token
+ * stream. `resolve` answers for one custom-property name: the resolved token
+ * stream, null (guaranteed-invalid — cycles or an invalid reference), or
+ * undefined (no such property). Fallbacks (everything after the first
+ * top-level comma) substitute when the reference is null/undefined. Quoted
+ * strings never substitute. Returns null when the value is invalid at
+ * computed-value time (a var() with no usable substitution), which drops the
+ * declaration like Chrome.
+ */
+function substituteVars(
+  value: string,
+  resolve: (name: string) => string | null | undefined,
+): string | null {
+  if (!/var\(/i.test(value)) return value;
+  let out = '';
+  let i = 0;
+  const n = value.length;
+  while (i < n) {
+    const c = value[i];
+    if (c === '"' || c === "'") {
+      let j = i + 1;
+      while (j < n) {
+        if (value[j] === '\\' && j + 1 < n) j += 2;
+        else if (value[j] === c) {
+          j++;
+          break;
+        } else j++;
+      }
+      out += value.slice(i, j);
+      i = j;
+      continue;
+    }
+    if ((c === 'v' || c === 'V') && value.slice(i, i + 4).toLowerCase() === 'var(') {
+      let depth = 0;
+      let j = i + 3;
+      while (j < n) {
+        const d = value[j];
+        if (d === '"' || d === "'") {
+          j++;
+          while (j < n) {
+            if (value[j] === '\\') j += 2;
+            else if (value[j] === d) {
+              j++;
+              break;
+            } else j++;
+          }
+          continue;
+        }
+        if (d === '(') depth++;
+        else if (d === ')') {
+          depth--;
+          if (depth === 0) break;
+        }
+        j++;
+      }
+      if (j >= n) return null;
+      const inner = value.slice(i + 4, j);
+      const comma = topLevelCommaIndex(inner);
+      const name = (comma === -1 ? inner : inner.slice(0, comma)).trim();
+      if (!name.startsWith('--')) return null;
+      const ref = resolve(name);
+      if (typeof ref === 'string') {
+        out += ref;
+      } else if (comma !== -1) {
+        const fb = substituteVars(inner.slice(comma + 1), resolve);
+        if (fb === null) return null;
+        out += fb;
+      } else {
+        return null;
+      }
+      i = j + 1;
+      continue;
+    }
+    out += c;
+    i++;
+  }
+  return out;
+}
+
+/** Index of the first comma at paren depth 0 outside strings, else -1. */
+function topLevelCommaIndex(s: string): number {
+  let depth = 0;
+  let quote: string | null = null;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (quote) {
+      if (c === '\\') i++;
+      else if (c === quote) quote = null;
+      continue;
+    }
+    if (c === '"' || c === "'") quote = c;
+    else if (c === '(') depth++;
+    else if (c === ')') depth--;
+    else if (c === ',' && depth === 0) return i;
+  }
+  return -1;
+}
+
+export function makeStyle(rawDecls: Declaration[], defaults: Defaults): ComputedStyle {
+  // --- custom properties (css-variables-1): resolve own declarations against
+  // the inherited map, then substitute var() in every remaining declaration.
+  // A declaration whose substitution is invalid at computed-value time drops
+  // (the property falls to its inherited/initial default, like Chrome). ---
+  const inheritedCustom = defaults.customPropsInherited ?? {};
+  const ownCustom: Record<string, string> = {};
+  const plainDecls: Declaration[] = [];
+  for (const d of rawDecls) {
+    if (d.property.startsWith('--')) {
+      if (!(d.property in ownCustom)) ownCustom[d.property] = d.value.trim();
+    } else {
+      plainDecls.push(d);
+    }
+  }
+  const resolvedCustom: Record<string, string> = {};
+  const invalidCustom = new Set<string>();
+  const resolving = new Set<string>();
+  const resolveCustom = (name: string): string | null | undefined => {
+    if (name in resolvedCustom) return resolvedCustom[name];
+    if (invalidCustom.has(name)) return null;
+    if (!(name in ownCustom)) return inheritedCustom[name];
+    if (resolving.has(name)) return null;
+    resolving.add(name);
+    const sub = substituteVars(ownCustom[name], resolveCustom);
+    resolving.delete(name);
+    if (sub === null) {
+      invalidCustom.add(name);
+      return null;
+    }
+    resolvedCustom[name] = sub.trim();
+    return resolvedCustom[name];
+  };
+  for (const name of Object.keys(ownCustom)) resolveCustom(name);
+  // Guaranteed-invalid own names block inheritance (children of an element
+  // whose --x is invalid do not see the grandparent's --x either).
+  const customProps: Record<string, string> = { ...inheritedCustom, ...resolvedCustom };
+  for (const name of invalidCustom) delete customProps[name];
+  const decls: Declaration[] = [];
+  for (const d of plainDecls) {
+    const sub = substituteVars(d.value, resolveCustom);
+    if (sub === null || sub.trim() === '') continue;
+    decls.push(sub === d.value ? d : { ...d, value: sub });
+  }
+  const transparentColor: Color = { r: 0, g: 0, b: 0, a: 0 };
+  // The element's own color resolves first: every other color-consuming
+  // position (background, borders, shadows, decorations) resolves currentColor
+  // against it, and `color: currentcolor` resolves against the inherited color.
+  const colorDecl = findDecl(decls, 'color');
+  const elementColor = (() => {
+    if (colorDecl) {
+      const c = parseColorOrNull(colorDecl.value);
+      if (c && !c.currentColor) return c;
+    }
+    return defaults.color;
+  })();
+  // A declaration whose color fails to parse drops (Chrome's parse-error
+  // recovery), yielding the default — never the black fallback.
   const color = (name: string, dflt: Color): Color => {
     const v = findDecl(decls, name);
-    return v ? parseColor(v.value) : dflt;
+    if (v) {
+      const c = parseColorOrNull(v.value);
+      if (c) return c.currentColor ? elementColor : c;
+    }
+    return dflt;
   };
 
   const bgDecl = findDecl(decls, 'background-color') ?? findDecl(decls, 'background');
-  const elementColor = color('color', defaults.color);
 
   // --- font-family (needed before line-height/font-size-margin resolution) ---
   let fontFamily = defaults.fontFamily;
@@ -1309,16 +1858,6 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     return resolveEmLength(parseLength(d.value), fontSize);
   };
 
-  const marginLonghand = (name: string, dflt: Length, quirkDecls: string[]): Length => {
-    const d = findDecl(decls, name);
-    if (d) {
-      const l = parseLength(d.value);
-      if (quirkDecls.includes(name) && d.quirk) l.quirk = true;
-      return l;
-    }
-    return dflt;
-  };
-
   const sideLens = (shorthand: string): Record<Side, Length> => {
     const sh = findDecl(decls, shorthand);
     const dflt = shorthand === 'padding' ? defaults.paddingDefault ?? pxLength(0) : pxLength(0);
@@ -1339,33 +1878,48 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     return d && d.value.trim() === 'rtl' ? 'rtl' : (defaults.directionInherited ?? 'ltr');
   })();
 
-  // --- margins: the logical longhands (margin-block-start/end,
-  // margin-inline-start/end) feed the physical sides, and the `margin`
-  // shorthand wins over everything (CSS logical/physical is resolved in source
-  // order in Blink; for the UA fixtures these never coexist). The UA
-  // margin-block-start carries the quirky-margin marker (Blink `__qem`).
-  // The inline longhands map per `direction` (css-writing-modes-4 §2.2). ---
+  // --- margins: each physical side takes its cascade winner among the
+  // physical longhand, the logical longhand mapped per `direction`, and the
+  // `margin` shorthand — the first declaration in the winner-first list
+  // (shorthands expand to longhands at their own cascade position, so a
+  // higher-specificity/later `margin-top` beats an earlier `margin`). The UA
+  // margin-block-start carries the quirky-margin marker (Blink `__qem`). ---
   const margin = (() => {
-    const sh = findDecl(decls, 'margin');
-    const top = marginLonghand('margin-block-start', len('margin-top', pxLength(0)), ['margin-block-start']);
-    const bottom = marginLonghand('margin-block-end', len('margin-bottom', pxLength(0)), ['margin-block-end']);
-    const left = marginLonghand(direction === 'rtl' ? 'margin-inline-end' : 'margin-inline-start', len('margin-left', pxLength(0)), []);
-    const right = marginLonghand(direction === 'rtl' ? 'margin-inline-start' : 'margin-inline-end', len('margin-right', pxLength(0)), []);
-    if (sh) return parseBoxShorthand(sh.value);
-    return { top, right, bottom, left };
+    const side = (s: Side, inlineLogical: string): Length => {
+      const d = findDeclAny(decls, [`margin-${s}`, inlineLogical, 'margin']);
+      if (!d) return pxLength(0);
+      if (d.property === 'margin') return parseBoxShorthand(d.value)[s];
+      const l = parseLength(d.value);
+      if ((s === 'top' || s === 'bottom') && d.property === `margin-block-${s === 'top' ? 'start' : 'end'}` && d.quirk) {
+        l.quirk = true;
+      }
+      return l;
+    };
+    return {
+      top: side('top', 'margin-block-start'),
+      bottom: side('bottom', 'margin-block-end'),
+      left: side('left', direction === 'rtl' ? 'margin-inline-end' : 'margin-inline-start'),
+      right: side('right', direction === 'rtl' ? 'margin-inline-start' : 'margin-inline-end'),
+    };
   })();
 
-  // --- padding: the inline logical longhands feed the physical sides per
-  // `direction` (the inline-start side holds the list gutter). ---
+  // --- padding: the same cascade scan as margins (the inline logical
+  // longhands feed the physical sides per `direction` — the inline-start side
+  // holds the list gutter), falling back to the UA per-tag default. ---
   const padding = (() => {
-    const sh = findDecl(decls, 'padding');
     const dflt = defaults.paddingDefault ?? pxLength(0);
-    const top = len('padding-top', dflt);
-    const right = len(direction === 'rtl' ? 'padding-inline-start' : 'padding-inline-end', len('padding-right', dflt));
-    const bottom = len('padding-bottom', dflt);
-    const left = len(direction === 'rtl' ? 'padding-inline-end' : 'padding-inline-start', len('padding-left', dflt));
-    if (sh) return parseBoxShorthand(sh.value);
-    return { top, right, bottom, left };
+    const side = (s: Side, inlineLogical: string): Length => {
+      const d = findDeclAny(decls, [`padding-${s}`, inlineLogical, 'padding']);
+      if (!d) return dflt;
+      if (d.property === 'padding') return parseBoxShorthand(d.value)[s];
+      return parseLength(d.value);
+    };
+    return {
+      top: side('top', 'padding-block-start'),
+      bottom: side('bottom', 'padding-block-end'),
+      left: side('left', direction === 'rtl' ? 'padding-inline-end' : 'padding-inline-start'),
+      right: side('right', direction === 'rtl' ? 'padding-inline-start' : 'padding-inline-end'),
+    };
   })();
 
   const resolveEm = (sides: Record<Side, Length>): Record<Side, Length> => ({
@@ -1393,21 +1947,13 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   const bwShort = findDecl(decls, 'border-width');
   const bsShort = findDecl(decls, 'border-style');
   const bcShort = findDecl(decls, 'border-color');
-  if (borderDecl) {
-    const parts = borderDecl.value.trim().split(/\s+/);
-    let width = 0;
-    let style: 'none' | 'solid' | 'inset' | 'outset' = 'solid';
-    let col = parseColor('black');
-    for (const p of parts) {
-      if (p === 'solid' || p === 'none' || p === 'inset' || p === 'outset') style = p as 'none' | 'solid' | 'inset' | 'outset';
-      else if (/^-?[\d.]+px$/.test(p)) width = parseFloat(p);
-      else col = parseColor(p);
-    }
-    if (style !== 'none') {
+  const borderShorthand = borderDecl ? parseBorderShorthandParts(borderDecl.value, elementColor) : null;
+  if (borderShorthand) {
+    if (borderShorthand.style !== 'none') {
       for (const s of SIDES) {
-        borderWidth[s] = width;
-        borderColor[s] = col;
-        borderStyle[s] = style;
+        borderWidth[s] = borderShorthand.width;
+        borderColor[s] = borderShorthand.color;
+        borderStyle[s] = borderShorthand.style;
       }
     }
   } else {
@@ -1418,25 +1964,20 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
       // `border-<side>` is a four-in-one shorthand (width/style/color for that
       // side); parse it like the full `border` shorthand so pages that write
       // per-side borders (border-left, border-bottom, ...) get their width.
+      // An invalid shorthand drops entirely and the longhands below decide.
       const sideShort = findDecl(decls, `border-${s}`);
       if (sideShort) {
-        const parts = sideShort.value.trim().split(/\s+/);
-        let w = 0;
-        let st: 'none' | 'solid' | 'inset' | 'outset' = 'solid';
-        let c = parseColor('black');
-        for (const p of parts) {
-          if (p === 'solid' || p === 'none' || p === 'inset' || p === 'outset') st = p as 'none' | 'solid' | 'inset' | 'outset';
-          else if (/^-?[\d.]+px$/.test(p)) w = parseFloat(p);
-          else c = parseColor(p);
+        const parts = parseBorderShorthandParts(sideShort.value, elementColor);
+        if (parts) {
+          borderWidth[s] = parts.style === 'none' ? 0 : parts.width;
+          borderColor[s] = parts.color;
+          borderStyle[s] = parts.style;
+          continue;
         }
-        borderWidth[s] = st === 'none' ? 0 : w;
-        borderColor[s] = c;
-        borderStyle[s] = st;
-        continue;
       }
       const bw2 = bw ? bw[s] : len(`border-${s}-width`, pxLength(0));
       borderWidth[s] = bw2.px ?? 0;
-      const c2 = bc ? bc[s] : color(`border-${s}-color`, parseColor('black'));
+      const c2 = bc ? bc[s] : color(`border-${s}-color`, elementColor);
       borderColor[s] = c2;
       borderStyle[s] = bs ? bs[s] : (() => {
         const d = findDecl(decls, `border-${s}-style`);
@@ -1454,6 +1995,7 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     if (!displayDecl) return defaults.display;
     const v = displayDecl.value.trim();
     if (v === 'none') return 'none';
+    if (v === 'contents') return 'contents';
     if (v === 'grid') return 'grid';
     if (v === 'inline-grid') return 'grid';
     if (v === 'flex' || v === 'inline-flex') return 'flex';
@@ -1475,10 +2017,13 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
 
   const floatDecl = findDecl(decls, 'float');
   const positionDecl = findDecl(decls, 'position');
-  const position: 'static' | 'relative' | 'absolute' | 'fixed' = (() => {
+  const position: 'static' | 'relative' | 'sticky' | 'absolute' | 'fixed' = (() => {
     if (!positionDecl) return 'static';
     const v = positionDecl.value.trim();
     if (v === 'relative') return 'relative';
+    // position: sticky computes to its own keyword; the layout treatement
+    // (in-flow, constraint pass at scroll 0) lives in block-inline.ts.
+    if (v === 'sticky') return 'sticky';
     if (v === 'absolute') return 'absolute';
     if (v === 'fixed') return 'fixed';
     return 'static';
@@ -1599,6 +2144,53 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     whiteSpace = defaults.whiteSpaceDefault ?? 'normal';
   }
 
+  // css-text-3 §6: word-break (word-wrap is a legacy alias for overflow-wrap,
+  // so both names feed the same cascade winner). Invalid keywords fall back to
+  // the initial value like Chrome's computed-value fallback.
+  // css-text-3 §2/§8: text-transform, text-indent (with the hanging/each-line
+  // keywords Chrome keeps in the computed value) and word-spacing (the legacy
+  // 'normal' computes to 0px). All three inherit.
+  const textTransformDecl = findDecl(decls, 'text-transform');
+  const textTransformRaw = textTransformDecl?.value.trim();
+  const textTransform: 'none' | 'uppercase' | 'lowercase' | 'capitalize' =
+    textTransformRaw === 'uppercase' || textTransformRaw === 'lowercase' || textTransformRaw === 'capitalize'
+      ? textTransformRaw
+      : defaults.textTransformInherited ?? 'none';
+  const textIndentDecl = findDecl(decls, 'text-indent');
+  let textIndent = defaults.textIndentInherited ?? pxLength(0);
+  let textIndentHanging = defaults.textIndentHangingInherited ?? false;
+  let textIndentEachLine = defaults.textIndentEachLineInherited ?? false;
+  if (textIndentDecl) {
+    const tokens = textIndentDecl.value.trim().split(/\s+/).filter(Boolean);
+    const lengthTokens = tokens.filter((t) => t !== 'hanging' && t !== 'each-line');
+    if (lengthTokens.length === 1) {
+      const l = parseLength(lengthTokens[0]);
+      if (l.px !== null || l.pct !== null || l.em !== null) textIndent = resolveEmLength(l, fontSize);
+      else if (l.auto) textIndent = pxLength(0);
+      textIndentHanging = tokens.includes('hanging');
+      textIndentEachLine = tokens.includes('each-line');
+    }
+  }
+  const wordSpacingDecl = findDecl(decls, 'word-spacing');
+  const wordSpacingRaw = wordSpacingDecl?.value.trim();
+  const wordSpacing: Length =
+    wordSpacingRaw && wordSpacingRaw !== 'normal'
+      ? (() => {
+          const l = parseLength(wordSpacingRaw);
+          if (l.pct !== null) return pxLength((l.pct / 100) * fontSize);
+          return l.px !== null || l.em !== null ? resolveEmLength(l, fontSize) : pxLength(0);
+        })()
+      : wordSpacingDecl ? pxLength(0) : defaults.wordSpacingInherited ?? pxLength(0);
+
+  const wordBreakDecl = findDecl(decls, 'word-break');
+  const wordBreakRaw = wordBreakDecl?.value.trim();
+  const wordBreak: 'normal' | 'break-all' | 'keep-all' =
+    wordBreakRaw === 'break-all' || wordBreakRaw === 'keep-all' ? wordBreakRaw : 'normal';
+  const overflowWrapDecl = findDeclAny(decls, ['overflow-wrap', 'word-wrap']);
+  const overflowWrapRaw = overflowWrapDecl?.value.trim();
+  const overflowWrap: 'normal' | 'break-word' | 'anywhere' =
+    overflowWrapRaw === 'break-word' || overflowWrapRaw === 'anywhere' ? overflowWrapRaw : 'normal';
+
   const letterSpacingDecl = findDecl(decls, 'letter-spacing');
   const letterSpacing = letterSpacingDecl ? parseLetterSpacing(letterSpacingDecl.value) : defaults.letterSpacing ?? 0;
 
@@ -1610,7 +2202,7 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   if (decShort) {
     const sh = parseDecorationShorthand(decShort.value);
     textDecorationLines = sh.lines.length > 0 ? sh.lines : textDecorationLines;
-    if (sh.color !== null) textDecorationColor = sh.color;
+    if (sh.color !== null) textDecorationColor = sh.color.currentColor ? elementColor : sh.color;
     if (sh.thickness !== 'auto') textDecorationThickness = sh.thickness;
   }
   // Longhands override the shorthand (matches source-order semantics for the
@@ -1618,7 +2210,10 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   const decLineDecl = findDecl(decls, 'text-decoration-line');
   if (decLineDecl) textDecorationLines = parseDecorationLines(decLineDecl.value);
   const decColorDecl = findDecl(decls, 'text-decoration-color');
-  if (decColorDecl) textDecorationColor = parseColor(decColorDecl.value);
+  if (decColorDecl) {
+    const c = parseColorOrNull(decColorDecl.value);
+    if (c) textDecorationColor = c.currentColor ? elementColor : c;
+  }
   const decThicknessDecl = findDecl(decls, 'text-decoration-thickness');
   if (decThicknessDecl) textDecorationThickness = parseDecorationThickness(decThicknessDecl.value);
   const decOffsetDecl = findDecl(decls, 'text-underline-offset');
@@ -1642,14 +2237,14 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     if (!d) return [];
     const s = d.value.trim();
     if (s === '' || s === 'none') return [];
-    return parseShadowList(s, elementColor);
+    return parseShadowList(s, elementColor) ?? [];
   })();
   const textShadow = (() => {
     const d = findDecl(decls, 'text-shadow');
     if (!d) return defaults.textShadow ?? [];
     const s = d.value.trim();
     if (s === '' || s === 'none') return [];
-    return parseShadowList(s, elementColor);
+    return parseShadowList(s, elementColor) ?? defaults.textShadow ?? [];
   })();
 
   const decl = (name: string) => findDecl(decls, name)?.value;
@@ -1791,6 +2386,8 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   const orderDecl = decl('order');
   const order = orderDecl && /^-?\d+$/.test(orderDecl.trim()) ? parseInt(orderDecl, 10) : 0;
 
+  const aspectRatioDecl = findDecl(decls, 'aspect-ratio');
+
   const containerTypeDecl = findDecl(decls, 'container-type');
   const containerType: 'normal' | 'inline-size' | 'size' | 'block-size' = (() => {
     const v = containerTypeDecl?.value.trim();
@@ -1804,6 +2401,23 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   })();
 
   return {
+    aspectRatio: (() => {
+      if (!aspectRatioDecl) return ASPECT_AUTO;
+      const v = aspectRatioDecl.value.trim();
+      if (v === 'auto') return ASPECT_AUTO;
+      const m = /^(auto\s+)?(\d+(?:\.\d+)?)\s*(?:\/\s*(\d+(?:\.\d+)?))?$/.exec(v);
+      if (!m) return ASPECT_AUTO;
+      const den = m[3] !== undefined ? parseFloat(m[3]) : 1;
+      if (den === 0) return ASPECT_AUTO;
+      return { type: 'ratio' as const, num: parseFloat(m[2]), den, autoRatio: m[1] !== undefined };
+    })(),
+    wordBreak,
+    overflowWrap,
+    textTransform,
+    textIndent,
+    textIndentHanging,
+    textIndentEachLine,
+    wordSpacing,
     display,
     position,
     direction,
@@ -1837,7 +2451,12 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     borderColor,
     borderStyle,
     borderRadius,
-    backgroundColor: bgDecl ? parseColor(bgDecl.value) : { r: 0, g: 0, b: 0, a: 0 },
+    backgroundColor: (() => {
+      if (!bgDecl) return transparentColor;
+      const c = parseColorOrNull(bgDecl.value);
+      if (!c) return transparentColor;
+      return c.currentColor ? elementColor : c;
+    })(),
     color: elementColor,
     opacity,
     boxShadow,
@@ -1889,5 +2508,34 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     after: null,
     containerType,
     containerName,
+    customProps,
   };
+}
+
+const wordSegmenter = new Intl.Segmenter(undefined, { granularity: 'word' });
+const graphemeSegmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+
+/**
+ * css-text-3 §2.1 case mapping with the default (locale-less) Unicode
+ * mappings: uppercase/lowercase map the whole text; capitalize uppercases the
+ * first grapheme of each UAX-29 word when it has an uppercase mapping (digits
+ * and punctuation stay put — probe-verified: '123abc' keeps its case).
+ */
+export function applyTextTransform(text: string, transform: 'none' | 'uppercase' | 'lowercase' | 'capitalize'): string {
+  if (transform === 'uppercase') return text.toUpperCase();
+  if (transform === 'lowercase') return text.toLowerCase();
+  if (transform === 'capitalize') {
+    let out = '';
+    for (const s of wordSegmenter.segment(text)) {
+      if (s.isWordLike === true && s.segment) {
+        const first = [...graphemeSegmenter.segment(s.segment)][0]?.segment ?? '';
+        const rest = s.segment.slice(first.length);
+        out += first.toUpperCase() + rest;
+      } else {
+        out += s.segment;
+      }
+    }
+    return out;
+  }
+  return text;
 }

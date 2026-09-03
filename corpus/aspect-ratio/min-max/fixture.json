@@ -1,0 +1,20 @@
+{
+  "name": "min-max",
+  "note": "css-sizing-4 §5.2 clamping of the ratio-derived dimension: max-height clamps the width-derived height down with the width untouched; min-height clamps it up; max-width/min-width clamp the height-derived width (150/250 around the 200 the ratio would give); a conflicting min beats max per the CSS 2.1 §10.7 order (200 with max-height 40 and min-height 200).",
+  "harvest": {
+    "viewport": { "width": 400, "height": 700 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} body{background-color:rgb(255, 255, 255)} #d{aspect-ratio:16/9;width:320px;max-height:100px;background-color:rgb(255, 255, 0)} #e{aspect-ratio:16/9;min-height:126px;width:160px;background-color:rgb(255, 0, 255)} #m{aspect-ratio:2;height:100px;max-width:150px;background-color:rgb(255, 0, 0)} #n{aspect-ratio:2;height:100px;min-width:250px;background-color:rgb(0, 255, 0)} #o{aspect-ratio:16/9;width:160px;max-height:40px;min-height:200px;background-color:rgb(0, 0, 255)}</style></head><body><div id=\"d\"></div><div id=\"e\"></div><div id=\"m\"></div><div id=\"n\"></div><div id=\"o\"></div></body></html>",
+    "computedStyle": [
+      { "id": "d", "props": ["aspect-ratio", "max-height"] },
+      { "id": "n", "props": ["min-width"] }
+    ],
+    "rects": ["d", "e", "m", "n", "o"],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

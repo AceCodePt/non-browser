@@ -1,0 +1,19 @@
+{
+  "name": "basic",
+  "note": "<br> forces a line break at the current position (css-text-3 §5.1): one<br>two yields two line boxes; a<br><br>b yields an empty interior line box (full line height, no ink); a trailing br does not produce a trailing line box; a leading br produces an empty first line. The br contributes no advance and is not a block or replaced box.",
+  "harvest": {
+    "viewport": { "width": 300, "height": 260 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} p{margin:0;font-size:16px} #p2{margin-top:10px} #p3{margin-top:10px} #p4{margin-top:10px}</style></head><body><p id=\"target\">one<br>two</p><p id=\"p2\">a<br><br>b</p><p id=\"p3\">c<br></p><p id=\"p4\"><br>d</p></body></html>",
+    "computedStyle": [
+      { "id": "target", "props": ["font-size"] }
+    ],
+    "rects": ["target", "p2", "p3", "p4"],
+    "textElements": ["target", "p2", "p3", "p4"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

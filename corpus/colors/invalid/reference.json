@@ -1,0 +1,64 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "inherits": {
+      "color": "rgb(0, 0, 238)",
+      "background-color": "rgb(238, 238, 238)"
+    },
+    "bg-invalid": {
+      "background-color": "rgba(0, 0, 0, 0)"
+    },
+    "border-invalid": {
+      "border-top-style": "none",
+      "border-top-width": "0px",
+      "border-top-color": "rgb(0, 0, 238)"
+    },
+    "shadow-invalid": {
+      "box-shadow": "none"
+    },
+    "hsl-short": {
+      "background-color": "rgba(0, 0, 0, 0)"
+    },
+    "rgb-two": {
+      "background-color": "rgba(0, 0, 0, 0)"
+    }
+  },
+  "rect": {
+    "inherits": {
+      "x": 0,
+      "y": 0,
+      "width": 100,
+      "height": 30
+    },
+    "bg-invalid": {
+      "x": 0,
+      "y": 30,
+      "width": 100,
+      "height": 30
+    },
+    "border-invalid": {
+      "x": 0,
+      "y": 60,
+      "width": 100,
+      "height": 30
+    },
+    "shadow-invalid": {
+      "x": 0,
+      "y": 90,
+      "width": 100,
+      "height": 30
+    },
+    "hsl-short": {
+      "x": 0,
+      "y": 120,
+      "width": 100,
+      "height": 30
+    },
+    "rgb-two": {
+      "x": 0,
+      "y": 150,
+      "width": 100,
+      "height": 30
+    }
+  }
+}

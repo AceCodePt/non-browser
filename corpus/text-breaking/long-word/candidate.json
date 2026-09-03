@@ -1,0 +1,51 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "d0": {
+      "overflow-wrap": "normal",
+      "word-break": "normal"
+    },
+    "d1": {
+      "overflow-wrap": "break-word"
+    },
+    "d3": {
+      "word-break": "break-all"
+    },
+    "d4": {
+      "word-wrap": "break-word",
+      "overflow-wrap": "break-word"
+    }
+  },
+  "rect": {
+    "d0": {
+      "x": 0,
+      "y": 0,
+      "width": 120,
+      "height": 44
+    },
+    "d1": {
+      "x": 0,
+      "y": 44,
+      "width": 120,
+      "height": 66
+    },
+    "d2": {
+      "x": 0,
+      "y": 110,
+      "width": 120,
+      "height": 66
+    },
+    "d3": {
+      "x": 0,
+      "y": 176,
+      "width": 120,
+      "height": 66
+    },
+    "d4": {
+      "x": 0,
+      "y": 242,
+      "width": 120,
+      "height": 66
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "aw": {
+      "overflow-wrap": "anywhere",
+      "display": "inline-block"
+    },
+    "bw": {
+      "overflow-wrap": "break-word"
+    }
+  },
+  "rect": {
+    "bw": {
+      "x": 0,
+      "y": 0,
+      "width": 242.796875,
+      "height": 22
+    },
+    "aw": {
+      "x": 0,
+      "y": 172,
+      "width": 50,
+      "height": 132
+    },
+    "pw": {
+      "x": 0,
+      "y": 304,
+      "width": 242.796875,
+      "height": 22
+    }
+  }
+}

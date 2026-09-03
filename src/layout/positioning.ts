@@ -12,10 +12,10 @@
  * shrink-to-fit width used when `width: auto`.
  */
 
-import { collectInlineText, layoutElementBox, type LayoutNode, type PaintOp } from './block-inline.js';
+import { collectInlineText, expandContents, layoutElementBox, type LayoutNode, type PaintOp } from './block-inline.js';
 import { borderPaddingBlock, borderPaddingInline, resolveLength, type ComputedStyle, type Length, type Viewport } from './css.js';
 import type { Box } from './types.js';
-import { measureTextWidth } from './measure.js';
+import { measureTextWidth, minTextWidth } from './measure.js';
 import { getActiveBrowserConfig } from '../config/browser-config.js';
 import { FloatManager } from './floats.js';
 import type { P5Element } from './types.js';
@@ -213,8 +213,11 @@ function maxContentOf(el: P5Element, styles: Map<P5Element, ComputedStyle>, refW
     const ls = style?.letterSpacing ?? 0;
     const weight = style?.fontWeight;
     const fontStyle = style?.fontStyle;
-    max = measureTextWidth(text, fontSize, family, ls, weight, fontStyle);
-    min = Math.max(0, ...text.split(/\s+/).map((w) => measureTextWidth(w, fontSize, family, ls, weight, fontStyle)));
+    const ws = style ? resolveLength(style.wordSpacing, refWidth) ?? 0 : 0;
+    max = measureTextWidth(text, fontSize, family, ls, weight, fontStyle) + ws * (text.match(/ /g)?.length ?? 0);
+    min = style?.overflowWrap === 'anywhere'
+      ? minTextWidth(text, fontSize, family, ls, true, weight, fontStyle)
+      : Math.max(0, ...text.split(/\s+/).map((w) => measureTextWidth(w, fontSize, family, ls, weight, fontStyle)));
   }
   // A row flex container's intrinsic width is the SUM of its items plus the
   // gaps between them, not the widest single item — otherwise a positioned
@@ -225,7 +228,7 @@ function maxContentOf(el: P5Element, styles: Map<P5Element, ComputedStyle>, refW
     let sumMin = 0;
     let n = 0;
     const gap = resolveLength(style.columnGap, refWidth) ?? 0;
-    for (const child of el.childNodes) {
+    for (const child of expandContents(el.childNodes, styles)) {
       if (child.nodeName === '#text' || child.nodeName === '#comment') continue;
       const cs = styles.get(child as P5Element);
       if (!cs || cs.display === 'none') continue;
@@ -247,7 +250,7 @@ function maxContentOf(el: P5Element, styles: Map<P5Element, ComputedStyle>, refW
     }
     return { max: Math.max(max, sumMax), min: Math.max(min, sumMin) };
   }
-  for (const child of el.childNodes) {
+  for (const child of expandContents(el.childNodes, styles)) {
     if (child.nodeName === '#text' || child.nodeName === '#comment') continue;
     const cs = styles.get(child as P5Element);
     if (!cs || cs.display === 'none') continue;

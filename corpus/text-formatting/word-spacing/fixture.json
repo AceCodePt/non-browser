@@ -1,0 +1,21 @@
+{
+  "name": "word-spacing",
+  "note": "css-text-3 §8: word-spacing adds the given advance to every word-separator character — 10px widens 'aa bb cc' by exactly 20px (two spaces), -2px narrows it, and a 20% percentage resolves against the font size (16px → 3.2px per space, probe-verified). The last word's trailing edge carries no extra advance; atomics and wrap decisions see the widened spaces.",
+  "harvest": {
+    "viewport": { "width": 600, "height": 200 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} span{display:inline-block;font-size:16px;white-space:pre}</style></head><body><span id=\"plain\">aa bb cc</span><span id=\"wsn\">aa bb cc</span><span id=\"wsn2\">aa bb cc</span><span id=\"wsp\">aa bb cc</span></body></html>",
+    "computedStyle": [
+      { "id": "wsn", "props": ["word-spacing"] },
+      { "id": "wsp", "props": ["word-spacing"] },
+      { "id": "plain", "props": ["word-spacing"] }
+    ],
+    "rects": ["plain", "wsn", "wsn2", "wsp"],
+    "textElements": ["plain", "wsn", "wsn2", "wsp"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

@@ -43,6 +43,16 @@ export interface MediaInput {
   prefersColorScheme?: 'light' | 'dark';
   prefersReducedMotion?: 'no-preference' | 'reduce';
   dppx?: number;
+  /** Device-capability inputs (css-media-queries-4): the caller states the
+   * device surface; unset features fall back to headless-desktop defaults. */
+  hover?: 'hover' | 'none';
+  anyHover?: 'hover' | 'none';
+  pointer?: 'fine' | 'coarse' | 'none';
+  anyPointer?: 'fine' | 'coarse' | 'none';
+  prefersContrast?: 'no-preference' | 'more' | 'less' | 'custom';
+  forcedColors?: 'active' | 'none';
+  colorGamut?: 'srgb' | 'p3' | 'rec2020';
+  update?: 'fast' | 'slow' | 'none';
 }
 
 export interface RenderOptions {
@@ -175,6 +185,14 @@ function prepare(html: string, opts: RenderOptions, label: string): Prepared {
     prefersColorScheme: opts.media?.prefersColorScheme,
     prefersReducedMotion: opts.media?.prefersReducedMotion,
     dppx: opts.media?.dppx,
+    hover: opts.media?.hover,
+    anyHover: opts.media?.anyHover,
+    pointer: opts.media?.pointer,
+    anyPointer: opts.media?.anyPointer,
+    prefersContrast: opts.media?.prefersContrast,
+    forcedColors: opts.media?.forcedColors,
+    colorGamut: opts.media?.colorGamut,
+    update: opts.media?.update,
   };
   const styleElements = scene.styleElements;
   const usesContainers = hasContainerRules(styleElements);

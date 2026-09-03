@@ -1,0 +1,29 @@
+{
+  "name": "combinators",
+  "note": "The four combinators: descendant (section p), child (section > p), adjacent sibling (p + span), and general sibling (p ~ em), including chained forms (p + span + em, #wrap span ~ em) where the middle element matters. Matched elements take the rule's color; siblings that fail the combinator keep the base gray, proving position-sensitive matching element by element.",
+  "harvest": {
+    "viewport": {
+      "width": 300,
+      "height": 420
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} .s{width:60px;height:30px;background-color:rgb(238, 238, 238)} #wrap > p{background-color:rgb(255, 0, 0)} #wrap span + span{background-color:rgb(0, 128, 0)} #wrap p ~ em{background-color:rgb(0, 0, 255)} #wrap span ~ em{background-color:rgb(0, 0, 255)} #p1 + p{background-color:rgb(255, 165, 0)} section p{background-color:rgb(128, 0, 128)} section > p{background-color:rgb(0, 128, 128)} p ~ span + em{background-color:rgb(255, 0, 255)}</style></head><body><div id=\"wrap\"><p id=\"p1\" class=\"s\">one</p><p id=\"p2\" class=\"s\">two</p><span id=\"s1\" class=\"s\">three</span><span id=\"s2\" class=\"s\">four</span><em id=\"e1\" class=\"s\">five</em></div><section id=\"sec\"><div><p id=\"deep1\" class=\"s\">d1</p></div><p id=\"deep2\" class=\"s\">d2</p></section><span id=\"far\" class=\"s\">far</span></body></html>",
+    "computedStyle": [
+      { "id": "p1", "props": ["background-color"] },
+      { "id": "p2", "props": ["background-color"] },
+      { "id": "s1", "props": ["background-color"] },
+      { "id": "s2", "props": ["background-color"] },
+      { "id": "e1", "props": ["background-color"] },
+      { "id": "deep1", "props": ["background-color"] },
+      { "id": "deep2", "props": ["background-color"] },
+      { "id": "far", "props": ["background-color"] }
+    ],
+    "rects": ["p1", "p2", "s1", "s2", "e1", "deep1", "deep2", "far"],
+    "textElements": ["p1", "p2", "s1", "s2", "e1", "deep1", "deep2", "far"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

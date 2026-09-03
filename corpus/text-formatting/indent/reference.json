@@ -1,0 +1,43 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "i1": {
+      "text-indent": "20px"
+    },
+    "i2": {
+      "text-indent": "20px hanging"
+    },
+    "i3": {
+      "text-indent": "20px each-line"
+    },
+    "i4": {
+      "text-indent": "10%"
+    }
+  },
+  "rect": {
+    "i1": {
+      "x": 0,
+      "y": 0,
+      "width": 200,
+      "height": 44
+    },
+    "i2": {
+      "x": 0,
+      "y": 54,
+      "width": 200,
+      "height": 44
+    },
+    "i3": {
+      "x": 0,
+      "y": 108,
+      "width": 200,
+      "height": 44
+    },
+    "i4": {
+      "x": 0,
+      "y": 162,
+      "width": 200,
+      "height": 44
+    }
+  }
+}

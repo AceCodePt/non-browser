@@ -1,0 +1,20 @@
+{
+  "name": "align-whitespace",
+  "note": "Forced breaks interact with alignment and white-space: under text-align: right the line before the br sits at the right edge and the last line at its own edge (no justification of br-terminated lines); under white-space: nowrap the br still forces a break (forced breaks apply in every white-space mode); under pre the br behaves like a newline; under pre-line collapsed spaces around the br vanish.",
+  "harvest": {
+    "viewport": { "width": 300, "height": 300 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} p{margin:0;font-size:16px} #right{text-align:right;width:200px} #nowrap{white-space:nowrap;width:100px;margin-top:10px} #pre{white-space:pre;margin-top:10px} #preline{white-space:pre-line;width:100px;margin-top:10px}</style></head><body><p id=\"right\">one<br>twotwo</p><p id=\"nowrap\">aaaa bbbb<br>cccc</p><p id=\"pre\">xx<br>yy</p><p id=\"preline\">aa aa<br>bb</p></body></html>",
+    "computedStyle": [
+      { "id": "right", "props": ["text-align"] },
+      { "id": "nowrap", "props": ["white-space"] }
+    ],
+    "rects": ["right", "nowrap", "pre", "preline"],
+    "textElements": ["right", "nowrap", "pre", "preline"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

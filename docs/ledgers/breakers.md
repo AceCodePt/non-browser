@@ -56,10 +56,13 @@ items reach the same code through their `layoutTextLines` call sites.
 
 ## Results
 
-`npm run verify:breaker` (2026-08-17, node 26.7.0, Chrome 151): 21/22 corpus
-fixtures at line-count parity (95.5%). All declared divergences (`long-word-default`)
-still diverge and are entered below. Drift gate green: greedy and Pretext
-agree on all 16 spine lines.
+`npm run verify:breaker` (2026-09-03, node 26.8.1, Chrome 151): 22/22 corpus
+fixtures at line-count parity. The former `long-word-default` divergence is
+closed — the engine parses overflow-wrap/word-break (text-breaking slice) and
+only arms Pretext's per-grapheme split advances when break-word/anywhere or
+word-break:break-all allows in-word breaks; the default is Chrome's
+overflow-wrap:normal (long words overflow, never split). Drift gate green:
+greedy and Pretext agree on all 16 spine lines.
 
 Four-layer/firefox/text-align/white-space run green with the engine breaking
 text through Pretext; the previous red Pretext-seam mean overage (basic-text
@@ -74,16 +77,15 @@ Pretext-config level, the configuration that would close it. Pretext's
 `prepare` options are `whiteSpace` ('normal'|'pre-wrap'), `wordBreak`
 ('normal'|'keep-all') and `letterSpacing`; there is no overflow-wrap option.
 
-- **overflow-wrap:normal long words** (`corpus/breaker/long-word-default`) —
-  Pretext's default line breaking always applies `overflow-wrap: break-word`
-  semantics (its `prepare` pre-measures breakable grapheme runs), so a long
-  word with no break opportunity is split at grapheme boundaries. Chrome's
-  default `overflow-wrap: normal` never splits it — the word overflows the
-  line. Input: `supercalifragilisticexpialidocious antidisestablishmentarianism
-  pneumonoultramicroscopicsilicovolcanoconiosis` at 120px → Chrome 3 lines,
-  engine 9. Patchable only when Pretext exposes an overflow-wrap:normal mode
-  (or the engine parses overflow-wrap and requests break-word only when
-  declared); until then it is the one line-count divergence in the corpus.
+- ~~overflow-wrap:normal long words~~ **CLOSED (text-breaking slice,
+  2026-09-03)** — the engine parses overflow-wrap (and the word-wrap alias)
+  and word-break, and `prepareText` (src/pretext/index.ts) nulls Pretext's
+  per-grapheme split advances for word-like text segments whenever
+  overflow-wrap:normal is in effect without word-break:break-all. The default
+  now matches Chrome: a word that fits nowhere overflows instead of splitting
+  (`corpus/breaker/long-word-default` reclassified into the pass corpus).
+  keep-all CJK runs also lose their overflow fallback (Chrome keeps them on
+  one line unless overflow-wrap re-allows).
 - **Long-word grapheme-boundary rounding**
   (`corpus/breaker/long-word-breakword-80`, `long-word-breakword-200`) —
   line counts match Chrome but the split point inside a long word can shift by

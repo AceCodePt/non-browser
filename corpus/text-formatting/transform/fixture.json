@@ -1,0 +1,21 @@
+{
+  "name": "transform",
+  "note": "css-text-3 §2.1 case mapping applied before measurement and paint (the computed value stays the keyword): uppercase widens, lowercase narrows, capitalize uppercases the first grapheme of each UAX-29 word — '\"hello' becomes '\"Hello' (punctuation skipped), 'foo_bar' becomes 'Foo_bar' (underscore joins the word), '123abc' is untouched (no uppercase mapping for a leading digit), and multi-grapheme clusters like 'ecole' capitalizing to 'Ecole' behave. The span widths pin the transformed measurement exactly.",
+  "harvest": {
+    "viewport": { "width": 600, "height": 200 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} span{display:inline-block;font-size:16px;white-space:pre}</style></head><body><span id=\"up\">Mixed Case text</span><span id=\"lo\">Mixed Case text</span><span id=\"cap\">\"hello world foo_bar 123abc ecole\"</span></body></html>",
+    "computedStyle": [
+      { "id": "up", "props": ["text-transform"] },
+      { "id": "lo", "props": ["text-transform"] },
+      { "id": "cap", "props": ["text-transform"] }
+    ],
+    "rects": ["up", "lo", "cap"],
+    "textElements": ["up", "lo", "cap"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "nth-anb",
+  "note": "The An+B grammar against element position: odd/even keywords, 2n+1, -n+3 (negative An), 0n+1 (explicit zero coefficient), nth-last-child from the end, source-order conflicts between overlapping nth rules, and an invalid argument (:nth-child(n+b)) that drops the whole rule in both engines.",
+  "harvest": {
+    "viewport": { "width": 300, "height": 260 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} body{background-color:rgb(238, 238, 238)} .n{width:60px;height:30px} .n:nth-child(2n+1){background-color:rgb(255, 0, 0)} .n:nth-child(2n){background-color:rgb(0, 128, 0)} .n:nth-child(-n+3){background-color:rgb(0, 0, 255)} .n:nth-child(0n+1){background-color:rgb(255, 165, 0)} .n:nth-last-child(2){background-color:rgb(128, 0, 128)} .bad:nth-child(n+b){background-color:rgb(255, 0, 255)}</style></head><body><div class=\"n\" id=\"n1\">1</div><div class=\"n\" id=\"n2\">2</div><div class=\"n\" id=\"n3\">3</div><div class=\"n\" id=\"n4\">4</div><div class=\"n\" id=\"n5\">5</div><div class=\"n\" id=\"n6\">6</div><div class=\"bad\" id=\"bad\">b</div></body></html>",
+    "computedStyle": [
+      { "id": "n1", "props": ["background-color"] },
+      { "id": "n2", "props": ["background-color"] },
+      { "id": "n3", "props": ["background-color"] },
+      { "id": "n4", "props": ["background-color"] },
+      { "id": "n5", "props": ["background-color"] },
+      { "id": "n6", "props": ["background-color"] },
+      { "id": "bad", "props": ["background-color"] }
+    ],
+    "rects": ["n1", "n2", "n3", "n4", "n5", "n6", "bad"],
+    "textElements": ["n1", "n2", "n3", "n4", "n5", "n6", "bad"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

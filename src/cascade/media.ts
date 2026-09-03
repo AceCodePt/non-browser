@@ -16,8 +16,10 @@
  *   - `and`, `or`, `not` composition (or/and as media-in-parens lists), and
  *     comma-separated media query lists (OR across queries)
  *
- * Range syntax (`(width > 300px)`) is only valid inside @container and is
- * handled by the container query parser in phases/media-queries.ts.
+ *   - mq4 §2.3 range syntax: `(width >= 300px)`, `(400px < width <= 800px)`,
+ *     `(600px > width)` (value-first flips the comparison), extended to
+ *     aspect-ratio and resolution. `==` is tokenized but rejected — Blink's
+ *     stylesheet parser accepts it only inside @container.
  */
 
 export type MediaOp = 'eq' | 'min' | 'max' | 'flag' | 'lt' | 'gt' | 'lte' | 'gte';
@@ -39,9 +41,23 @@ export interface MediaEnvironment {
   prefersColorScheme?: 'light' | 'dark';
   prefersReducedMotion?: 'no-preference' | 'reduce';
   dppx?: number;
+  /** Device capability inputs: the caller states the device surface, the
+   * engine never guesses (defaults mirror headless desktop Chrome). */
+  hover?: 'hover' | 'none';
+  anyHover?: 'hover' | 'none';
+  pointer?: 'fine' | 'coarse' | 'none';
+  anyPointer?: 'fine' | 'coarse' | 'none';
+  prefersContrast?: 'no-preference' | 'more' | 'less' | 'custom';
+  forcedColors?: 'active' | 'none';
+  colorGamut?: 'srgb' | 'p3' | 'rec2020';
+  update?: 'fast' | 'slow' | 'none';
 }
 
 export type Token = string;
+
+/** Media-query punctuation: range operators (< > <= >= = ==) tokenize as
+ * single tokens so `(width>=600px)` and `(400px < width <= 800px)` parse. */
+const PUNCT = new Set(['(', ')', ':', '/', ',']);
 
 export function tokenize(input: string): Token[] {
   const tokens: Token[] = [];
@@ -53,13 +69,33 @@ export function tokenize(input: string): Token[] {
       i++;
       continue;
     }
-    if (c === '(' || c === ')' || c === ':' || c === '/' || c === ',') {
+    if (PUNCT.has(c)) {
       tokens.push(c);
       i++;
       continue;
     }
+    if (c === '<' || c === '>') {
+      if (i + 1 < n && input[i + 1] === '=') {
+        tokens.push(c + '=');
+        i += 2;
+      } else {
+        tokens.push(c);
+        i++;
+      }
+      continue;
+    }
+    if (c === '=') {
+      if (i + 1 < n && input[i + 1] === '=') {
+        tokens.push('==');
+        i += 2;
+      } else {
+        tokens.push('=');
+        i++;
+      }
+      continue;
+    }
     let j = i;
-    while (j < n && !/[\s(),:\/]/.test(input[j])) j++;
+    while (j < n && !/[\s(),:\/<>=]/.test(input[j])) j++;
     tokens.push(input.slice(i, j));
     i = j;
   }
@@ -130,10 +166,77 @@ function parseAnd(tokens: Token[]): MediaCondition | null {
   return { type: 'and', children };
 }
 
-function parseFeature(inner: Token[]): MediaCondition | null {
+const RANGE_OPS = new Set(['<', '>', '<=', '>=', '=']);
+
+/** The operator the feature carries when it appears left of the op. */
+const DIRECT_OPS: Record<string, MediaOp> = {
+  '<': 'lt',
+  '<=': 'lte',
+  '>': 'gt',
+  '>=': 'gte',
+  '=': 'eq',
+};
+
+/** The operator when the feature appears right of the op: `400px < width`
+ * means width > 400px (css-media-queries-4 §2.3 flips the comparison). */
+const FLIPPED_OPS: Record<string, MediaOp> = {
+  '<': 'gt',
+  '<=': 'gte',
+  '>': 'lt',
+  '>=': 'lte',
+  '=': 'eq',
+};
+
+const isFeatureName = (t: string): boolean => /^[a-z][a-z0-9-]*$/i.test(t);
+
+function featureCond(name: string, op: MediaOp, value: string | null): MediaCondition {
+  return { type: 'feature', name: name.toLowerCase(), op, value };
+}
+
+/** Ratio values tokenize as number '/' number — rejoin them so range parsing
+ * sees `(aspect-ratio >= 3/4)` as three tokens. */
+function joinRatios(inner: Token[]): Token[] {
+  const out: Token[] = [];
+  for (let i = 0; i < inner.length; i++) {
+    const t = inner[i];
+    if (t === '/' && /^-?[\d.]+$/.test(out[out.length - 1] ?? '') && /^-?[\d.]+$/.test(inner[i + 1] ?? '')) {
+      out[out.length - 1] = `${out[out.length - 1]}/${inner[i + 1]}`;
+      i++;
+      continue;
+    }
+    out.push(t);
+  }
+  return out;
+}
+
+function parseFeature(innerTokens: Token[]): MediaCondition | null {
+  const inner = joinRatios(innerTokens);
   const nameTok = inner[0];
   if (!nameTok || nameTok === '(' || nameTok === ')') return null;
   const name = nameTok.toLowerCase();
+  // Range syntax, css-media-queries-4 §2.3: (name op value), (value op name),
+  // and the two-sided (value op name op value).
+  if (inner.length >= 3 && inner.length % 2 === 1 && RANGE_OPS.has(inner[1])) {
+    if (inner.length === 3) {
+      const [a, op, b] = inner;
+      if (isFeatureName(a) && !RANGE_OPS.has(b)) {
+        const v = inner.slice(2).join('');
+        return featureCond(a, DIRECT_OPS[op], v);
+      }
+      if (isFeatureName(b)) {
+        const v = a;
+        return featureCond(b, FLIPPED_OPS[op], v);
+      }
+      return null;
+    }
+    // two-sided: value op name op value
+    const [lo, op1, mid, op2, hi] = inner;
+    if (!isFeatureName(mid)) return null;
+    if (!RANGE_OPS.has(op1) || !RANGE_OPS.has(op2)) return null;
+    const left = featureCond(mid, FLIPPED_OPS[op1], lo);
+    const right = featureCond(mid, DIRECT_OPS[op2], hi);
+    return { type: 'and', children: [left, right] };
+  }
   const colon = inner.indexOf(':');
   if (colon < 0) {
     if (inner.length !== 1) return null;
@@ -277,6 +380,14 @@ export function evaluateFeature(cond: { name: string; op: MediaOp; value: string
           return lhs >= rhs;
         case 'max':
           return lhs <= rhs;
+        case 'lt':
+          return lhs < rhs;
+        case 'gt':
+          return lhs > rhs;
+        case 'lte':
+          return lhs <= rhs;
+        case 'gte':
+          return lhs >= rhs;
         default:
           return false;
       }
@@ -305,10 +416,41 @@ export function evaluateFeature(cond: { name: string; op: MediaOp; value: string
           return cur >= target - eps;
         case 'max':
           return cur <= target + eps;
+        case 'lt':
+          return cur < target - eps;
+        case 'gt':
+          return cur > target + eps;
+        case 'lte':
+          return cur <= target + eps;
+        case 'gte':
+          return cur >= target - eps;
         default:
           return false;
       }
     }
+    // Discrete device-capability features: the MediaEnvironment input is the
+    // only source of truth (the caller states the device surface); only the
+    // eq/flag forms are valid — Chrome rejects min-/max- and range operators
+    // on discrete features, so other ops never match.
+    case 'hover':
+      return op === 'flag' ? (env.hover ?? 'hover') !== 'none' : op === 'eq' && value === (env.hover ?? 'hover');
+    case 'any-hover':
+      return op === 'flag' ? (env.anyHover ?? 'hover') !== 'none' : op === 'eq' && value === (env.anyHover ?? 'hover');
+    case 'pointer':
+      return op === 'flag' ? (env.pointer ?? 'fine') !== 'none' : op === 'eq' && value === (env.pointer ?? 'fine');
+    case 'any-pointer':
+      return op === 'flag' ? (env.anyPointer ?? 'fine') !== 'none' : op === 'eq' && value === (env.anyPointer ?? 'fine');
+    case 'prefers-contrast':
+      return op === 'flag'
+        ? (env.prefersContrast ?? 'no-preference') !== 'no-preference'
+        : op === 'eq' && value === (env.prefersContrast ?? 'no-preference');
+    case 'forced-colors':
+      return op === 'flag' ? (env.forcedColors ?? 'none') === 'active' : op === 'eq' && value === (env.forcedColors ?? 'none');
+    case 'color-gamut':
+      // Boolean context: every renderer has at least srgb (mq4 §8.14).
+      return op === 'flag' ? true : op === 'eq' && value === (env.colorGamut ?? 'srgb');
+    case 'update':
+      return op === 'flag' ? (env.update ?? 'fast') !== 'none' : op === 'eq' && value === (env.update ?? 'fast');
     case 'color':
       // Every supported renderer is 8-bit color. `(color)` is true; bit-depth
       // queries against 8 bits.

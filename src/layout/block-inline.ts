@@ -13,8 +13,8 @@
  * swap in a different FormattingContext and the same block/inline layout runs.
  */
 
-import { borderPaddingBlock, borderPaddingInline, clipsContent, isScrollContainer, parseStyleAttribute, pxLength, resolveEmLength, resolveLength, makeStyle, type BorderRadius, type ComputedStyle, type Color, type Declaration, type DecorationLine, type Direction, type DisplayValue, type ListStyleType, type PseudoBox, type Shadow, type TextAlign, type VerticalAlign, type Viewport, type WhiteSpaceValue } from './css.js';
-import { layoutTextLines, measureTextWidth, type LineBox } from './measure.js';
+import { borderPaddingBlock, borderPaddingInline, applyTextTransform, clipsContent, isScrollContainer, parseStyleAttribute, pxLength, resolveEmLength, resolveLength, makeStyle, type BorderRadius, type ComputedStyle, type Color, type Declaration, type DecorationLine, type Direction, type DisplayValue, type ListStyleType, type PseudoBox, type Shadow, type TextAlign, type VerticalAlign, type Viewport, type WhiteSpaceValue } from './css.js';
+import { layoutTextLines, measureTextWidth, minTextWidth, type LineBox } from './measure.js';
 import { FloatManager, type FormattingContext } from './floats.js';
 import { layoutGridChildren } from './grid.js';
 import { layoutFlexChildren } from './flexbox.js';
@@ -54,9 +54,16 @@ export interface StyleDefaults {
   textAlignInheritedKeyword?: string;
   direction?: import('./css.js').Direction;
   whiteSpace?: WhiteSpaceValue;
+  textTransformInherited?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
+  textIndentInherited?: import('./css.js').Length;
+  textIndentHangingInherited?: boolean;
+  textIndentEachLineInherited?: boolean;
+  wordSpacingInherited?: import('./css.js').Length;
   borderCollapse?: 'separate' | 'collapse';
   borderSpacing?: number;
   borderSpacingV?: number;
+  /** inherited computed custom properties (css-variables-1 §3). */
+  customProps?: Record<string, string>;
 }
 
 const INLINE_TAGS = new Set([
@@ -155,10 +162,20 @@ export function resolveStyles(
       fontStyleDefault: d.fontStyle,
       listStyleTypeDefault: d.listStyleType,
       listStylePositionDefault: d.listStylePosition,
+      customPropsInherited: d.customProps,
     });
     style.before = computePseudoBox(el, style, pseudoDecls, 'before');
     style.after = computePseudoBox(el, style, pseudoDecls, 'after');
-    applyReplacedSize(el, style);
+    applyReplacedSize(
+      el,
+      style,
+      decls.some((d) => d.property === 'width'),
+      decls.some((d) => d.property === 'height'),
+    );
+    // css-display-3 §2: replaced elements cannot be display:contents — Blink
+    // computes 'none' for them (probed: img with display:contents reports
+    // computed 'none' and a zero rect).
+    if (style.display === 'contents' && (el.nodeName === 'img' || el.nodeName === 'canvas')) style.display = 'none';
     map.set(el, style);
     const childDefaults: StyleDefaults = {
       fontFamily: style.fontFamily,
@@ -180,6 +197,12 @@ export function resolveStyles(
       listStyleType: style.listStyleType,
       listStylePosition: style.listStylePosition,
       whiteSpace: style.whiteSpace,
+      textTransformInherited: style.textTransform,
+      textIndentInherited: style.textIndent,
+      textIndentHangingInherited: style.textIndentHanging,
+      textIndentEachLineInherited: style.textIndentEachLine,
+      wordSpacingInherited: style.wordSpacing,
+      customProps: style.customProps,
     };
     for (const child of el.childNodes) {
       if (child.nodeName !== '#text' && child.nodeName !== '#comment') {
@@ -198,20 +221,48 @@ export function resolveStyles(
  * attributes when no CSS size is set — the "empty replaced box at layout size"
  * contract from the charter (no image decoding in v1; the box is laid out but
  * paints nothing unless it has a background/border). `<canvas>` without
- * attributes defaults to 300x150 per the HTML spec.
+ * attributes defaults to 300x150 per the HTML spec. The attributes are
+ * presentational hints: author CSS overrides them (even `width: auto`), and an
+ * explicit aspect-ratio transfers through whichever dimension is actually
+ * specified (css-sizing-4 §5.3, probe-verified against Chrome).
  */
-function applyReplacedSize(el: P5Element, style: ComputedStyle): void {
+function applyReplacedSize(el: P5Element, style: ComputedStyle, cssWidthDecl: boolean, cssHeightDecl: boolean): void {
   const tag = el.nodeName;
   if (tag !== 'img' && tag !== 'canvas') return;
   const attr = (name: string): string | undefined => el.attrs.find((a) => a.name === name)?.value;
   const numeric = (v: string | undefined): number | null => (v !== undefined && /^\d+$/.test(v) ? parseInt(v, 10) : null);
-  if (style.width.auto) {
-    const w = numeric(attr('width'));
-    style.width = pxLength(w ?? (tag === 'canvas' ? 300 : 0));
+  const attrW = numeric(attr('width'));
+  const attrH = numeric(attr('height'));
+  const natW = attrW ?? (tag === 'canvas' ? 300 : 0);
+  const natH = attrH ?? (tag === 'canvas' ? 150 : 0);
+  // Capture the pre-fill auto state: the attr fill below overwrites it.
+  const widthAutoBefore = style.width.auto;
+  const heightAutoBefore = style.height.auto;
+  if (widthAutoBefore) {
+    style.width = pxLength(natW);
   }
-  if (style.height.auto) {
-    const h = numeric(attr('height'));
-    style.height = pxLength(h ?? (tag === 'canvas' ? 150 : 0));
+  if (heightAutoBefore) {
+    style.height = pxLength(natH);
+  }
+  // A dimension is "specified" for the ratio transfer when author CSS gives a
+  // definite size, or when the attribute hint stands (no author declaration).
+  const widthSpecified = !widthAutoBefore || (!cssWidthDecl && attrW !== null);
+  const heightSpecified = !heightAutoBefore || (!cssHeightDecl && attrH !== null);
+  const ar = style.aspectRatio;
+  if (ar.type === 'ratio' && !ar.autoRatio) {
+    const r = ar.num / ar.den;
+    if (widthSpecified && !heightSpecified && style.width.px !== null) {
+      style.height = pxLength(Math.max(0, style.width.px / r));
+    } else if (!widthSpecified && heightSpecified && style.height.px !== null) {
+      style.width = pxLength(Math.max(0, style.height.px * r));
+    } else if (!widthSpecified && !heightSpecified && natH > 0 && natW > 0) {
+      // Both dimensions unspecified: the natural size maps through the new
+      // ratio, keeping the dimension whose transfer yields the smaller box
+      // (probed: img 200x100 with ratio 1/1 → 100x100, with 4/1 → 200x50).
+      const naturalRatio = natW / natH;
+      if (r > naturalRatio) style.height = pxLength(Math.max(0, natW / r));
+      else if (r < naturalRatio) style.width = pxLength(Math.max(0, natH * r));
+    }
   }
 }
 
@@ -235,6 +286,7 @@ function computePseudoBox(
     textUnderlineOffset: style.textUnderlineOffset,
     textShadow: style.textShadow,
     display: 'inline',
+    customPropsInherited: style.customProps,
   });
   return { text: box.content.kind === 'text' ? box.content.text : null, style: box };
 }
@@ -253,6 +305,13 @@ export interface LayoutNode {
   isFloat: boolean;
   marginTop: number;
   marginBottom: number;
+  /**
+   * Set on block containers whose last in-flow child's bottom margin collapses
+   * out of the parent's bottom edge (CSS 2.1 §8.3.1: no bottom border/padding,
+   * not a BFC root): the parent's height excludes the escaped margin and this
+   * carries the collapsed value as the parent's effective margin-bottom.
+   */
+  escapedMarginBottom?: number;
   flowY: number;
   children: LayoutNode[];
   lines: LineBox[];
@@ -745,7 +804,13 @@ function hasInlineContent(el: P5Element, styles: Map<P5Element, ComputedStyle>):
       if (/\S/.test((child as P5Text).value)) return true;
     } else if (child.nodeName !== '#comment') {
       const s = styles.get(child as P5Element);
-      if (s && (s.display === 'block' || s.display === 'list-item' || s.display === 'grid' || s.display === 'flex' || s.float !== 'none')) continue;
+      if (!s) return true;
+      if (s.display === 'contents') {
+        // css-display-3 §2: no box — the children ARE the inline content.
+        if (hasInlineContent(child as P5Element, styles)) return true;
+        continue;
+      }
+      if (s.display === 'block' || s.display === 'list-item' || s.display === 'grid' || s.display === 'flex' || s.float !== 'none') continue;
       return true;
     }
   }
@@ -757,6 +822,10 @@ function hasBlockLevelChild(el: P5Element, styles: Map<P5Element, ComputedStyle>
     if (child.nodeName === '#text' || child.nodeName === '#comment') continue;
     const s = styles.get(child as P5Element);
     if (!s || s.display === 'none') continue;
+    if (s.display === 'contents') {
+      if (hasBlockLevelChild(child as P5Element, styles)) return true;
+      continue;
+    }
     if (s.display === 'block' || s.display === 'list-item' || s.display === 'grid' || s.display === 'flex' || s.float !== 'none' || s.position !== 'static') {
       return true;
     }
@@ -764,20 +833,48 @@ function hasBlockLevelChild(el: P5Element, styles: Map<P5Element, ComputedStyle>
   return false;
 }
 
+/**
+ * css-display-3 §2: a display:contents element generates no box — its children
+ * participate in the parent's formatting context. Replaces every contents
+ * element in a child sequence with its own (recursively expanded) children so
+ * block/inline/flex/grid child collection sees through it; text and comment
+ * nodes pass through untouched. A contents element's own margins, borders and
+ * background never contribute (it has no box), and its rect falls back to the
+ * all-zero total-map entry like any other box-less element.
+ */
+export function expandContents<T extends { nodeName: string; childNodes?: unknown[] }>(
+  children: T[],
+  styles: Map<P5Element, ComputedStyle>,
+): T[] {
+  let out: T[] | null = null;
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i];
+    const s = styles.get(child as unknown as P5Element);
+    if (!s || s.display !== 'contents') {
+      if (out) out.push(child);
+      continue;
+    }
+    if (!out) out = children.slice(0, i);
+    out.push(...expandContents((child.childNodes ?? []) as T[], styles));
+  }
+  return out ?? children;
+}
+
 export function collectInlineText(el: P5Element, styles: Map<P5Element, ComputedStyle>): string {
   let out = '';
   const self = styles.get(el);
-  if (self?.before?.text) out += self.before.text;
+  const transform = self?.textTransform ?? 'none';
+  if (self?.before?.text) out += applyTextTransform(self.before.text, transform);
   for (const child of el.childNodes) {
     if (child.nodeName === '#text') {
-      out += (child as P5Text).value;
+      out += applyTextTransform((child as P5Text).value, transform);
     } else if (child.nodeName !== '#comment') {
       const s = styles.get(child as P5Element);
       if (s && (s.display === 'block' || s.display === 'list-item' || s.display === 'grid' || s.display === 'flex')) continue;
       out += collectInlineText(child as P5Element, styles);
     }
   }
-  if (self?.after?.text) out += self.after.text;
+  if (self?.after?.text) out += applyTextTransform(self.after.text, transform);
   return out;
 }
 
@@ -791,12 +888,33 @@ interface LayoutBlockInput {
    * over-constrained block against the containing block's direction, not the
    * block's own. */
   cbDirection: Direction;
+  /** The nearest ancestor scrollport (padding box of the nearest scroll
+   * container, else the initial containing block): sticky insets resolve
+   * against it at scroll offset 0 (css-position-3 §3.6). */
+  scrollport?: Box;
+  /** The parent block's content-box rect when its height is definite — the
+   * containing-block clamp for sticky shifts. Undefined when the parent's
+   * height is auto (the clamp needs a final height, unavailable mid-flow). */
+  cbClampRect?: Box;
   /**
    * When set, the child is the first in-flow block of a parent with no top
    * border/padding: its top margin collapses into the parent's top margin, so
    * the child sits flush with the parent's content top (CSS 2.1 §8.3.1).
    */
   collapseTop?: boolean;
+  /**
+   * A UA quirky margin-block-start (Blink `__qem`) is dropped when the element
+   * is a later in-flow sibling whose previous in-flow sibling self-collapses
+   * (zero-height box; probed: `<p>` after a zero-height `<div>` sits flush,
+   * after a sized one keeps its margin).
+   */
+  quirkTopZero?: boolean;
+  /**
+   * The collapsed quirky-margin chain from qemChainBelow: the child carries
+   * its subtree's quirky margin as its effective top margin, offsetting the
+   * outermost chain element instead of the holder itself.
+   */
+  chainTopMargin?: number;
 }
 
 export function layoutElementBox(
@@ -814,10 +932,13 @@ export function layoutElementBox(
   nextOrder: () => number,
   viewport?: Viewport,
   forcedHeight?: number,
+  scrollport?: Box,
+  textIndentPx?: number,
 ): LayoutNode {
   const children: LayoutNode[] = [];
   let lines: LineBox[] = [];
   let contentHeight = 0;
+  let nodeEscapedBottom: number | undefined;
 
   const bT = style.borderWidth.top;
   const bB = style.borderWidth.bottom;
@@ -828,6 +949,40 @@ export function layoutElementBox(
   const padL = resolveLength(style.padding.left, contentWidth, viewport) ?? 0;
   const padR = resolveLength(style.padding.right, contentWidth, viewport) ?? 0;
   const padBorderV = borderPaddingBlock(style, contentWidth, viewport);
+
+  // Sticky-inset chain: this box's own scrollport if it is a scroll container,
+  // else the inherited one (the viewport's ICB at the root). The clamp rect is
+  // this box's content area when its height is definite (sticky children may
+  // not leave it); with an auto height no clamp is available mid-flow.
+  const incomingScrollport = scrollport ?? initialContainingBlock(viewport ?? { width: 0, height: 0 });
+  let childScrollport = incomingScrollport;
+  if (isScrollContainer(style.overflow)) {
+    const ownSpecH = resolveLength(style.height, contentWidth, viewport);
+    const ownBorderBoxH =
+      ownSpecH !== null ? (style.boxSizing === 'border-box' ? ownSpecH : ownSpecH + padBorderV) : null;
+    if (ownBorderBoxH !== null) {
+      childScrollport = {
+        x: borderX + bL,
+        y: borderY + bT,
+        width: Math.max(0, borderWidth - bL - bR),
+        height: Math.max(0, ownBorderBoxH - bT - bB),
+      };
+    }
+  }
+  const ownSpecH = resolveLength(style.height, contentWidth, viewport);
+  // Scroll-container parents never yield a y-clamp: their containing block
+  // extends over the full flowed content (Chrome keeps sticky children at
+  // their flow position even below the scroller's visible bottom), so the
+  // visible height would under-clamp.
+  const childCbClampRect =
+    ownSpecH !== null && !isScrollContainer(style.overflow)
+      ? {
+          x: contentX,
+          y: contentY,
+          width: contentWidth,
+          height: Math.max(0, style.boxSizing === 'border-box' ? ownSpecH - padBorderV : ownSpecH),
+        }
+      : undefined;
 
   // Positioned boxes push their paint key and containing block for the whole
   // subtree; their own background/border is keyed to the pushed level.
@@ -968,7 +1123,7 @@ export function layoutElementBox(
     children.push(...res.children);
     contentHeight = res.height;
   } else if (hasInlineContent(el, styles) && !hasBlockLevelChild(el, styles)) {
-    const inlineRes = layoutInlineContent(el, style, styles, fm, contentX, contentY, contentWidth, paints, nextOrder, viewport);
+    const inlineRes = layoutInlineContent(el, style, styles, fm, contentX, contentY, contentWidth, paints, nextOrder, viewport, textIndentPx);
     lines = inlineRes.lines;
     children.push(...inlineRes.children);
     contentHeight = inlineRes.contentHeight;
@@ -976,18 +1131,43 @@ export function layoutElementBox(
     const hasBlocks = el.childNodes.some((c) => c.nodeName !== '#text' && c.nodeName !== '#comment');
     if (hasBlocks) {
       const childFm = new FloatManager(contentX, contentWidth);
-      const state: LayoutBlockInput = { fm: childFm, contentX, contentWidth, y: contentY, prevBottomMargin: 0, cbDirection: style.direction };
-      const { nodes, height } = layoutBlockChildren(el, state, styles, paints, nextOrder, viewport);
+      const state: LayoutBlockInput = {
+        fm: childFm,
+        contentX,
+        contentWidth,
+        y: contentY,
+        prevBottomMargin: 0,
+        cbDirection: style.direction,
+        scrollport: childScrollport,
+        cbClampRect: childCbClampRect,
+      };
+      const { nodes, height, escapedBottom } = layoutBlockChildren(el, state, styles, paints, nextOrder, viewport);
       children.push(...nodes);
       contentHeight = height;
+      nodeEscapedBottom = escapedBottom;
       // A BFC's height grows to include its floats.
       const lowest = childFm.lowestFloatBottom('both');
       if (Number.isFinite(lowest)) contentHeight = Math.max(contentHeight, lowest - contentY);
     }
   }
 
+  // css-sizing-4 §5: with a definite width and auto height the aspect ratio
+  // derives the height on the box's own surface (content-box or border-box per
+  // box-sizing, probed); §5.2 clamps the derived size by min/max-height —
+  // content overflows instead of stretching the box, like Chrome.
+  let ratioDerivedHeight = false;
+  if (style.aspectRatio.type === 'ratio') {
+    const specWpx = resolveLength(style.width, contentWidth, viewport);
+    if (specWpx !== null && resolveLength(style.height, contentWidth, viewport) === null && forcedHeight === undefined) {
+      const r = style.aspectRatio.num / style.aspectRatio.den;
+      contentHeight =
+        style.boxSizing === 'border-box' ? Math.max(0, borderWidth / r - padBorderV) : Math.max(0, contentWidth / r);
+      ratioDerivedHeight = true;
+    }
+  }
+
   const specH = resolveLength(style.height, contentWidth, viewport);
-  const resolvedHeight =
+  let resolvedHeight =
     forcedHeight !== undefined
       ? forcedHeight
       : specH !== null
@@ -995,6 +1175,15 @@ export function layoutElementBox(
           ? specH
           : specH + padBorderV
         : contentHeight + padBorderV;
+  if (ratioDerivedHeight) {
+    const minH = resolveLength(style.minHeight, contentWidth, viewport);
+    const maxH = resolveLength(style.maxHeight, contentWidth, viewport);
+    const floor = minH !== null ? Math.max(0, minH - (style.boxSizing === 'border-box' ? padBorderV : 0)) : 0;
+    const ceil = maxH !== null ? Math.max(0, maxH - (style.boxSizing === 'border-box' ? padBorderV : 0)) : Infinity;
+    // CSS 2.1 §10.7 order: max clamps first, then min — a conflicting min wins.
+    contentHeight = Math.max(Math.min(Math.max(contentHeight, 0), ceil), floor);
+    resolvedHeight = contentHeight + padBorderV;
+  }
 
   const node: LayoutNode = {
     element: el,
@@ -1010,6 +1199,7 @@ export function layoutElementBox(
     isFloat: false,
     marginTop: 0,
     marginBottom: 0,
+    escapedMarginBottom: nodeEscapedBottom,
     flowY: borderY,
     children,
     lines,
@@ -1081,7 +1271,12 @@ function layoutBlock(
   const { fm, contentX, contentWidth, y, prevBottomMargin } = ctx;
   const marginL = resolveLength(style.margin.left, contentWidth, viewport) ?? 0;
   const marginR = resolveLength(style.margin.right, contentWidth, viewport) ?? 0;
-  const marginT = resolveLength(style.margin.top, contentWidth, viewport) ?? 0;
+  const marginT =
+    ctx.quirkTopZero === true
+      ? 0
+      : ctx.chainTopMargin !== undefined
+        ? ctx.chainTopMargin
+        : (resolveLength(style.margin.top, contentWidth, viewport) ?? 0);
   const marginB = resolveLength(style.margin.bottom, contentWidth, viewport) ?? 0;
 
   const padL = resolveLength(style.padding.left, contentWidth, viewport) ?? 0;
@@ -1092,12 +1287,28 @@ function layoutBlock(
   const specW = resolveLength(style.width, contentWidth, viewport);
   const padBorderH = padL + padR + bL + bR;
   const autoWidth = Math.max(0, contentWidth - marginL - marginR);
-  const borderBoxWidth =
+  let borderBoxWidth =
     specW !== null
       ? style.boxSizing === 'border-box'
         ? specW
         : specW + padBorderH
       : autoWidth;
+  // css-sizing-4 §5: with a definite height and auto width the aspect ratio
+  // derives the width in place of the block's stretch size (probed: block with
+  // height 100px and aspect-ratio 2 computes a 200px width, not the parent's).
+  if (specW === null && style.aspectRatio.type === 'ratio') {
+    const specHpx = resolveLength(style.height, contentWidth, viewport);
+    if (specHpx !== null) {
+      const r = style.aspectRatio.num / style.aspectRatio.den;
+      const contentW =
+        style.boxSizing === 'border-box' ? Math.max(0, specHpx * r - padBorderH) : Math.max(0, specHpx * r);
+      borderBoxWidth = contentW + padBorderH;
+      const maxWpx = resolveLength(style.maxWidth, contentWidth, viewport);
+      const minWpx = resolveLength(style.minWidth, contentWidth, viewport);
+      if (maxWpx !== null) borderBoxWidth = Math.min(borderBoxWidth, maxWpx + (style.boxSizing === 'border-box' ? 0 : padBorderH));
+      if (minWpx !== null) borderBoxWidth = Math.max(borderBoxWidth, minWpx + (style.boxSizing === 'border-box' ? 0 : padBorderH));
+    }
+  }
 
   // Vertical: margin collapsing with the previous sibling, then clearance. A
   // first-child whose top margin collapses into the parent sits flush with the
@@ -1149,6 +1360,41 @@ function layoutBlock(
     const offB = resolveLength(style.bottom, cbRect.height, viewport);
     paintX = borderX + (offL !== null ? offL : offR !== null ? -offR : 0);
     paintY = borderTop + (offT !== null ? offT : offB !== null ? -offB : 0);
+  } else if (style.position === 'sticky') {
+    // css-position-3 §3.6 at scroll offset 0: the box shifts minimally so its
+    // rect satisfies the insets against the nearest scrollport, clamped to its
+    // containing block. In-flow space is untouched (flowY stays borderTop).
+    const sp = ctx.scrollport ?? initialContainingBlock(viewport ?? { width: 0, height: 0 });
+    const offL = resolveLength(style.left, cbRect.width, viewport);
+    const offR = resolveLength(style.right, cbRect.width, viewport);
+    const offT = resolveLength(style.top, cbRect.height, viewport);
+    const offB = resolveLength(style.bottom, cbRect.height, viewport);
+    const ownPadT = resolveLength(style.padding.top, contentWidth, viewport) ?? 0;
+    const ownPadB = resolveLength(style.padding.bottom, contentWidth, viewport) ?? 0;
+    const ownSpecH = resolveLength(style.height, contentWidth, viewport);
+    const boxH =
+      ownSpecH !== null
+        ? style.boxSizing === 'border-box'
+          ? ownSpecH
+          : ownSpecH + ownPadT + ownPadB + style.borderWidth.top + style.borderWidth.bottom
+        : 0;
+    let shiftX = 0;
+    let shiftY = 0;
+    if (offT !== null) shiftY = Math.max(shiftY, sp.y + offT - borderTop);
+    else if (offB !== null) shiftY = Math.min(shiftY, sp.y + sp.height - offB - boxH - borderTop);
+    if (offL !== null) shiftX = Math.max(shiftX, sp.x + offL - borderX);
+    else if (offR !== null) shiftX = Math.min(shiftX, sp.x + sp.width - offR - borderBoxWidth - borderX);
+    // The containing-block clamp: horizontally the parent content box is
+    // always known (ctx.contentX/contentWidth); vertically only when the
+    // parent's height is definite (ctx.cbClampRect).
+    shiftX = Math.max(shiftX, ctx.contentX - borderX);
+    shiftX = Math.min(shiftX, ctx.contentX + ctx.contentWidth - borderBoxWidth - borderX);
+    if (ctx.cbClampRect) {
+      shiftY = Math.max(shiftY, ctx.cbClampRect.y - borderTop);
+      shiftY = Math.min(shiftY, ctx.cbClampRect.y + ctx.cbClampRect.height - boxH - borderTop);
+    }
+    paintX = borderX + shiftX;
+    paintY = borderTop + shiftY;
   }
 
   const node = layoutElementBox(
@@ -1165,9 +1411,12 @@ function layoutBlock(
     paints,
     nextOrder,
     viewport,
+    undefined,
+    ctx.scrollport,
+    resolveLength(style.textIndent, contentWidth, viewport) ?? 0,
   );
   node.marginTop = marginT;
-  node.marginBottom = marginB;
+  node.marginBottom = node.escapedMarginBottom === undefined ? marginB : node.escapedMarginBottom;
   node.flowY = borderTop;
   return node;
 }
@@ -1336,6 +1585,62 @@ function layoutFloat(
   return node;
 }
 
+/**
+ * The quirky-margin chain margin below `el` (Blink's `__qem` on UA
+ * margin-block-start): a first in-flow child's quirky top margin collapses
+ * through consecutive borderless/paddingless first-child blocks (CSS 2.1
+ * §8.3.1), and the collapsed margin offsets the outermost chain element.
+ * Probed Chrome behavior: `<body>` terminates the chain (a first `<p>` sits
+ * flush and body keeps its own margin); a non-first-in-flow ancestor is
+ * pushed by the collapsed margin; an ancestor with top border/padding pushes
+ * the chain child below that border instead.
+ * Returns null when no chain runs through `el` — no quirky margin in the
+ * first-child subtree, or `el`'s own top border/padding stops the
+ * collapse-through.
+ */
+function qemChainBelow(
+  el: P5Element,
+  styles: Map<P5Element, ComputedStyle>,
+  contentWidth: number,
+  viewport?: Viewport,
+): number | null {
+  if (el.nodeName === 'body') return null;
+  const style = styles.get(el);
+  if (!style) return null;
+  if (
+    style.borderWidth.top !== 0 ||
+    (resolveLength(style.padding.top, contentWidth, viewport) ?? 0) !== 0
+  ) {
+    return null;
+  }
+  const ownTop = resolveLength(style.margin.top, contentWidth, viewport) ?? 0;
+  if (style.margin.top.quirk === true) return ownTop;
+  const scan = (nodes: P5Element['childNodes'], ownTop: number): number | null => {
+    for (const child of nodes) {
+      if (child.nodeName === '#comment') continue;
+      if (child.nodeName === '#text') {
+        if (/\S/.test((child as P5Text).value)) return null;
+        continue;
+      }
+      const cs = styles.get(child as P5Element);
+      if (!cs || cs.display === 'none') continue;
+      if (cs.position === 'absolute' || cs.position === 'fixed' || cs.float !== 'none') continue;
+      // Inline content forms an anonymous block ahead of any block child, so
+      // no element child here is the first in-flow child.
+      if (cs.display.startsWith('inline')) return null;
+      if (cs.display === 'contents') {
+        // css-display-3 §2: no box — the chain continues through the contents
+        // element's children with no margin/border contribution from it.
+        return scan((child as P5Element).childNodes, ownTop);
+      }
+      const sub = qemChainBelow(child as P5Element, styles, contentWidth, viewport);
+      return sub === null ? null : collapseMargins(ownTop, sub);
+    }
+    return null;
+  };
+  return scan(el.childNodes, ownTop);
+}
+
 function layoutBlockChildren(
   parent: P5Element,
   ctx: LayoutBlockInput,
@@ -1343,10 +1648,12 @@ function layoutBlockChildren(
   paints: PaintOp[],
   nextOrder: () => number,
   viewport?: Viewport,
-): { nodes: LayoutNode[]; height: number } {
+): { nodes: LayoutNode[]; height: number; escapedBottom?: number } {
   const nodes: LayoutNode[] = [];
   let y = ctx.y;
   let prevBottomMargin = 0;
+  let prevNode: LayoutNode | null = null;
+  let lastInFlow: LayoutNode | null = null;
   const parentTag = parent.nodeName;
   const isOrderedList = parentTag === 'ol';
   let listIndex = 0;
@@ -1370,7 +1677,13 @@ function layoutBlockChildren(
     const anon: P5Element = { nodeName: '#anon', tagName: '#anon', attrs: [], childNodes: inlineRun } as unknown as P5Element;
     const anonStyle = styles.get(parent)!;
     const anonFm = new FloatManager(ctx.contentX, ctx.contentWidth);
-    const inlineRes = layoutInlineContent(anon, anonStyle, styles, anonFm, ctx.contentX, y, ctx.contentWidth, paints, nextOrder, viewport);
+    const indentPx =
+      firstInFlow
+        ? resolveLength(anonStyle.textIndent, ctx.contentWidth, viewport) ?? 0
+        : anonStyle.textIndentHanging || anonStyle.textIndentEachLine
+          ? resolveLength(anonStyle.textIndent, ctx.contentWidth, viewport) ?? 0
+          : 0;
+    const inlineRes = layoutInlineContent(anon, anonStyle, styles, anonFm, ctx.contentX, y, ctx.contentWidth, paints, nextOrder, viewport, indentPx);
     nodes.push({
       element: anon,
       style: anonStyle,
@@ -1392,10 +1705,12 @@ function layoutBlockChildren(
     y += inlineRes.contentHeight;
     prevBottomMargin = 0;
     firstInFlow = false;
+    prevNode = nodes[nodes.length - 1];
+    lastInFlow = prevNode;
     inlineRun = [];
   };
 
-  for (const child of parent.childNodes) {
+  for (const child of expandContents(parent.childNodes, styles)) {
     if (child.nodeName === '#comment') continue;
     if (child.nodeName === '#text') {
       if (/\S/.test((child as P5Text).value)) inlineRun.push(child as unknown as P5Element);
@@ -1438,24 +1753,28 @@ function layoutBlockChildren(
       isListItem && style.listStylePosition === 'inside' ? insideMarkerAdvanceFor(style, listIndex) : null;
     insideMarkerAdvance = insideAdvance;
     insideMarkerOwner = insideAdvance !== null ? el : null;
-    const node = layoutBlock(
-      el,
-      style,
-      {
-        ...ctx,
-        y,
-        prevBottomMargin,
-        // A UA "quirky" margin-block-start collapses through its parent (Blink's
-        // `__qem`): the first in-flow child sits flush with the parent's content
-        // top and its margin extends above the parent's box. Author margins do
-        // not collapse into the parent this way.
-        collapseTop: firstInFlow && allowTopCollapse && style.margin.top.quirk === true,
-      },
-      styles,
-      paints,
-      nextOrder,
-      viewport,
-    );
+    // Quirky-margin chains (Blink `__qem`): a first in-flow holder collapses
+    // through a borderless parent (flush, vanishing at body, pushing the
+    // terminal chain element); a later-sibling holder keeps its margin unless
+    // the previous in-flow sibling self-collapses (zero-height box), in which
+    // case Chrome drops it; an intermediate chain element either sits flush
+    // (chain continues above) or carries the collapsed margin as its effective
+    // top margin.
+    const isQemHolder = style.margin.top.quirk === true;
+    const chain = qemChainBelow(el, styles, ctx.contentWidth, viewport);
+    const childCtx: LayoutBlockInput = { ...ctx, y, prevBottomMargin };
+    if (isQemHolder) {
+      if (firstInFlow) {
+        if (allowTopCollapse) childCtx.collapseTop = true;
+      } else if (prevNode !== null && prevNode.borderHeight === 0) {
+        childCtx.quirkTopZero = true;
+      }
+    } else if (chain !== null) {
+      if (firstInFlow && allowTopCollapse) childCtx.collapseTop = true;
+      else childCtx.chainTopMargin = chain;
+    }
+    const node = layoutBlock(el, style, childCtx, styles, paints, nextOrder, viewport);
+    prevNode = node;
     insideMarkerAdvance = null;
     insideMarkerOwner = null;
     firstInFlow = false;
@@ -1465,8 +1784,30 @@ function layoutBlockChildren(
     nodes.push(node);
     y = node.flowY + node.borderHeight + node.marginBottom;
     prevBottomMargin = node.marginBottom;
+    lastInFlow = node;
   }
   flushInlineRun();
+  // The last in-flow child's bottom margin collapses out of the parent's
+  // bottom edge when the parent has auto height (a specified height keeps the
+  // margin inside, CSS 2.1 §8.3.1), no bottom border/padding and is not a BFC
+  // root: the parent's height ends at the child's border box and the collapsed
+  // margin becomes the parent's effective margin-bottom.
+  let escapedBottom: number | undefined;
+  if (
+    lastInFlow !== null &&
+    lastInFlow.marginBottom !== 0 &&
+    parentStyle !== undefined &&
+    parentStyle.height.auto === true &&
+    !isScrollContainer(parentStyle.overflow) &&
+    parentStyle.borderWidth.bottom === 0 &&
+    (resolveLength(parentStyle.padding.bottom, ctx.contentWidth, viewport) ?? 0) === 0
+  ) {
+    escapedBottom = collapseMargins(
+      resolveLength(parentStyle.margin.bottom, ctx.contentWidth, viewport) ?? 0,
+      lastInFlow.marginBottom,
+    );
+    return { nodes, height: lastInFlow.flowY + lastInFlow.borderHeight - ctx.y, escapedBottom };
+  }
   return { nodes, height: y - ctx.y };
 }
 
@@ -1713,6 +2054,7 @@ type InlinePiece =
   | { kind: 'word'; text: string; style: TextRunStyle; owner: P5Element | null }
   | { kind: 'space'; text: string }
   | { kind: 'break' }
+  | { kind: 'wbr' }
   | AtomicPiece;
 
 interface InlineLayoutResult {
@@ -1765,6 +2107,8 @@ function pureTextDelegatable(pieces: InlinePiece[], style: ComputedStyle, el: P5
   const blockRun = runStyleOf(style);
   for (const p of pieces) {
     if (p.kind === 'atomic') return false;
+    // Forced breaks and soft opportunities need the segmenting piece walker.
+    if (p.kind === 'break' || p.kind === 'wbr') return false;
     if (p.kind === 'word') {
       if (!sameRunStyle(p.style, blockRun)) return false;
       if (p.owner && p.owner !== el && p.owner.attrs.some((a) => a.name === 'id')) return false;
@@ -1865,7 +2209,7 @@ function atomicBoxSize(
     borderWidth = style.boxSizing === 'border-box' ? specW : specW + padBorderH;
   } else {
     const pieces = buildPieces(el, style, styles, refWidth, viewport, style.whiteSpace);
-    const sizes = piecesContentSizes(pieces, style, style.whiteSpace);
+    const sizes = piecesContentSizes(pieces, style, style.whiteSpace, resolveLength(style.wordSpacing, refWidth, viewport) ?? 0);
     const mL = resolveLength(style.margin.left, refWidth, viewport) ?? 0;
     const mR = resolveLength(style.margin.right, refWidth, viewport) ?? 0;
     const available = Math.max(0, refWidth - mL - mR - padBorderH);
@@ -1879,16 +2223,16 @@ function atomicBoxSize(
   return { borderWidth, contentWidth: Math.max(0, borderWidth - padBorderH) };
 }
 
-function piecesContentSizes(pieces: InlinePiece[], style: ComputedStyle, ws: WhiteSpaceValue): { min: number; max: number } {
+function piecesContentSizes(pieces: InlinePiece[], style: ComputedStyle, ws: WhiteSpaceValue, wordSpacing = 0): { min: number; max: number } {
   const preserve = ws === 'pre' || ws === 'pre-wrap';
   let min = 0;
   let max = 0;
   let prevWasSpace = false;
   for (const p of pieces) {
-    if (p.kind === 'break') continue;
+    if (p.kind === 'break' || p.kind === 'wbr') continue;
     if (p.kind === 'space') {
       if (preserve) {
-        max += measureTextWidth(p.text, style.fontSize, style.fontFamily, style.letterSpacing);
+        max += measureTextWidth(p.text, style.fontSize, style.fontFamily, style.letterSpacing) + wordSpacing * p.text.length;
       }
       prevWasSpace = true;
       continue;
@@ -1897,8 +2241,8 @@ function piecesContentSizes(pieces: InlinePiece[], style: ComputedStyle, ws: Whi
       p.kind === 'word'
         ? measureTextWidth(p.text, p.style.fontSize, p.style.family, p.style.letterSpacing, p.style.fontWeight, p.style.fontStyle)
         : p.marginLeft + p.borderWidth + p.marginRight;
-    min = Math.max(min, w);
-    if (prevWasSpace && !preserve) max += measureTextWidth(' ', style.fontSize, style.fontFamily, style.letterSpacing);
+    min = Math.max(min, p.kind === 'word' ? minTextWidth(p.text, p.style.fontSize, p.style.family, p.style.letterSpacing, style.overflowWrap === 'anywhere', p.style.fontWeight, p.style.fontStyle) : w);
+    if (prevWasSpace && !preserve) max += measureTextWidth(' ', style.fontSize, style.fontFamily, style.letterSpacing) + wordSpacing;
     max += w;
     prevWasSpace = false;
   }
@@ -1910,13 +2254,13 @@ function piecesContentSizes(pieces: InlinePiece[], style: ComputedStyle, ws: Whi
  * pieces styled with the pseudo's computed style. An empty content string still
  * produces a box (a zero-width piece) so it is not conflated with none/normal.
  */
-function pushPseudoPieces(box: PseudoBox, owner: P5Element, out: InlinePiece[], ws: WhiteSpaceValue): void {
+function pushPseudoPieces(box: PseudoBox, owner: P5Element, out: InlinePiece[], ws: WhiteSpaceValue, transform: 'none' | 'uppercase' | 'lowercase' | 'capitalize' = 'none'): void {
   if (box.text === null) return;
   if (box.text === '') {
     out.push({ kind: 'word', text: '', style: runStyleOf(box.style), owner });
     return;
   }
-  pushTextPieces(box.text, runStyleOf(box.style), owner, out, ws);
+  pushTextPieces(applyTextTransform(box.text, box.style.textTransform ?? transform), runStyleOf(box.style), owner, out, ws);
 }
 
 /**
@@ -1936,16 +2280,29 @@ function buildPieces(
   ws: WhiteSpaceValue = style.whiteSpace,
 ): InlinePiece[] {
   const out: InlinePiece[] = [];
-  if (style.before) pushPseudoPieces(style.before, el, out, ws);
-  for (const child of el.childNodes) {
+  if (style.before) pushPseudoPieces(style.before, el, out, ws, style.textTransform);
+  for (const child of expandContents(el.childNodes, styles)) {
     if (child.nodeName === '#text') {
-      pushTextPieces((child as P5Text).value, runStyleOf(style), el, out, ws);
+      pushTextPieces(applyTextTransform((child as P5Text).value, style.textTransform), runStyleOf(style), el, out, ws);
       continue;
     }
     if (child.nodeName === '#comment') continue;
     const childEl = child as P5Element;
     const s = styles.get(childEl);
     if (!s || s.display === 'none') continue;
+    if (childEl.nodeName === 'br') {
+      // <br> is a forced break at the current position: it contributes no
+      // advance and closes the line box (css-text-3 §5.1), in every
+      // white-space mode.
+      out.push({ kind: 'break' });
+      continue;
+    }
+    if (childEl.nodeName === 'wbr') {
+      // The <wbr> element is a zero-width soft wrap opportunity: the breaker
+      // may break here but need not (HTML Standard, the wbr element).
+      out.push({ kind: 'wbr' });
+      continue;
+    }
     if (s.display === 'block' || s.display === 'list-item' || s.display === 'grid' || s.display === 'flex' || s.float !== 'none' || s.position !== 'static') {
       continue;
     }
@@ -1970,7 +2327,7 @@ function buildPieces(
     }
     for (const p of buildPieces(childEl, s, styles, refWidth, viewport, s.whiteSpace)) out.push(p);
   }
-  if (style.after) pushPseudoPieces(style.after, el, out, ws);
+  if (style.after) pushPseudoPieces(style.after, el, out, ws, style.textTransform);
   return out;
 }
 
@@ -1994,7 +2351,7 @@ interface WalkedLine {
  * grow by exactly `stretch × spaceCount`, so the line fills the available
  * width the same way Chrome distributes the surplus across spaces.
  */
-function walkLine(pieces: InlinePiece[], style: ComputedStyle, stretch = 0, ws: WhiteSpaceValue = 'normal'): WalkedLine {
+function walkLine(pieces: InlinePiece[], style: ComputedStyle, stretch = 0, ws: WhiteSpaceValue = 'normal', wordSpacing = 0): WalkedLine {
   const preserve = ws === 'pre' || ws === 'pre-wrap';
   const runs: WalkedLine['runs'] = [];
   const atomics: WalkedLine['atomics'] = [];
@@ -2014,7 +2371,7 @@ function walkLine(pieces: InlinePiece[], style: ComputedStyle, stretch = 0, ws: 
     runStyle = null;
     runOwner = null;
   };
-  const spaceW = (s: TextRunStyle): number => measureTextWidth(' ', s.fontSize, s.family, s.letterSpacing, s.fontWeight, s.fontStyle) + stretch;
+  const spaceW = (s: TextRunStyle): number => measureTextWidth(' ', s.fontSize, s.family, s.letterSpacing, s.fontWeight, s.fontStyle) + stretch + wordSpacing;
   for (const p of pieces) {
     if (p.kind === 'space') {
       prevWasSpace = true;
@@ -2054,9 +2411,10 @@ function walkLine(pieces: InlinePiece[], style: ComputedStyle, stretch = 0, ws: 
       x += measureTextWidth(p.text, p.style.fontSize, p.style.family, p.style.letterSpacing, p.style.fontWeight, p.style.fontStyle);
       hasContent = true;
       prevWasSpace = false;
-    } else if (p.kind === 'break') {
+    } else if (p.kind === 'break' || p.kind === 'wbr') {
       // Forced breaks are split out into segments before walkLine runs; a
-      // stray break piece contributes nothing to a line.
+      // stray break piece contributes nothing to a line. A wbr is a zero-width
+      // opportunity marker with no rendering of its own.
       continue;
     } else {
       flush();
@@ -2136,9 +2494,15 @@ function layoutInlineContent(
   paints: PaintOp[],
   nextOrder: () => number,
   viewport: Viewport | undefined,
+  indentAmount?: number,
 ): InlineLayoutResult {
   const metrics = activeFontMetrics();
   const ws = style.whiteSpace;
+  const wordSpacingPx = resolveLength(style.wordSpacing, contentWidth, viewport) ?? 0;
+  const indent =
+    indentAmount || style.textIndentHanging || style.textIndentEachLine
+      ? { amount: indentAmount ?? 0, hanging: style.textIndentHanging, eachLine: style.textIndentEachLine }
+      : null;
   // Snapshot the staged inside-marker advance before any nested layout (e.g.
   // inline-block atomic measurement) runs, since that can clear the module
   // state; the shift applies to the first line below.
@@ -2165,6 +2529,10 @@ function layoutInlineContent(
       letterSpacing: style.letterSpacing,
       align: style.textAlign,
       whiteSpace: ws,
+      wordBreak: style.wordBreak,
+      overflowWrap: style.overflowWrap,
+      wordSpacing: wordSpacingPx,
+      textIndent: indent ?? undefined,
       available: (top, bottom) => {
         const av = fm.floatIntrusion(top, bottom);
         return { x: contentX + av.left, width: Math.max(0, contentWidth - av.left - av.right) };
@@ -2196,6 +2564,19 @@ function layoutInlineContent(
   segments.push(cur);
   if (hasBreak && segments[segments.length - 1].length === 0) segments.pop();
 
+  // css-text-3 §2.1: the indent applies to the first formatted line (default),
+  // to the first line of every segment after forced breaks (each-line), or to
+  // every line except the first (hanging). `segmentIndex`/`segFirstLine`
+  // distinguish forced-break line starts from soft wraps.
+  let globalLineIndex = 0;
+  let segmentIndex = 0;
+  const lineIndent = (isSegmentStart: boolean, isFirstFormatted: boolean): number => {
+    if (!indent || indent.amount === 0) return 0;
+    if (indent.hanging) return isFirstFormatted ? 0 : indent.amount;
+    if (indent.eachLine) return isSegmentStart ? indent.amount : 0;
+    return isFirstFormatted ? indent.amount : 0;
+  };
+
   const collapseTrim = ws === 'normal' || ws === 'nowrap' || ws === 'pre-line';
   const noWrap = ws === 'pre' || ws === 'nowrap';
   const justifyAllowed = ws === 'normal' || ws === 'pre-line';
@@ -2219,18 +2600,24 @@ function layoutInlineContent(
         endWord: 1,
         baseline: y + lineAscentContribution(style.fontSize, style.lineHeight, metrics),
       });
+      globalLineIndex++;
       y += style.lineHeight;
       continue;
     }
     let idx = 0;
+    let segFirstLine = true;
     while (idx < seg.length) {
+      const indentAmount = lineIndent(segFirstLine, globalLineIndex === 0 && segmentIndex === 0);
       const av = fm.floatIntrusion(y, y + style.lineHeight);
-      const availLeft = contentX + av.left;
-      const availWidth = Math.max(0, contentWidth - av.left - av.right);
+      const rawAvailLeft = contentX + av.left;
+      const availLeft = rawAvailLeft + (rtl ? 0 : indentAmount);
+      const availWidth = Math.max(0, contentWidth - av.left - av.right - indentAmount);
       const availRight = availLeft + availWidth;
+      segFirstLine = false;
 
       const onLine: InlinePiece[] = [];
       let lastBreak = -1;
+      let lastBreakWasSpace = false;
       let lineHasContent = false;
       let i = idx;
       if (noWrap) {
@@ -2244,19 +2631,26 @@ function layoutInlineContent(
           if (p.kind === 'space') {
             onLine.push(p);
             lastBreak = onLine.length - 1;
+            lastBreakWasSpace = true;
             continue;
           }
-          const trial = walkLine([...onLine, p], style, 0, ws).width;
+          if (p.kind === 'wbr') {
+            // A soft opportunity: the break may happen right after it (the
+            // zero-width marker stays on the line, contributing no advance).
+            onLine.push(p);
+            lastBreak = onLine.length;
+            lastBreakWasSpace = false;
+            continue;
+          }
+          const trial = walkLine([...onLine, p], style, 0, ws, wordSpacingPx).width;
           if (lineHasContent && trial > availWidth) {
-            if (lastBreak >= 0) {
-              if (ws === 'pre-wrap') {
-                // A preserved space run at the wrap point collapses to one hung
-                // space on the line (Chrome keeps a single space, no ink).
-                onLine.length = lastBreak;
-                onLine.push({ kind: 'space', text: ' ' });
-              } else {
-                onLine.length = lastBreak;
-              }
+            // Every already-pushed piece fits, so the line keeps them all and
+            // the break happens before the overflowing piece. Only pre-wrap's
+            // preserved run needs the collapse-to-one-hung-space treatment
+            // (Chrome keeps a single space, no ink, at the wrap point).
+            if (ws === 'pre-wrap' && lastBreakWasSpace && lastBreak >= 0) {
+              onLine.length = lastBreak;
+              onLine.push({ kind: 'space', text: ' ' });
             }
             break;
           }
@@ -2269,7 +2663,7 @@ function layoutInlineContent(
         if (onLine.length > 0 && onLine[onLine.length - 1].kind === 'space') onLine.pop();
       }
 
-      const natural = walkLine(onLine, style, 0, ws);
+      const natural = walkLine(onLine, style, 0, ws, wordSpacingPx);
       const isLastLine = i >= seg.length;
       const align = style.textAlign;
       // The layout origin is where run x=0 sits: the text's left edge under
@@ -2294,7 +2688,7 @@ function layoutInlineContent(
         const spaceCount = onLine.filter((p) => p.kind === 'space').length;
         if (spaceCount > 0 && natural.width < availWidth) stretch = (availWidth - natural.width) / spaceCount;
       }
-      const walked = stretch !== 0 ? walkLine(onLine, style, stretch, ws) : natural;
+      const walked = stretch !== 0 ? walkLine(onLine, style, stretch, ws, wordSpacingPx) : natural;
 
       const measured = new Map<AtomicPiece, MeasuredAtomic>();
       for (const a of walked.atomics) measured.set(a.piece, measureAtomic(a.piece, styles, paints, nextOrder, viewport));
@@ -2437,7 +2831,9 @@ function layoutInlineContent(
 
       y += lineHeight;
       idx = i;
+      globalLineIndex++;
     }
+    segmentIndex++;
   }
 
   // Inline elements (spans) have no box of their own, but getBoundingClientRect

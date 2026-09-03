@@ -1,0 +1,20 @@
+{
+  "name": "grid-items",
+  "note": "css-display-3 §2 + css-grid-1: children of a display:contents element become grid items of the grandparent grid container — auto-placement continues across the spliced children (the wrapper's two children fill row 1, the direct child places in row 2), and the contents wrapper itself contributes no item and keeps an all-zero rect.",
+  "harvest": {
+    "viewport": { "width": 400, "height": 200 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} body{background-color:rgb(255, 255, 255)} #gr{display:grid;grid-template-columns:100px 100px;gap:10px} #gw{display:contents} #g1{height:20px;background-color:rgb(128, 0, 128)} #g2{height:20px;background-color:rgb(0, 128, 128)} #g3{height:20px;background-color:rgb(255, 165, 0)}</style></head><body><div id=\"gr\"><div id=\"gw\"><div id=\"g1\">x</div><div id=\"g2\">y</div></div><div id=\"g3\">z</div></div></body></html>",
+    "computedStyle": [
+      { "id": "gw", "props": ["display"] },
+      { "id": "g1", "props": ["background-color"] }
+    ],
+    "rects": ["gr", "gw", "g1", "g2", "g3"],
+    "textElements": ["g1", "g2", "g3"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "n1": {
+      "background-color": "rgb(255, 0, 0)"
+    },
+    "n2": {
+      "background-color": "rgba(0, 0, 0, 0)"
+    },
+    "a1": {
+      "background-color": "rgb(128, 0, 128)"
+    },
+    "a2": {
+      "background-color": "rgba(0, 0, 0, 0)"
+    },
+    "o1": {
+      "background-color": "rgb(255, 165, 0)"
+    },
+    "o2": {
+      "background-color": "rgba(0, 0, 0, 0)"
+    },
+    "p1": {
+      "background-color": "rgb(255, 0, 255)"
+    },
+    "p2": {
+      "background-color": "rgba(0, 0, 0, 0)"
+    }
+  },
+  "rect": {
+    "n1": {
+      "x": 0,
+      "y": 0,
+      "width": 60,
+      "height": 30
+    },
+    "n2": {
+      "x": 0,
+      "y": 30,
+      "width": 60,
+      "height": 30
+    },
+    "a1": {
+      "x": 0,
+      "y": 60,
+      "width": 60,
+      "height": 30
+    },
+    "a2": {
+      "x": 0,
+      "y": 90,
+      "width": 60,
+      "height": 30
+    },
+    "o1": {
+      "x": 0,
+      "y": 120,
+      "width": 60,
+      "height": 30
+    },
+    "o2": {
+      "x": 0,
+      "y": 150,
+      "width": 60,
+      "height": 30
+    },
+    "p1": {
+      "x": 0,
+      "y": 180,
+      "width": 60,
+      "height": 30
+    },
+    "p2": {
+      "x": 0,
+      "y": 210,
+      "width": 60,
+      "height": 30
+    }
+  }
+}

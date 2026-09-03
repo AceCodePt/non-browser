@@ -1,0 +1,40 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "wsn": {
+      "word-spacing": "0px"
+    },
+    "wsp": {
+      "word-spacing": "0px"
+    },
+    "plain": {
+      "word-spacing": "0px"
+    }
+  },
+  "rect": {
+    "plain": {
+      "x": 0,
+      "y": 0,
+      "width": 61.3100004196167,
+      "height": 22
+    },
+    "wsn": {
+      "x": 61.3100004196167,
+      "y": 0,
+      "width": 61.3100004196167,
+      "height": 22
+    },
+    "wsn2": {
+      "x": 122.6200008392334,
+      "y": 0,
+      "width": 61.3100004196167,
+      "height": 22
+    },
+    "wsp": {
+      "x": 183.9300012588501,
+      "y": 0,
+      "width": 61.3100004196167,
+      "height": 22
+    }
+  }
+}

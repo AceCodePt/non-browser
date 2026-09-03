@@ -1,0 +1,41 @@
+{
+  "name": "calc-media",
+  "note": "var() composes inside calc() (substitution at computed-value time, then the calc resolves at layout: width calc(var(--w) + 10px) renders a 50px box) and custom properties cascade through @media blocks — the media-scoped redefinition wins when the query matches and is absent when it does not.",
+  "harvest": {
+    "viewport": {
+      "width": 400,
+      "height": 200
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} body{--c:teal; --w:40px} @media (min-width: 300px){ body{--c:crimson} } #m{color:var(--c)} #w{width:calc(var(--w) + 10px);height:20px;background:var(--c)}</style></head><body><div id=\"m\">media</div><div id=\"w\">calc</div></body></html>",
+    "computedStyle": [
+      {
+        "id": "m",
+        "props": [
+          "color",
+          "--c",
+          "--w"
+        ]
+      },
+      {
+        "id": "w",
+        "props": [
+          "background-color",
+          "--w"
+        ]
+      }
+    ],
+    "rects": [
+      "m",
+      "w"
+    ],
+    "textElements": [
+      "m"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

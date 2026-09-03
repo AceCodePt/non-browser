@@ -1,0 +1,20 @@
+{
+  "name": "wbr-opportunity",
+  "note": "<wbr> is a zero-width soft wrap opportunity (HTML Standard): a 100px box with longword<wbr>continued breaks at the wbr (two lines, the wbr contributes no advance), while the identical word without a wbr keeps one overflowing line (overflow-wrap: normal never breaks inside a word). Both targets are id'd spans so the layer-3 rects pin the line fragments; the wbr itself stays invisible.",
+  "harvest": {
+    "viewport": { "width": 300, "height": 200 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} p{margin:0;font-size:16px;width:100px} #with{margin-bottom:10px}</style></head><body><p id=\"with\"><span id=\"split\">longword<wbr>continued</span></p><p id=\"without\"><span id=\"whole\">longwordcontinued</span></p></body></html>",
+    "computedStyle": [
+      { "id": "split", "props": ["font-size"] },
+      { "id": "whole", "props": ["font-size"] }
+    ],
+    "rects": ["with", "split", "without", "whole"],
+    "textElements": ["split", "whole"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

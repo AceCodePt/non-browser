@@ -1,0 +1,23 @@
+{
+  "name": "block-surface",
+  "note": "css-sizing-4 §5 on the block path: width specified + auto height derives the height from the ratio (16/9 → 90); height specified + auto width derives the width instead of stretching (aspect-ratio: 2 + height 100 → 200); both specified ignores the ratio; a plain number normalizes to n/1; content-box ratios apply to the content surface (padding adds outside) and border-box ratios to the border surface (probe-verified against Chrome).",
+  "harvest": {
+    "viewport": { "width": 400, "height": 700 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} body{background-color:rgb(255, 255, 255)} #a{aspect-ratio:16/9;width:160px;background-color:rgb(255, 0, 0)} #b{aspect-ratio:2;height:100px;background-color:rgb(0, 255, 0)} #c{aspect-ratio:16/9;width:160px;height:100px;background-color:rgb(0, 0, 255)} #h{aspect-ratio:1.5;width:150px;background-color:rgb(255, 128, 0)} #f{aspect-ratio:16/9;width:160px;padding:10px;background-color:rgb(0, 255, 255)} #g{aspect-ratio:2/1;width:160px;box-sizing:border-box;border:5px solid rgb(0, 0, 0);background-color:rgb(128, 128, 0)}</style></head><body><div id=\"a\"></div><div id=\"b\"></div><div id=\"c\"></div><div id=\"h\"></div><div id=\"f\"></div><div id=\"g\"></div></body></html>",
+    "computedStyle": [
+      { "id": "a", "props": ["aspect-ratio"] },
+      { "id": "b", "props": ["aspect-ratio"] },
+      { "id": "c", "props": ["aspect-ratio"] },
+      { "id": "h", "props": ["aspect-ratio"] },
+      { "id": "g", "props": ["aspect-ratio", "width"] }
+    ],
+    "rects": ["a", "b", "c", "h", "f", "g"],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

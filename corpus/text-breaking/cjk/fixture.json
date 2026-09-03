@@ -1,0 +1,49 @@
+{
+  "name": "cjk",
+  "note": "css-text-3 \u00a76.1 keep-all: a long CJK run under word-break:keep-all does not break at all \u2014 one overflowing line in both engines (the run loses its overflow fallback unless overflow-wrap re-allows). The Latin control shows keep-all leaves space-separated Latin wrapping untouched. Pure-CJK wrap COUNTS under word-break:normal are count-sensitive to CJK glyph fallback metrics, which differ between this engine's measurement surface and Chrome (see docs/ledgers/breakers.md) \u2014 the suppression semantics, not the counts, are the pin here. The CJK run's border box is a declared maskElement: the engine's registered face (Noto Sans) has no CJK glyphs, so Chrome's CJK ink is not reproducible; the keep-all geometry (one overflowing line) is what the rect layer pins.",
+  "harvest": {
+    "viewport": {
+      "width": 300,
+      "height": 200
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} p{margin:0;font-size:16px} #ka{word-break:keep-all;width:90px} #latin{word-break:keep-all;width:120px;margin-top:10px}</style></head><body><p id=\"ka\">\u7ea2\u697c\u68a6\u662f\u4e2d\u56fd\u53e4\u5178\u56db\u5927\u540d\u8457\u4e4b\u9996\u88ab\u8a89\u4e3a\u4e2d\u56fd\u5c01\u5efa\u793e\u4f1a\u7684\u767e\u79d1\u5168\u4e66</p><p id=\"latin\">aaaa bbbb cccc dddd</p></body></html>",
+    "computedStyle": [
+      {
+        "id": "ka",
+        "props": [
+          "word-break"
+        ]
+      },
+      {
+        "id": "latin",
+        "props": [
+          "word-break"
+        ]
+      }
+    ],
+    "rects": [
+      "ka",
+      "latin"
+    ],
+    "textElements": [
+      "latin"
+    ],
+    "maskElements": [
+      "ka"
+    ],
+    "maskRects": [
+      {
+        "x": 0,
+        "y": 0,
+        "width": 420,
+        "height": 26
+      }
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

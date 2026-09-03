@@ -1,0 +1,29 @@
+{
+  "name": "hover-pointer",
+  "note": "Input-capability features: (hover: hover/none), (pointer: fine/coarse), (any-hover: hover), (any-pointer: coarse), and the (hover: hover) and (pointer: fine) composition. The touch viewport emulates a coarse primary input so every rule flips; the device surface is an explicit MediaEnvironment input (the engine never guesses capabilities).",
+  "harvest": {
+    "viewports": [
+      { "width": 300, "height": 400 },
+      { "width": 300, "height": 400, "touch": true }
+    ],
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} body{background-color:rgb(238, 238, 238)} div{width:60px;height:30px;background-color:rgb(0, 0, 0)} @media (hover: hover) { #hh{background-color:rgb(255, 0, 0)} } @media (hover: none) { #hn{background-color:rgb(0, 128, 0)} } @media (pointer: fine) { #pf{background-color:rgb(0, 0, 255)} } @media (pointer: coarse) { #pc{background-color:rgb(128, 0, 128)} } @media (any-hover: hover) { #ah{background-color:rgb(255, 165, 0)} } @media (any-pointer: coarse) { #apc{background-color:rgb(0, 128, 128)} } @media (hover: hover) and (pointer: fine) { #combo{background-color:rgb(255, 0, 255)} } @media not (hover: none) { #not{background-color:rgb(139, 69, 19)} }</style></head><body><div id=\"hh\">1</div><div id=\"hn\">2</div><div id=\"pf\">3</div><div id=\"pc\">4</div><div id=\"ah\">5</div><div id=\"apc\">6</div><div id=\"combo\">7</div><div id=\"not\">8</div></body></html>",
+    "computedStyle": [
+      { "id": "hh", "props": ["background-color"] },
+      { "id": "hn", "props": ["background-color"] },
+      { "id": "pf", "props": ["background-color"] },
+      { "id": "pc", "props": ["background-color"] },
+      { "id": "ah", "props": ["background-color"] },
+      { "id": "apc", "props": ["background-color"] },
+      { "id": "combo", "props": ["background-color"] },
+      { "id": "not", "props": ["background-color"] }
+    ],
+    "rects": ["hh", "hn", "pf", "pc", "ah", "apc", "combo", "not"],
+    "textElements": ["hh", "hn", "pf", "pc", "ah", "apc", "combo", "not"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

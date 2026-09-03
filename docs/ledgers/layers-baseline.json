@@ -1,6 +1,27 @@
 {
-  "generatedAt": "2026-08-31T18:35:02.320Z",
+  "generatedAt": "2026-09-03T11:49:06.584Z",
   "fixtures": {
+    "aspect-ratio/block-surface": {
+      "sha256": "5d45b9b9ab2c56340a50cd75f738e67c96b080949461231c0e352638dd3b3567",
+      "width": 400,
+      "height": 700,
+      "rectCount": 6,
+      "computedStyleCount": 5
+    },
+    "aspect-ratio/min-max": {
+      "sha256": "f283f913e8a217e4ff812ebb21aae260be4fe5e095dbb8f9a2939e0424012695",
+      "width": 400,
+      "height": 700,
+      "rectCount": 5,
+      "computedStyleCount": 2
+    },
+    "aspect-ratio/replaced": {
+      "sha256": "ab013d92402b398ac5877fde4018ba264338df4b8cfa2184a5999d31e0291e7d",
+      "width": 400,
+      "height": 200,
+      "rectCount": 4,
+      "computedStyleCount": 4
+    },
     "border-radius/circle-50": {
       "sha256": "c9c1de75e34787220404d3e2c33096a6a882cab941a48bfcc7577185bed7a1d9",
       "width": 220,
@@ -105,6 +126,34 @@
       "height": 120,
       "rectCount": 1,
       "computedStyleCount": 1
+    },
+    "br-wbr/align-whitespace": {
+      "sha256": "86481b99d65ac5490fdb13207f6fa151c615b030048a0f76e04811f72d90cc60",
+      "width": 300,
+      "height": 300,
+      "rectCount": 4,
+      "computedStyleCount": 2
+    },
+    "br-wbr/basic": {
+      "sha256": "02f169a5c14cee86a55b445b0b9fe6ffe7e625833c0b0b132c1b00b9c0ddf772",
+      "width": 300,
+      "height": 260,
+      "rectCount": 4,
+      "computedStyleCount": 1
+    },
+    "br-wbr/list-markers": {
+      "sha256": "2e571424de179be5093c5d495a2ddb2a6e2cb1439b5fe95a88caf18aa0958f69",
+      "width": 300,
+      "height": 220,
+      "rectCount": 2,
+      "computedStyleCount": 2
+    },
+    "br-wbr/wbr-opportunity": {
+      "sha256": "0d11ce13d72f4450f1b298f5e1224a7750578d0c5b21ae2bcf40137239a0eccb",
+      "width": 300,
+      "height": 200,
+      "rectCount": 4,
+      "computedStyleCount": 2
     },
     "breaker/cjk-japanese": {
       "sha256": "4b144451efc00ab047e54f2e71428bab582fb82969e7d56f1851fdd4219e62ff",
@@ -219,7 +268,7 @@
       "computedStyleCount": 0
     },
     "breaker/long-word-default": {
-      "sha256": "6e77fe47cf19d434e8f4b060f4a65f9719b455f4410ce3e9f3021a25462bbf34",
+      "sha256": "87843cf0bbc1f9ec48f0fa05e966ff37344577d348a7c6e8d4f480acea6e242a",
       "width": 460,
       "height": 240,
       "rectCount": 1,
@@ -309,6 +358,34 @@
       "rectCount": 4,
       "computedStyleCount": 0
     },
+    "colors/alpha": {
+      "sha256": "694af99c58503960c9dc0b44dde5da53e7b154035e536507ef89aa970a79bd42",
+      "width": 220,
+      "height": 340,
+      "rectCount": 6,
+      "computedStyleCount": 6
+    },
+    "colors/invalid": {
+      "sha256": "629542c15d305695dd082e651979f5f9f30670c429923b3fa738b6afa8dba60a",
+      "width": 220,
+      "height": 260,
+      "rectCount": 6,
+      "computedStyleCount": 6
+    },
+    "colors/shadows-borders": {
+      "sha256": "a1f6acbd4db02cf0179bbbc63162f1071c47431a8765b6ff9db3b184ca191d42",
+      "width": 260,
+      "height": 300,
+      "rectCount": 4,
+      "computedStyleCount": 4
+    },
+    "colors/syntaxes": {
+      "sha256": "27b18e6398c0aa7612559ab15ccbc9035d9bdd2d4f383a4a31b4e5b646b32816",
+      "width": 220,
+      "height": 640,
+      "rectCount": 12,
+      "computedStyleCount": 12
+    },
     "cross-family/arial-sans-stack": {
       "sha256": "0a05ab772b4e4488c7ba04b081324c8f86736aa029f08f8e191783f1ae5dbec6",
       "width": 480,
@@ -347,6 +424,69 @@
     "cross-family/times-new-roman": {
       "sha256": "ad3b48e3409812d3ee1d654dcb7c855c79f821626798207aeb906dd8917d6989",
       "width": 480,
+      "height": 200,
+      "rectCount": 2,
+      "computedStyleCount": 2
+    },
+    "custom-properties/calc-media": {
+      "sha256": "dc3f849d9df5b7e242e2f90c2c9229d5e4f640593a17b3657a5151e8940e35d8",
+      "width": 400,
+      "height": 200,
+      "rectCount": 2,
+      "computedStyleCount": 2
+    },
+    "custom-properties/fallback": {
+      "sha256": "0c92e6b8d7887dd135d7ab559677e6b1ab39b472cc00d61fca962624f3f9d185",
+      "width": 260,
+      "height": 240,
+      "rectCount": 5,
+      "computedStyleCount": 5
+    },
+    "custom-properties/inheritance": {
+      "sha256": "23ae8af86909e8c04507698ed9d50c123d58ba0c7265404a1ce496a8301edba3",
+      "width": 300,
+      "height": 260,
+      "rectCount": 3,
+      "computedStyleCount": 3
+    },
+    "custom-properties/invalid-cycles": {
+      "sha256": "0913e2987f34f3aa0fd68035b8e0cbd9009e24ed2454b679f915bc827ecb89f0",
+      "width": 260,
+      "height": 220,
+      "rectCount": 4,
+      "computedStyleCount": 4
+    },
+    "custom-properties/shorthands": {
+      "sha256": "97b6bab472fd67569db308dab125e4eeda6f49ca7e234dfe71bdf53e56b32cda",
+      "width": 300,
+      "height": 220,
+      "rectCount": 2,
+      "computedStyleCount": 2
+    },
+    "display-contents/block-suppression": {
+      "sha256": "e957c4378c7a7007e4413d2461e17c22e1e9ea8dd53e0066af8df16a73711a4f",
+      "width": 400,
+      "height": 300,
+      "rectCount": 9,
+      "computedStyleCount": 4
+    },
+    "display-contents/flex-items": {
+      "sha256": "9173bdfda12704c9f736162645a5c21db0a2afa6bbc462427621d55e63c6439b",
+      "width": 400,
+      "height": 240,
+      "rectCount": 9,
+      "computedStyleCount": 3
+    },
+    "display-contents/grid-items": {
+      "sha256": "e6ea1391616db8203469522d67f595973e168d1deefcb4b45c3c31da1dd21002",
+      "width": 400,
+      "height": 200,
+      "rectCount": 5,
+      "computedStyleCount": 2
+    },
+    "display-contents/replaced": {
+      "sha256": "e3f4ceb3a622cd6dd0e948ce111b44fee05078a862dd88f4643a0412d151d402",
+      "width": 400,
       "height": 200,
       "rectCount": 2,
       "computedStyleCount": 2
@@ -799,6 +939,34 @@
       "rectCount": 6,
       "computedStyleCount": 6
     },
+    "media-modern/contrast-forced-gamut": {
+      "sha256": "7161ed5cf0d65649b435005c45f0b199d0249cca56a2e4ce86c424de8b9218f7",
+      "width": 300,
+      "height": 360,
+      "rectCount": 7,
+      "computedStyleCount": 7
+    },
+    "media-modern/defaults-compose": {
+      "sha256": "e521401462880f42396ef62c30ebc9c1e99e56f39c79abc2debd3ae4f4e15027",
+      "width": 300,
+      "height": 280,
+      "rectCount": 7,
+      "computedStyleCount": 7
+    },
+    "media-modern/hover-pointer": {
+      "sha256": "0e622f667f1f8d22ee6bb73383db406dc3d95641ff3005444eea397d408114b3",
+      "width": 300,
+      "height": 400,
+      "rectCount": 8,
+      "computedStyleCount": 8
+    },
+    "media-modern/range-syntax": {
+      "sha256": "c31cd82a0e094b5af1f3f3e24178c09bd8d00bc823109475c6809392a6200c4a",
+      "width": 300,
+      "height": 200,
+      "rectCount": 7,
+      "computedStyleCount": 7
+    },
     "media-queries/aspect-ratio": {
       "sha256": "ab8373e99c1bfd5b8cfcc0eb615ef901a534af5d304effa278f8b42fd80eb7e7",
       "width": 800,
@@ -1205,6 +1373,62 @@
       "rectCount": 4,
       "computedStyleCount": 1
     },
+    "selectors/attr-operators": {
+      "sha256": "024a8271896579f769b272e5794afc3a1cc32eb5c0d9f0716c8a37afc5aa83b5",
+      "width": 320,
+      "height": 380,
+      "rectCount": 12,
+      "computedStyleCount": 12
+    },
+    "selectors/combinators": {
+      "sha256": "2151adbac34c7f1a9aece46895e84b5dfabd57ddb6a5cb4f77220cea90e97db2",
+      "width": 300,
+      "height": 420,
+      "rectCount": 10,
+      "computedStyleCount": 8
+    },
+    "selectors/functional": {
+      "sha256": "10d1e23ad8763c98dc75cb42763fe16b032bd5ce4b4e10e15d4890ac128c3e73",
+      "width": 300,
+      "height": 300,
+      "rectCount": 7,
+      "computedStyleCount": 7
+    },
+    "selectors/ua-nested-lists": {
+      "sha256": "7df18e6ab5da6460e06c74a19004bd9dbed7b0b0c9a8b69332f435fd37883aea",
+      "width": 300,
+      "height": 320,
+      "rectCount": 5,
+      "computedStyleCount": 4
+    },
+    "selectors-structural/child-position": {
+      "sha256": "e599089c2be1c192258351476fb9dc12635d014294eb52209874ea17b88178bd",
+      "width": 300,
+      "height": 320,
+      "rectCount": 7,
+      "computedStyleCount": 6
+    },
+    "selectors-structural/nth-anb": {
+      "sha256": "4dc6b787101df33afa44ac5906faf0ab0cace723044b3bcea39ea4282e7aa20c",
+      "width": 300,
+      "height": 260,
+      "rectCount": 7,
+      "computedStyleCount": 7
+    },
+    "selectors-structural/of-type-compose": {
+      "sha256": "a9f19b0ba3a4aff23d6822a260d16140d9e7fb766f4574379c8debc0a7e4c81c",
+      "width": 300,
+      "height": 260,
+      "rectCount": 6,
+      "computedStyleCount": 6
+    },
+    "selectors-structural/root-empty": {
+      "sha256": "eb8651f8647e884e085d8c70e99703ba45e08b34fcf20398e0d04f4ef7fd0af0",
+      "width": 300,
+      "height": 220,
+      "rectCount": 5,
+      "computedStyleCount": 5
+    },
     "spine/basic-text": {
       "sha256": "524325afaec23db4a2e365f4794fa3651b383dd9f491ecd74b05064c6948196a",
       "width": 460,
@@ -1239,6 +1463,27 @@
       "height": 140,
       "rectCount": 1,
       "computedStyleCount": 1
+    },
+    "sticky/abs-child-stacking": {
+      "sha256": "dbe7e36c2ec61f734972dcb9a672630fe4972ece0a6b4e0b0ab05b0034f0d884",
+      "width": 400,
+      "height": 400,
+      "rectCount": 5,
+      "computedStyleCount": 3
+    },
+    "sticky/constraints": {
+      "sha256": "17f37708c6db895b27059c713d6ffa50faa5deb1692e5068f9fe78e029e60f8b",
+      "width": 400,
+      "height": 400,
+      "rectCount": 8,
+      "computedStyleCount": 2
+    },
+    "sticky/header": {
+      "sha256": "8bc7413a2041afa567bed29ce35997a9eccf1b5aeded401b5dd2030e8bb1df03",
+      "width": 400,
+      "height": 400,
+      "rectCount": 7,
+      "computedStyleCount": 3
     },
     "stress/article": {
       "sha256": "c65e8ea44bb537de5b474d677a98216a3892ee2bd68d649cc111ee759ff10d27",
@@ -1281,6 +1526,34 @@
       "height": 640,
       "rectCount": 9,
       "computedStyleCount": 5
+    },
+    "supports/decl-conditions": {
+      "sha256": "eadd1c395b05afa33bed14ed8f07d6c82eec91eff49bbf2c1ecb74e6fc724bec",
+      "width": 300,
+      "height": 260,
+      "rectCount": 6,
+      "computedStyleCount": 6
+    },
+    "supports/nested-media": {
+      "sha256": "bd371d719d1335838d94f9a4828b875d9d0a34957d7b97408d23bacb06de64e3",
+      "width": 300,
+      "height": 280,
+      "rectCount": 4,
+      "computedStyleCount": 4
+    },
+    "supports/not-and-or": {
+      "sha256": "09a21cadf02fe9372ccabab26b0db3410a7df27168fe2b087acee618843ca1e1",
+      "width": 300,
+      "height": 320,
+      "rectCount": 8,
+      "computedStyleCount": 8
+    },
+    "supports/shorthand-units": {
+      "sha256": "7c9d7dfc54b3c0c909bb64b04ff06f595ce07978f628a1d1ffa197bcac7f3fbe",
+      "width": 300,
+      "height": 260,
+      "rectCount": 6,
+      "computedStyleCount": 6
     },
     "sweep-flexbox/flex-nowrap-center-baseline": {
       "sha256": "0abf7b4cb044c2cba77cd68c8a2f32051366f895cf0f76ede0dde95918fe2c44",
@@ -2094,6 +2367,48 @@
       "rectCount": 2,
       "computedStyleCount": 2
     },
+    "text-breaking/anywhere-intrinsic": {
+      "sha256": "d16cde1bf3c8038fade0d09ede5e5902001f6b5d5e49efc98c50a5ce94e3c7bb",
+      "width": 300,
+      "height": 260,
+      "rectCount": 3,
+      "computedStyleCount": 2
+    },
+    "text-breaking/cjk": {
+      "sha256": "5658c66d36aeb0a763ab93b5ed23f0acdc8c05a4ac720c3a3c9f8b31f2e9485f",
+      "width": 300,
+      "height": 200,
+      "rectCount": 2,
+      "computedStyleCount": 2
+    },
+    "text-breaking/long-word": {
+      "sha256": "fa2228644f1c6b8464d92a315681d6ec7c535d833890c86857e81789ffb7bc0a",
+      "width": 300,
+      "height": 300,
+      "rectCount": 5,
+      "computedStyleCount": 4
+    },
+    "text-formatting/indent": {
+      "sha256": "8439fcc2377d526354b82aa556e46ec4de43a4cae2775ba81b0fda2fb4fb119d",
+      "width": 400,
+      "height": 300,
+      "rectCount": 4,
+      "computedStyleCount": 4
+    },
+    "text-formatting/transform": {
+      "sha256": "9d65c80bf29d0edf721b280b124021ff68caaeb7aad27c8cbba56b7063d07ad6",
+      "width": 600,
+      "height": 200,
+      "rectCount": 3,
+      "computedStyleCount": 3
+    },
+    "text-formatting/word-spacing": {
+      "sha256": "2aae140d15ffdec3f714366a86f96b2dd903af12a1ede614481df085af2dd341",
+      "width": 600,
+      "height": 200,
+      "rectCount": 4,
+      "computedStyleCount": 3
+    },
     "ua-styles/bare-headings": {
       "sha256": "df2b5d62f2cc8a3c560fb69d816381a4e27f3a4b8351a8a23f497ad14f60f7b8",
       "width": 640,
@@ -2123,7 +2438,7 @@
       "computedStyleCount": 7
     },
     "ua-styles/strong-em-pre-hr": {
-      "sha256": "b6a365f9a4e83b09ae87af614af48bd677a6ecc0bc729f744f53cd5ea9ef4035",
+      "sha256": "8c1e0bed79659b825ba78af7e7fb544aac41e65d549681fc4be3cca5d57395dc",
       "width": 460,
       "height": 200,
       "rectCount": 6,

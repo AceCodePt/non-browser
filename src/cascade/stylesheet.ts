@@ -7,14 +7,20 @@
  * enclosing @media's query list (a rule applies only when every enclosing
  * @media group matches) and the enclosing @container groups.
  *
+ * @supports (css-conditional-3) is evaluated at parse time — its conditions
+ * are viewport-independent — so a failing @supports block's rules never reach
+ * the cascade, while a passing block's rules descend with the enclosing
+ * @media/@container state intact (either nesting order).
+ *
  * At-rules the media-queries task does not own (@import, @font-face,
- * @supports, @keyframes, ...) are skipped with brace-aware recovery — the
- * cascade simply never sees their rules. This task's fixtures do not use them.
+ * @keyframes, ...) are skipped with brace-aware recovery — the cascade simply
+ * never sees their rules. This task's fixtures do not use them.
  */
 
 import type { Declaration } from '../layout/css.js';
 import { parseDeclarationBlock } from '../layout/css.js';
 import { parseMediaQueryList, type MediaQuery, type Token, tokenize, splitTopLevel, hasTopLevelOperator } from './media.js';
+import { evaluateSupportsCondition, parseSupportsCondition } from './supports.js';
 
 export interface ContainerGroup {
   name: string | null;
@@ -310,6 +316,17 @@ function parseTopLevel(css: string, inherited: ParseState, rules: CascadeRule[],
         if (hasBlock) {
           const block = readBalancedBlock(css, end);
           parseTopLevel(block, { mediaGroups: inherited.mediaGroups, containerGroups: [...inherited.containerGroups, group] }, rules, nextOrder);
+          i = findClosingBrace(css, end) + 1;
+        } else {
+          i = end + 1;
+        }
+      } else if (name === 'supports') {
+        if (hasBlock) {
+          const cond = parseSupportsCondition(prelude);
+          if (cond && evaluateSupportsCondition(cond)) {
+            const block = readBalancedBlock(css, end);
+            parseTopLevel(block, inherited, rules, nextOrder);
+          }
           i = findClosingBrace(css, end) + 1;
         } else {
           i = end + 1;

@@ -1,0 +1,59 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "a": {
+      "aspect-ratio": "16 / 9"
+    },
+    "b": {
+      "aspect-ratio": "2 / 1"
+    },
+    "c": {
+      "aspect-ratio": "16 / 9"
+    },
+    "h": {
+      "aspect-ratio": "1.5 / 1"
+    },
+    "g": {
+      "aspect-ratio": "2 / 1",
+      "width": "160px"
+    }
+  },
+  "rect": {
+    "a": {
+      "x": 0,
+      "y": 0,
+      "width": 160,
+      "height": 90
+    },
+    "b": {
+      "x": 0,
+      "y": 90,
+      "width": 200,
+      "height": 100
+    },
+    "c": {
+      "x": 0,
+      "y": 190,
+      "width": 160,
+      "height": 100
+    },
+    "h": {
+      "x": 0,
+      "y": 290,
+      "width": 150,
+      "height": 100
+    },
+    "f": {
+      "x": 0,
+      "y": 390,
+      "width": 180,
+      "height": 110
+    },
+    "g": {
+      "x": 0,
+      "y": 500,
+      "width": 160,
+      "height": 80
+    }
+  }
+}

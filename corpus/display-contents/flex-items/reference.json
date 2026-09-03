@@ -1,0 +1,70 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "fw": {
+      "display": "contents"
+    },
+    "fwc": {
+      "display": "contents"
+    },
+    "f1": {
+      "flex-grow": "1"
+    }
+  },
+  "rect": {
+    "fx": {
+      "x": 0,
+      "y": 0,
+      "width": 300,
+      "height": 20
+    },
+    "fw": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0
+    },
+    "f1": {
+      "x": 0,
+      "y": 0,
+      "width": 79.71875,
+      "height": 20
+    },
+    "f2": {
+      "x": 89.71875,
+      "y": 0,
+      "width": 150.28125,
+      "height": 20
+    },
+    "f3": {
+      "x": 250,
+      "y": 0,
+      "width": 50,
+      "height": 20
+    },
+    "fc": {
+      "x": 0,
+      "y": 40,
+      "width": 300,
+      "height": 120
+    },
+    "fwc": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0
+    },
+    "fc1": {
+      "x": 0,
+      "y": 40,
+      "width": 300,
+      "height": 30
+    },
+    "fc2": {
+      "x": 0,
+      "y": 70,
+      "width": 300,
+      "height": 40
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "shorthand-units",
+  "note": "Shorthand conditions are true when the shorthand's value parses for the engine (border: 1px solid red, flex: 1 1 auto, font: 12px 'Noto Sans', margin: 1px 2px) and unit-sensitive value forms match Chrome: calc(1px + 2px) is valid while calc(1px+2px) is invalid CSS (spaces are required around + and -), so both blocks drop or apply identically.",
+  "harvest": {
+    "viewport": { "width": 300, "height": 260 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} body{background-color:rgb(238, 238, 238)} div{width:60px;height:30px} @supports (border: 1px solid red) { .bd{background-color:rgb(255, 0, 0)} } @supports (flex: 1 1 auto) { .fl{background-color:rgb(0, 128, 0)} } @supports (font: 12px 'Noto Sans') { .fn{background-color:rgb(0, 0, 255)} } @supports (margin: 1px 2px) { .mg{background-color:rgb(128, 0, 128)} } @supports (width: calc(1px + 2px)) { .calc{background-color:rgb(255, 165, 0)} } @supports (width: calc(1px+2px)) { .calcbad{background-color:rgb(0, 128, 128)} }</style></head><body><div id=\"bd\" class=\"bd\">b</div><div id=\"fl\" class=\"fl\">f</div><div id=\"fn\" class=\"fn\">n</div><div id=\"mg\" class=\"mg\">m</div><div id=\"calc\" class=\"calc\">c</div><div id=\"calcbad\" class=\"calcbad\">x</div></body></html>",
+    "computedStyle": [
+      { "id": "bd", "props": ["background-color"] },
+      { "id": "fl", "props": ["background-color"] },
+      { "id": "fn", "props": ["background-color"] },
+      { "id": "mg", "props": ["background-color"] },
+      { "id": "calc", "props": ["background-color"] },
+      { "id": "calcbad", "props": ["background-color"] }
+    ],
+    "rects": ["bd", "fl", "fn", "mg", "calc", "calcbad"],
+    "textElements": ["bd", "fl", "fn", "mg", "calc", "calcbad"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

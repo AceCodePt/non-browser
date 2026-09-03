@@ -1,0 +1,115 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "e-presence": {
+      "background-color": "rgb(0, 128, 0)"
+    },
+    "e-exact": {
+      "background-color": "rgb(0, 128, 0)"
+    },
+    "e-word": {
+      "background-color": "rgb(0, 0, 255)"
+    },
+    "e-word-neg": {
+      "background-color": "rgb(255, 0, 0)"
+    },
+    "e-lang": {
+      "background-color": "rgb(255, 165, 0)"
+    },
+    "e-lang-neg": {
+      "background-color": "rgb(238, 238, 238)"
+    },
+    "e-prefix": {
+      "background-color": "rgb(0, 128, 128)"
+    },
+    "e-suffix": {
+      "background-color": "rgb(0, 128, 128)"
+    },
+    "e-sub": {
+      "background-color": "rgb(255, 0, 255)"
+    },
+    "e-ci": {
+      "background-color": "rgb(139, 69, 19)"
+    },
+    "e-cs-neg": {
+      "background-color": "rgb(238, 238, 238)"
+    },
+    "e-none": {
+      "background-color": "rgb(238, 238, 238)"
+    }
+  },
+  "rect": {
+    "e-presence": {
+      "x": 0,
+      "y": 0,
+      "width": 60,
+      "height": 30
+    },
+    "e-exact": {
+      "x": 0,
+      "y": 30,
+      "width": 60,
+      "height": 30
+    },
+    "e-word": {
+      "x": 0,
+      "y": 60,
+      "width": 60,
+      "height": 30
+    },
+    "e-word-neg": {
+      "x": 0,
+      "y": 90,
+      "width": 60,
+      "height": 30
+    },
+    "e-lang": {
+      "x": 0,
+      "y": 120,
+      "width": 60,
+      "height": 30
+    },
+    "e-lang-neg": {
+      "x": 0,
+      "y": 150,
+      "width": 60,
+      "height": 30
+    },
+    "e-prefix": {
+      "x": 0,
+      "y": 180,
+      "width": 60,
+      "height": 30
+    },
+    "e-suffix": {
+      "x": 0,
+      "y": 210,
+      "width": 60,
+      "height": 30
+    },
+    "e-sub": {
+      "x": 0,
+      "y": 240,
+      "width": 60,
+      "height": 30
+    },
+    "e-ci": {
+      "x": 0,
+      "y": 270,
+      "width": 60,
+      "height": 30
+    },
+    "e-cs-neg": {
+      "x": 0,
+      "y": 300,
+      "width": 60,
+      "height": 30
+    },
+    "e-none": {
+      "x": 0,
+      "y": 330,
+      "width": 60,
+      "height": 30
+    }
+  }
+}

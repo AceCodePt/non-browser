@@ -1,0 +1,28 @@
+{
+  "name": "range-syntax",
+  "note": "css-media-queries-4 §2.3 range syntax in @media: (width >= Npx), (400px < width <= 800px) two-sided, (600px > width) value-first with flipped comparison, exact (width = Npx), aspect-ratio with a ratio value ((aspect-ratio >= 2/1)), evaluated across two viewports so each rule flips. The (width == 500px) rule documents that `==` is rejected in media context (Blink accepts it only inside @container): both engines drop the rule and the box keeps the base color.",
+  "harvest": {
+    "viewports": [
+      { "width": 300, "height": 200 },
+      { "width": 500, "height": 200 }
+    ],
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} body{background-color:rgb(238, 238, 238)} div{width:60px;height:30px;background-color:rgb(0, 0, 0)} @media (width >= 300px) { #w1{background-color:rgb(255, 0, 0)} } @media (400px < width <= 800px) { #w2{background-color:rgb(0, 128, 0)} } @media (600px > width) { #w3{background-color:rgb(0, 0, 255)} } @media (width = 300px) { #w4{background-color:rgb(128, 0, 128)} } @media (200px <= width < 350px) { #w5{background-color:rgb(255, 165, 0)} } @media (aspect-ratio >= 2/1) { #w6{background-color:rgb(0, 128, 128)} } @media (width == 500px) { #w7{background-color:rgb(255, 0, 255)} }</style></head><body><div id=\"w1\">1</div><div id=\"w2\">2</div><div id=\"w3\">3</div><div id=\"w4\">4</div><div id=\"w5\">5</div><div id=\"w6\">6</div><div id=\"w7\">7</div></body></html>",
+    "computedStyle": [
+      { "id": "w1", "props": ["background-color"] },
+      { "id": "w2", "props": ["background-color"] },
+      { "id": "w3", "props": ["background-color"] },
+      { "id": "w4", "props": ["background-color"] },
+      { "id": "w5", "props": ["background-color"] },
+      { "id": "w6", "props": ["background-color"] },
+      { "id": "w7", "props": ["background-color"] }
+    ],
+    "rects": ["w1", "w2", "w3", "w4", "w5", "w6", "w7"],
+    "textElements": ["w1", "w2", "w3", "w4", "w5", "w6", "w7"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

@@ -16,7 +16,7 @@
 import type { CanvasFactory, CanvasLike } from '../canvas/interface.js';
 import { skiaCanvasFactory } from '../canvas/skia.js';
 import { getActiveBrowserConfig, resolveFontFamily } from '../config/browser-config.js';
-import { breakNextLine, prepareText, type PrepareOptions } from '../pretext/index.js';
+import { breakNextLine, prepareText, segmentGraphemes, type EngineBreakOptions, type PrepareOptions } from '../pretext/index.js';
 import type { Color, TextAlign, WhiteSpaceValue } from './css.js';
 import { letterSpacingPositions } from './letter-spacing.js';
 
@@ -182,6 +182,12 @@ export function layoutTextLines(opts: {
   align?: TextAlign;
   whiteSpace?: WhiteSpaceValue;
   rtl?: boolean;
+  /** css-text-3 §6 inputs feeding the breaker's in-word breakability. */
+  wordBreak?: 'normal' | 'break-all' | 'keep-all';
+  overflowWrap?: 'normal' | 'break-word' | 'anywhere';
+  /** css-text-3 §2.2/§8: first-line indent (resolved px) and word-spacing. */
+  textIndent?: { amount: number; hanging: boolean; eachLine: boolean };
+  wordSpacing?: number;
   available: (top: number, bottom: number) => { x: number; width: number };
 }): { lines: LineBox[]; height: number } {
   const { text, y, lineHeight, fontSize, family, available } = opts;
@@ -228,7 +234,7 @@ export function layoutTextLines(opts: {
       return { lines, height: lineTop - y };
     }
     if (usePretextBreaker) {
-      lineTop = pretextWordFill(collapsed, lines, lineTop, available, measure, align, fontSize, family, letterSpacing, lineHeight, 'normal', false, rtl);
+      lineTop = pretextWordFill(collapsed, lines, lineTop, available, measure, align, fontSize, family, letterSpacing, lineHeight, 'normal', false, rtl, { cssWordBreak: opts.wordBreak, overflowWrap: opts.overflowWrap, wordSpacing: opts.wordSpacing }, segIndent(opts.textIndent, 0, 1));
     } else {
       lineTop = fillWordLines(collapsed.split(' '), lines, lineTop, available, measure, align, fontSize, family, letterSpacing, lineHeight, rtl);
     }
@@ -238,7 +244,8 @@ export function layoutTextLines(opts: {
   if (ws === 'pre-line') {
     let segments = text.split('\n');
     if (segments[segments.length - 1] === '') segments.pop();
-    for (const seg of segments) {
+    for (let si = 0; si < segments.length; si++) {
+      const seg = segments[si]!;
       const collapsed = seg.replace(/[ \t\r\n\f]+/g, ' ').trim();
       if (collapsed === '') {
         const av = available(lineTop, lineTop + lineHeight);
@@ -247,7 +254,7 @@ export function layoutTextLines(opts: {
         continue;
       }
       if (usePretextBreaker) {
-        lineTop = pretextWordFill(collapsed, lines, lineTop, available, measure, align, fontSize, family, letterSpacing, lineHeight, 'normal', false, rtl);
+        lineTop = pretextWordFill(collapsed, lines, lineTop, available, measure, align, fontSize, family, letterSpacing, lineHeight, 'normal', false, rtl, { cssWordBreak: opts.wordBreak, overflowWrap: opts.overflowWrap, wordSpacing: opts.wordSpacing }, segIndent(opts.textIndent, si, segments.length));
       } else {
         lineTop = fillWordLines(collapsed.split(' '), lines, lineTop, available, measure, align, fontSize, family, letterSpacing, lineHeight, rtl);
       }
@@ -256,7 +263,7 @@ export function layoutTextLines(opts: {
   }
 
   if (usePretextBreaker) {
-    lineTop = pretextWordFill(text, lines, lineTop, available, measure, align, fontSize, family, letterSpacing, lineHeight, 'pre-wrap', true);
+    lineTop = pretextWordFill(text, lines, lineTop, available, measure, align, fontSize, family, letterSpacing, lineHeight, 'pre-wrap', true, rtl, { cssWordBreak: opts.wordBreak, overflowWrap: opts.overflowWrap, wordSpacing: opts.wordSpacing }, segIndent(opts.textIndent, 0, 1));
     return { lines, height: lineTop - y };
   }
 
@@ -329,6 +336,50 @@ export function layoutTextLines(opts: {
  * stays on the line (Chrome). Under 'normal' the trailing space is dropped
  * instead — it collapses away at the wrap point and is not painted.
  */
+type BreakOptions = EngineBreakOptions;
+
+/** css-text-3 §2.1: the indent for a segment's first line under the
+ * default/hanging/each-line modes (soft-wrapped lines never indent). */
+function segIndent(
+  ti: { amount: number; hanging: boolean; eachLine: boolean } | undefined,
+  segmentIndex: number,
+  segmentCount: number,
+): number {
+  if (!ti || ti.amount === 0) return 0;
+  if (ti.hanging) return segmentIndex === 0 ? 0 : ti.amount;
+  if (ti.eachLine) return ti.amount;
+  return segmentIndex === 0 ? ti.amount : 0;
+}
+
+/**
+ * css-text-3 §6.2: overflow-wrap:anywhere makes every grapheme a break
+ * opportunity, so min-content sizing sees the widest grapheme instead of the
+ * widest word. break-word deliberately does not participate — its in-word
+ * wrapping is not considered for intrinsic sizes (the spec's exact distinction
+ * from anywhere).
+ */
+export function minTextWidth(
+  text: string,
+  fontSize: number,
+  family: string,
+  letterSpacing = 0,
+  anywhere = false,
+  fontWeight?: number,
+  fontStyle?: 'normal' | 'italic',
+): number {
+  let max = 0;
+  if (anywhere) {
+    for (const g of segmentGraphemes(text)) {
+      max = Math.max(max, measureTextWidth(g, fontSize, family, letterSpacing, fontWeight, fontStyle));
+    }
+    return max;
+  }
+  for (const w of text.split(' ')) {
+    max = Math.max(max, measureTextWidth(w, fontSize, family, letterSpacing, fontWeight, fontStyle));
+  }
+  return max;
+}
+
 function pretextWordFill(
   text: string,
   lines: LineBox[],
@@ -343,13 +394,24 @@ function pretextWordFill(
   prepareWs: 'normal' | 'pre-wrap',
   hungSpace: boolean,
   rtl = false,
+  breaks: BreakOptions = {},
+  indent = 0,
 ): number {
+  let firstLine = true;
   let lineTop = startTop;
-  const prepared = prepareText(text, cssFontString(fontSize, family), { whiteSpace: prepareWs, letterSpacing });
+  const prepared = prepareText(text, cssFontString(fontSize, family), {
+    whiteSpace: prepareWs,
+    letterSpacing,
+    wordBreak: breaks.cssWordBreak === 'keep-all' ? 'keep-all' : 'normal',
+    cssWordBreak: breaks.cssWordBreak,
+    overflowWrap: breaks.overflowWrap,
+  });
   const totalSegments = prepared.segments.length;
   let cursor = { segmentIndex: 0, graphemeIndex: 0 };
   while (true) {
-    const av = available(lineTop, lineTop + lineHeight);
+    const avRaw = available(lineTop, lineTop + lineHeight);
+    const av = firstLine && indent !== 0 ? { x: avRaw.x + indent, width: Math.max(0, avRaw.width - indent) } : avRaw;
+    firstLine = false;
     const availWidth = Math.max(0, av.width);
     const broke = breakNextLine(prepared, cursor, availWidth);
     if (broke === null) break;

@@ -1,0 +1,24 @@
+{
+  "name": "child-position",
+  "note": "Sibling position: :first-child, :last-child and :only-child count element siblings only — interleaved whitespace text nodes are ignored — with a nested single-child :only-child and a mid-position element that must not match :first-child.",
+  "harvest": {
+    "viewport": { "width": 300, "height": 320 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} body{background-color:rgb(238, 238, 238)} div{width:60px;height:30px} .row:first-child{background-color:rgb(255, 0, 0)} .row:last-child{background-color:rgb(0, 128, 0)} .mid:first-child{background-color:rgb(128, 0, 128)} .mid:last-child{background-color:rgb(0, 128, 128)} .nest:only-child{background-color:rgb(0, 0, 255)} .pair:first-child{background-color:rgb(255, 165, 0)} .pair:last-child{background-color:rgb(255, 0, 255)}</style></head><body><div class=\"row\" id=\"r1\">first</div> <div class=\"mid\" id=\"mid\">mid</div> <div class=\"row\" id=\"r2\">last</div><div id=\"nestwrap\"><p class=\"nest\" id=\"nest\">only</p></div><div class=\"pair\" id=\"pa\">pa</div><div class=\"pair\" id=\"pb\">pb</div></body></html>",
+    "computedStyle": [
+      { "id": "r1", "props": ["background-color"] },
+      { "id": "mid", "props": ["background-color"] },
+      { "id": "r2", "props": ["background-color"] },
+      { "id": "nest", "props": ["background-color"] },
+      { "id": "pa", "props": ["background-color"] },
+      { "id": "pb", "props": ["background-color"] }
+    ],
+    "rects": ["r1", "mid", "r2", "nestwrap", "nest", "pa", "pb"],
+    "textElements": ["r1", "mid", "r2", "nest", "pa", "pb"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

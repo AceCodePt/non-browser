@@ -1,0 +1,94 @@
+{
+  "viewports": [
+    {
+      "viewport": {
+        "width": 300,
+        "height": 360
+      },
+      "computedStyle": {
+        "cm": {
+          "width": "60px"
+        },
+        "cn": {
+          "width": "90px"
+        },
+        "fa": {
+          "width": "60px"
+        },
+        "fn": {
+          "width": "90px"
+        },
+        "gp": {
+          "width": "60px"
+        },
+        "gr": {
+          "width": "60px"
+        },
+        "both": {
+          "width": "60px"
+        }
+      }
+    },
+    {
+      "viewport": {
+        "width": 300,
+        "height": 360,
+        "prefersContrast": "more",
+        "forcedColors": "active"
+      },
+      "computedStyle": {
+        "cm": {
+          "width": "90px"
+        },
+        "cn": {
+          "width": "60px"
+        },
+        "fa": {
+          "width": "90px"
+        },
+        "fn": {
+          "width": "60px"
+        },
+        "gp": {
+          "width": "60px"
+        },
+        "gr": {
+          "width": "60px"
+        },
+        "both": {
+          "width": "90px"
+        }
+      }
+    },
+    {
+      "viewport": {
+        "width": 300,
+        "height": 360,
+        "colorGamut": "p3"
+      },
+      "computedStyle": {
+        "cm": {
+          "width": "60px"
+        },
+        "cn": {
+          "width": "90px"
+        },
+        "fa": {
+          "width": "60px"
+        },
+        "fn": {
+          "width": "90px"
+        },
+        "gp": {
+          "width": "90px"
+        },
+        "gr": {
+          "width": "60px"
+        },
+        "both": {
+          "width": "60px"
+        }
+      }
+    }
+  ]
+}

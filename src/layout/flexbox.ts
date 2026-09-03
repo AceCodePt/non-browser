@@ -40,8 +40,9 @@ import {
   type Length,
   type Viewport,
 } from './css.js';
-import { layoutTextLines, measureTextWidth } from './measure.js';
-import { FloatManager, layoutElementBox, type LayoutNode, type PaintOp } from './block-inline.js';
+import { applyTextTransform } from './css.js';
+import { layoutTextLines, measureTextWidth, minTextWidth } from './measure.js';
+import { expandContents, FloatManager, layoutElementBox, type LayoutNode, type PaintOp } from './block-inline.js';
 import { activeFontMetrics, lineAscentContribution } from './fontmetrics.js';
 import { isCommentNode, isElementNode, isTextNode, type P5Element, type P5Text } from './types.js';
 
@@ -104,7 +105,7 @@ interface FlexLine {
 }
 
 function hasInlineText(el: P5Element, styles: Map<P5Element, ComputedStyle>): boolean {
-  for (const child of el.childNodes) {
+  for (const child of expandContents(el.childNodes, styles)) {
     if (isTextNode(child)) {
       if (/\S/.test(child.value)) return true;
     } else if (isElementNode(child)) {
@@ -118,9 +119,11 @@ function hasInlineText(el: P5Element, styles: Map<P5Element, ComputedStyle>): bo
 
 function collectInlineText(el: P5Element, styles: Map<P5Element, ComputedStyle>): string {
   let out = '';
-  for (const child of el.childNodes) {
+  const self = styles.get(el);
+  const transform = self?.textTransform ?? 'none';
+  for (const child of expandContents(el.childNodes, styles)) {
     if (isTextNode(child)) {
-      out += child.value;
+      out += applyTextTransform(child.value, transform);
     } else if (isElementNode(child)) {
       const s = styles.get(child);
       if (s && (s.display === 'block' || s.display === 'grid' || s.display === 'flex')) continue;
@@ -137,11 +140,9 @@ function contentInlineSizes(
 ): { min: number; max: number } {
   if (hasInlineText(el, styles)) {
     const text = collectInlineText(el, styles).replace(/[ \t\r\n\f]+/g, ' ').trim();
-    let widest = 0;
-    for (const w of text.split(' ')) {
-      widest = Math.max(widest, measureTextWidth(w, style.fontSize, style.fontFamily, style.letterSpacing));
-    }
-    const full = measureTextWidth(text, style.fontSize, style.fontFamily, style.letterSpacing);
+    const widest = minTextWidth(text, style.fontSize, style.fontFamily, style.letterSpacing, style.overflowWrap === 'anywhere');
+    const ws = resolveLength(style.wordSpacing, 0) ?? 0;
+    const full = measureTextWidth(text, style.fontSize, style.fontFamily, style.letterSpacing) + ws * (text.match(/ /g)?.length ?? 0);
     return { min: widest, max: full };
   }
   let min = 0;
@@ -156,7 +157,7 @@ function contentInlineSizes(
     const gap = gapLen(style.columnGap, 0, undefined);
     let sumMin = 0;
     let sumMax = 0;
-    for (const child of el.childNodes) {
+    for (const child of expandContents(el.childNodes, styles)) {
       if (!isElementNode(child)) continue;
       const cs = styles.get(child);
       if (!cs || cs.display === 'none') continue;
@@ -172,7 +173,7 @@ function contentInlineSizes(
     }
     return { min: sumMin, max: sumMax };
   }
-  for (const child of el.childNodes) {
+  for (const child of expandContents(el.childNodes, styles)) {
     if (!isElementNode(child)) continue;
     const cs = styles.get(child);
     if (!cs || cs.display === 'none') continue;
@@ -226,6 +227,8 @@ function contentBlockHeight(
       fontSize: style.fontSize,
       family: style.fontFamily,
       whiteSpace: style.whiteSpace,
+      wordBreak: style.wordBreak,
+      overflowWrap: style.overflowWrap,
       available: () => ({ x: 0, width: w }),
     });
     return res.height;
@@ -240,7 +243,7 @@ function contentBlockHeight(
       : 0;
   let h = 0;
   let counted = 0;
-  for (const child of el.childNodes) {
+  for (const child of expandContents(el.childNodes, styles)) {
     if (!isElementNode(child)) continue;
     const cs = styles.get(child);
     if (!cs || cs.display === 'none') continue;
@@ -329,7 +332,7 @@ function collectFlexItems(
     textBuf = [];
   };
 
-  for (const child of el.childNodes) {
+  for (const child of expandContents(el.childNodes, styles)) {
     if (isCommentNode(child)) continue;
     if (isTextNode(child)) {
       textBuf.push(child);

@@ -1,0 +1,63 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "s1": {
+      "position": "sticky",
+      "top": "200px"
+    },
+    "s3": {
+      "position": "sticky",
+      "top": "500px"
+    }
+  },
+  "rect": {
+    "s1": {
+      "x": 0,
+      "y": 200,
+      "width": 400,
+      "height": 20
+    },
+    "s2": {
+      "x": 0,
+      "y": 30,
+      "width": 400,
+      "height": 20
+    },
+    "wrap": {
+      "x": 0,
+      "y": 60,
+      "width": 400,
+      "height": 60
+    },
+    "s3": {
+      "x": 0,
+      "y": 100,
+      "width": 400,
+      "height": 20
+    },
+    "s4": {
+      "x": 0,
+      "y": 120,
+      "width": 400,
+      "height": 20
+    },
+    "sc": {
+      "x": 0,
+      "y": 150,
+      "width": 310,
+      "height": 110
+    },
+    "sinner": {
+      "x": 5,
+      "y": 185,
+      "width": 300,
+      "height": 20
+    },
+    "big": {
+      "x": 5,
+      "y": 175,
+      "width": 300,
+      "height": 300
+    }
+  }
+}

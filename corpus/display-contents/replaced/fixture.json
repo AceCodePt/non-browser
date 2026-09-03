@@ -1,0 +1,20 @@
+{
+  "name": "replaced",
+  "note": "css-display-3 §2: replaced elements cannot be display:contents — Blink computes 'none' for them (probed), so the img generates no box (all-zero rect despite width/height attributes) and the following sibling lays out at the top with no gap. The computed display value ('none', not 'contents') is pinned on the computed-style layer.",
+  "harvest": {
+    "viewport": { "width": 400, "height": 200 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} body{background-color:rgb(255, 255, 255)} #after{height:20px;background-color:rgb(238, 238, 238)}</style></head><body><img id=\"im\" style=\"display:contents\" width=\"100\" height=\"40\"><div id=\"after\">next</div></body></html>",
+    "computedStyle": [
+      { "id": "im", "props": ["display"] },
+      { "id": "after", "props": ["background-color"] }
+    ],
+    "rects": ["im", "after"],
+    "textElements": ["after"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

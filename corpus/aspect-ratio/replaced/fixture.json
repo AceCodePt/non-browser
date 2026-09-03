@@ -1,0 +1,57 @@
+{
+  "name": "replaced",
+  "note": "css-sizing-4 §5.3 on replaced elements: aspect-ratio: auto keeps the attribute-derived size (200x100); an explicit ratio replaces the natural ratio — with both CSS dimensions auto the natural size maps through the new ratio keeping the dimension whose transfer yields the smaller box (1/1 on a 200x100 natural size → 100x100; 4/1 → 200x50, probe-verified). The computed aspect-ratio strings pin Chrome's serialization ('auto', '1 / 1'). The imgs are display:block so the boxes stack without line-box struts: this engine's UA defaults make img block-level, a pre-existing divergence from Chrome's inline replaced elements that this slice does not change. Chrome paints a placeholder frame on source-less imgs that the engine (no image decoding in v1) does not reproduce — the img border boxes are declared maskElements per the harness convention.",
+  "harvest": {
+    "viewport": {
+      "width": 400,
+      "height": 200
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} body{background-color:rgb(255, 255, 255)} img{display:block} #i1{aspect-ratio:auto;background-color:rgb(255, 0, 0)} #i2{aspect-ratio:1/1;width:auto} #i3{aspect-ratio:4/1;height:auto} #i4{aspect-ratio:1/1;width:80px}</style></head><body><img id=\"i1\" width=\"200\" height=\"100\"><img id=\"i2\" width=\"200\" height=\"100\"><img id=\"i3\" width=\"200\" height=\"100\"><img id=\"i4\" width=\"200\" height=\"100\"></body></html>",
+    "computedStyle": [
+      {
+        "id": "i1",
+        "props": [
+          "aspect-ratio"
+        ]
+      },
+      {
+        "id": "i2",
+        "props": [
+          "aspect-ratio"
+        ]
+      },
+      {
+        "id": "i3",
+        "props": [
+          "aspect-ratio"
+        ]
+      },
+      {
+        "id": "i4",
+        "props": [
+          "aspect-ratio",
+          "width"
+        ]
+      }
+    ],
+    "rects": [
+      "i1",
+      "i2",
+      "i3",
+      "i4"
+    ],
+    "textElements": [],
+    "maskElements": [
+      "i1",
+      "i2",
+      "i3",
+      "i4"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

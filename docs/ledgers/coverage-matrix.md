@@ -77,7 +77,8 @@ the archive-audit classification so a reader can see the evidence:
 | calc()/min()/max()/clamp() | never landed | not an archived task | `tasks/calc-values` |
 | custom properties / var() | EMPTY archive | `cascade-custom-props` EMPTY | none |
 | cascade layers / !important | EMPTY archive | `cascade-layers-important` EMPTY | none |
-| @import / @supports / @font-face | at-rules skipped | `parse-stylesheets` PARTIAL | none |
+| @import / @font-face / @keyframes | at-rules skipped | `parse-stylesheets` PARTIAL | none |
+| @supports | declaration conditions + not/and/or, parse-time evaluation | `supports-at-rule` EXECUTED | `docs/ledgers/supports.md` |
 | @container container queries | declared typed gap | `cascade-media-queries` EXECUTED, gap in ledger | `docs/ledgers/media-queries.md` |
 
 The table CSS 2.1 §17 properties (border-collapse, border-spacing, caption-side,

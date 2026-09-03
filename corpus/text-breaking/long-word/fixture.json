@@ -1,0 +1,22 @@
+{
+  "name": "long-word",
+  "note": "css-text-3 §6.2: a long unbreakable word at the default overflow-wrap:normal overflows its line without splitting (one overflowing line plus the following word on the next); overflow-wrap:break-word moves the word to its own line and splits it there (the following word lands after the split chunks); word-break:break-all fills every line with the word's characters. The word-wrap legacy alias computes the same value.",
+  "harvest": {
+    "viewport": { "width": 300, "height": 300 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} p{margin:0;font-size:16px;width:120px} #d1{overflow-wrap:break-word} #d2{overflow-wrap:anywhere} #d3{word-break:break-all} #d4{word-wrap:break-word}</style></head><body><p id=\"d0\">supercalifragilisticexpialidocious x</p><p id=\"d1\">supercalifragilisticexpialidocious x</p><p id=\"d2\">supercalifragilisticexpialidocious x</p><p id=\"d3\">supercalifragilisticexpialidocious x</p><p id=\"d4\">supercalifragilisticexpialidocious x</p></body></html>",
+    "computedStyle": [
+      { "id": "d0", "props": ["overflow-wrap", "word-break"] },
+      { "id": "d1", "props": ["overflow-wrap"] },
+      { "id": "d3", "props": ["word-break"] },
+      { "id": "d4", "props": ["word-wrap", "overflow-wrap"] }
+    ],
+    "rects": ["d0", "d1", "d2", "d3", "d4"],
+    "textElements": ["d0", "d1", "d2", "d3", "d4"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

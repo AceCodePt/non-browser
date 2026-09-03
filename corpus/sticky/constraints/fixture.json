@@ -1,0 +1,20 @@
+{
+  "name": "constraints",
+  "note": "css-position-3 §3.6 constraint pass at scroll 0 (probe-verified): top: 200px shifts the box down from flow y=0 to y=200; left: 50px on a full-width box yields no shift because the containing-block clamp cancels it (the 400px box cannot move inside a 400px content box); top: 500px inside a 60px-tall parent clamps to the parent's bottom minus the box height (y=100); bottom: 5px at flow y=120 holds (no violation against the 400px scrollport); a sticky inside an overflow scroll container shifts within the scroller's scrollport (flow 155 -> 185 with top: 30px).",
+  "harvest": {
+    "viewport": { "width": 400, "height": 400 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} body{background-color:rgb(255, 255, 255)} #s1{position: sticky;top:200px;height:20px;background-color:rgb(255, 0, 0)} #s2{position: sticky;left:50px;height:20px;background-color:rgb(0, 255, 0);margin-top:10px} #wrap{margin-top:10px;height:60px;background-color:rgb(238, 238, 238)} #s3{position: sticky;top:500px;height:20px;background-color:rgb(0, 0, 255)} #s4{position: sticky;bottom:5px;height:20px;background-color:rgb(255, 255, 0)} #sc{overflow:auto;height:100px;width:300px;border:5px solid rgb(0, 0, 0);margin-top:10px} #sinner{position: sticky;top:30px;height:20px;background-color:rgb(255, 0, 255)} #big{height:300px}</style></head><body><div id=\"s1\"></div><div id=\"s2\"></div><div id=\"wrap\"><div id=\"s3\"></div></div><div id=\"s4\"></div><div id=\"sc\"><div id=\"sinner\"></div><div id=\"big\"></div></div></body></html>",
+    "computedStyle": [
+      { "id": "s1", "props": ["position", "top"] },
+      { "id": "s3", "props": ["position", "top"] }
+    ],
+    "rects": ["s1", "s2", "wrap", "s3", "s4", "sc", "sinner"],
+    "textElements": []
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "list-markers",
+  "note": "A <br> inside a list item splits the item's text across line boxes without disturbing list mechanics: the ordered-list counter is not reset (the second li still numbers 2) and the outside marker stays on the item's first line. The list-item display and marker placement are pinned by the rects and the screenshot.",
+  "harvest": {
+    "viewport": { "width": 300, "height": 220 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} ol{margin:0;padding:0 0 0 40px} li{font-size:16px}</style></head><body><ol><li id=\"one\">first<br>item</li><li id=\"two\">second</li></ol></body></html>",
+    "computedStyle": [
+      { "id": "one", "props": ["display", "list-style-type"] },
+      { "id": "two", "props": ["display"] }
+    ],
+    "rects": ["one", "two"],
+    "textElements": ["one", "two"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

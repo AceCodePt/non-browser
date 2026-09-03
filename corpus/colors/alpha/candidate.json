@@ -1,0 +1,61 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "a-legacy": {
+      "background-color": "rgba(10, 20, 30, 0.25)"
+    },
+    "a-zero": {
+      "background-color": "rgba(10, 20, 30, 0)"
+    },
+    "a-hex4": {
+      "background-color": "rgba(0, 255, 0, 0.533)"
+    },
+    "a-pct": {
+      "background-color": "rgba(10, 20, 30, 0.5)"
+    },
+    "a-clamp": {
+      "background-color": "rgb(10, 20, 30)"
+    },
+    "a-pct-clamp": {
+      "background-color": "rgb(10, 20, 30)"
+    }
+  },
+  "rect": {
+    "a-legacy": {
+      "x": 0,
+      "y": 0,
+      "width": 120,
+      "height": 40
+    },
+    "a-zero": {
+      "x": 0,
+      "y": 40,
+      "width": 120,
+      "height": 40
+    },
+    "a-hex4": {
+      "x": 0,
+      "y": 80,
+      "width": 120,
+      "height": 40
+    },
+    "a-pct": {
+      "x": 0,
+      "y": 120,
+      "width": 120,
+      "height": 40
+    },
+    "a-clamp": {
+      "x": 0,
+      "y": 160,
+      "width": 120,
+      "height": 40
+    },
+    "a-pct-clamp": {
+      "x": 0,
+      "y": 200,
+      "width": 120,
+      "height": 40
+    }
+  }
+}

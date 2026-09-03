@@ -1,0 +1,26 @@
+{
+  "name": "not-and-or",
+  "note": "css-conditional-3 §4.1 composition with correct precedence: not flips a false condition to true (and vice versa), and requires every operand, or requires one, and parenthesized nesting ((x) and (not (y))) composes. Matching cases apply and non-matching cases drop in both engines.",
+  "harvest": {
+    "viewport": { "width": 300, "height": 320 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} body{background-color:rgb(238, 238, 238)} div{width:60px;height:30px} @supports not (color: bogus) { .n1{background-color:rgb(255, 0, 0)} } @supports not (display: grid) { .n2{background-color:rgb(0, 128, 0)} } @supports (color: red) and (filter: bogus) { .a2{background-color:rgb(0, 0, 255)} } @supports (color: red) and (display: block) { .a1{background-color:rgb(128, 0, 128)} } @supports (display: grid) or (display: bogus) { .o1{background-color:rgb(255, 165, 0)} } @supports (color: bogus) or (color: bogus) { .o2{background-color:rgb(0, 128, 128)} } @supports ((display: grid) and (not (color: bogus))) { .p1{background-color:rgb(255, 0, 255)} } @supports ((display: grid) and (not (color: red))) { .p2{background-color:rgb(139, 69, 19)} }</style></head><body><div id=\"n1\" class=\"n1\">1</div><div id=\"n2\" class=\"n2\">2</div><div id=\"a1\" class=\"a1\">3</div><div id=\"a2\" class=\"a2\">4</div><div id=\"o1\" class=\"o1\">5</div><div id=\"o2\" class=\"o2\">6</div><div id=\"p1\" class=\"p1\">7</div><div id=\"p2\" class=\"p2\">8</div></body></html>",
+    "computedStyle": [
+      { "id": "n1", "props": ["background-color"] },
+      { "id": "n2", "props": ["background-color"] },
+      { "id": "a1", "props": ["background-color"] },
+      { "id": "a2", "props": ["background-color"] },
+      { "id": "o1", "props": ["background-color"] },
+      { "id": "o2", "props": ["background-color"] },
+      { "id": "p1", "props": ["background-color"] },
+      { "id": "p2", "props": ["background-color"] }
+    ],
+    "rects": ["n1", "n2", "a1", "a2", "o1", "o2", "p1", "p2"],
+    "textElements": ["n1", "n2", "a1", "a2", "o1", "o2", "p1", "p2"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

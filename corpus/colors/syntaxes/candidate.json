@@ -1,0 +1,117 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "hsl-comma": {
+      "background-color": "rgb(64, 191, 64)",
+      "color": "rgb(0, 0, 0)"
+    },
+    "hsl-modern": {
+      "background-color": "rgb(64, 191, 64)"
+    },
+    "hsl-alpha": {
+      "background-color": "rgba(64, 191, 64, 0.5)"
+    },
+    "hsl-turn": {
+      "background-color": "rgb(191, 64, 64)"
+    },
+    "rgb-space": {
+      "background-color": "rgb(10, 20, 30)"
+    },
+    "rgb-space-alpha": {
+      "background-color": "rgba(10, 20, 30, 0.5)"
+    },
+    "rgb-legacy": {
+      "background-color": "rgb(10, 20, 30)"
+    },
+    "hex8": {
+      "background-color": "rgba(0, 255, 0, 0.533)"
+    },
+    "hex4": {
+      "background-color": "rgba(0, 255, 0, 0.533)"
+    },
+    "named": {
+      "background-color": "rgb(102, 51, 153)"
+    },
+    "currentcolor-bg": {
+      "background-color": "rgb(255, 128, 0)",
+      "color": "rgb(255, 128, 0)"
+    },
+    "clamp": {
+      "background-color": "rgb(255, 0, 30)"
+    }
+  },
+  "rect": {
+    "hsl-comma": {
+      "x": 0,
+      "y": 0,
+      "width": 120,
+      "height": 40
+    },
+    "hsl-modern": {
+      "x": 0,
+      "y": 40,
+      "width": 120,
+      "height": 40
+    },
+    "hsl-alpha": {
+      "x": 0,
+      "y": 80,
+      "width": 120,
+      "height": 40
+    },
+    "hsl-turn": {
+      "x": 0,
+      "y": 120,
+      "width": 120,
+      "height": 40
+    },
+    "rgb-space": {
+      "x": 0,
+      "y": 160,
+      "width": 120,
+      "height": 40
+    },
+    "rgb-space-alpha": {
+      "x": 0,
+      "y": 200,
+      "width": 120,
+      "height": 40
+    },
+    "rgb-legacy": {
+      "x": 0,
+      "y": 240,
+      "width": 120,
+      "height": 40
+    },
+    "hex8": {
+      "x": 0,
+      "y": 280,
+      "width": 120,
+      "height": 40
+    },
+    "hex4": {
+      "x": 0,
+      "y": 320,
+      "width": 120,
+      "height": 40
+    },
+    "named": {
+      "x": 0,
+      "y": 360,
+      "width": 120,
+      "height": 40
+    },
+    "currentcolor-bg": {
+      "x": 0,
+      "y": 400,
+      "width": 120,
+      "height": 40
+    },
+    "clamp": {
+      "x": 0,
+      "y": 440,
+      "width": 120,
+      "height": 40
+    }
+  }
+}

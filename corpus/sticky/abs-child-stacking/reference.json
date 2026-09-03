@@ -1,0 +1,48 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "st": {
+      "position": "sticky",
+      "z-index": "auto"
+    },
+    "stz": {
+      "position": "sticky",
+      "z-index": "2"
+    },
+    "ab": {
+      "position": "absolute"
+    }
+  },
+  "rect": {
+    "st": {
+      "x": 0,
+      "y": 100,
+      "width": 400,
+      "height": 40
+    },
+    "ab": {
+      "x": 5,
+      "y": 105,
+      "width": 20,
+      "height": 20
+    },
+    "after": {
+      "x": 0,
+      "y": 140,
+      "width": 400,
+      "height": 20
+    },
+    "z": {
+      "x": 0,
+      "y": 160,
+      "width": 400,
+      "height": 20
+    },
+    "stz": {
+      "x": 0,
+      "y": 180,
+      "width": 400,
+      "height": 20
+    }
+  }
+}

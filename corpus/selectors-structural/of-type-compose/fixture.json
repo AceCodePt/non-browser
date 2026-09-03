@@ -1,0 +1,24 @@
+{
+  "name": "of-type-compose",
+  "note": "Of-type position counts same-tag element siblings among mixed p/span/em children (:first-of-type, :nth-of-type(2n), :last-of-type, :only-of-type), composed with classes and functional lists (:not(:nth-child(2)), :is(p, span):last-of-type, :where(em, span):only-of-type).",
+  "harvest": {
+    "viewport": { "width": 300, "height": 260 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} body{background-color:rgb(238, 238, 238)} .s{width:60px;height:30px} p.s, span.s, em.s{display:block} p:first-of-type{background-color:rgb(255, 0, 0)} span:first-of-type{background-color:rgb(0, 128, 0)} p:nth-of-type(2n){background-color:rgb(0, 0, 255)} span:last-of-type{background-color:rgb(255, 165, 0)} em:only-of-type{background-color:rgb(128, 0, 128)} .s:not(:nth-child(2)){background-color:rgb(0, 128, 128)} :is(p, span):last-of-type{background-color:rgb(255, 0, 255)} :where(em, span):only-of-type{background-color:rgb(139, 69, 19)}</style></head><body><p id=\"a\" class=\"s\">pa</p><span id=\"b\" class=\"s\">sb</span><p id=\"c\" class=\"s\">pc</p><em id=\"d\" class=\"s\">ed</em><span id=\"e\" class=\"s\">se</span><p id=\"f\" class=\"s\">pf</p></body></html>",
+    "computedStyle": [
+      { "id": "a", "props": ["background-color"] },
+      { "id": "b", "props": ["background-color"] },
+      { "id": "c", "props": ["background-color"] },
+      { "id": "d", "props": ["background-color"] },
+      { "id": "e", "props": ["background-color"] },
+      { "id": "f", "props": ["background-color"] }
+    ],
+    "rects": ["a", "b", "c", "d", "e", "f"],
+    "textElements": ["a", "b", "c", "d", "e", "f"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

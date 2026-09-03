@@ -1,0 +1,26 @@
+{
+  "name": "alpha",
+  "note": "Alpha serialization parity: rgba() legacy alpha, zero alpha, 4-digit hex alpha (0x88 -> 0.533, Chrome's shortest round-tripping decimal), percentage alpha, and the alpha clamps (2 and 150% serialize opaque). Computed background-color strings must equal Chrome's exactly.",
+  "harvest": {
+    "viewport": {
+      "width": 220,
+      "height": 340
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"a-legacy\" style=\"width:120px;height:40px;background-color:rgba(10, 20, 30, 0.25)\"></div><div id=\"a-zero\" style=\"width:120px;height:40px;background-color:rgb(10 20 30 / 0)\"></div><div id=\"a-hex4\" style=\"width:120px;height:40px;background-color:#0f08\"></div><div id=\"a-pct\" style=\"width:120px;height:40px;background-color:rgb(10 20 30 / 50%)\"></div><div id=\"a-clamp\" style=\"width:120px;height:40px;background-color:rgba(10, 20, 30, 2)\"></div><div id=\"a-pct-clamp\" style=\"width:120px;height:40px;background-color:rgb(10 20 30 / 150%)\"></div></body></html>",
+    "computedStyle": [
+      { "id": "a-legacy", "props": ["background-color"] },
+      { "id": "a-zero", "props": ["background-color"] },
+      { "id": "a-hex4", "props": ["background-color"] },
+      { "id": "a-pct", "props": ["background-color"] },
+      { "id": "a-clamp", "props": ["background-color"] },
+      { "id": "a-pct-clamp", "props": ["background-color"] }
+    ],
+    "rects": ["a-legacy", "a-zero", "a-hex4", "a-pct", "a-clamp", "a-pct-clamp"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}
