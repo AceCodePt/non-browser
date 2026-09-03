@@ -1,0 +1,52 @@
+{
+  "name": "inheritance",
+  "note": "Custom property declarations parse, cascade, inherit, and serialize as the authored token stream: body-level --c/--m resolve on every descendant, an element-level inline --p wins for its own substitution, and the computed token streams (including inner spacing) match Chrome exactly on both the defining and the inheriting elements.",
+  "harvest": {
+    "viewport": {
+      "width": 300,
+      "height": 260
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} body{--c:rgb(0, 0, 238); --m:4px} #k{color:var(--c);padding:var(--m)} #deep{color:var(--c);background-color:var(--c)}</style></head><body><div id=\"k\"><span id=\"deep\">inherited</span></div><div id=\"inline\" style=\"--p:8px;padding:var(--p)\">inline</div></body></html>",
+    "computedStyle": [
+      {
+        "id": "k",
+        "props": [
+          "color",
+          "padding-top",
+          "--c",
+          "--m"
+        ]
+      },
+      {
+        "id": "deep",
+        "props": [
+          "color",
+          "background-color",
+          "--c"
+        ]
+      },
+      {
+        "id": "inline",
+        "props": [
+          "padding-left",
+          "--p"
+        ]
+      }
+    ],
+    "rects": [
+      "k",
+      "deep",
+      "inline"
+    ],
+    "textElements": [
+      "deep",
+      "inline"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

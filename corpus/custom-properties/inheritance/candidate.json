@@ -1,0 +1,40 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "k": {
+      "color": "rgb(0, 0, 238)",
+      "padding-top": "4px",
+      "--c": "rgb(0, 0, 238)",
+      "--m": "4px"
+    },
+    "deep": {
+      "color": "rgb(0, 0, 238)",
+      "background-color": "rgb(0, 0, 238)",
+      "--c": "rgb(0, 0, 238)"
+    },
+    "inline": {
+      "padding-left": "8px",
+      "--p": "8px"
+    }
+  },
+  "rect": {
+    "k": {
+      "x": 0,
+      "y": 0,
+      "width": 300,
+      "height": 30
+    },
+    "deep": {
+      "x": 4,
+      "y": 4,
+      "width": 68.30000305175781,
+      "height": 22
+    },
+    "inline": {
+      "x": 0,
+      "y": 30,
+      "width": 300,
+      "height": 38
+    }
+  }
+}

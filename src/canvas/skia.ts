@@ -258,6 +258,13 @@ export class SkiaCanvasFactory implements CanvasFactory {
     return canvas;
   }
 
+  /** Offscreen surfaces are never pooled: an opacity group renders while the
+   * same-size destination canvas is still live, and a pooled create() would
+   * hand out that destination and clear() its painted pixels. */
+  createOffscreen(width: number, height: number): CanvasLike {
+    return new SkiaCanvas(createCanvas(width, height));
+  }
+
   registerFont(filePath: string, familyAlias?: string): void {
     const key = GlobalFonts.registerFromPath(filePath, familyAlias);
     if (key === null) {

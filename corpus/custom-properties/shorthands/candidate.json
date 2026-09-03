@@ -1,0 +1,31 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "s1": {
+      "border-top-color": "rgb(128, 51, 77)",
+      "margin-top": "6px",
+      "background-color": "rgb(64, 191, 64)",
+      "--bc": "rgb(50% 20% 30%)",
+      "--mv": "6px",
+      "--bgc": "hsl(120, 50%, 50%)"
+    },
+    "s2": {
+      "box-shadow": "rgb(0, 128, 128) 2px 2px 0px 0px",
+      "--sc": "teal"
+    }
+  },
+  "rect": {
+    "s1": {
+      "x": 6,
+      "y": 6,
+      "width": 82,
+      "height": 32
+    },
+    "s2": {
+      "x": 0,
+      "y": 44,
+      "width": 80,
+      "height": 30
+    }
+  }
+}

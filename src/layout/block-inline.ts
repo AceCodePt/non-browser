@@ -57,6 +57,8 @@ export interface StyleDefaults {
   borderCollapse?: 'separate' | 'collapse';
   borderSpacing?: number;
   borderSpacingV?: number;
+  /** inherited computed custom properties (css-variables-1 §3). */
+  customProps?: Record<string, string>;
 }
 
 const INLINE_TAGS = new Set([
@@ -155,6 +157,7 @@ export function resolveStyles(
       fontStyleDefault: d.fontStyle,
       listStyleTypeDefault: d.listStyleType,
       listStylePositionDefault: d.listStylePosition,
+      customPropsInherited: d.customProps,
     });
     style.before = computePseudoBox(el, style, pseudoDecls, 'before');
     style.after = computePseudoBox(el, style, pseudoDecls, 'after');
@@ -180,6 +183,7 @@ export function resolveStyles(
       listStyleType: style.listStyleType,
       listStylePosition: style.listStylePosition,
       whiteSpace: style.whiteSpace,
+      customProps: style.customProps,
     };
     for (const child of el.childNodes) {
       if (child.nodeName !== '#text' && child.nodeName !== '#comment') {
@@ -235,6 +239,7 @@ function computePseudoBox(
     textUnderlineOffset: style.textUnderlineOffset,
     textShadow: style.textShadow,
     display: 'inline',
+    customPropsInherited: style.customProps,
   });
   return { text: box.content.kind === 'text' ? box.content.text : null, style: box };
 }

@@ -1,0 +1,61 @@
+{
+  "name": "invalid-cycles",
+  "note": "Invalid at computed-value time: a var() cycle (--a <-> --b), a self-referencing property, and a reference to an undefined name all make the custom property guaranteed-invalid (serialized as '' by Chrome), block inheritance of the same name from the ancestor, and drop the consuming declaration to the inherited value.",
+  "harvest": {
+    "viewport": {
+      "width": 260,
+      "height": 220
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} body{--g:var(--nope); color:rgb(0, 0, 238)} #c1{--a:var(--b);--b:var(--a);color:var(--a)} #c2{--s:1px var(--s);color:var(--s)} #c3{color:var(--g);--x:var(--nope)} #c4{color:var(--a);--a:teal}</style></head><body><div id=\"c1\">c1</div><div id=\"c2\">c2</div><div id=\"c3\">c3</div><div id=\"c4\">c4</div></body></html>",
+    "computedStyle": [
+      {
+        "id": "c1",
+        "props": [
+          "--a",
+          "--b",
+          "color"
+        ]
+      },
+      {
+        "id": "c2",
+        "props": [
+          "--s",
+          "color"
+        ]
+      },
+      {
+        "id": "c3",
+        "props": [
+          "--g",
+          "--x",
+          "color"
+        ]
+      },
+      {
+        "id": "c4",
+        "props": [
+          "--a",
+          "color"
+        ]
+      }
+    ],
+    "rects": [
+      "c1",
+      "c2",
+      "c3",
+      "c4"
+    ],
+    "textElements": [
+      "c1",
+      "c2",
+      "c3",
+      "c4"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

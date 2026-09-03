@@ -112,6 +112,9 @@ function shadowListString(shadows: Shadow[], refWidth: number, viewport?: Viewpo
  * property is not computed by the engine (so it cannot be compared).
  */
 export function computedStyleString(style: ComputedStyle, prop: string, refWidth: number, viewport?: Viewport | null): string | null {
+  // Custom properties serialize as their computed token stream; Chrome reports
+  // '' for undefined and guaranteed-invalid names alike.
+  if (prop.startsWith('--')) return style.customProps[prop] ?? '';
   switch (prop) {
     case 'display': {
       const d = style.display;

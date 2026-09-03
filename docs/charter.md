@@ -183,6 +183,11 @@ the charter and the corpus cannot silently diverge:
 | colors | full CSS named-color set | yes | corpus/colors | rebeccapurple |
 | colors | currentColor in every color-consuming position | yes | corpus/colors | currentcolor |
 | colors | invalid color drops the declaration (parse-error recovery) | yes | corpus/colors | parse-error recovery |
+| custom properties | --* declarations parse, cascade, inherit, serialize | yes | corpus/custom-properties | var( |
+| custom properties | var() fallback (nested, empty, guaranteed-invalid) | yes | corpus/custom-properties | fallback |
+| custom properties | cycles / undefined refs → guaranteed-invalid, consumers drop | yes | corpus/custom-properties | guaranteed-invalid |
+| custom properties | var() inside calc() and shorthands | yes | corpus/custom-properties | calc( |
+| custom properties | media-scoped custom-property redefinitions | yes | corpus/custom-properties | @media |
 
 ### Deferred / Not in v1 (no silent absence)
 

@@ -1,0 +1,28 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "m": {
+      "color": "rgb(220, 20, 60)",
+      "--c": "crimson",
+      "--w": "40px"
+    },
+    "w": {
+      "background-color": "rgb(220, 20, 60)",
+      "--w": "40px"
+    }
+  },
+  "rect": {
+    "m": {
+      "x": 0,
+      "y": 0,
+      "width": 400,
+      "height": 22
+    },
+    "w": {
+      "x": 0,
+      "y": 22,
+      "width": 50,
+      "height": 20
+    }
+  }
+}

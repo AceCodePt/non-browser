@@ -392,6 +392,13 @@ export interface ComputedStyle {
   containerType: 'normal' | 'inline-size' | 'size' | 'block-size';
   /** css-contain-3 §3.2: the query-container names this element answers to. */
   containerName: string[];
+  /**
+   * The element's computed custom properties (css-variables-1 §3): resolved
+   * token streams after var() substitution, keyed by the case-sensitive
+   * '--name'. Guaranteed-invalid names are absent (they serialize like
+   * undefined, and do not inherit to descendants).
+   */
+  customProps: Record<string, string>;
 }
 
 /**
@@ -1309,13 +1316,30 @@ function parseFlexShorthand(value: string): { grow: number; shrink: number; basi
   return { grow, shrink, basis };
 }
 
-/** Split a declaration block on top-level semicolons (no strings with ';' expected). */
+/** Split a declaration block on top-level semicolons (quote-aware; a ';' inside
+ * a string never splits). */
 function splitDeclarations(block: string): string[] {
   const out: string[] = [];
   let depth = 0;
   let cur = '';
+  let quote: string | null = null;
   for (let i = 0; i < block.length; i++) {
     const c = block[i];
+    if (quote) {
+      cur += c;
+      if (c === '\\' && i + 1 < block.length) {
+        cur += block[i + 1];
+        i++;
+      } else if (c === quote) {
+        quote = null;
+      }
+      continue;
+    }
+    if (c === '"' || c === "'") {
+      quote = c;
+      cur += c;
+      continue;
+    }
     if (c === '(') depth++;
     else if (c === ')') depth--;
     if (c === ';' && depth === 0) {
@@ -1341,8 +1365,11 @@ export function parseDeclarationBlock(block: string): Declaration[] {
     .map((d) => {
       const idx = d.indexOf(':');
       if (idx < 0) return null;
+      const name = d.slice(0, idx).trim();
+      // Custom property names are case-sensitive (css-variables-1 §2) and must
+      // not fold; regular property names are ASCII case-insensitive.
       return {
-        property: d.slice(0, idx).trim().toLowerCase(),
+        property: name.startsWith('--') ? name : name.toLowerCase(),
         value: d.slice(idx + 1).trim(),
       };
     })
@@ -1503,8 +1530,158 @@ interface Defaults {
   captionSideDefault?: 'top' | 'bottom';
   /** inherited `direction` (direction inherits; initial ltr). */
   directionInherited?: Direction;
+  /**
+   * The parent's computed custom properties (css-variables-1 §3): custom
+   * properties inherit as resolved token streams, and var() substitution at
+   * computed-value time reads this map (the element's own declarations win
+   * per name).
+   */
+  customPropsInherited?: Record<string, string>;
 }
-export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedStyle {
+
+/**
+ * Substitute every top-level var() reference in a css-variables-1 §3 token
+ * stream. `resolve` answers for one custom-property name: the resolved token
+ * stream, null (guaranteed-invalid — cycles or an invalid reference), or
+ * undefined (no such property). Fallbacks (everything after the first
+ * top-level comma) substitute when the reference is null/undefined. Quoted
+ * strings never substitute. Returns null when the value is invalid at
+ * computed-value time (a var() with no usable substitution), which drops the
+ * declaration like Chrome.
+ */
+function substituteVars(
+  value: string,
+  resolve: (name: string) => string | null | undefined,
+): string | null {
+  if (!/var\(/i.test(value)) return value;
+  let out = '';
+  let i = 0;
+  const n = value.length;
+  while (i < n) {
+    const c = value[i];
+    if (c === '"' || c === "'") {
+      let j = i + 1;
+      while (j < n) {
+        if (value[j] === '\\' && j + 1 < n) j += 2;
+        else if (value[j] === c) {
+          j++;
+          break;
+        } else j++;
+      }
+      out += value.slice(i, j);
+      i = j;
+      continue;
+    }
+    if ((c === 'v' || c === 'V') && value.slice(i, i + 4).toLowerCase() === 'var(') {
+      let depth = 0;
+      let j = i + 3;
+      while (j < n) {
+        const d = value[j];
+        if (d === '"' || d === "'") {
+          j++;
+          while (j < n) {
+            if (value[j] === '\\') j += 2;
+            else if (value[j] === d) {
+              j++;
+              break;
+            } else j++;
+          }
+          continue;
+        }
+        if (d === '(') depth++;
+        else if (d === ')') {
+          depth--;
+          if (depth === 0) break;
+        }
+        j++;
+      }
+      if (j >= n) return null;
+      const inner = value.slice(i + 4, j);
+      const comma = topLevelCommaIndex(inner);
+      const name = (comma === -1 ? inner : inner.slice(0, comma)).trim();
+      if (!name.startsWith('--')) return null;
+      const ref = resolve(name);
+      if (typeof ref === 'string') {
+        out += ref;
+      } else if (comma !== -1) {
+        const fb = substituteVars(inner.slice(comma + 1), resolve);
+        if (fb === null) return null;
+        out += fb;
+      } else {
+        return null;
+      }
+      i = j + 1;
+      continue;
+    }
+    out += c;
+    i++;
+  }
+  return out;
+}
+
+/** Index of the first comma at paren depth 0 outside strings, else -1. */
+function topLevelCommaIndex(s: string): number {
+  let depth = 0;
+  let quote: string | null = null;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (quote) {
+      if (c === '\\') i++;
+      else if (c === quote) quote = null;
+      continue;
+    }
+    if (c === '"' || c === "'") quote = c;
+    else if (c === '(') depth++;
+    else if (c === ')') depth--;
+    else if (c === ',' && depth === 0) return i;
+  }
+  return -1;
+}
+
+export function makeStyle(rawDecls: Declaration[], defaults: Defaults): ComputedStyle {
+  // --- custom properties (css-variables-1): resolve own declarations against
+  // the inherited map, then substitute var() in every remaining declaration.
+  // A declaration whose substitution is invalid at computed-value time drops
+  // (the property falls to its inherited/initial default, like Chrome). ---
+  const inheritedCustom = defaults.customPropsInherited ?? {};
+  const ownCustom: Record<string, string> = {};
+  const plainDecls: Declaration[] = [];
+  for (const d of rawDecls) {
+    if (d.property.startsWith('--')) {
+      if (!(d.property in ownCustom)) ownCustom[d.property] = d.value.trim();
+    } else {
+      plainDecls.push(d);
+    }
+  }
+  const resolvedCustom: Record<string, string> = {};
+  const invalidCustom = new Set<string>();
+  const resolving = new Set<string>();
+  const resolveCustom = (name: string): string | null | undefined => {
+    if (name in resolvedCustom) return resolvedCustom[name];
+    if (invalidCustom.has(name)) return null;
+    if (!(name in ownCustom)) return inheritedCustom[name];
+    if (resolving.has(name)) return null;
+    resolving.add(name);
+    const sub = substituteVars(ownCustom[name], resolveCustom);
+    resolving.delete(name);
+    if (sub === null) {
+      invalidCustom.add(name);
+      return null;
+    }
+    resolvedCustom[name] = sub.trim();
+    return resolvedCustom[name];
+  };
+  for (const name of Object.keys(ownCustom)) resolveCustom(name);
+  // Guaranteed-invalid own names block inheritance (children of an element
+  // whose --x is invalid do not see the grandparent's --x either).
+  const customProps: Record<string, string> = { ...inheritedCustom, ...resolvedCustom };
+  for (const name of invalidCustom) delete customProps[name];
+  const decls: Declaration[] = [];
+  for (const d of plainDecls) {
+    const sub = substituteVars(d.value, resolveCustom);
+    if (sub === null || sub.trim() === '') continue;
+    decls.push(sub === d.value ? d : { ...d, value: sub });
+  }
   const transparentColor: Color = { r: 0, g: 0, b: 0, a: 0 };
   // The element's own color resolves first: every other color-consuming
   // position (background, borders, shadows, decorations) resolves currentColor
@@ -2223,5 +2400,6 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     after: null,
     containerType,
     containerName,
+    customProps,
   };
 }

@@ -115,6 +115,14 @@ export interface CanvasLike {
 export interface CanvasFactory {
   create(width: number, height: number): CanvasLike;
   /**
+   * A surface that is never pooled or reused — opacity compositing renders
+   * into an offscreen while the destination canvas of the same size is still
+   * live, so a pooled create() here would alias and wipe the destination
+   * (canvas/skia.ts pools per size). Optional: factories without it fall back
+   * to create().
+   */
+  createOffscreen?(width: number, height: number): CanvasLike;
+  /**
    * Register a font file (.ttf/.woff2/...). `familyAlias` optionally overrides
    * the family name the file declares, so a font can be made resolvable under a
    * specific CSS family string.

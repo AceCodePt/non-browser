@@ -637,7 +637,7 @@ function renderGroup(
   scopeItems: (parent: number | null) => PaintItem[],
 ): void {
   if (group.level === 0) return;
-  const off = factory.create(vw, vh);
+  const off = factory.createOffscreen?.(vw, vh) ?? factory.create(vw, vh);
   renderSequence(off, scopeItems(group.id), factory, viewport, vw, vh, fontMetrics, scopeItems);
   canvas.drawImage(off, group.level);
 }

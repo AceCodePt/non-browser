@@ -1,0 +1,45 @@
+{
+  "name": "shorthands",
+  "note": "var() substitutes inside the shorthands the engine parses: border's color component, margin, background, and box-shadow all take custom properties, with computed-style serialization and painted output matching Chrome.",
+  "harvest": {
+    "viewport": {
+      "width": 300,
+      "height": 220
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} body{--bc:rgb(50% 20% 30%); --mv:6px; --bgc:hsl(120, 50%, 50%); --sc:teal} #s1{border:1px solid var(--bc);margin:var(--mv);background:var(--bgc);width:80px;height:30px} #s2{box-shadow:2px 2px 0 var(--sc);width:80px;height:30px}</style></head><body><div id=\"s1\">s1</div><div id=\"s2\">s2</div></body></html>",
+    "computedStyle": [
+      {
+        "id": "s1",
+        "props": [
+          "border-top-color",
+          "margin-top",
+          "background-color",
+          "--bc",
+          "--mv",
+          "--bgc"
+        ]
+      },
+      {
+        "id": "s2",
+        "props": [
+          "box-shadow",
+          "--sc"
+        ]
+      }
+    ],
+    "rects": [
+      "s1",
+      "s2"
+    ],
+    "textElements": [
+      "s1",
+      "s2"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}
