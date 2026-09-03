@@ -1,5 +1,5 @@
 ---
-wait_human_start: true
+wait_human_start: false
 wait_human_merge: false
 dependencies: []
 ---
@@ -25,7 +25,7 @@ The engine is Chrome-parity on its authored corpus but that corpus only exercise
 - [ ] Legacy surface is unsupported and documented in the README: deprecated HTML elements, presentational attributes, vendor-prefixed properties, and legacy-only CSS syntax. comma rgb()/rgba() remains supported (explicitly not treated as legacy).
 - [ ] README documents every excluded surface so 'admitted/not supported' is stated, and check-charter.mjs remains green after each slice (no claim drifts from engine or corpus).
 - [ ] The existing quirky UA margin-collapse behavior (__qem) and comma rgb()/rgba() support are preserved as current-Chrome parity.
-- [ ] wait_human_start is true for every task in this program; wait_human_merge is false — the human starts each slice, the scheduler-verified work merges on its own.
+- [ ] wait_human_start is false for every task in this program; wait_human_merge is false — the scheduler dispatches and merges each slice on its own with no human gate.
 
 ## Verification
 
