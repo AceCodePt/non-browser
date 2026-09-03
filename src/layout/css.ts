@@ -248,7 +248,18 @@ export type DisplayValue =
   | 'table-column'
   | 'table-caption';
 
-export type VerticalAlign = 'baseline' | 'top' | 'middle' | 'bottom';
+export type VerticalAlign = 'baseline' | 'sub' | 'super' | 'top' | 'middle' | 'bottom';
+
+/** The valid vertical-align keywords (used by computed-value fallback and the
+ * @supports declaration evaluator). */
+export const VERTICAL_ALIGN_KEYWORDS: readonly VerticalAlign[] = [
+  'baseline',
+  'sub',
+  'super',
+  'top',
+  'middle',
+  'bottom',
+];
 
 /**
  * Used text-alignment: the layout keyword after `start`/`end` resolve against
@@ -1873,10 +1884,19 @@ export function makeStyle(rawDecls: Declaration[], defaults: Defaults): Computed
   }
   const fsDecl = findDecl(decls, 'font-size');
   if (fsDecl) {
-    const m = fsDecl.value.trim().match(/^(-?[\d.]+)(px|em)?$/);
+    const v = fsDecl.value.trim();
+    const m = v.match(/^(-?[\d.]+)(px|em|%)?$/);
     if (m) {
       if (m[2] === 'em') fontSize = defaults.fontSize * parseFloat(m[1]);
+      else if (m[2] === '%') fontSize = (defaults.fontSize * parseFloat(m[1])) / 100;
       else fontSize = parseFloat(m[1]);
+    } else if (v === 'smaller') {
+      // Chrome's relative font-size keyword (Blink FontSize::GetSize):
+      // `smaller` = parent × 5/6, `larger` = parent × 6/5, rounded to four
+      // decimals so computed values serialize like Chrome (16px → 13.3333px).
+      fontSize = Math.round((defaults.fontSize * 5 * 10000) / 6) / 10000;
+    } else if (v === 'larger') {
+      fontSize = Math.round((defaults.fontSize * 6 * 10000) / 5) / 10000;
     }
   }
 
@@ -1925,13 +1945,13 @@ export function makeStyle(rawDecls: Declaration[], defaults: Defaults): Computed
     if (sh) {
       const parts = sh.value.trim().toLowerCase().split(/\s+/);
       for (const p of parts) {
-        if (p === 'none' || p === 'disc' || p === 'circle' || p === 'square' || p === 'decimal' || p === 'decimal-leading-zero') return p;
+        if (p === 'none' || p === 'disc' || p === 'circle' || p === 'square' || p === 'decimal' || p === 'decimal-leading-zero' || p === 'disclosure-closed' || p === 'disclosure-open') return p;
       }
     }
     const d = findDecl(decls, 'list-style-type');
     if (!d) return defaults.listStyleTypeDefault ?? 'disc';
     const v = d.value.trim().toLowerCase();
-    return v === 'none' || v === 'disc' || v === 'circle' || v === 'square' || v === 'decimal' || v === 'decimal-leading-zero' ? v : 'disc';
+    return v === 'none' || v === 'disc' || v === 'circle' || v === 'square' || v === 'decimal' || v === 'decimal-leading-zero' || v === 'disclosure-closed' || v === 'disclosure-open' ? v : 'disc';
   })();
 
   const listStylePosition = (() => {
@@ -2167,7 +2187,9 @@ export function makeStyle(rawDecls: Declaration[], defaults: Defaults): Computed
 
   const verticalAlignDecl = findDecl(decls, 'vertical-align');
   const verticalAlign: VerticalAlign = verticalAlignDecl
-    ? (verticalAlignDecl.value.trim() as VerticalAlign)
+    ? (VERTICAL_ALIGN_KEYWORDS.includes(verticalAlignDecl.value.trim() as VerticalAlign)
+        ? (verticalAlignDecl.value.trim() as VerticalAlign)
+        : (defaults.verticalAlignDefault ?? 'baseline'))
     : (defaults.verticalAlignDefault ?? 'baseline');
 
   const textAlignDecl = findDecl(decls, 'text-align');

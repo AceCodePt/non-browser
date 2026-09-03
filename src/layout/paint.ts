@@ -1856,6 +1856,13 @@ function paintOp(canvas: CanvasLike, op: PaintOp, viewport: Viewport | null | un
       const family = run.family ?? t.family;
       const color = run.color ?? t.color;
       const letterSpacing = run.letterSpacing ?? t.letterSpacing;
+      // An inline background (mark) paints over the run's content box —
+      // baseline ± rounded font metrics — behind the glyphs.
+      if (run.background && fontMetrics) {
+        const a = roundedAscent(fontMetrics, fontSize);
+        const d = roundedDescent(fontMetrics, fontSize);
+        canvas.fillRect(run.x, run.baseline - a, run.width, a + d, run.background);
+      }
       if (t.textShadow.length > 0) paintTextShadows(canvas, run, fontSize, family, t.textShadow, viewport);
       paintTextRun(canvas, run, fontSize, family, color, letterSpacing);
     }

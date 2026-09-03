@@ -1,0 +1,28 @@
+{
+  "name": "details-summary",
+  "note": "details/summary UA defaults (corpus/text-level-ua, text-level UA feature, token disclosure-closed): details is a block container; a first-of-type summary computes display:list-item with list-style-position:inside and list-style-type:disclosure-closed (disclosure-open under details[open]), and the marker's 0.66em + 0.4em inline advance shifts the summary text to Chrome's position. The triangle itself is a declared divergence (docs/ledgers/text-level-ua.md) — its ~50 pixels sit within the strict 1% band.",
+  "harvest": {
+    "viewport": { "width": 640, "height": 200 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'}</style></head><body><details id=\"det\"><summary id=\"sum\">Overview</summary></details><details open id=\"deto\"><summary id=\"sumo\">Details</summary><p id=\"dp\">The body content.</p></details></body></html>",
+    "measureText": [
+      { "text": "Overview", "font": "16px 'Noto Sans'" },
+      { "text": "Details", "font": "16px 'Noto Sans'" },
+      { "text": "The body content.", "font": "16px 'Noto Sans'" }
+    ],
+    "computedStyle": [
+      { "id": "det", "props": ["display", "font-size"] },
+      { "id": "sum", "props": ["display", "list-style-type", "list-style-position", "padding-top", "padding-bottom", "padding-left", "padding-right", "font-size", "font-weight"] },
+      { "id": "deto", "props": ["display", "font-size"] },
+      { "id": "sumo", "props": ["display", "list-style-type", "list-style-position", "font-size"] },
+      { "id": "dp", "props": ["display", "font-size", "margin-top", "margin-bottom"] }
+    ],
+    "rects": ["det", "sum", "deto", "sumo", "dp"],
+    "textElements": ["sum", "sumo", "dp"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

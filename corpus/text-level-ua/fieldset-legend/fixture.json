@@ -1,0 +1,25 @@
+{
+  "name": "fieldset-legend",
+  "note": "fieldset/legend UA defaults (corpus/text-level-ua, text-level UA feature): the fieldset's 2px groove ThreeDFace border (rgb(239,239,239) on this headless Linux), 2px inline margins and 0.35em/0.625em block + 0.75em inline padding; the legend participates in the fieldset box — it is pulled out of flow, shrinks to fit, straddles the block-start border (flush with the border-box top when taller than the border) and pushes the content down by its protrusion — all without table layout.",
+  "harvest": {
+    "viewport": { "width": 640, "height": 200 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'}</style></head><body><fieldset id=\"fs\"><legend id=\"leg\">Account</legend><p id=\"fp\">User details go here.</p></fieldset></body></html>",
+    "measureText": [
+      { "text": "Account", "font": "16px 'Noto Sans'" },
+      { "text": "User details go here.", "font": "16px 'Noto Sans'" }
+    ],
+    "computedStyle": [
+      { "id": "fs", "props": ["display", "margin-top", "margin-right", "margin-bottom", "margin-left", "border-top-width", "border-top-style", "border-top-color", "border-bottom-width", "padding-top", "padding-bottom", "padding-left", "padding-right"] },
+      { "id": "leg", "props": ["display", "padding-left", "padding-right", "font-size", "font-weight"] },
+      { "id": "fp", "props": ["display", "font-size", "margin-top", "margin-bottom"] }
+    ],
+    "rects": ["fs", "leg", "fp"],
+    "textElements": ["leg", "fp"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

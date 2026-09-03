@@ -1,0 +1,176 @@
+{
+  "measureText": {
+    "16px 'Noto Sans' | highlighted": 86.36817932128906,
+    "16px 'Noto Sans' | removed": 66.6241455078125,
+    "16px 'Noto Sans' | added": 47.520111083984375,
+    "16px 'Noto Sans' | struck": 46.16011047363281,
+    "13.3333px 'Noto Sans' | small text": 60.589385986328125,
+    "13.3333px 'Noto Sans' | sub": 22.817672729492188,
+    "13.3333px 'Noto Sans' | sup": 22.817672729492188,
+    "16px 'Noto Sans' | abbr": 35.26408386230469
+  },
+  "computedStyle": {
+    "p1": {
+      "display": "block",
+      "font-size": "16px",
+      "font-weight": "400",
+      "font-style": "normal",
+      "text-decoration-line": "none",
+      "background-color": "rgba(0, 0, 0, 0)",
+      "color": "rgb(0, 0, 0)",
+      "vertical-align": "baseline"
+    },
+    "mark": {
+      "display": "inline",
+      "font-size": "16px",
+      "font-weight": "400",
+      "font-style": "normal",
+      "text-decoration-line": "none",
+      "background-color": "rgb(255, 255, 0)",
+      "color": "rgb(0, 0, 0)",
+      "vertical-align": "baseline"
+    },
+    "del": {
+      "display": "inline",
+      "font-size": "16px",
+      "font-weight": "400",
+      "font-style": "normal",
+      "text-decoration-line": "line-through",
+      "background-color": "rgba(0, 0, 0, 0)",
+      "color": "rgb(0, 0, 0)",
+      "vertical-align": "baseline"
+    },
+    "ins": {
+      "display": "inline",
+      "font-size": "16px",
+      "font-weight": "400",
+      "font-style": "normal",
+      "text-decoration-line": "underline",
+      "background-color": "rgba(0, 0, 0, 0)",
+      "color": "rgb(0, 0, 0)",
+      "vertical-align": "baseline"
+    },
+    "s": {
+      "display": "inline",
+      "font-size": "16px",
+      "font-weight": "400",
+      "font-style": "normal",
+      "text-decoration-line": "line-through",
+      "background-color": "rgba(0, 0, 0, 0)",
+      "color": "rgb(0, 0, 0)",
+      "vertical-align": "baseline"
+    },
+    "small": {
+      "display": "inline",
+      "font-size": "13.3333px",
+      "font-weight": "400",
+      "font-style": "normal",
+      "text-decoration-line": "none",
+      "background-color": "rgba(0, 0, 0, 0)",
+      "color": "rgb(0, 0, 0)",
+      "vertical-align": "baseline"
+    },
+    "sub": {
+      "display": "inline",
+      "font-size": "13.3333px",
+      "font-weight": "400",
+      "font-style": "normal",
+      "text-decoration-line": "none",
+      "background-color": "rgba(0, 0, 0, 0)",
+      "color": "rgb(0, 0, 0)",
+      "vertical-align": "sub"
+    },
+    "sup": {
+      "display": "inline",
+      "font-size": "13.3333px",
+      "font-weight": "400",
+      "font-style": "normal",
+      "text-decoration-line": "none",
+      "background-color": "rgba(0, 0, 0, 0)",
+      "color": "rgb(0, 0, 0)",
+      "vertical-align": "super"
+    },
+    "abbr": {
+      "display": "inline",
+      "font-size": "16px",
+      "font-weight": "400",
+      "font-style": "normal",
+      "text-decoration-line": "none",
+      "background-color": "rgba(0, 0, 0, 0)",
+      "color": "rgb(0, 0, 0)",
+      "vertical-align": "baseline"
+    },
+    "q": {
+      "display": "inline",
+      "font-size": "16px",
+      "font-weight": "400",
+      "font-style": "normal",
+      "text-decoration-line": "none",
+      "background-color": "rgba(0, 0, 0, 0)",
+      "color": "rgb(0, 0, 0)",
+      "vertical-align": "baseline"
+    }
+  },
+  "rect": {
+    "p1": {
+      "x": 0,
+      "y": 0,
+      "width": 640,
+      "height": 28.515625
+    },
+    "mark": {
+      "x": 50.703125,
+      "y": 3.328125,
+      "width": 86.375,
+      "height": 22
+    },
+    "del": {
+      "x": 145.53125,
+      "y": 3.328125,
+      "width": 66.625,
+      "height": 22
+    },
+    "ins": {
+      "x": 220.609375,
+      "y": 3.328125,
+      "width": 47.53125,
+      "height": 22
+    },
+    "s": {
+      "x": 276.59375,
+      "y": 3.328125,
+      "width": 46.171875,
+      "height": 22
+    },
+    "small": {
+      "x": 331.21875,
+      "y": 6.328125,
+      "width": 60.59375,
+      "height": 18
+    },
+    "sub": {
+      "x": 408.734375,
+      "y": 10.515625,
+      "width": 22.828125,
+      "height": 18
+    },
+    "sup": {
+      "x": 439.734375,
+      "y": 0,
+      "width": 22.828125,
+      "height": 18
+    },
+    "abbr": {
+      "x": 478.53125,
+      "y": 3.328125,
+      "width": 35.265625,
+      "height": 22
+    },
+    "p2": {
+      "x": 0,
+      "y": 44.515625,
+      "width": 640,
+      "height": 22
+    }
+  }
+}

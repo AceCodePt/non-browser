@@ -1,0 +1,56 @@
+{
+  "measureText": {
+    "16px 'Noto Sans' | Account": 60.816131591796875,
+    "16px 'Noto Sans' | User details go here.": 155.04031372070312
+  },
+  "computedStyle": {
+    "fs": {
+      "display": "block",
+      "margin-top": "0px",
+      "margin-right": "2px",
+      "margin-bottom": "0px",
+      "margin-left": "2px",
+      "border-top-width": "2px",
+      "border-top-style": "groove",
+      "border-top-color": "rgb(239, 239, 239)",
+      "border-bottom-width": "2px",
+      "padding-top": "5.6px",
+      "padding-bottom": "10px",
+      "padding-left": "12px",
+      "padding-right": "12px"
+    },
+    "leg": {
+      "display": "block",
+      "padding-left": "2px",
+      "padding-right": "2px",
+      "font-size": "16px",
+      "font-weight": "400"
+    },
+    "fp": {
+      "display": "block",
+      "font-size": "16px",
+      "margin-top": "16px",
+      "margin-bottom": "16px"
+    }
+  },
+  "rect": {
+    "fs": {
+      "x": 2,
+      "y": 0,
+      "width": 636,
+      "height": 93.59375
+    },
+    "leg": {
+      "x": 16,
+      "y": 0,
+      "width": 64.828125,
+      "height": 22
+    },
+    "fp": {
+      "x": 16,
+      "y": 43.59375,
+      "width": 608,
+      "height": 22
+    }
+  }
+}
