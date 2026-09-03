@@ -20,6 +20,8 @@ import { layoutGridChildren } from './grid.js';
 import { layoutFlexChildren } from './flexbox.js';
 import { layoutPositionedChild, initialContainingBlock, type ContainingBlock } from './positioning.js';
 import { hasNonZeroRadius, type Clip } from './radius.js';
+import type { BackgroundLayer } from './background.js';
+import type { Side } from './css.js';
 import { activeFontMetrics, fallbackAscent, halfXHeight, lineAscentContribution, lineDescentContribution, roundedAscent, roundedDescent, type FontVerticalMetrics } from './fontmetrics.js';
 import type { P5Element, P5Text } from './types.js';
 import type { Box } from './types.js';
@@ -378,6 +380,16 @@ export interface PaintOp {
   group?: number;
   box: Box;
   color?: Color;
+  /**
+   * Background image layers (css-backgrounds-3 §9) for a 'bg' op: the gradient
+   * layer list with the resolved border/padding extents the paint layer needs
+   * for origin/clip boxes. Absent when the element paints only a color.
+   */
+  background?: {
+    layers: BackgroundLayer[];
+    widths: Record<Side, number>;
+    padding: Record<Side, number>;
+  };
   shadow?: ShadowPaint;
   borderWidths?: Record<'top' | 'right' | 'bottom' | 'left', number>;
   borderColors?: Record<'top' | 'right' | 'bottom' | 'left', Color>;
@@ -507,6 +519,35 @@ function pushPaintOp(paints: PaintOp[], op: PaintOp): void {
   const g = opacityStack[opacityStack.length - 1];
   if (g !== undefined) op.group = g;
   paints.push(op);
+}
+
+/**
+ * A 'bg' op needs the paint layer when any background-image layer is a
+ * gradient (the only paintable image kind — url() is chartered-out and paints
+ * nothing). Layer lists are already cycled to the image count in makeStyle.
+ */
+function hasGradientImage(style: ComputedStyle): boolean {
+  return style.backgroundImages.some((i) => i.kind === 'linear' || i.kind === 'radial');
+}
+
+function backgroundPaintFor(
+  style: ComputedStyle,
+  padding: Record<Side, number>,
+): PaintOp['background'] {
+  if (!hasGradientImage(style)) return undefined;
+  return {
+    layers: style.backgroundImages.map((image, i) => ({
+      image,
+      position: style.backgroundPositions[i],
+      size: style.backgroundSizes[i],
+      repeat: style.backgroundRepeats[i],
+      clip: style.backgroundClips[i],
+      origin: style.backgroundOrigins[i],
+      attachment: style.backgroundAttachments[i],
+    })),
+    widths: { ...style.borderWidth },
+    padding,
+  };
 }
 
 /**
@@ -672,18 +713,21 @@ export function layoutRoot(
   const contentY = borderY + bT + padT;
   const contentWidth = Math.max(0, borderBoxWidth - bL - bR - padL - padR);
 
+  const padB = resolveLength(style.padding.bottom, viewportWidth, viewport) ?? 0;
+
   const fm = new FloatManager(contentX, contentWidth);
   const paints: PaintOp[] = [];
   let order = 0;
 
   // Body background propagates to the canvas and paints behind everything.
-  if (style.backgroundColor.a > 0) {
+  if (style.backgroundColor.a > 0 || hasGradientImage(style)) {
     pushPaintOp(paints, {
       key: [],
       order: order++,
       kind: 'bg',
       box: { x: 0, y: 0, width: viewportWidth, height: 0 },
       color: style.backgroundColor,
+      background: backgroundPaintFor(style, { top: padT, right: padR, bottom: padB, left: padL }),
     });
   }
 
@@ -1045,7 +1089,8 @@ export function layoutElementBox(
   // CSS paints a shadow list front-to-back (first on top); with source-over the
   // last shadow must be painted first, so the list is traversed in reverse.
   for (let i = shadowOps.length - 1; i >= 0; i--) if (!shadowOps[i].inset) pushShadow(shadowOps[i]);
-  const ownBg = style.backgroundColor.a > 0
+  const bgPaint = backgroundPaintFor(style, { top: padT, right: padR, bottom: padB, left: padL });
+  const ownBg = style.backgroundColor.a > 0 || bgPaint
     ? {
         key: ownKey,
         order: nextOrder(),
@@ -1053,6 +1098,7 @@ export function layoutElementBox(
         box: { x: borderX, y: borderY, width: borderWidth, height: 0 },
         color: style.backgroundColor,
         borderRadius: style.borderRadius,
+        background: bgPaint,
       }
     : null;
   if (ownBg) pushPaintOp(paints, ownBg);
@@ -1541,7 +1587,7 @@ function layoutFloat(
       shadow: floatShadowOps[i],
     });
   }
-  if (style.backgroundColor.a > 0) {
+  if (style.backgroundColor.a > 0 || hasGradientImage(style)) {
     firstFloatOrder = nextOrder();
     pushPaintOp(paints, {
       key: floatKey,
@@ -1550,6 +1596,12 @@ function layoutFloat(
       box: { x: placed.borderX, y: placed.borderY, width: borderBoxWidth, height: borderHeight },
       color: style.backgroundColor,
       borderRadius: style.borderRadius,
+      background: backgroundPaintFor(style, {
+        top: resolveLength(style.padding.top, borderBoxWidth, viewport) ?? 0,
+        right: resolveLength(style.padding.right, borderBoxWidth, viewport) ?? 0,
+        bottom: resolveLength(style.padding.bottom, borderBoxWidth, viewport) ?? 0,
+        left: resolveLength(style.padding.left, borderBoxWidth, viewport) ?? 0,
+      }),
     });
   }
   updateOpacityOrder(floatOpacityGroup, firstFloatOrder);

@@ -7,7 +7,7 @@
  */
 
 import { createCanvas, GlobalFonts, type Canvas as NapiCanvas, type SKRSContext2D } from '@napi-rs/canvas';
-import type { CanvasColor, CanvasFactory, CanvasLike, CanvasTextMetrics } from './interface.js';
+import type { CanvasColor, CanvasFactory, CanvasGradient, CanvasLike, CanvasTextMetrics } from './interface.js';
 import { getActiveBrowserConfig } from '../config/browser-config.js';
 import { cachedFamilyHas, cachedMetrics, cachedResolvedRuns, invalidateMeasureCache } from './measure-cache.js';
 import { measureTextWithFallback, resolveFallbackRuns } from './script-fallback.js';
@@ -92,6 +92,45 @@ export class SkiaCanvas implements CanvasLike {
     this.ctx.fillRect(x, y, w, h);
   }
 
+  fillGradientRect(x: number, y: number, w: number, h: number, gradient: CanvasGradient): void {
+    const ctx = this.ctx;
+    ctx.save();
+    let grad: ReturnType<SKRSContext2D['createLinearGradient']>;
+    let radial: { cx: number; cy: number; rx: number; ry: number } | null = null;
+    if (gradient.type === 'linear') {
+      grad = ctx.createLinearGradient(gradient.x0, gradient.y0, gradient.x1, gradient.y1);
+    } else {
+      radial = gradient;
+      if (Math.abs(gradient.rx - gradient.ry) < 1e-9) {
+        grad = ctx.createRadialGradient(gradient.cx, gradient.cy, 0, gradient.cx, gradient.cy, gradient.rx);
+      } else {
+        // Two-radius radial: map a unit circle through scale(rx, ry) around
+        // the center, so the ellipse interpolates on distance like Skia's shader.
+        ctx.translate(gradient.cx, gradient.cy);
+        ctx.scale(gradient.rx, gradient.ry);
+        grad = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+      }
+    }
+    // Gradient stops must keep their rgb at alpha 0 (unlike plain fills,
+    // where transparent black is equivalent): Skia interpolates stops in
+    // straight alpha space, so a zero-alpha stop that collapses to black
+    // turns a color fade-out into a fade-to-black. Chrome's CSS gradients
+    // interpolate premultiplied (css-images-3 §3.4), which canvasStops
+    // compensates for by sampling; keeping rgb here makes single-color ramps
+    // exact.
+    const stopColor = (c: CanvasColor): string =>
+      c.a >= 1 ? `rgb(${c.r},${c.g},${c.b})` : `rgba(${c.r},${c.g},${c.b},${c.a})`;
+    for (const s of gradient.stops) {
+      grad.addColorStop(Math.min(1, Math.max(0, s.offset)), stopColor(s.color));
+    }
+    ctx.fillStyle = grad;
+    if (radial && Math.abs(radial.rx - radial.ry) >= 1e-9) {
+      ctx.fillRect((x - radial.cx) / radial.rx, (y - radial.cy) / radial.ry, w / radial.rx, h / radial.ry);
+    } else {
+      ctx.fillRect(x, y, w, h);
+    }
+    ctx.restore();
+  }
   drawText(text: string, x: number, baselineY: number, font: string, color: CanvasColor): void {
     const config = getActiveBrowserConfig();
     const hasFamily = (family: string): boolean => cachedFamilyHas(family, (f) => GlobalFonts.has(f));

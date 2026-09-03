@@ -166,6 +166,8 @@ the charter and the corpus cannot silently diverge:
 | text | color (fill) | yes | corpus/paint-text, corpus/spine, corpus/stress | color |
 | text | text-shadow | yes | corpus/box-shadow | text-shadow |
 | paint | box-shadow | yes | corpus/box-shadow, corpus/stress | box-shadow |
+| paint | background-image gradients (linear/radial-gradient: angles, side/corner keywords, stops incl. lengths/percentages/hard stops/double positions, repeating forms, radial ending shapes) | yes | corpus/backgrounds | linear-gradient |
+| paint | background layers (comma-list stacking, background-size/position/repeat incl. cover/contain/round/space, background-clip/background-origin incl. border-radius, full background shorthand; url() raster backgrounds chartered-out per docs/ledgers/backgrounds.md) | yes | corpus/backgrounds | background-clip |
 | paint | opacity (subtree compositing + stacking context) | yes | corpus/opacity, corpus/stress | opacity |
 | font | font-family (fallback tables) | yes | corpus/cross-family, corpus/firefox-track, corpus/stress | font-family |
 | font | font-size | yes | corpus/paint-text, corpus/spine, corpus/stress | font-size |

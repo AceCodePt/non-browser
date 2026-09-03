@@ -1,0 +1,35 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "a": {
+      "background": "rgb(34, 68, 204) linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0)) no-repeat scroll 50% 50% / 80px 60px content-box padding-box",
+      "background-image": "linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0))",
+      "background-color": "rgb(34, 68, 204)",
+      "background-position": "50% 50%",
+      "background-size": "80px 60px",
+      "background-repeat": "no-repeat",
+      "background-clip": "padding-box",
+      "background-origin": "content-box",
+      "background-attachment": "scroll"
+    },
+    "b": {
+      "background": "rgba(0, 0, 0, 0) linear-gradient(rgb(255, 212, 0), rgb(255, 61, 0)) repeat-x fixed 10px 20px / 50px 40px border-box border-box",
+      "background-attachment": "fixed",
+      "background-origin": "border-box"
+    }
+  },
+  "rect": {
+    "a": {
+      "x": 30,
+      "y": 30,
+      "width": 190,
+      "height": 140
+    },
+    "b": {
+      "x": 260,
+      "y": 30,
+      "width": 234,
+      "height": 184
+    }
+  }
+}

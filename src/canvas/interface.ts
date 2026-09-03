@@ -22,6 +22,22 @@ export interface CanvasTextMetrics {
   actualBoundingBoxRight: number;
 }
 
+export interface CanvasGradientStop {
+  offset: number;
+  color: CanvasColor;
+}
+
+/**
+ * A gradient fill spec in absolute surface coordinates, resolved by the caller
+ * (the engine's gradient geometry lives in layout/background.ts, not here).
+ * The radial radii define an ellipse: the implementation maps a unit circular
+ * gradient through a scale(rx, ry) transform, matching Skia's two-radius
+ * shader, so a CSS ellipse gradient rasterizes with the same interpolation.
+ */
+export type CanvasGradient =
+  | { type: 'linear'; x0: number; y0: number; x1: number; y1: number; stops: CanvasGradientStop[] }
+  | { type: 'radial'; cx: number; cy: number; rx: number; ry: number; stops: CanvasGradientStop[] };
+
 /**
  * An offscreen paint surface. `measureText` and `drawText` share the same font
  * resolution, so a string's measured width is the width of what will be drawn.
@@ -33,6 +49,13 @@ export interface CanvasLike {
   measureText(text: string, font: string): CanvasTextMetrics;
 
   fillRect(x: number, y: number, w: number, h: number, color: CanvasColor): void;
+
+  /**
+   * Fill a rectangle with a gradient (see CanvasGradient). Stops with equal
+   * offsets produce the hard transitions CSS hard stops require; offsets
+   * outside [0,1] must be clamped by the caller.
+   */
+  fillGradientRect(x: number, y: number, w: number, h: number, gradient: CanvasGradient): void;
 
   /**
    * Draw glyphs for `text` starting at (x, baselineY). `baselineY` is the

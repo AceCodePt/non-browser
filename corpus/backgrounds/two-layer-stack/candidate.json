@@ -1,0 +1,19 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "s": {
+      "background-image": "linear-gradient(to right, rgba(255, 0, 0, 0.8), rgba(255, 0, 0, 0)), linear-gradient(rgb(255, 212, 0), rgb(0, 180, 255))",
+      "background-position": "0% 0%, 0% 0%",
+      "background-size": "auto, auto",
+      "background-repeat": "repeat, repeat"
+    }
+  },
+  "rect": {
+    "s": {
+      "x": 40,
+      "y": 40,
+      "width": 160,
+      "height": 100
+    }
+  }
+}

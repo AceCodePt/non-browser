@@ -1,0 +1,35 @@
+{
+  "name": "linear-gradient",
+  "note": "The canonical gradient: linear-gradient(to right, red, blue) paints across the box per css-images-3 §3.4 (gradient line from left edge to right edge), and the full computed background longhand set serializes exactly like Chrome (color slot transparent, gradient with resolved rgb stops, 0% 0% / auto padding-box border-box).",
+  "harvest": {
+    "viewport": {
+      "width": 240,
+      "height": 180
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"g\" style=\"position:absolute;left:40px;top:40px;width:160px;height:100px;background-image:linear-gradient(to right, red, blue)\"></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "g",
+        "props": [
+          "background-image",
+          "background-position",
+          "background-size",
+          "background-repeat",
+          "background-clip",
+          "background-origin",
+          "background-color",
+          "background"
+        ]
+      }
+    ],
+    "rects": [
+      "g"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

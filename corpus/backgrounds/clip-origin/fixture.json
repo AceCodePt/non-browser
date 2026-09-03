@@ -1,0 +1,49 @@
+{
+  "name": "clip-origin",
+  "note": "background-clip and background-origin move the painted region: border over padding over content, each with border 12px and padding 14px, over a background-color so the unpainted bands show. The rounded case clips a gradient to the inner (padding-edge) radii of a 24px border-radius box.",
+  "harvest": {
+    "viewport": {
+      "width": 560,
+      "height": 260
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"a\" style=\"position:absolute;left:30px;top:30px;width:110px;height:90px;border:12px solid rgba(0,0,0,0.25);padding:14px;background-color:#e8f4ff;background-image:linear-gradient(to right, red, blue);background-origin:border-box;background-clip:border-box\"></div><div id=\"b\" style=\"position:absolute;left:190px;top:30px;width:110px;height:90px;border:12px solid rgba(0,0,0,0.25);padding:14px;background-color:#e8f4ff;background-image:linear-gradient(to right, red, blue);background-origin:padding-box;background-clip:padding-box\"></div><div id=\"c\" style=\"position:absolute;left:350px;top:30px;width:110px;height:90px;border:12px solid rgba(0,0,0,0.25);padding:14px;background-color:#e8f4ff;background-image:linear-gradient(to right, red, blue);background-origin:content-box;background-clip:content-box\"></div><div id=\"d\" style=\"position:absolute;left:30px;top:150px;width:110px;height:90px;border:12px solid rgba(0,0,0,0.25);padding:14px;background-color:#e8f4ff;background-image:linear-gradient(to right, red, blue);background-origin:border-box;background-clip:content-box\"></div><div id=\"e\" style=\"position:absolute;left:190px;top:150px;width:110px;height:90px;border:12px solid rgba(0,0,0,0.25);padding:14px;background-color:#e8f4ff;border-radius:24px;background-image:linear-gradient(135deg, red, blue);background-origin:padding-box;background-clip:padding-box\"></div><div id=\"f\" style=\"position:absolute;left:350px;top:150px;width:110px;height:90px;border:12px solid rgba(0,0,0,0.25);padding:14px;background-color:#e8f4ff;border-radius:50%;background-image:radial-gradient(circle at 50% 50%, white, navy);background-origin:border-box;background-clip:border-box\"></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "a",
+        "props": [
+          "background-clip",
+          "background-origin"
+        ]
+      },
+      {
+        "id": "d",
+        "props": [
+          "background-clip",
+          "background-origin"
+        ]
+      },
+      {
+        "id": "e",
+        "props": [
+          "background-clip",
+          "background-origin",
+          "border-radius"
+        ]
+      }
+    ],
+    "rects": [
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+      "f"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

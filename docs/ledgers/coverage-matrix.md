@@ -44,6 +44,8 @@ corpus token, or explicitly recorded deferred below. Nothing is silently absent.
 | font | line-height | line-height | corpus/spine, corpus/paint-text |
 | pseudo-elements | ::before/::after content | content | corpus/pseudo-elements |
 | cascade | @media at-rule resolution | @media | corpus/media-queries |
+| paint | background-image gradients (linear/radial, stops, repeating) | linear-gradient | corpus/backgrounds |
+| paint | background layers (size/position/repeat/clip/origin, full shorthand) | background-clip | corpus/backgrounds |
 
 Remaining spread-over-rows properties are claimed by a feature row rather than a
 literal row: `display` by the flex/grid/inline-block/lists rows; `top/right/
@@ -70,6 +72,7 @@ the archive-audit classification so a reader can see the evidence:
 
 | Absent surface | Status | Archive-audit classification | Owner / successor |
 | --- | --- | --- | --- |
+| url() raster backgrounds (image decode) | parsed + serialized, never painted (chartered-out) | explicit disposition, `docs/ledgers/backgrounds.md` | `corpus/backgrounds/url-unsupported` pins the contract |
 | per-element opacity (box-level compositing) | EMPTY archive | `opacity-compositing` EMPTY | `tasks/opacity-subtree-compositing` |
 | box-shadow / text-shadow | EMPTY archive | `box-shadow-paint` EMPTY | `tasks/shadow-paint` |
 | outline | never landed | `paint-shapes` PARTIAL (outline ownerless) | none |

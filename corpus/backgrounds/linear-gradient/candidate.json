@@ -1,0 +1,23 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "g": {
+      "background-image": "linear-gradient(to right, rgb(255, 0, 0), rgb(0, 0, 255))",
+      "background-position": "0% 0%",
+      "background-size": "auto",
+      "background-repeat": "repeat",
+      "background-clip": "border-box",
+      "background-origin": "padding-box",
+      "background-color": "rgba(0, 0, 0, 0)",
+      "background": "rgba(0, 0, 0, 0) linear-gradient(to right, rgb(255, 0, 0), rgb(0, 0, 255)) repeat scroll 0% 0% / auto padding-box border-box"
+    }
+  },
+  "rect": {
+    "g": {
+      "x": 40,
+      "y": 40,
+      "width": 160,
+      "height": 100
+    }
+  }
+}

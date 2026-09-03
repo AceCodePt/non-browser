@@ -1,0 +1,36 @@
+{
+  "name": "url-unsupported",
+  "note": "url() raster backgrounds are chartered-out (no image decode): the declaration parses and serializes (computed background-image keeps url(\"...\") verbatim, never dropped) but paints nothing — Chrome, pointed at an unresolvable URL, also paints nothing, so the gradient underneath shows through both engines.",
+  "harvest": {
+    "viewport": {
+      "width": 240,
+      "height": 220
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"a\" style=\"position:absolute;left:40px;top:30px;width:160px;height:70px;background-image:url('https://invalid.invalid/a.png');background-color:#eeeeee\"></div><div id=\"b\" style=\"position:absolute;left:40px;top:120px;width:160px;height:70px;background-image:url('https://invalid.invalid/a.png'), linear-gradient(to right, red, blue)\"></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "a",
+        "props": [
+          "background-image",
+          "background"
+        ]
+      },
+      {
+        "id": "b",
+        "props": [
+          "background-image"
+        ]
+      }
+    ],
+    "rects": [
+      "a",
+      "b"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "a": {
+      "background-image": "url(\"https://invalid.invalid/a.png\")",
+      "background": "rgb(238, 238, 238) url(\"https://invalid.invalid/a.png\") repeat scroll 0% 0% / auto padding-box border-box"
+    },
+    "b": {
+      "background-image": "url(\"https://invalid.invalid/a.png\"), linear-gradient(to right, rgb(255, 0, 0), rgb(0, 0, 255))"
+    }
+  },
+  "rect": {
+    "a": {
+      "x": 40,
+      "y": 30,
+      "width": 160,
+      "height": 70
+    },
+    "b": {
+      "x": 40,
+      "y": 120,
+      "width": 160,
+      "height": 70
+    }
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "name": "radial-gradients",
+  "note": "Radial ending shapes per css-images-3 sizing: default farthest-corner ellipse, circle at 30% 30%, explicit 40px 60px ellipse radii, circle closest-side, circle farthest-corner at an offset position, and a repeating-radial stripe ring.",
+  "harvest": {
+    "viewport": {
+      "width": 560,
+      "height": 260
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"a\" style=\"position:absolute;left:30px;top:30px;width:110px;height:90px;background-image:radial-gradient(red, blue)\"></div><div id=\"b\" style=\"position:absolute;left:190px;top:30px;width:110px;height:90px;background-image:radial-gradient(circle at 30% 30%, white, black)\"></div><div id=\"c\" style=\"position:absolute;left:350px;top:30px;width:110px;height:90px;background-image:radial-gradient(ellipse 40px 60px at center, #ffff00, #0000ff)\"></div><div id=\"d\" style=\"position:absolute;left:30px;top:150px;width:110px;height:90px;background-image:radial-gradient(circle closest-side, red, blue)\"></div><div id=\"e\" style=\"position:absolute;left:190px;top:150px;width:110px;height:90px;background-image:radial-gradient(circle farthest-corner at 20px 25px, #00c853, #d500f9)\"></div><div id=\"f\" style=\"position:absolute;left:350px;top:150px;width:110px;height:90px;background-image:repeating-radial-gradient(circle at center, red 0px, red 8px, blue 8px, blue 16px)\"></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "b",
+        "props": [
+          "background-image"
+        ]
+      },
+      {
+        "id": "c",
+        "props": [
+          "background-image"
+        ]
+      },
+      {
+        "id": "e",
+        "props": [
+          "background-image"
+        ]
+      },
+      {
+        "id": "f",
+        "props": [
+          "background-image"
+        ]
+      }
+    ],
+    "rects": [
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+      "f"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}
