@@ -1,0 +1,26 @@
+{
+  "name": "invalid",
+  "note": "Invalid colors drop the declaration like Chrome's parse-error recovery, never falling to the black fallback: color: bogus inherits, background-color: bogus computes transparent, the whole border shorthand with an invalid color drops (style none, width 0, color back to currentColor), an invalid box-shadow color drops the shadow, and short rgb()/hsl() arg lists are invalid.",
+  "harvest": {
+    "viewport": {
+      "width": 220,
+      "height": 260
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body style=\"color:rgb(0, 0, 238)\"><div id=\"inherits\" style=\"width:100px;height:30px;color:bogus;background-color:#eeeeee\">text</div><div id=\"bg-invalid\" style=\"width:100px;height:30px;background-color:notacolor\"></div><div id=\"border-invalid\" style=\"width:100px;height:30px;border:2px solid notacolor\"></div><div id=\"shadow-invalid\" style=\"width:100px;height:30px;box-shadow:10px 10px notacolor\"></div><div id=\"hsl-short\" style=\"width:100px;height:30px;background-color:hsl(120, 50%)\"></div><div id=\"rgb-two\" style=\"width:100px;height:30px;background-color:rgb(10 20)\"></div></body></html>",
+    "computedStyle": [
+      { "id": "inherits", "props": ["color", "background-color"] },
+      { "id": "bg-invalid", "props": ["background-color"] },
+      { "id": "border-invalid", "props": ["border-top-style", "border-top-width", "border-top-color"] },
+      { "id": "shadow-invalid", "props": ["box-shadow"] },
+      { "id": "hsl-short", "props": ["background-color"] },
+      { "id": "rgb-two", "props": ["background-color"] }
+    ],
+    "rects": ["inherits", "bg-invalid", "border-invalid", "shadow-invalid", "hsl-short", "rgb-two"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

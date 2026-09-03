@@ -51,6 +51,7 @@
     "verify:white-space": "npm run build && node scripts/verify-white-space.mjs",
     "verify:property-coverage": "npm run build && node scripts/verify-property-coverage.mjs",
     "verify:legacy-removal": "npm run build && node scripts/verify-legacy-removal.mjs",
+    "verify:colors": "npm run build && node scripts/verify-colors.mjs",
     "verify:breaker": "npm run build && node scripts/verify-breaker.mjs",
     "verify:comments": "npm run build && node scripts/verify-comments.mjs",
     "verify:measure-perf": "npm run build && node scripts/verify-measure-perf.mjs",

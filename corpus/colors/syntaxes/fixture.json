@@ -1,0 +1,32 @@
+{
+  "name": "syntaxes",
+  "note": "One box per modern color syntax: hsl() comma and space forms, hue units (deg/turn), /alpha, space-separated rgb(), the kept legacy comma rgb(), 8- and 4-digit hex with alpha scaling, the full named-color set (rebeccapurple), and currentcolor resolving against the element's own color for background-color. Computed styles must match Chrome exactly; non-text paint must match within the strict band.",
+  "harvest": {
+    "viewport": {
+      "width": 220,
+      "height": 640
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"hsl-comma\" style=\"width:120px;height:40px;background-color:hsl(120, 50%, 50%)\"></div><div id=\"hsl-modern\" style=\"width:120px;height:40px;background-color:hsl(120deg 50% 50%)\"></div><div id=\"hsl-alpha\" style=\"width:120px;height:40px;background-color:hsl(120 50% 50% / 0.5)\"></div><div id=\"hsl-turn\" style=\"width:120px;height:40px;background-color:hsl(1turn 50% 50%)\"></div><div id=\"rgb-space\" style=\"width:120px;height:40px;background-color:rgb(10 20 30)\"></div><div id=\"rgb-space-alpha\" style=\"width:120px;height:40px;background-color:rgb(10 20 30 / 50%)\"></div><div id=\"rgb-legacy\" style=\"width:120px;height:40px;background-color:rgb(10, 20, 30)\"></div><div id=\"hex8\" style=\"width:120px;height:40px;background-color:#00ff0088\"></div><div id=\"hex4\" style=\"width:120px;height:40px;background-color:#0f08\"></div><div id=\"named\" style=\"width:120px;height:40px;background-color:rebeccapurple\"></div><div id=\"currentcolor-bg\" style=\"width:120px;height:40px;color:hsl(30, 100%, 50%);background-color:currentcolor\"></div><div id=\"clamp\" style=\"width:120px;height:40px;background-color:rgb(300 -20 30 / 200%)\"></div></body></html>",
+    "computedStyle": [
+      { "id": "hsl-comma", "props": ["background-color", "color"] },
+      { "id": "hsl-modern", "props": ["background-color"] },
+      { "id": "hsl-alpha", "props": ["background-color"] },
+      { "id": "hsl-turn", "props": ["background-color"] },
+      { "id": "rgb-space", "props": ["background-color"] },
+      { "id": "rgb-space-alpha", "props": ["background-color"] },
+      { "id": "rgb-legacy", "props": ["background-color"] },
+      { "id": "hex8", "props": ["background-color"] },
+      { "id": "hex4", "props": ["background-color"] },
+      { "id": "named", "props": ["background-color"] },
+      { "id": "currentcolor-bg", "props": ["background-color", "color"] },
+      { "id": "clamp", "props": ["background-color"] }
+    ],
+    "rects": ["hsl-comma", "hsl-modern", "hsl-alpha", "hsl-turn", "rgb-space", "rgb-space-alpha", "rgb-legacy", "hex8", "hex4", "named", "currentcolor-bg", "clamp"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

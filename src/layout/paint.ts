@@ -242,23 +242,66 @@ function insetEdgeColor(style: BorderStyle, side: 'top' | 'right' | 'bottom' | '
   }
 }
 
+function sameColor(a: Color, b: Color): boolean {
+  return a.r === b.r && a.g === b.g && a.b === b.b && a.a === b.a;
+}
+
 function paintBorder(
-  canvas: { fillRect(x: number, y: number, w: number, h: number, color: Color): void },
+  canvas: { fillRect(x: number, y: number, w: number, h: number, color: Color): void; beginPath(): void; moveTo(x: number, y: number): void; lineTo(x: number, y: number): void; closePath(): void; fillPath(color: Color, rule?: string): void },
   box: Box,
   widths: SideWidths,
   colors: SideColors,
   styles: Record<Side, BorderStyle>,
 ): void {
   const { x, y, width, height } = box;
-  const sides: { side: Side; rect: Box }[] = [
-    { side: 'top', rect: { x, y, width, height: widths.top } },
-    { side: 'right', rect: { x: x + width - widths.right, y, width: widths.right, height } },
-    { side: 'bottom', rect: { x, y: y + height - widths.bottom, width, height: widths.bottom } },
-    { side: 'left', rect: { x, y, width: widths.left, height } },
-  ];
-  for (const s of sides) {
-    if (widths[s.side] <= 0) continue;
-    canvas.fillRect(s.rect.x, s.rect.y, s.rect.width, s.rect.height, insetEdgeColor(styles[s.side] ?? 'solid', s.side, colors[s.side]));
+  const lit = (side: Side): Color => insetEdgeColor(styles[side] ?? 'solid', side, colors[side]);
+  const uniform = sameColor(lit('top'), lit('right')) && sameColor(lit('top'), lit('bottom')) && sameColor(lit('top'), lit('left'));
+  if (uniform) {
+    const sides: { side: Side; rect: Box }[] = [
+      { side: 'top', rect: { x, y, width, height: widths.top } },
+      { side: 'right', rect: { x: x + width - widths.right, y, width: widths.right, height } },
+      { side: 'bottom', rect: { x, y: y + height - widths.bottom, width, height: widths.bottom } },
+      { side: 'left', rect: { x, y, width: widths.left, height } },
+    ];
+    for (const s of sides) {
+      if (widths[s.side] <= 0) continue;
+      canvas.fillRect(s.rect.x, s.rect.y, s.rect.width, s.rect.height, lit(s.side));
+    }
+    return;
+  }
+  // Non-uniform side colors: Chrome miters the corners. Each corner square
+  // takes the adjacent horizontal side's color, then the vertical side's
+  // triangle composites over it with its anti-aliased diagonal — the single
+  // 50/50 blend along the corner diagonal that Chrome's raster shows.
+  const w = widths;
+  const fillQuad = (pts: [number, number][], color: Color): void => {
+    canvas.beginPath();
+    canvas.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) canvas.lineTo(pts[i][0], pts[i][1]);
+    canvas.closePath();
+    canvas.fillPath(color);
+  };
+  canvas.fillRect(x, y, width, w.top, lit('top'));
+  if (w.bottom > 0) canvas.fillRect(x, y + height - w.bottom, width, w.bottom, lit('bottom'));
+  if (height - w.top - w.bottom > 0) {
+    if (w.left > 0) canvas.fillRect(x, y + w.top, w.left, height - w.top - w.bottom, lit('left'));
+    if (w.right > 0) canvas.fillRect(x + width - w.right, y + w.top, w.right, height - w.top - w.bottom, lit('right'));
+  }
+  if (w.top > 0 && w.left > 0) {
+    canvas.fillRect(x, y, w.left, w.top, lit('top'));
+    fillQuad([[x, y], [x, y + w.top], [x + w.left, y + w.top]], lit('left'));
+  }
+  if (w.top > 0 && w.right > 0) {
+    canvas.fillRect(x + width - w.right, y, w.right, w.top, lit('top'));
+    fillQuad([[x + width, y], [x + width, y + w.top], [x + width - w.right, y + w.top]], lit('right'));
+  }
+  if (w.bottom > 0 && w.right > 0) {
+    canvas.fillRect(x + width - w.right, y + height - w.bottom, w.right, w.bottom, lit('bottom'));
+    fillQuad([[x + width, y + height], [x + width - w.right, y + height], [x + width - w.right, y + height - w.bottom]], lit('right'));
+  }
+  if (w.bottom > 0 && w.left > 0) {
+    canvas.fillRect(x, y + height - w.bottom, w.left, w.bottom, lit('bottom'));
+    fillQuad([[x, y + height], [x, y + height - w.bottom], [x + w.left, y + height - w.bottom]], lit('left'));
   }
 }
 
@@ -416,15 +459,29 @@ function paintShadow(canvas: CanvasLike, op: PaintOp, viewport?: Viewport | null
     const sy = y + s.oy - s.spread;
     const sw = width + 2 * s.spread;
     const sh = height + 2 * s.spread;
+    // An outer shadow paints the shadow shape minus the box's border-box hole
+    // (css-backgrounds-3 §6.1.1) — over a transparent element the shadow must
+    // not show through the box itself. Rounded shapes use one evenodd path so
+    // the hole is a single composite; plain shapes use four hard band fills.
     if (s.borderRadius && hasNonZeroRadius(s.borderRadius)) {
       canvas.save();
       canvas.beginPath();
       traceRoundedRect(canvas, sx, sy, sw, sh, resolveBorderRadius(s.borderRadius, sw, sh, viewport));
-      canvas.fillPath(s.color);
+      traceRoundedRect(canvas, x, y, width, height, resolveBorderRadius(s.borderRadius, width, height, viewport));
+      canvas.fillPath(s.color, 'evenodd');
       canvas.restore();
-    } else {
-      canvas.fillRect(sx, sy, sw, sh, s.color);
+      return;
     }
+    const holeRight = x + width;
+    const holeBottom = y + height;
+    const topH = y - sy;
+    const bottomH = sy + sh - holeBottom;
+    const leftW = x - sx;
+    const rightW = sx + sw - holeRight;
+    if (topH > 0) canvas.fillRect(sx, sy, sw, topH, s.color);
+    if (bottomH > 0) canvas.fillRect(sx, holeBottom, sw, bottomH, s.color);
+    if (leftW > 0) canvas.fillRect(sx, Math.max(sy, y), leftW, Math.max(0, Math.min(sy + sh, holeBottom) - Math.max(sy, y)), s.color);
+    if (rightW > 0) canvas.fillRect(holeRight, Math.max(sy, y), rightW, Math.max(0, Math.min(sy + sh, holeBottom) - Math.max(sy, y)), s.color);
     return;
   }
   // Inset: the shadow is the box minus the hole rect

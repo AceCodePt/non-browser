@@ -1,0 +1,25 @@
+{
+  "name": "shadows-borders",
+  "note": "currentColor and modern color syntaxes in every color-consuming position: a border-color shorthand mixing a percentage rgb() and a named color, an hsl() shadow color, a currentcolor shadow resolved against the element's color, and colored text glyphs under the documented text tier.",
+  "harvest": {
+    "viewport": {
+      "width": 260,
+      "height": 300
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0}</style></head><body><div id=\"border-colors\" style=\"width:120px;height:50px;border-width:6px;border-style:solid;border-color:rgb(50% 20% 30%) teal\"></div><div id=\"shadow-hsl\" style=\"width:120px;height:50px;box-shadow:4px 4px 0 hsl(200, 80%, 40%)\"></div><div id=\"shadow-current\" style=\"width:120px;height:50px;color:rgb(255, 100, 0);box-shadow:4px 4px 0 currentcolor\"></div><div id=\"text-colored\" style=\"width:200px;height:40px;color:#33aa77\">hello colors</div></body></html>",
+    "computedStyle": [
+      { "id": "border-colors", "props": ["border-top-color", "border-right-color", "border-bottom-color", "border-left-color"] },
+      { "id": "shadow-hsl", "props": ["box-shadow"] },
+      { "id": "shadow-current", "props": ["box-shadow", "color"] },
+      { "id": "text-colored", "props": ["color"] }
+    ],
+    "rects": ["border-colors", "shadow-hsl", "shadow-current", "text-colored"],
+    "textElements": ["text-colored"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

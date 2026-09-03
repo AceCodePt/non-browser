@@ -177,6 +177,12 @@ the charter and the corpus cannot silently diverge:
 | ua-stylesheet | UA defaults at lowest cascade priority | yes | corpus/ua-styles | UA stylesheet |
 | lists | list-style-type markers | yes | corpus/lists, corpus/ua-styles, corpus/stress | list-style-type |
 | lists | list-style-position | yes | corpus/lists, corpus/stress | list-style-position |
+| colors | hsl()/hsla() (comma + space + hue units + /alpha) | yes | corpus/colors | hsl |
+| colors | modern space-separated rgb()/rgba() with /alpha | yes | corpus/colors | rgb( |
+| colors | 4/8-digit hex alpha | yes | corpus/colors | hex |
+| colors | full CSS named-color set | yes | corpus/colors | rebeccapurple |
+| colors | currentColor in every color-consuming position | yes | corpus/colors | currentcolor |
+| colors | invalid color drops the declaration (parse-error recovery) | yes | corpus/colors | parse-error recovery |
 
 ### Deferred / Not in v1 (no silent absence)
 

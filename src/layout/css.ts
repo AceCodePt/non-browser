@@ -18,6 +18,10 @@ export interface Color {
   g: number;
   b: number;
   a: number;
+  /** currentColor sentinel (css-color-4 §4.4): parseColorOrNull returns it and
+   * every color-consuming position resolves it against the element's computed
+   * color at computed-value time; it never reaches serialization or paint. */
+  currentColor?: boolean;
 }
 
 /**
@@ -413,54 +417,322 @@ export function borderPaddingBlock(style: ComputedStyle, ref: number, viewport?:
   );
 }
 
+/**
+ * The CSS named-color set (css-color-4 §4.3), with the sRGB values the oracle
+ * resolves them to. `transparent` and `currentcolor` are handled before this
+ * table since their behavior differs (alpha 0 / used-value substitution).
+ */
 const NAMED_COLORS: Record<string, Color> = {
-  transparent: { r: 0, g: 0, b: 0, a: 0 },
-  white: { r: 255, g: 255, b: 255, a: 1 },
+  aliceblue: { r: 240, g: 248, b: 255, a: 1 },
+  antiquewhite: { r: 250, g: 235, b: 215, a: 1 },
+  aqua: { r: 0, g: 255, b: 255, a: 1 },
+  aquamarine: { r: 127, g: 255, b: 212, a: 1 },
+  azure: { r: 240, g: 255, b: 255, a: 1 },
+  beige: { r: 245, g: 245, b: 220, a: 1 },
+  bisque: { r: 255, g: 228, b: 196, a: 1 },
   black: { r: 0, g: 0, b: 0, a: 1 },
-  red: { r: 255, g: 0, b: 0, a: 1 },
+  blanchedalmond: { r: 255, g: 235, b: 205, a: 1 },
   blue: { r: 0, g: 0, b: 255, a: 1 },
-  green: { r: 0, g: 128, b: 0, a: 1 },
+  blueviolet: { r: 138, g: 43, b: 226, a: 1 },
+  brown: { r: 165, g: 42, b: 42, a: 1 },
+  burlywood: { r: 222, g: 184, b: 135, a: 1 },
+  cadetblue: { r: 95, g: 158, b: 160, a: 1 },
+  chartreuse: { r: 127, g: 255, b: 0, a: 1 },
+  chocolate: { r: 210, g: 105, b: 30, a: 1 },
+  coral: { r: 255, g: 127, b: 80, a: 1 },
+  cornflowerblue: { r: 100, g: 149, b: 237, a: 1 },
+  cornsilk: { r: 255, g: 248, b: 220, a: 1 },
+  crimson: { r: 220, g: 20, b: 60, a: 1 },
+  cyan: { r: 0, g: 255, b: 255, a: 1 },
+  darkblue: { r: 0, g: 0, b: 139, a: 1 },
+  darkcyan: { r: 0, g: 139, b: 139, a: 1 },
+  darkgoldenrod: { r: 184, g: 134, b: 11, a: 1 },
+  darkgray: { r: 169, g: 169, b: 169, a: 1 },
+  darkgreen: { r: 0, g: 100, b: 0, a: 1 },
+  darkgrey: { r: 169, g: 169, b: 169, a: 1 },
+  darkkhaki: { r: 189, g: 183, b: 107, a: 1 },
+  darkmagenta: { r: 139, g: 0, b: 139, a: 1 },
+  darkolivegreen: { r: 85, g: 107, b: 47, a: 1 },
+  darkorange: { r: 255, g: 140, b: 0, a: 1 },
+  darkorchid: { r: 153, g: 50, b: 204, a: 1 },
+  darkred: { r: 139, g: 0, b: 0, a: 1 },
+  darksalmon: { r: 233, g: 150, b: 122, a: 1 },
+  darkseagreen: { r: 143, g: 188, b: 143, a: 1 },
+  darkslateblue: { r: 72, g: 61, b: 139, a: 1 },
+  darkslategray: { r: 47, g: 79, b: 79, a: 1 },
+  darkslategrey: { r: 47, g: 79, b: 79, a: 1 },
+  darkturquoise: { r: 0, g: 206, b: 209, a: 1 },
+  darkviolet: { r: 148, g: 0, b: 211, a: 1 },
+  deeppink: { r: 255, g: 20, b: 147, a: 1 },
+  deepskyblue: { r: 0, g: 191, b: 255, a: 1 },
+  dimgray: { r: 105, g: 105, b: 105, a: 1 },
+  dimgrey: { r: 105, g: 105, b: 105, a: 1 },
+  dodgerblue: { r: 30, g: 144, b: 255, a: 1 },
+  firebrick: { r: 178, g: 34, b: 34, a: 1 },
+  floralwhite: { r: 255, g: 250, b: 240, a: 1 },
+  forestgreen: { r: 34, g: 139, b: 34, a: 1 },
+  fuchsia: { r: 255, g: 0, b: 255, a: 1 },
+  gainsboro: { r: 220, g: 220, b: 220, a: 1 },
+  ghostwhite: { r: 248, g: 248, b: 255, a: 1 },
+  gold: { r: 255, g: 215, b: 0, a: 1 },
+  goldenrod: { r: 218, g: 165, b: 32, a: 1 },
   gray: { r: 128, g: 128, b: 128, a: 1 },
+  green: { r: 0, g: 128, b: 0, a: 1 },
+  greenyellow: { r: 173, g: 255, b: 47, a: 1 },
   grey: { r: 128, g: 128, b: 128, a: 1 },
+  honeydew: { r: 240, g: 255, b: 240, a: 1 },
+  hotpink: { r: 255, g: 105, b: 180, a: 1 },
+  indianred: { r: 205, g: 92, b: 92, a: 1 },
+  indigo: { r: 75, g: 0, b: 130, a: 1 },
+  ivory: { r: 255, g: 255, b: 240, a: 1 },
+  khaki: { r: 240, g: 230, b: 140, a: 1 },
+  lavender: { r: 230, g: 230, b: 250, a: 1 },
+  lavenderblush: { r: 255, g: 240, b: 245, a: 1 },
+  lawngreen: { r: 124, g: 252, b: 0, a: 1 },
+  lemonchiffon: { r: 255, g: 250, b: 205, a: 1 },
+  lightblue: { r: 173, g: 216, b: 230, a: 1 },
+  lightcoral: { r: 240, g: 128, b: 128, a: 1 },
+  lightcyan: { r: 224, g: 255, b: 255, a: 1 },
+  lightgoldenrodyellow: { r: 250, g: 250, b: 210, a: 1 },
+  lightgray: { r: 211, g: 211, b: 211, a: 1 },
+  lightgreen: { r: 144, g: 238, b: 144, a: 1 },
+  lightgrey: { r: 211, g: 211, b: 211, a: 1 },
+  lightpink: { r: 255, g: 182, b: 193, a: 1 },
+  lightsalmon: { r: 255, g: 160, b: 122, a: 1 },
+  lightseagreen: { r: 32, g: 178, b: 170, a: 1 },
+  lightskyblue: { r: 135, g: 206, b: 250, a: 1 },
+  lightslategray: { r: 119, g: 136, b: 153, a: 1 },
+  lightslategrey: { r: 119, g: 136, b: 153, a: 1 },
+  lightsteelblue: { r: 176, g: 196, b: 222, a: 1 },
+  lightyellow: { r: 255, g: 255, b: 224, a: 1 },
+  lime: { r: 0, g: 255, b: 0, a: 1 },
+  limegreen: { r: 50, g: 205, b: 50, a: 1 },
+  linen: { r: 250, g: 240, b: 230, a: 1 },
+  magenta: { r: 255, g: 0, b: 255, a: 1 },
+  maroon: { r: 128, g: 0, b: 0, a: 1 },
+  mediumaquamarine: { r: 102, g: 205, b: 170, a: 1 },
+  mediumblue: { r: 0, g: 0, b: 205, a: 1 },
+  mediumorchid: { r: 186, g: 85, b: 211, a: 1 },
+  mediumpurple: { r: 147, g: 112, b: 219, a: 1 },
+  mediumseagreen: { r: 60, g: 179, b: 113, a: 1 },
+  mediumslateblue: { r: 123, g: 104, b: 238, a: 1 },
+  mediumspringgreen: { r: 0, g: 250, b: 154, a: 1 },
+  mediumturquoise: { r: 72, g: 209, b: 204, a: 1 },
+  mediumvioletred: { r: 199, g: 21, b: 133, a: 1 },
+  midnightblue: { r: 25, g: 25, b: 112, a: 1 },
+  mintcream: { r: 245, g: 255, b: 250, a: 1 },
+  mistyrose: { r: 255, g: 228, b: 225, a: 1 },
+  moccasin: { r: 255, g: 228, b: 181, a: 1 },
+  navajowhite: { r: 255, g: 222, b: 173, a: 1 },
+  navy: { r: 0, g: 0, b: 128, a: 1 },
+  oldlace: { r: 253, g: 245, b: 230, a: 1 },
+  olive: { r: 128, g: 128, b: 0, a: 1 },
+  olivedrab: { r: 107, g: 142, b: 35, a: 1 },
+  orange: { r: 255, g: 165, b: 0, a: 1 },
+  orangered: { r: 255, g: 69, b: 0, a: 1 },
+  orchid: { r: 218, g: 112, b: 214, a: 1 },
+  palegoldenrod: { r: 238, g: 232, b: 170, a: 1 },
+  palegreen: { r: 152, g: 251, b: 152, a: 1 },
+  paleturquoise: { r: 175, g: 238, b: 238, a: 1 },
+  palevioletred: { r: 219, g: 112, b: 147, a: 1 },
+  papayawhip: { r: 255, g: 239, b: 213, a: 1 },
+  peachpuff: { r: 255, g: 218, b: 185, a: 1 },
+  peru: { r: 205, g: 133, b: 63, a: 1 },
+  pink: { r: 255, g: 192, b: 203, a: 1 },
+  plum: { r: 221, g: 160, b: 221, a: 1 },
+  powderblue: { r: 176, g: 224, b: 230, a: 1 },
+  purple: { r: 128, g: 0, b: 128, a: 1 },
+  rebeccapurple: { r: 102, g: 51, b: 153, a: 1 },
+  red: { r: 255, g: 0, b: 0, a: 1 },
+  rosybrown: { r: 188, g: 143, b: 143, a: 1 },
+  royalblue: { r: 65, g: 105, b: 225, a: 1 },
+  saddlebrown: { r: 139, g: 69, b: 19, a: 1 },
+  salmon: { r: 250, g: 128, b: 114, a: 1 },
+  sandybrown: { r: 244, g: 164, b: 96, a: 1 },
+  seagreen: { r: 46, g: 139, b: 87, a: 1 },
+  seashell: { r: 255, g: 245, b: 238, a: 1 },
+  sienna: { r: 160, g: 82, b: 45, a: 1 },
+  silver: { r: 192, g: 192, b: 192, a: 1 },
+  skyblue: { r: 135, g: 206, b: 235, a: 1 },
+  slateblue: { r: 106, g: 90, b: 205, a: 1 },
+  slategray: { r: 112, g: 128, b: 144, a: 1 },
+  slategrey: { r: 112, g: 128, b: 144, a: 1 },
+  snow: { r: 255, g: 250, b: 250, a: 1 },
+  springgreen: { r: 0, g: 255, b: 127, a: 1 },
+  steelblue: { r: 70, g: 130, b: 180, a: 1 },
+  tan: { r: 210, g: 180, b: 140, a: 1 },
+  teal: { r: 0, g: 128, b: 128, a: 1 },
+  thistle: { r: 216, g: 191, b: 216, a: 1 },
+  tomato: { r: 255, g: 99, b: 71, a: 1 },
+  turquoise: { r: 64, g: 224, b: 208, a: 1 },
+  violet: { r: 238, g: 130, b: 238, a: 1 },
+  wheat: { r: 245, g: 222, b: 179, a: 1 },
+  white: { r: 255, g: 255, b: 255, a: 1 },
+  whitesmoke: { r: 245, g: 245, b: 245, a: 1 },
+  yellow: { r: 255, g: 255, b: 0, a: 1 },
+  yellowgreen: { r: 154, g: 205, b: 50, a: 1 },
 };
 
-export function parseColor(input: string): Color {
+/**
+ * css-color-4 color parsing. Returns null for anything the grammar rejects so
+ * the caller drops the declaration like Chrome's parse-error recovery — never
+ * the black fallback. `currentcolor` parses to the sentinel resolved by the
+ * caller against the element's computed color.
+ */
+export function parseColorOrNull(input: string): Color | null {
   const s = input.trim().toLowerCase();
+  if (s === 'currentcolor') return { r: 0, g: 0, b: 0, a: 1, currentColor: true };
+  if (s === 'transparent') return { r: 0, g: 0, b: 0, a: 0 };
   if (s.startsWith('#')) {
     const hex = s.slice(1);
-    if (hex.length === 3) {
-      return {
-        r: parseInt(hex[0] + hex[0], 16),
-        g: parseInt(hex[1] + hex[1], 16),
-        b: parseInt(hex[2] + hex[2], 16),
-        a: 1,
-      };
+    if (!/^[0-9a-f]+$/.test(hex)) return null;
+    if (hex.length === 3 || hex.length === 4) {
+      const [r, g, b, a] = hex.split('').map((h) => parseInt(h + h, 16));
+      return { r, g, b, a: a !== undefined ? a / 255 : 1 };
     }
-    if (hex.length === 6) {
-      return {
-        r: parseInt(hex.slice(0, 2), 16),
-        g: parseInt(hex.slice(2, 4), 16),
-        b: parseInt(hex.slice(4, 6), 16),
-        a: 1,
-      };
+    if (hex.length === 6 || hex.length === 8) {
+      const r = parseInt(hex.slice(0, 2), 16);
+      const g = parseInt(hex.slice(2, 4), 16);
+      const b = parseInt(hex.slice(4, 6), 16);
+      const a = hex.length === 8 ? parseInt(hex.slice(6, 8), 16) / 255 : 1;
+      return { r, g, b, a };
+    }
+    return null;
+  }
+  const fn = s.match(/^(rgba?|hsla?)\(([^)]*)\)$/);
+  if (!fn) {
+    const named = NAMED_COLORS[s];
+    return named ? { ...named } : null;
+  }
+  const kind = fn[1].startsWith('hsl') ? 'hsl' : 'rgb';
+  const body = fn[2];
+  // Legacy comma form: exactly 3 color args + optional 4th alpha, all
+  // comma-separated (kept — current-Chrome parity, not legacy exclusion).
+  // Modern form: whitespace-separated args + optional `/ alpha`.
+  let args: string[];
+  let alphaRaw: string | null = null;
+  if (body.includes(',')) {
+    const parts = splitOnTopLevelComma(body);
+    if (parts.length === 4) {
+      args = parts.slice(0, 3);
+      alphaRaw = parts[3];
+    } else if (parts.length === 3) {
+      args = parts;
+    } else {
+      return null;
+    }
+    for (const p of args) if (/\s/.test(p.trim())) return null;
+  } else {
+    const slash = splitTopLevelBy(body, '/');
+    if (slash.length > 2) return null;
+    args = splitTopLevel(slash[0] ?? '');
+    if (slash.length === 2) {
+      if (args.length !== 3) return null;
+      alphaRaw = slash[1];
+    } else if (args.length !== 3) {
+      return null;
     }
   }
-  const m = s.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([0-9.]+))?\s*\)$/);
-  if (m) {
-    return {
-      r: clamp255(parseInt(m[1], 10)),
-      g: clamp255(parseInt(m[2], 10)),
-      b: clamp255(parseInt(m[3], 10)),
-      a: m[4] !== undefined ? Math.max(0, Math.min(1, parseFloat(m[4]))) : 1,
-    };
+  let a = 1;
+  if (alphaRaw !== null) {
+    // Alpha is a number in [0,1] or a percentage (css-color-4 §4.2) — the
+    // scale is independent of the rgb()/hsl() function kind.
+    const alpha = parseColorComponent(alphaRaw.trim(), 1);
+    if (alpha === null) return null;
+    a = Math.max(0, Math.min(1, alpha));
   }
-  const named = NAMED_COLORS[s];
-  if (named) return { ...named };
-  return { r: 0, g: 0, b: 0, a: 1 };
+  if (kind === 'rgb') {
+    if (args.length !== 3) return null;
+    const c: number[] = [];
+    for (const rawArg of args) {
+      const v = parseColorComponent(rawArg.trim(), 255);
+      if (v === null) return null;
+      c.push(Math.round(Math.max(0, Math.min(255, v))));
+    }
+    return { r: c[0], g: c[1], b: c[2], a };
+  }
+  if (args.length !== 3) return null;
+  const hue = parseHue(args[0].trim());
+  if (hue === null) return null;
+  const ch = (rawArg: string): number | null => {
+    const m = rawArg.match(/^([+-]?[\d.]+(?:e[+-]?\d+)?)%?$/);
+    if (!m) return null;
+    return Math.max(0, Math.min(100, parseFloat(m[1])));
+  };
+  const sat = ch(args[1].trim());
+  const light = ch(args[2].trim());
+  if (sat === null || light === null) return null;
+  const { r, g, b } = hslToRgb(hue, sat, light);
+  return { r, g, b, a };
 }
 
-function clamp255(v: number): number {
-  return Math.max(0, Math.min(255, v));
+/**
+ * One rgb() component: a number resolved against `scale` (255 for channels,
+ * 1 for alpha) or a percentage resolved against 100 then scaled (css-color-4
+ * §4.2). Returns the clamped-to-range value; null on unparseable input.
+ */
+function parseColorComponent(raw: string, scale: number): number | null {
+  const m = raw.match(/^([+-]?[\d.]+(?:e[+-]?\d+)?)(%)?$/);
+  if (!m) return null;
+  const v = parseFloat(m[1]);
+  if (!Number.isFinite(v)) return null;
+  return m[2] ? (v / 100) * scale : v;
+}
+
+/** Hue angle: unitless degrees or deg/rad/grad/turn, normalized mod 360. */
+function parseHue(raw: string): number | null {
+  const m = raw.match(/^([+-]?[\d.]+(?:e[+-]?\d+)?)(deg|rad|grad|turn)?$/);
+  if (!m) return null;
+  const v = parseFloat(m[1]);
+  if (!Number.isFinite(v)) return null;
+  const unit = m[2] ?? 'deg';
+  const deg = unit === 'rad' ? (v * 180) / Math.PI : unit === 'grad' ? v * 0.9 : unit === 'turn' ? v * 360 : v;
+  return ((deg % 360) + 360) % 360;
+}
+
+function hslToRgb(hDeg: number, sPct: number, lPct: number): { r: number; g: number; b: number } {
+  const h = hDeg / 360;
+  const s = sPct / 100;
+  const l = lPct / 100;
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h * 6) % 2) - 1));
+  const m = l - c / 2;
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  if (h < 1 / 6) {
+    r = c;
+    g = x;
+  } else if (h < 2 / 6) {
+    r = x;
+    g = c;
+  } else if (h < 3 / 6) {
+    g = c;
+    b = x;
+  } else if (h < 4 / 6) {
+    g = x;
+    b = c;
+  } else if (h < 5 / 6) {
+    r = x;
+    b = c;
+  } else {
+    r = c;
+    b = x;
+  }
+  return {
+    r: Math.round(Math.max(0, Math.min(1, r + m)) * 255),
+    g: Math.round(Math.max(0, Math.min(1, g + m)) * 255),
+    b: Math.round(Math.max(0, Math.min(1, b + m)) * 255),
+  };
+}
+
+export function parseColor(input: string): Color {
+  return parseColorOrNull(input) ?? { r: 0, g: 0, b: 0, a: 1 };
+}
+
+/** Resolve the currentColor sentinel against the element's computed color. */
+export function resolveCurrentColor(c: Color, elementColor: Color): Color {
+  return c.currentColor ? elementColor : c;
 }
 
 /**
@@ -469,8 +741,10 @@ function clamp255(v: number): number {
  * item's tokens are `inset? && <length>{2,4} && <color>?` with the color
  * allowed anywhere; a missing color is `currentColor` (the element's color).
  * text-shadow shares the grammar minus `inset` and the 4th (spread) length.
+ * Returns null when any token fails to parse (an unparseable color or length
+ * invalidates the whole declaration, like Chrome's parse-error recovery).
  */
-export function parseShadowList(value: string, currentColor: Color): Shadow[] {
+export function parseShadowList(value: string, currentColor: Color): Shadow[] | null {
   const parts = splitOnTopLevelComma(value);
   const out: Shadow[] = [];
   for (const part of parts) {
@@ -483,11 +757,16 @@ export function parseShadowList(value: string, currentColor: Color): Shadow[] {
         inset = true;
         continue;
       }
-      if (/^#|^rgba?\(|^hsla?\(|^[a-zA-Z]/.test(t) && !/^-?[\d.]/.test(t)) {
-        color = t.toLowerCase() === 'currentcolor' ? currentColor : parseColor(t);
+      const parsed = parseColorOrNull(t);
+      if (parsed) {
+        color = resolveCurrentColor(parsed, currentColor);
         continue;
       }
-      lenses.push(t);
+      if (/^(calc|min|max|clamp)\(/i.test(t) || /^[-+\d.]/.test(t)) {
+        lenses.push(t);
+        continue;
+      }
+      return null;
     }
     const lens = lenses.map((t) => parseLength(t));
     out.push({
@@ -934,6 +1213,47 @@ function parseBoxShorthand(raw: string): Record<Side, Length> {
 
 type BorderStyleKeyword = 'none' | 'solid' | 'inset' | 'outset';
 
+const BORDER_WIDTH_KEYWORDS: Record<string, number> = { thin: 1, medium: 3, thick: 5 };
+
+/**
+ * Tokenize a border shorthand's value into width/style/color. Tokens split
+ * paren-aware so a modern `rgb(10 20 30)` color survives. Returns null when
+ * any token is unparseable — an invalid component invalidates the whole
+ * shorthand like Chrome (the declaration drops entirely, not token-by-token).
+ */
+function parseBorderShorthandParts(
+  raw: string,
+  defaultColor: Color,
+): { width: number; style: BorderStyleKeyword; color: Color } | null {
+  let width = 0;
+  let style: BorderStyleKeyword = 'solid';
+  let color: Color | null = null;
+  let sawWidth = false;
+  for (const p of splitTopLevel(raw.trim())) {
+    if (p === 'solid' || p === 'none' || p === 'inset' || p === 'outset') {
+      style = p;
+      continue;
+    }
+    if (/^-?[\d.]+px$/.test(p)) {
+      width = parseFloat(p);
+      sawWidth = true;
+      continue;
+    }
+    if (!sawWidth && p in BORDER_WIDTH_KEYWORDS) {
+      width = BORDER_WIDTH_KEYWORDS[p];
+      sawWidth = true;
+      continue;
+    }
+    const c = parseColorOrNull(p);
+    if (c) {
+      color = c;
+      continue;
+    }
+    return null;
+  }
+  return { width, style, color: color ? resolveCurrentColor(color, defaultColor) : defaultColor };
+}
+
 function parseBorderStyleShorthand(raw: string): Record<Side, BorderStyleKeyword> {
   const kw = (v: string): BorderStyleKeyword =>
     v === 'inset' ? 'inset' : v === 'outset' ? 'outset' : v === 'solid' ? 'solid' : 'none';
@@ -942,9 +1262,10 @@ function parseBorderStyleShorthand(raw: string): Record<Side, BorderStyleKeyword
   return { top: t, right: r, bottom: b, left: l };
 }
 
-function parseBorderColorShorthand(raw: string): Record<Side, Color> {
-  const parts = raw.trim().split(/\s+/).map(parseColor);
-  const [t = parseColor('black'), r = t, b = t, l = r] = parts;
+function parseBorderColorShorthand(raw: string): Record<Side, Color> | null {
+  const parts = splitTopLevel(raw.trim()).map(parseColorOrNull);
+  if (parts.some((p) => p === null)) return null;
+  const [t = parseColor('black'), r = t, b = t, l = r] = parts as Color[];
   return { top: t, right: r, bottom: b, left: l };
 }
 
@@ -1136,8 +1457,9 @@ function parseDecorationShorthand(value: string): {
       const m = tok.match(/^(-?[\d.]+)(px)?$/);
       if (m) {
         thickness = { px: parseFloat(m[1]) };
-      } else if (color === null && /^[#a-zA-Z]/.test(tok)) {
-        color = parseColor(tok);
+      } else if (color === null) {
+        const c = parseColorOrNull(tok);
+        if (c) color = c;
       }
     }
   }
@@ -1183,13 +1505,30 @@ interface Defaults {
   directionInherited?: Direction;
 }
 export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedStyle {
+  const transparentColor: Color = { r: 0, g: 0, b: 0, a: 0 };
+  // The element's own color resolves first: every other color-consuming
+  // position (background, borders, shadows, decorations) resolves currentColor
+  // against it, and `color: currentcolor` resolves against the inherited color.
+  const colorDecl = findDecl(decls, 'color');
+  const elementColor = (() => {
+    if (colorDecl) {
+      const c = parseColorOrNull(colorDecl.value);
+      if (c && !c.currentColor) return c;
+    }
+    return defaults.color;
+  })();
+  // A declaration whose color fails to parse drops (Chrome's parse-error
+  // recovery), yielding the default — never the black fallback.
   const color = (name: string, dflt: Color): Color => {
     const v = findDecl(decls, name);
-    return v ? parseColor(v.value) : dflt;
+    if (v) {
+      const c = parseColorOrNull(v.value);
+      if (c) return c.currentColor ? elementColor : c;
+    }
+    return dflt;
   };
 
   const bgDecl = findDecl(decls, 'background-color') ?? findDecl(decls, 'background');
-  const elementColor = color('color', defaults.color);
 
   // --- font-family (needed before line-height/font-size-margin resolution) ---
   let fontFamily = defaults.fontFamily;
@@ -1393,21 +1732,13 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   const bwShort = findDecl(decls, 'border-width');
   const bsShort = findDecl(decls, 'border-style');
   const bcShort = findDecl(decls, 'border-color');
-  if (borderDecl) {
-    const parts = borderDecl.value.trim().split(/\s+/);
-    let width = 0;
-    let style: 'none' | 'solid' | 'inset' | 'outset' = 'solid';
-    let col = parseColor('black');
-    for (const p of parts) {
-      if (p === 'solid' || p === 'none' || p === 'inset' || p === 'outset') style = p as 'none' | 'solid' | 'inset' | 'outset';
-      else if (/^-?[\d.]+px$/.test(p)) width = parseFloat(p);
-      else col = parseColor(p);
-    }
-    if (style !== 'none') {
+  const borderShorthand = borderDecl ? parseBorderShorthandParts(borderDecl.value, elementColor) : null;
+  if (borderShorthand) {
+    if (borderShorthand.style !== 'none') {
       for (const s of SIDES) {
-        borderWidth[s] = width;
-        borderColor[s] = col;
-        borderStyle[s] = style;
+        borderWidth[s] = borderShorthand.width;
+        borderColor[s] = borderShorthand.color;
+        borderStyle[s] = borderShorthand.style;
       }
     }
   } else {
@@ -1418,25 +1749,20 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
       // `border-<side>` is a four-in-one shorthand (width/style/color for that
       // side); parse it like the full `border` shorthand so pages that write
       // per-side borders (border-left, border-bottom, ...) get their width.
+      // An invalid shorthand drops entirely and the longhands below decide.
       const sideShort = findDecl(decls, `border-${s}`);
       if (sideShort) {
-        const parts = sideShort.value.trim().split(/\s+/);
-        let w = 0;
-        let st: 'none' | 'solid' | 'inset' | 'outset' = 'solid';
-        let c = parseColor('black');
-        for (const p of parts) {
-          if (p === 'solid' || p === 'none' || p === 'inset' || p === 'outset') st = p as 'none' | 'solid' | 'inset' | 'outset';
-          else if (/^-?[\d.]+px$/.test(p)) w = parseFloat(p);
-          else c = parseColor(p);
+        const parts = parseBorderShorthandParts(sideShort.value, elementColor);
+        if (parts) {
+          borderWidth[s] = parts.style === 'none' ? 0 : parts.width;
+          borderColor[s] = parts.color;
+          borderStyle[s] = parts.style;
+          continue;
         }
-        borderWidth[s] = st === 'none' ? 0 : w;
-        borderColor[s] = c;
-        borderStyle[s] = st;
-        continue;
       }
       const bw2 = bw ? bw[s] : len(`border-${s}-width`, pxLength(0));
       borderWidth[s] = bw2.px ?? 0;
-      const c2 = bc ? bc[s] : color(`border-${s}-color`, parseColor('black'));
+      const c2 = bc ? bc[s] : color(`border-${s}-color`, elementColor);
       borderColor[s] = c2;
       borderStyle[s] = bs ? bs[s] : (() => {
         const d = findDecl(decls, `border-${s}-style`);
@@ -1610,7 +1936,7 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   if (decShort) {
     const sh = parseDecorationShorthand(decShort.value);
     textDecorationLines = sh.lines.length > 0 ? sh.lines : textDecorationLines;
-    if (sh.color !== null) textDecorationColor = sh.color;
+    if (sh.color !== null) textDecorationColor = sh.color.currentColor ? elementColor : sh.color;
     if (sh.thickness !== 'auto') textDecorationThickness = sh.thickness;
   }
   // Longhands override the shorthand (matches source-order semantics for the
@@ -1618,7 +1944,10 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
   const decLineDecl = findDecl(decls, 'text-decoration-line');
   if (decLineDecl) textDecorationLines = parseDecorationLines(decLineDecl.value);
   const decColorDecl = findDecl(decls, 'text-decoration-color');
-  if (decColorDecl) textDecorationColor = parseColor(decColorDecl.value);
+  if (decColorDecl) {
+    const c = parseColorOrNull(decColorDecl.value);
+    if (c) textDecorationColor = c.currentColor ? elementColor : c;
+  }
   const decThicknessDecl = findDecl(decls, 'text-decoration-thickness');
   if (decThicknessDecl) textDecorationThickness = parseDecorationThickness(decThicknessDecl.value);
   const decOffsetDecl = findDecl(decls, 'text-underline-offset');
@@ -1642,14 +1971,14 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     if (!d) return [];
     const s = d.value.trim();
     if (s === '' || s === 'none') return [];
-    return parseShadowList(s, elementColor);
+    return parseShadowList(s, elementColor) ?? [];
   })();
   const textShadow = (() => {
     const d = findDecl(decls, 'text-shadow');
     if (!d) return defaults.textShadow ?? [];
     const s = d.value.trim();
     if (s === '' || s === 'none') return [];
-    return parseShadowList(s, elementColor);
+    return parseShadowList(s, elementColor) ?? defaults.textShadow ?? [];
   })();
 
   const decl = (name: string) => findDecl(decls, name)?.value;
@@ -1837,7 +2166,12 @@ export function makeStyle(decls: Declaration[], defaults: Defaults): ComputedSty
     borderColor,
     borderStyle,
     borderRadius,
-    backgroundColor: bgDecl ? parseColor(bgDecl.value) : { r: 0, g: 0, b: 0, a: 0 },
+    backgroundColor: (() => {
+      if (!bgDecl) return transparentColor;
+      const c = parseColorOrNull(bgDecl.value);
+      if (!c) return transparentColor;
+      return c.currentColor ? elementColor : c;
+    })(),
     color: elementColor,
     opacity,
     boxShadow,

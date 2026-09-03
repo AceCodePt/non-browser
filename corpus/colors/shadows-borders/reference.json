@@ -1,0 +1,47 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "border-colors": {
+      "border-top-color": "rgb(128, 51, 77)",
+      "border-right-color": "rgb(0, 128, 128)",
+      "border-bottom-color": "rgb(128, 51, 77)",
+      "border-left-color": "rgb(0, 128, 128)"
+    },
+    "shadow-hsl": {
+      "box-shadow": "rgb(20, 129, 184) 4px 4px 0px 0px"
+    },
+    "shadow-current": {
+      "box-shadow": "rgb(255, 100, 0) 4px 4px 0px 0px",
+      "color": "rgb(255, 100, 0)"
+    },
+    "text-colored": {
+      "color": "rgb(51, 170, 119)"
+    }
+  },
+  "rect": {
+    "border-colors": {
+      "x": 0,
+      "y": 0,
+      "width": 132,
+      "height": 62
+    },
+    "shadow-hsl": {
+      "x": 0,
+      "y": 62,
+      "width": 120,
+      "height": 50
+    },
+    "shadow-current": {
+      "x": 0,
+      "y": 112,
+      "width": 120,
+      "height": 50
+    },
+    "text-colored": {
+      "x": 0,
+      "y": 162,
+      "width": 200,
+      "height": 40
+    }
+  }
+}

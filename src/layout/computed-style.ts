@@ -14,9 +14,27 @@ import type { Color, ComputedStyle, CornerRadii, Length, Shadow, Viewport } from
 
 export type ComputedStyleProps = Record<string, string>;
 
+/**
+ * CSSOM color serialization: an opaque color is `rgb(r, g, b)`; a
+ * non-opaque alpha serializes with the fewest decimal places that still
+ * quantizes back to the same 8-bit alpha byte (Chrome prints 0x88 as 0.533,
+ * 0.25 as 0.25, 0.5 as 0.5).
+ */
 function colorString(c: Color): string {
-  if (c.a >= 1) return `rgb(${c.r}, ${c.g}, ${c.b})`;
-  return `rgba(${c.r}, ${c.g}, ${c.b}, ${c.a})`;
+  const byte = Math.round(Math.min(1, Math.max(0, c.a)) * 255);
+  if (byte >= 255) return `rgb(${c.r}, ${c.g}, ${c.b})`;
+  return `rgba(${c.r}, ${c.g}, ${c.b}, ${alphaString(byte)})`;
+}
+
+function alphaString(byte: number): string {
+  for (let d = 0; d <= 6; d++) {
+    const f = Math.round((byte / 255) * 10 ** d) / 10 ** d;
+    if (Math.round(f * 255) === byte) {
+      const s = f.toFixed(d);
+      return d === 0 ? s : s.replace(/0+$/, '').replace(/\.$/, '');
+    }
+  }
+  return String(byte / 255);
 }
 
 /**
@@ -184,6 +202,14 @@ export function computedStyleString(style: ComputedStyle, prop: string, refWidth
       return style.borderStyle.bottom;
     case 'border-left-style':
       return style.borderStyle.left;
+    case 'border-top-color':
+      return colorString(style.borderColor.top);
+    case 'border-right-color':
+      return colorString(style.borderColor.right);
+    case 'border-bottom-color':
+      return colorString(style.borderColor.bottom);
+    case 'border-left-color':
+      return colorString(style.borderColor.left);
     case 'border-color': {
       const { top, right, bottom, left } = style.borderColor;
       const s = (c: Color) => colorString(c);
