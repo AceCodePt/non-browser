@@ -1,0 +1,36 @@
+{
+  "measureText": {},
+  "computedStyle": {},
+  "rect": {
+    "t": {
+      "x": 0,
+      "y": 0,
+      "width": 400,
+      "height": 30
+    },
+    "c1": {
+      "x": 2,
+      "y": 2,
+      "width": 64,
+      "height": 26
+    },
+    "c2": {
+      "x": 68,
+      "y": 2,
+      "width": 214.5,
+      "height": 26
+    },
+    "c3": {
+      "x": 284.5,
+      "y": 2,
+      "width": 97.5,
+      "height": 26
+    },
+    "c4": {
+      "x": 384,
+      "y": 2,
+      "width": 14,
+      "height": 26
+    }
+  }
+}

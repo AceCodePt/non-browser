@@ -24,6 +24,10 @@ The four layers are independent and each fixture records expectations for all fo
 The following are **in scope** for v1:
 
 - Full CSS layout, landed in a defined order: block/inline → positioning → floats → flexbox → grid **last**.
+- Table formatting context (css-tables-3), separate-borders model: auto and
+  fixed table layout, anonymous box generation, spanning, captions,
+  border-spacing, empty-cells. `border-collapse: collapse` is the follow-on
+  `tables-border-collapse` slice.
 - Text: layout over a generic Canvas interface (`measureText` + paint primitives). The engine's shipped breaking path is `@chenglou/pretext` prepare/break over the same interface (`src/layout/measure.ts` routes `layoutTextLines` through `breakNextLine`; see `docs/ledgers/breakers.md`). The greedy space-break wrapper survives only as the flagged `CASCADE_BREAKER=greedy` fallback that the drift gate pins to Pretext. Skia is the first implementation; CoreText/HarfBuzz may follow behind the same interface.
 - Replaced boxes at layout size for `<canvas>` and `<img>`.
 
@@ -208,6 +212,7 @@ the charter and the corpus cannot silently diverge:
 | text | text-transform (uppercase/lowercase/capitalize UAX-29 words), text-indent (length/percentage, hanging, each-line), word-spacing (length/percentage) feeding measurement and paint (css-text-3 §2, §8) | yes | corpus/text-formatting | word-spacing |
 | ua-stylesheet | nested-list rules authored with :is() (Blink html.css parity) | yes | corpus/selectors | :is(dl, ol, ul) |
 | form controls | default rendering of input/select/textarea/button: UA display/box-sizing/border/background/padding and the 13.3333px control font, size/cols-derived control sizing, checkbox/radio 13x13 geometry painted per checked state, select chosen-option text + chevron, theme-painted appearance:auto look, static :checked/:disabled/:enabled matching from attributes | yes | corpus/form-controls | :checked |
+| tables | table formatting context, separate-borders model (css-tables-3): anonymous table-row-group/row/cell generation (§2.1), auto width distribution (guess algorithm over cell min/max constraints, colspan distribution) and fixed layout (col-element + first-row widths, no column shrink — over-constrained tables grow), rowspan/colspan spanning with row block-size distribution, captions (caption-side, margins) above/below the box, border-spacing on every grid edge, cell vertical-align (middle/bottom/baseline), empty-cells:hide; HTML-table stray content hoists above the box, css display:table wraps stray content in place | yes | corpus/tables | table-layout |
 
 ### Deferred / Not in v1 (no silent absence)
 
@@ -219,11 +224,11 @@ classification):
 
 - **outline** — not implemented; `paint-shapes` is archived PARTIAL and outline
   has no owning task.
-- **tables layout** — CSS 2.1 §17 table display values (`display:table*`) and the
-  table properties (border-collapse, border-spacing, caption-side, table-layout,
-  empty-cells) are parsed and computed, and UA table defaults land, but there is
-  no table layout module (cell grid, border-collapse box model, spanning);
-  charter §3 keeps tables out of v1. `tables-layout` is archived PARTIAL.
+- **tables layout (border-collapse: collapse)** — the separate-borders table
+  model is implemented (charter §11 tables row, `corpus/tables/`,
+  `docs/ledgers/tables.md`); the collapsing-borders box model is the follow-on
+  `tables-border-collapse` slice. `tables-layout` was archived PARTIAL (display
+  parsing + UA defaults only) and is executed by the tables-layout slice.
 - **Cascade layers / !important** — intentionally **not supported by design**
   (not a gap): `!important` and `@layer` are excluded from the compatibility
   surface because they override the normal cascade in ways a deterministic

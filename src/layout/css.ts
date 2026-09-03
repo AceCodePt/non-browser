@@ -1588,6 +1588,8 @@ interface Defaults {
    * 'center'/'justify'), resolved against the element's own direction. */
   textAlignInheritedKeyword?: string;
   whiteSpaceDefault?: WhiteSpaceValue;
+  /** inherited empty-cells (css-tables-3: the property inherits). */
+  emptyCellsDefault?: 'show' | 'hide';
   textTransformInherited?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
   textIndentInherited?: Length;
   textIndentHangingInherited?: boolean;
@@ -2204,7 +2206,11 @@ export function makeStyle(rawDecls: Declaration[], defaults: Defaults): Computed
     tableLayoutDecl && tableLayoutDecl.value.trim() === 'fixed' ? 'fixed' : (defaults.tableLayoutDefault ?? 'auto');
   const emptyCellsDecl = findDecl(decls, 'empty-cells');
   const emptyCells: 'show' | 'hide' =
-    emptyCellsDecl && emptyCellsDecl.value.trim() === 'hide' ? 'hide' : 'show';
+    emptyCellsDecl && emptyCellsDecl.value.trim() === 'hide'
+      ? 'hide'
+      : emptyCellsDecl
+        ? 'show'
+        : (defaults.emptyCellsDefault ?? 'show');
 
   const boxSizingDecl = findDecl(decls, 'box-sizing');
   const boxSizing: 'content-box' | 'border-box' =

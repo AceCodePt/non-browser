@@ -1,0 +1,31 @@
+{
+ "note": "Top and bottom captions (caption-side:bottom) with margins; caption min-content drives the table width floor, caption boxes span the table border-box minus margins.",
+ "harvest": {
+  "viewport": {
+   "width": 400,
+   "height": 180
+  },
+  "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans';font-size:16px}td{border:1px solid #666}</style></head><body><table id=\"t\" style=\"border:1px solid #333\"><caption id=\"cap\" style=\"margin:4px 8px;background:#4a90d9;color:#fff\">Table Caption</caption><tr><td id=\"c1\" style=\"background:#d9534f\">alpha</td><td id=\"c2\" style=\"background:#90b04f\">beta</td></tr><caption id=\"cap2\" style=\"caption-side:bottom;background:#f0c040\">Bottom caption</caption></table></body></html>",
+  "measureText": [],
+  "rects": [
+   "t",
+   "cap",
+   "cap2",
+   "c1",
+   "c2"
+  ],
+  "textElements": [
+   "cap",
+   "cap2",
+   "c1",
+   "c2"
+  ]
+ },
+ "name": "caption",
+ "expected": {
+  "measureText": "pass",
+  "computedStyle": "pass",
+  "rect": "pass",
+  "screenshot": "pass"
+ }
+}

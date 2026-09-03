@@ -76,7 +76,7 @@ the archive-audit classification so a reader can see the evidence:
 | per-element opacity (box-level compositing) | EMPTY archive | `opacity-compositing` EMPTY | `tasks/opacity-subtree-compositing` |
 | box-shadow / text-shadow | EMPTY archive | `box-shadow-paint` EMPTY | `tasks/shadow-paint` |
 | outline | never landed | `paint-shapes` PARTIAL (outline ownerless) | none |
-| tables layout (cell grid, border-collapse box model, spanning) | parse + UA defaults only | `tables-layout` PARTIAL; charter §3 out of v1 | none |
+| tables layout (border-collapse: collapse box model) | separate-borders model implemented (charter §11 tables row, `corpus/tables/`, `docs/ledgers/tables.md`); collapse is the follow-on | `tables-layout` PARTIAL (display parsing + UA defaults) — executed by the tables-layout slice | `tables-border-collapse` |
 | calc()/min()/max()/clamp() | never landed | not an archived task | `tasks/calc-values` |
 | custom properties / var() | EMPTY archive | `cascade-custom-props` EMPTY | none |
 | cascade layers / !important | EMPTY archive | `cascade-layers-important` EMPTY | none |
@@ -85,10 +85,11 @@ the archive-audit classification so a reader can see the evidence:
 | @container container queries | declared typed gap | `cascade-media-queries` EXECUTED, gap in ledger | `docs/ledgers/media-queries.md` |
 
 The table CSS 2.1 §17 properties (border-collapse, border-spacing, caption-side,
-table-layout, empty-cells) are parsed and computed (getComputedStyle strings
-work on table elements) but have no layout effect, so they are **not** claimed
-as implemented rows (no corpus fixture exercises them; §11 "no claim without a
-corpus token") — the tables-layout bullet captures that split explicitly.
+table-layout, empty-cells) previously had no layout effect; the tables-layout
+slice landed the separate-borders model (auto/fixed layout, anonymous boxes,
+spanning, captions, border-spacing, empty-cells) with corpus/tables/ and a
+charter §11 row. `border-collapse: collapse` remains unclaimed — the follow-on
+`tables-border-collapse` slice owns it.
 
 ## Agreement with archive-audit.md
 

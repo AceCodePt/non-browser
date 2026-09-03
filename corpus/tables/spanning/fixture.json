@@ -1,0 +1,35 @@
+{
+ "note": "Colspan + rowspan spanning: a 2x2 spanner occupies the top-left, rowspan/colspan tabulator places later cells, row heights grow through the rowspan block-size distribution.",
+ "harvest": {
+  "viewport": {
+   "width": 360,
+   "height": 180
+  },
+  "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans';font-size:16px}td{border:1px solid #666}</style></head><body><table id=\"t\"><tr><td id=\"s1\" colspan=\"2\" rowspan=\"2\" style=\"background:#4a90d9\">2x2<br>span</td><td id=\"c1\" style=\"background:#d9534f\">one</td></tr><tr><td id=\"c2\" style=\"background:#90b04f\">two</td></tr><tr><td id=\"c3\" style=\"background:#e0a0a0\">three</td><td id=\"c4\" style=\"background:#f0c040\">four</td><td id=\"c5\" style=\"background:#40c0a0\">five</td></tr></table></body></html>",
+  "measureText": [],
+  "rects": [
+   "t",
+   "s1",
+   "c1",
+   "c2",
+   "c3",
+   "c4",
+   "c5"
+  ],
+  "textElements": [
+   "s1",
+   "c1",
+   "c2",
+   "c3",
+   "c4",
+   "c5"
+  ]
+ },
+ "name": "spanning",
+ "expected": {
+  "measureText": "pass",
+  "computedStyle": "pass",
+  "rect": "pass",
+  "screenshot": "pass"
+ }
+}

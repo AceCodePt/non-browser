@@ -88,8 +88,15 @@ export class SkiaCanvas implements CanvasLike {
   }
 
   fillRect(x: number, y: number, w: number, h: number, color: CanvasColor): void {
+    // Blink pixel-snaps filled rects (BoxPainter's PixelSnappedIntRect):
+    // edges round to the device grid separately, so a 1px border at a
+    // fractional x paints one solid column instead of two AA halves.
+    const x0 = Math.round(x);
+    const x1 = Math.round(x + w);
+    const y0 = Math.round(y);
+    const y1 = Math.round(y + h);
     this.ctx.fillStyle = cssColor(color);
-    this.ctx.fillRect(x, y, w, h);
+    this.ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
   }
 
   fillGradientRect(x: number, y: number, w: number, h: number, gradient: CanvasGradient): void {

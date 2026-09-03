@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-03T13:54:55.276Z",
+  "generatedAt": "2026-09-03T17:07:13.520Z",
   "fixtures": {
     "aspect-ratio/block-surface": {
       "sha256": "5d45b9b9ab2c56340a50cd75f738e67c96b080949461231c0e352638dd3b3567",
@@ -821,7 +821,7 @@
       "computedStyleCount": 0
     },
     "form-controls/buttons": {
-      "sha256": "562cccad4d600bce3e9f7c299d3295dfc060d613fd6016d8f6185cafbe945b5f",
+      "sha256": "3cd0b0f6a6c15a345c0274ec645b8385956538f28f5fc5fc83eb81e4aed1d30a",
       "width": 400,
       "height": 180,
       "rectCount": 4,
@@ -835,7 +835,7 @@
       "computedStyleCount": 4
     },
     "form-controls/hidden-disabled": {
-      "sha256": "00add059962600e8aa0a398ffb0e5b3de1190614869f7cdc1d847803d7405076",
+      "sha256": "29f12175594a93fa7e5db0bb3b6a9b152a40d887d8089ef3cd98c13611e6daa0",
       "width": 640,
       "height": 200,
       "rectCount": 5,
@@ -1612,14 +1612,14 @@
       "computedStyleCount": 4
     },
     "stress/kitchen-sink": {
-      "sha256": "6fb93f63e468f023b253b273a0979f5e33fb7b75b2018f3054d58aba14cc385e",
+      "sha256": "4f4c04c61e26ae681314093c6958c3481900d195e97315d49c7f7f15a2641f0c",
       "width": 320,
       "height": 568,
       "rectCount": 59,
       "computedStyleCount": 12
     },
     "stress/navbar": {
-      "sha256": "1504a11a72b248b5e9eb39e375ba5b923293d2ece32314ea458bf59fd5b3f6ee",
+      "sha256": "bba2322e24b6301819b66d8e7fd7fefbaa18d79db320db00058cd62bd9afdf9e",
       "width": 360,
       "height": 640,
       "rectCount": 16,
@@ -2427,6 +2427,62 @@
       "sha256": "cf381a8a57dd26591daa84a82ac36c41ae904efde39cd5c5ceb1cbd86ec6fa1f",
       "width": 340,
       "height": 220,
+      "rectCount": 7,
+      "computedStyleCount": 0
+    },
+    "tables/anonymous-boxes": {
+      "sha256": "d41f31a5ddcfe85b4ef6f7b8022dccfef95fe8ddb0814437ffed97d53bb5ea3a",
+      "width": 400,
+      "height": 220,
+      "rectCount": 8,
+      "computedStyleCount": 0
+    },
+    "tables/basic": {
+      "sha256": "20fa0924ec31fc65d3d5e8d35c85a13fc11ccd01afb736694b692793709908f0",
+      "width": 360,
+      "height": 160,
+      "rectCount": 10,
+      "computedStyleCount": 0
+    },
+    "tables/caption": {
+      "sha256": "0453297a6b50d8333cb7688fd995c7cd259fae116eba90f850c83deedef718ad",
+      "width": 400,
+      "height": 180,
+      "rectCount": 5,
+      "computedStyleCount": 0
+    },
+    "tables/column-widths": {
+      "sha256": "dd576f6f4b944882401a5649d1d0c19feaf842e55b49c3e7b7c1f29136aa34b5",
+      "width": 480,
+      "height": 100,
+      "rectCount": 5,
+      "computedStyleCount": 0
+    },
+    "tables/fixed-layout": {
+      "sha256": "3eaa496efd6a605adda0b3fd9023603d9fe919ed19c339045befef628186b720",
+      "width": 400,
+      "height": 140,
+      "rectCount": 6,
+      "computedStyleCount": 0
+    },
+    "tables/spacing-empty": {
+      "sha256": "720851d90a1ced199ba959a94c04073a312252d01f05bfa4d3d77bd172b2df1c",
+      "width": 400,
+      "height": 180,
+      "rectCount": 5,
+      "computedStyleCount": 0
+    },
+    "tables/spanning": {
+      "sha256": "8dc1b8aae25b0e84ca9e5f04e681ee3f0b324d72b5d7378f15cf379b27f9f0ab",
+      "width": 360,
+      "height": 180,
+      "rectCount": 7,
+      "computedStyleCount": 0
+    },
+    "tables/valign": {
+      "sha256": "74f1093d7c3f0f81cafdb7613c10a7a85a74e7d93e6d70ef21f38e86e895a01c",
+      "width": 420,
+      "height": 200,
       "rectCount": 7,
       "computedStyleCount": 0
     },

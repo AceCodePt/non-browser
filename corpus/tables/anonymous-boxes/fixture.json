@@ -1,0 +1,33 @@
+{
+ "note": "Anonymous box generation (css-tables-3 section 2): stray text inside a display:table div wraps into an anonymous cell/row in place; an HTML table hoists stray text above the table box and wraps a direct td child into an anonymous row.",
+ "harvest": {
+  "viewport": {
+   "width": 400,
+   "height": 220
+  },
+  "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans';font-size:16px}td,th{border:0}div{border:1px solid #666}</style></head><body><div id=\"dt\" style=\"display:table;width:300px;background:#f5f5f5;border:1px solid #333\"><span id=\"st\">stray text here</span><div id=\"ar\" style=\"display:table-row\"><div id=\"ac1\" style=\"display:table-cell;background:#4a90d9\">cell one</div><div id=\"ac2\" style=\"display:table-cell;background:#d9534f\">cell two</div></div></div><table id=\"ht\" style=\"margin-top:10px\"><span id=\"ht1\">hoisted text</span><td id=\"hc1\" style=\"background:#90b04f\">direct cell</td></table></body></html>",
+  "measureText": [],
+  "rects": [
+   "dt",
+   "ar",
+   "ac1",
+   "ac2",
+   "ht",
+   "hc1"
+  ],
+  "textElements": [
+   "st",
+   "ac1",
+   "ac2",
+   "ht1",
+   "hc1"
+  ]
+ },
+ "name": "anonymous-boxes",
+ "expected": {
+  "measureText": "pass",
+  "computedStyle": "pass",
+  "rect": "pass",
+  "screenshot": "pass"
+ }
+}

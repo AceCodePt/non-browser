@@ -28,6 +28,7 @@ import type { Box } from './types.js';
 import type { PseudoDecls } from '../cascade/phases/media-queries.js';
 import { resolveUaDecls } from '../cascade/ua.js';
 import { controlBorderBoxWidth, controlContentHeight, controlKindFor, controlLabel, themePaintSpec, type ControlKind, type ControlPaintSpec } from './controls.js';
+import { layoutTableContent, setTableAvailableInlineSize, tableBorderBoxWidth, tablePreferredWidth } from './tables.js';
 
 export { FloatManager };
 export type { FormattingContext };
@@ -65,6 +66,8 @@ export interface StyleDefaults {
   borderCollapse?: 'separate' | 'collapse';
   borderSpacing?: number;
   borderSpacingV?: number;
+  /** inherited empty-cells (css-tables-3: the property inherits). */
+  emptyCells?: 'show' | 'hide';
   /** inherited computed custom properties (css-variables-1 §3). */
   customProps?: Record<string, string>;
 }
@@ -106,13 +109,17 @@ function tableDefaultsFor(tag: string): Partial<StyleDefaults> {
   if (t === 'table') {
     return { borderCollapse: 'separate', borderSpacing: 2, borderSpacingV: 2 };
   }
-  if (t === 'tr') {
+  if (t === 'caption') {
+    return { textAlign: 'center' };
+  }
+  if (t === 'thead' || t === 'tbody' || t === 'tfoot' || t === 'tr') {
     return { verticalAlign: 'middle' };
   }
   if (t === 'td' || t === 'th') {
     return {
       padding: pxLength(1),
       verticalAlign: 'middle',
+      fontWeight: t === 'th' ? 700 : undefined,
       textAlign: t === 'th' ? 'center' : undefined,
     };
   }
@@ -158,10 +165,11 @@ export function resolveStyles(
       textAlignInheritedKeyword: d.textAlignInheritedKeyword ?? 'start',
       directionInherited: d.direction,
       whiteSpaceDefault: d.whiteSpace ?? 'normal',
+      emptyCellsDefault: d.emptyCells,
       borderCollapseDefault: tagDefaults.borderCollapse,
       borderSpacingDefault: tagDefaults.borderSpacing,
       borderSpacingVDefault: tagDefaults.borderSpacingV,
-      fontWeightDefault: d.fontWeight,
+      fontWeightDefault: tagDefaults.fontWeight ?? d.fontWeight,
       fontStyleDefault: d.fontStyle,
       listStyleTypeDefault: d.listStyleType,
       listStylePositionDefault: d.listStylePosition,
@@ -211,6 +219,7 @@ export function resolveStyles(
       textIndentHangingInherited: style.textIndentHanging,
       textIndentEachLineInherited: style.textIndentEachLine,
       wordSpacingInherited: style.wordSpacing,
+      emptyCells: style.emptyCells,
       customProps: style.customProps,
     };
     for (const child of el.childNodes) {
@@ -322,6 +331,14 @@ export interface LayoutNode {
    */
   escapedMarginBottom?: number;
   flowY: number;
+  /**
+   * Extra block height the element's flow slot occupies beyond its border box:
+   * a table's hoisted HTML-table content sits above the table box but inside
+   * the slot, so the next sibling advances past it (probed Blink behavior).
+   */
+  flowExtra?: number;
+  /** Baseline offset from the element's border-box top (table formatting). */
+  tableBaseline?: number | null;
   children: LayoutNode[];
   lines: LineBox[];
   marker?: ListMarker;
@@ -871,7 +888,7 @@ function hasInlineContent(el: P5Element, styles: Map<P5Element, ComputedStyle>):
         if (hasInlineContent(child as P5Element, styles)) return true;
         continue;
       }
-      if (s.display === 'block' || s.display === 'list-item' || s.display === 'grid' || s.display === 'flex' || s.float !== 'none') continue;
+      if (s.display === 'block' || s.display === 'list-item' || s.display === 'grid' || s.display === 'flex' || s.display === 'table' || s.float !== 'none') continue;
       return true;
     }
   }
@@ -887,7 +904,7 @@ function hasBlockLevelChild(el: P5Element, styles: Map<P5Element, ComputedStyle>
       if (hasBlockLevelChild(child as P5Element, styles)) return true;
       continue;
     }
-    if (s.display === 'block' || s.display === 'list-item' || s.display === 'grid' || s.display === 'flex' || s.float !== 'none' || s.position !== 'static') {
+    if (s.display === 'block' || s.display === 'list-item' || s.display === 'grid' || s.display === 'flex' || s.display === 'table' || s.float !== 'none' || s.position !== 'static') {
       return true;
     }
   }
@@ -936,7 +953,7 @@ export function collectInlineText(el: P5Element, styles: Map<P5Element, Computed
       out += applyTextTransform((child as P5Text).value, transform);
     } else if (child.nodeName !== '#comment') {
       const s = styles.get(child as P5Element);
-      if (s && (s.display === 'block' || s.display === 'list-item' || s.display === 'grid' || s.display === 'flex')) continue;
+      if (s && (s.display === 'block' || s.display === 'list-item' || s.display === 'grid' || s.display === 'flex' || s.display === 'table')) continue;
       out += collectInlineText(child as P5Element, styles);
     }
   }
@@ -1005,6 +1022,13 @@ export function layoutElementBox(
   let lines: LineBox[] = [];
   let contentHeight = 0;
   let nodeEscapedBottom: number | undefined;
+  // Table formatting state (set only by the table branch below): the flow slot
+  // extends over hoisted content, and the own background/border paint on the
+  // table box (below the caption areas), not the whole element border box.
+  let nodeFlowExtra: number | undefined;
+  let nodeTableBaseline: number | null | undefined;
+  let tableBoxY = borderY;
+  let tableBoxH = 0;
 
   const bT = style.borderWidth.top;
   const bB = style.borderWidth.bottom;
@@ -1209,6 +1233,25 @@ export function layoutElementBox(
     });
     children.push(...res.children);
     contentHeight = res.height;
+  } else if (style.display === 'table' || style.display === 'inline-table') {
+    const res = layoutTableContent({
+      el,
+      style,
+      styles,
+      borderX,
+      contentX,
+      contentWidth,
+      borderY,
+      paints,
+      nextOrder,
+      viewport,
+    });
+    children.push(...res.children);
+    contentHeight = res.contentHeight;
+    nodeFlowExtra = res.hoistedHeight;
+    nodeTableBaseline = res.baselineOffset;
+    tableBoxY = borderY + res.hoistedHeight + res.topCaptionArea;
+    tableBoxH = res.boxHeight;
   } else if (hasInlineContent(el, styles) && !hasBlockLevelChild(el, styles)) {
     const inlineRes = layoutInlineContent(el, style, styles, fm, contentX, contentY, contentWidth, paints, nextOrder, viewport, textIndentPx);
     lines = inlineRes.lines;
@@ -1288,6 +1331,8 @@ export function layoutElementBox(
     marginBottom: 0,
     escapedMarginBottom: nodeEscapedBottom,
     flowY: borderY,
+    flowExtra: nodeFlowExtra,
+    tableBaseline: nodeTableBaseline,
     children,
     lines,
   };
@@ -1297,6 +1342,30 @@ export function layoutElementBox(
   if (controlOp) controlOp.box.height = resolvedHeight;
   for (const s of shadowPlaceholders) s.box.height = resolvedHeight;
   if (clipEntry) clipEntry.height = resolvedHeight;
+  if (nodeFlowExtra !== undefined) {
+    // The table element's own background/border/clip paint on the table box
+    // alone: the caption areas and hoisted content sit outside it.
+    if (ownBg) {
+      ownBg.box.y = tableBoxY;
+      ownBg.box.height = tableBoxH;
+    }
+    if (ownBorder) {
+      ownBorder.box.y = tableBoxY;
+      ownBorder.box.height = tableBoxH;
+    }
+    if (controlOp) {
+      controlOp.box.y = tableBoxY;
+      controlOp.box.height = tableBoxH;
+    }
+    for (const s of shadowPlaceholders) {
+      s.box.y = tableBoxY;
+      s.box.height = tableBoxH;
+    }
+    if (clipEntry) {
+      clipEntry.y = tableBoxY;
+      clipEntry.height = tableBoxH;
+    }
+  }
   if (lines.length > 0) {
     pushPaintOp(paints, {
       key: inFlowPaintKey(STEP_INLINE),
@@ -1398,6 +1467,20 @@ function layoutBlock(
     }
   }
 
+  if (style.display === 'table') {
+    // css-tables-3 §3.3/§4: a block-level table's used width is its specified
+    // width (floored by min-content) or the shrink-to-fit over its column
+    // min/max sums; percentages resolve against the containing block. The
+    // available width also feeds the fixed-layout pass and hoisted content.
+    const available = Math.max(0, contentWidth - marginL - marginR);
+    setTableAvailableInlineSize(available);
+    borderBoxWidth = tableBorderBoxWidth(el, style, styles, available, viewport);
+    const maxWpx = resolveLength(style.maxWidth, contentWidth, viewport);
+    const minWpx = resolveLength(style.minWidth, contentWidth, viewport);
+    if (maxWpx !== null) borderBoxWidth = Math.min(borderBoxWidth, style.boxSizing === 'border-box' ? maxWpx : maxWpx + padBorderH);
+    if (minWpx !== null) borderBoxWidth = Math.max(borderBoxWidth, style.boxSizing === 'border-box' ? minWpx : minWpx + padBorderH);
+  }
+
   // Vertical: margin collapsing with the previous sibling, then clearance. A
   // first-child whose top margin collapses into the parent sits flush with the
   // parent's content top (its margin extends above the parent's box instead of
@@ -1434,6 +1517,15 @@ function layoutBlock(
     // inline-end (left) instead of the inline-start (right).
     borderX = cbRtl ? borderX - i.right : contentX + marginL + i.left;
     if (specW === null) usableWidth = Math.max(0, autoWidth - i.left - i.right);
+  }
+
+  // CSS 2.1 §10.3.3: with a non-auto width, auto margins absorb the free space
+  // (both auto → centered) — the margin:auto idiom for centered tables.
+  if (style.display === 'table' && specW !== null && (style.margin.left.auto || style.margin.right.auto)) {
+    const free = Math.max(0, contentWidth - borderBoxWidth - marginL - marginR);
+    if (style.margin.left.auto && style.margin.right.auto) borderX = contentX + free / 2;
+    else if (style.margin.left.auto) borderX = contentX + free + marginR;
+    else borderX = contentX + marginL;
   }
 
   // Relative offsets shift the box without affecting in-flow layout; the next
@@ -1832,7 +1924,7 @@ function layoutBlockChildren(
       nodes.push(layoutFloat(el, style, { ...ctx, y }, styles, paints, nextOrder, viewport));
       continue;
     }
-    if (style.display === 'inline' || style.display === 'inline-block') {
+    if (style.display === 'inline' || style.display === 'inline-block' || style.display === 'inline-table') {
       inlineRun.push(el);
       continue;
     }
@@ -2144,7 +2236,7 @@ interface AtomicPiece {
   contentWidth: number;
 }
 
-type InlinePiece =
+export type InlinePiece =
   | { kind: 'word'; text: string; style: TextRunStyle; owner: P5Element | null }
   | { kind: 'space'; text: string }
   | { kind: 'break' }
@@ -2282,7 +2374,7 @@ function pushTextPieces(raw: string, style: TextRunStyle, owner: P5Element | nul
 }
 
 function isInlineBoxStyle(s: ComputedStyle): boolean {
-  return s.display === 'inline-block' && s.float === 'none' && s.position === 'static';
+  return (s.display === 'inline-block' || s.display === 'inline-table') && s.float === 'none' && s.position === 'static';
 }
 
 function atomicBoxSize(
@@ -2308,13 +2400,27 @@ function atomicBoxSize(
     const controlW = control ? controlBorderBoxWidth(control, el, style.fontSize, style.fontFamily, padBorderH) : null;
     if (controlW !== null) {
       borderWidth = controlW;
+    } else if (style.display === 'inline-table') {
+      // css-tables-3 §3.3: an inline-level table shrink-to-fits like a
+      // block-level one (available = the containing block minus its margins).
+      const mL = resolveLength(style.margin.left, refWidth, viewport) ?? 0;
+      const mR = resolveLength(style.margin.right, refWidth, viewport) ?? 0;
+      borderWidth = tableBorderBoxWidth(el, style, styles, Math.max(0, refWidth - mL - mR), viewport);
     } else {
       const pieces = buildPieces(el, style, styles, refWidth, viewport, style.whiteSpace);
       const sizes = piecesContentSizes(pieces, style, style.whiteSpace, resolveLength(style.wordSpacing, refWidth, viewport) ?? 0);
       const mL = resolveLength(style.margin.left, refWidth, viewport) ?? 0;
       const mR = resolveLength(style.margin.right, refWidth, viewport) ?? 0;
       const available = Math.max(0, refWidth - mL - mR - padBorderH);
-      const contentW = Math.min(sizes.max, Math.max(sizes.min, available));
+      let contentW = Math.min(sizes.max, Math.max(sizes.min, available));
+      // display:table children are invisible to the piece machinery but
+      // contribute their preferred width (css-tables-3 §3.4).
+      for (const child of el.childNodes) {
+        if (child.nodeName === '#text' || child.nodeName === '#comment') continue;
+        const cs = styles.get(child as P5Element);
+        if (!cs || (cs.display !== 'table' && cs.display !== 'inline-table')) continue;
+        contentW = Math.max(contentW, tablePreferredWidth(child as P5Element, cs, styles, available, viewport));
+      }
       borderWidth = contentW + padBorderH;
     }
   }
@@ -2325,7 +2431,7 @@ function atomicBoxSize(
   return { borderWidth, contentWidth: Math.max(0, borderWidth - padBorderH) };
 }
 
-function piecesContentSizes(pieces: InlinePiece[], style: ComputedStyle, ws: WhiteSpaceValue, wordSpacing = 0): { min: number; max: number } {
+export function piecesContentSizes(pieces: InlinePiece[], style: ComputedStyle, ws: WhiteSpaceValue, wordSpacing = 0): { min: number; max: number } {
   const preserve = ws === 'pre' || ws === 'pre-wrap';
   let min = 0;
   let max = 0;
@@ -2373,7 +2479,7 @@ function pushPseudoPieces(box: PseudoBox, owner: P5Element, out: InlinePiece[], 
  * block-with-inline behavior). Generated ::before content leads and ::after
  * content trails the element's own inline content.
  */
-function buildPieces(
+export function buildPieces(
   el: P5Element,
   style: ComputedStyle,
   styles: Map<P5Element, ComputedStyle>,
@@ -2415,7 +2521,7 @@ function buildPieces(
       out.push({ kind: 'wbr' });
       continue;
     }
-    if (s.display === 'block' || s.display === 'list-item' || s.display === 'grid' || s.display === 'flex' || s.float !== 'none' || s.position !== 'static') {
+    if (s.display === 'block' || s.display === 'list-item' || s.display === 'grid' || s.display === 'flex' || s.display === 'table' || s.float !== 'none' || s.position !== 'static') {
       continue;
     }
     if (isInlineBoxStyle(s)) {
@@ -2591,6 +2697,11 @@ function measureAtomic(
  * control and the surrounding line text share one baseline.
  */
 function atomicBaselineOffset(node: LayoutNode, style: ComputedStyle): number | null {
+  if (node.tableBaseline !== undefined) {
+    // A table's baseline is its first row's (css-tables-3 §14); with no row
+    // baseline Chrome falls back to the border-box bottom edge.
+    return node.tableBaseline ?? node.borderHeight;
+  }
   if (style.appearanceAuto) {
     const kind = node.element ? controlKindFor(node.element) : null;
     if (kind === 'checkbox' || kind === 'radio') return node.borderHeight;

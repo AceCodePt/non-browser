@@ -1,0 +1,31 @@
+{
+ "note": "Auto table layout at width:400px mixing a specified-width cell, a percent cell and two auto cells (guess-based width distribution); backgrounds make the column bands visible.",
+ "harvest": {
+  "viewport": {
+   "width": 480,
+   "height": 100
+  },
+  "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans';font-size:16px}td{border:1px solid #666}</style></head><body><table id=\"t\" style=\"width:400px\"><tr><td id=\"c1\" style=\"width:60px;background:#d9534f\">fixed</td><td id=\"c2\" style=\"background:#4a90d9\">auto column with more text</td><td id=\"c3\" style=\"width:25%;background:#90b04f\">pct</td><td id=\"c4\" style=\"background:#e0a0a0\">b</td></tr></table></body></html>",
+  "measureText": [],
+  "rects": [
+   "t",
+   "c1",
+   "c2",
+   "c3",
+   "c4"
+  ],
+  "textElements": [
+   "c1",
+   "c2",
+   "c3",
+   "c4"
+  ]
+ },
+ "name": "column-widths",
+ "expected": {
+  "measureText": "pass",
+  "computedStyle": "pass",
+  "rect": "pass",
+  "screenshot": "pass"
+ }
+}

@@ -56,7 +56,7 @@ paint-run-fallback) are included for completeness.
 | pretext-engine-path | EMPTY | `orch: archive pretext-engine-path` (`55d3d1a`) is a task.md move; no merge — `src/layout/measure.ts` still ships the greedy wrapper; seam-vs-shipped split is documented unlanded (`parity.md` HR #3); redone as `tasks/pretext-breaker-path` |
 | pseudo-elements-content | EXECUTED | merge `4748c20` landed `::before/::after` matching in `src/cascade/selector.ts` + content inline-box generation, `corpus/pseudo-elements/`, `verify-pseudo-elements.mjs`, `pseudo-elements.md` |
 | strip-what-comments | EXECUTED | merge `fa8416f` = deletions-only diff across `src/scripts/probes` (no code change) + AGENTS.md comment policy |
-| tables-layout | PARTIAL | merge `abe9b9e` landed table display-value parsing + UA table defaults (`src/layout/css.ts`, `block-inline.ts`, `computed-style.ts`) + `probes/probe-table-*.mjs`; but no table layout module (cell grid, border-collapse, spanning), no `corpus/tables`, no `verify:tables`; charter §3 lists tables out of v1 |
+| tables-layout | PARTIAL | merge `abe9b9e` landed table display-value parsing + UA table defaults (`src/layout/css.ts`, `block-inline.ts`, `computed-style.ts`) + `probes/probe-table-*.mjs`; but no table layout module (cell grid, border-collapse, spanning), no `corpus/tables`, no `verify:tables`; charter §3 lists tables out of v1 — **executed by the redo**: the `tables-layout` slice landed the separate-borders formatting context (`src/layout/tables.ts`, `corpus/tables/`, `verify-tables.mjs`, `docs/ledgers/tables.md`); `border-collapse: collapse` remains with the follow-on `tables-border-collapse` slice |
 | text-align-inline | EXECUTED | merge `b3fb830` landed `text-align` in computable style + per-line alignment (incl. justify), `corpus/text-align/`, `verify-text-align.mjs` |
 | text-breaker-parity | EMPTY | archived twice (`79b0834`, `5e35ab2`) as task.md moves, no merge; `docs/ledgers/breakers.md` is still a stub; no `verify:breaker`, no `corpus/breaker` — redone as `tasks/pretext-breaker-path` |
 | text-font-fallback | EMPTY | `orch: archive text-font-fallback` (`f4fed62`) is a task.md move, no merge; the per-browser fallback-table machinery landed instead under firefox-track (`0d52778`) and cross-family; no `verify:fonts`, no `corpus/fonts` |
@@ -102,7 +102,7 @@ to a live matrix row.
 | parse-stylesheets | PARTIAL | **none** — `@import`/`@supports`/`@font-face` have no owner task | no row |
 | cascade-core | PARTIAL | **none** — selector engine exists via media-queries accept; no `corpus/cascade-core`/`verify:cascade-core` task | `block/inline` rows backed by spine/floats/positioning corpora |
 | layout-block-inline | PARTIAL | **none** — engine landed via floats accept; no `verify:layout-block-inline` | `block/inline` + `float` rows green via floats corpus |
-| tables-layout | PARTIAL | **none** — no table layout task; charter §3 declares tables out of v1 scope | no row |
+| tables-layout | PARTIAL | **executed** — the `tables-layout` slice lands the formatting context (`corpus/tables`, `verify:tables`, charter §11 tables row); `border-collapse: collapse` follows in `tables-border-collapse` | charter §11 `tables` row backed by corpus/tables |
 
 Cursor: the four findings kept live in `parity.md` Honest Reading #1–#2 + the
 seam-vs-shipped text-layout gap all already have owners in `tasks/`
