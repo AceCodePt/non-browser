@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-03T10:43:16.256Z",
+  "generatedAt": "2026-09-03T11:04:53.866Z",
   "fixtures": {
     "aspect-ratio/block-surface": {
       "sha256": "5d45b9b9ab2c56340a50cd75f738e67c96b080949461231c0e352638dd3b3567",
@@ -268,7 +268,7 @@
       "computedStyleCount": 0
     },
     "breaker/long-word-default": {
-      "sha256": "6e77fe47cf19d434e8f4b060f4a65f9719b455f4410ce3e9f3021a25462bbf34",
+      "sha256": "87843cf0bbc1f9ec48f0fa05e966ff37344577d348a7c6e8d4f480acea6e242a",
       "width": 460,
       "height": 240,
       "rectCount": 1,
@@ -2366,6 +2366,27 @@
       "height": 200,
       "rectCount": 2,
       "computedStyleCount": 2
+    },
+    "text-breaking/anywhere-intrinsic": {
+      "sha256": "d16cde1bf3c8038fade0d09ede5e5902001f6b5d5e49efc98c50a5ce94e3c7bb",
+      "width": 300,
+      "height": 260,
+      "rectCount": 3,
+      "computedStyleCount": 2
+    },
+    "text-breaking/cjk": {
+      "sha256": "5658c66d36aeb0a763ab93b5ed23f0acdc8c05a4ac720c3a3c9f8b31f2e9485f",
+      "width": 300,
+      "height": 200,
+      "rectCount": 2,
+      "computedStyleCount": 2
+    },
+    "text-breaking/long-word": {
+      "sha256": "fa2228644f1c6b8464d92a315681d6ec7c535d833890c86857e81789ffb7bc0a",
+      "width": 300,
+      "height": 300,
+      "rectCount": 5,
+      "computedStyleCount": 4
     },
     "ua-styles/bare-headings": {
       "sha256": "df2b5d62f2cc8a3c560fb69d816381a4e27f3a4b8351a8a23f497ad14f60f7b8",

@@ -1,0 +1,42 @@
+{
+  "name": "anywhere-intrinsic",
+  "note": "css-text-3 \u00a76.2 anywhere vs break-word on intrinsic sizing: an inline-block shrink-to-fit box containing one long word takes max-content width without wrapping; the same box under overflow-wrap:anywhere takes min-content width (the widest grapheme, ~10px) and wraps every line to the 50px available width. break-word's in-word wrapping is deliberately not considered for min-content, so only the anywhere box resizes.",
+  "harvest": {
+    "viewport": {
+      "width": 300,
+      "height": 260
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} div{width:50px} #bw{display:inline-block;overflow-wrap:break-word} #aw{display:inline-block;overflow-wrap:anywhere;margin-top:150px} #pw{display:inline-block}</style></head><body><div><span id=\"bw\">supercalifragilisticexpialidocious</span></div><div><span id=\"aw\">supercalifragilisticexpialidocious</span></div><div><span id=\"pw\">supercalifragilisticexpialidocious</span></div></body></html>",
+    "computedStyle": [
+      {
+        "id": "aw",
+        "props": [
+          "overflow-wrap",
+          "display"
+        ]
+      },
+      {
+        "id": "bw",
+        "props": [
+          "overflow-wrap"
+        ]
+      }
+    ],
+    "rects": [
+      "bw",
+      "aw",
+      "pw"
+    ],
+    "textElements": [
+      "bw",
+      "aw",
+      "pw"
+    ]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

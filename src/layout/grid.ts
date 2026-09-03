@@ -30,7 +30,7 @@ import {
   type TrackFunction,
   type Viewport,
 } from './css.js';
-import { layoutTextLines, measureTextWidth } from './measure.js';
+import { layoutTextLines, measureTextWidth, minTextWidth } from './measure.js';
 import { expandContents, FloatManager, layoutElementBox, type LayoutNode, type PaintOp } from './block-inline.js';
 import { isCommentNode, isElementNode, isTextNode, type P5Element, type P5Text } from './types.js';
 
@@ -93,10 +93,7 @@ function contentInlineSizes(
 ): { min: number; max: number } {
   if (hasInlineText(el, styles)) {
     const text = collectInlineText(el, styles).replace(/[ \t\r\n\f]+/g, ' ').trim();
-    let widest = 0;
-    for (const w of text.split(' ')) {
-      widest = Math.max(widest, measureTextWidth(w, style.fontSize, style.fontFamily, style.letterSpacing));
-    }
+    const widest = minTextWidth(text, style.fontSize, style.fontFamily, style.letterSpacing, style.overflowWrap === 'anywhere');
     const full = measureTextWidth(text, style.fontSize, style.fontFamily, style.letterSpacing);
     return { min: widest, max: full };
   }
@@ -149,6 +146,8 @@ function contentHeightAtWidth(
       fontSize: style.fontSize,
       family: style.fontFamily,
       whiteSpace: style.whiteSpace,
+      wordBreak: style.wordBreak,
+      overflowWrap: style.overflowWrap,
       available: () => ({ x: 0, width: w }),
     });
     return res.height;

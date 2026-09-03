@@ -14,7 +14,7 @@
  */
 
 import { borderPaddingBlock, borderPaddingInline, clipsContent, isScrollContainer, parseStyleAttribute, pxLength, resolveEmLength, resolveLength, makeStyle, type BorderRadius, type ComputedStyle, type Color, type Declaration, type DecorationLine, type Direction, type DisplayValue, type ListStyleType, type PseudoBox, type Shadow, type TextAlign, type VerticalAlign, type Viewport, type WhiteSpaceValue } from './css.js';
-import { layoutTextLines, measureTextWidth, type LineBox } from './measure.js';
+import { layoutTextLines, measureTextWidth, minTextWidth, type LineBox } from './measure.js';
 import { FloatManager, type FormattingContext } from './floats.js';
 import { layoutGridChildren } from './grid.js';
 import { layoutFlexChildren } from './flexbox.js';
@@ -2222,7 +2222,7 @@ function piecesContentSizes(pieces: InlinePiece[], style: ComputedStyle, ws: Whi
       p.kind === 'word'
         ? measureTextWidth(p.text, p.style.fontSize, p.style.family, p.style.letterSpacing, p.style.fontWeight, p.style.fontStyle)
         : p.marginLeft + p.borderWidth + p.marginRight;
-    min = Math.max(min, w);
+    min = Math.max(min, p.kind === 'word' ? minTextWidth(p.text, p.style.fontSize, p.style.family, p.style.letterSpacing, style.overflowWrap === 'anywhere', p.style.fontWeight, p.style.fontStyle) : w);
     if (prevWasSpace && !preserve) max += measureTextWidth(' ', style.fontSize, style.fontFamily, style.letterSpacing);
     max += w;
     prevWasSpace = false;
@@ -2504,6 +2504,8 @@ function layoutInlineContent(
       letterSpacing: style.letterSpacing,
       align: style.textAlign,
       whiteSpace: ws,
+      wordBreak: style.wordBreak,
+      overflowWrap: style.overflowWrap,
       available: (top, bottom) => {
         const av = fm.floatIntrusion(top, bottom);
         return { x: contentX + av.left, width: Math.max(0, contentWidth - av.left - av.right) };

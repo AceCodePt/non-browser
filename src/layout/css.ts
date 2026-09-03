@@ -359,6 +359,12 @@ export interface ComputedStyle {
    * as 'normal', while layout uses the font-metric-derived px value). */
   lineHeightNormal: boolean;
   whiteSpace: WhiteSpaceValue;
+  /** css-text-3 §6.1: break-all allows breaks between any characters;
+   * keep-all suppresses breaks within CJK runs. */
+  wordBreak: 'normal' | 'break-all' | 'keep-all';
+  /** css-text-3 §6.2 (word-wrap is a legacy alias): anywhere also feeds
+   * min-content sizing; break-word only wraps when a line cannot fit. */
+  overflowWrap: 'normal' | 'break-word' | 'anywhere';
 
   letterSpacing: number;
   /** active text-decoration lines, in the order they should paint. */
@@ -2123,6 +2129,18 @@ export function makeStyle(rawDecls: Declaration[], defaults: Defaults): Computed
     whiteSpace = defaults.whiteSpaceDefault ?? 'normal';
   }
 
+  // css-text-3 §6: word-break (word-wrap is a legacy alias for overflow-wrap,
+  // so both names feed the same cascade winner). Invalid keywords fall back to
+  // the initial value like Chrome's computed-value fallback.
+  const wordBreakDecl = findDecl(decls, 'word-break');
+  const wordBreakRaw = wordBreakDecl?.value.trim();
+  const wordBreak: 'normal' | 'break-all' | 'keep-all' =
+    wordBreakRaw === 'break-all' || wordBreakRaw === 'keep-all' ? wordBreakRaw : 'normal';
+  const overflowWrapDecl = findDeclAny(decls, ['overflow-wrap', 'word-wrap']);
+  const overflowWrapRaw = overflowWrapDecl?.value.trim();
+  const overflowWrap: 'normal' | 'break-word' | 'anywhere' =
+    overflowWrapRaw === 'break-word' || overflowWrapRaw === 'anywhere' ? overflowWrapRaw : 'normal';
+
   const letterSpacingDecl = findDecl(decls, 'letter-spacing');
   const letterSpacing = letterSpacingDecl ? parseLetterSpacing(letterSpacingDecl.value) : defaults.letterSpacing ?? 0;
 
@@ -2343,6 +2361,8 @@ export function makeStyle(rawDecls: Declaration[], defaults: Defaults): Computed
       if (den === 0) return ASPECT_AUTO;
       return { type: 'ratio' as const, num: parseFloat(m[2]), den, autoRatio: m[1] !== undefined };
     })(),
+    wordBreak,
+    overflowWrap,
     display,
     position,
     direction,

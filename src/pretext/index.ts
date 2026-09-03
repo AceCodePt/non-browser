@@ -33,6 +33,16 @@ import { getActiveBrowserConfig, resolveFontFamily } from '../config/browser-con
 export type { PrepareOptions };
 
 /**
+ * css-text-3 §6 knobs the engine layers on top of Pretext's PrepareOptions.
+ * `cssWordBreak`/`overflowWrap` come from the computed word-break and
+ * overflow-wrap/word-wrap declarations.
+ */
+export interface EngineBreakOptions {
+  cssWordBreak?: 'normal' | 'break-all' | 'keep-all';
+  overflowWrap?: 'normal' | 'break-word' | 'anywhere';
+}
+
+/**
  * Resolve the CSS font-family inside a Pretext font shorthand through the
  * active browser-config, so the seam measures the exact family the engine's
  * measureTextWidth would. `prepareText`/`layoutLines` receive the fixture's
@@ -128,9 +138,33 @@ export function segmentGraphemes(text: string): string[] {
 export function prepareText(
   text: string,
   font: string,
-  options?: PrepareOptions,
+  options?: PrepareOptions & EngineBreakOptions,
 ): PreparedTextWithSegments {
-  return prepareWithSegments(text, font, options);
+  const prepared = prepareWithSegments(text, font, options);
+  // css-text-3 §6: Pretext measures per-grapheme split advances for every
+  // word-like run (overflow-wrap:break-word semantics). Under the default
+  // overflow-wrap:normal — unless word-break:break-all opts in — those
+  // in-word opportunities must not exist: a word that fits nowhere on the
+  // line overflows instead of splitting (probe-verified against Chrome).
+  // CJK units under word-break:normal are single graphemes here (unbreakable
+  // anyway), and keep-all runs lose their overflow fallback, matching
+  // Chrome's keep-all (the run overflows unless overflow-wrap re-allows).
+  const overflowWrap = options?.overflowWrap ?? 'normal';
+  const cssWordBreak = options?.cssWordBreak ?? 'normal';
+  if (overflowWrap === 'normal' && cssWordBreak !== 'break-all') {
+    const core = prepared as PreparedTextWithSegments & {
+      kinds: string[];
+      breakableFitAdvances: (number[] | null)[];
+      breakablePreferredBreaks: (number[] | null)[];
+    };
+    for (let i = 0; i < core.breakableFitAdvances.length; i++) {
+      if (core.kinds[i] === 'text' && core.breakableFitAdvances[i] !== null) {
+        core.breakableFitAdvances[i] = null;
+        core.breakablePreferredBreaks[i] = null;
+      }
+    }
+  }
+  return prepared;
 }
 
 export interface PretextLayoutLine {

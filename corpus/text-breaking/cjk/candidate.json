@@ -1,0 +1,25 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "ka": {
+      "word-break": "keep-all"
+    },
+    "latin": {
+      "word-break": "keep-all"
+    }
+  },
+  "rect": {
+    "ka": {
+      "x": 0,
+      "y": 0,
+      "width": 90,
+      "height": 22
+    },
+    "latin": {
+      "x": 0,
+      "y": 32,
+      "width": 120,
+      "height": 44
+    }
+  }
+}

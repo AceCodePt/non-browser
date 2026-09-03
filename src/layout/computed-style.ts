@@ -127,6 +127,11 @@ export function computedStyleString(style: ComputedStyle, prop: string, refWidth
     }
     case 'font-weight':
       return String(style.fontWeight);
+    case 'word-break':
+      return String(style.wordBreak);
+    case 'overflow-wrap':
+    case 'word-wrap':
+      return String(style.overflowWrap);
     case 'font-style':
       return style.fontStyle;
     case 'list-style-type':
