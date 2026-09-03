@@ -188,6 +188,12 @@ the charter and the corpus cannot silently diverge:
 | custom properties | cycles / undefined refs → guaranteed-invalid, consumers drop | yes | corpus/custom-properties | guaranteed-invalid |
 | custom properties | var() inside calc() and shorthands | yes | corpus/custom-properties | calc( |
 | custom properties | media-scoped custom-property redefinitions | yes | corpus/custom-properties | @media |
+| selectors | attribute selectors: =, word-list, hyphen-prefix, prefix, suffix, substring operators, presence | yes | corpus/selectors | ~= |
+| selectors | attribute case flags i / s | yes | corpus/selectors | case-insensitive |
+| selectors | combinators: descendant, > (child), + (adjacent), ~ (sibling) | yes | corpus/selectors | > |
+| selectors | :not() / :is() / :where() with selector-list arguments | yes | corpus/selectors | :where( |
+| selectors | :is() takes max argument specificity; :where() contributes zero | yes | corpus/selectors | :is( |
+| ua-stylesheet | nested-list rules authored with :is() (Blink html.css parity) | yes | corpus/selectors | :is(dl, ol, ul) |
 
 ### Deferred / Not in v1 (no silent absence)
 
@@ -204,8 +210,6 @@ classification):
   empty-cells) are parsed and computed, and UA table defaults land, but there is
   no table layout module (cell grid, border-collapse box model, spanning);
   charter §3 keeps tables out of v1. `tables-layout` is archived PARTIAL.
-- **Custom properties / var()** — not implemented; `cascade-custom-props`
-  archived EMPTY.
 - **Cascade layers / !important** — intentionally **not supported by design**
   (not a gap): `!important` and `@layer` are excluded from the compatibility
   surface because they override the normal cascade in ways a deterministic

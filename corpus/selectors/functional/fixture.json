@@ -1,0 +1,28 @@
+{
+  "name": "functional",
+  "note": "Functional pseudo-classes with selector-list arguments: :not(.a, #b) negation, :is() matching-any with the maximum argument specificity (the :is(#s2, .zz) id case beats a later class rule), :where() matching identically but contributing zero specificity (the .cls rule beats :where(#s1, .cls) despite coming first), and a nested :not(:is(...)).",
+  "harvest": {
+    "viewport": {
+      "width": 300,
+      "height": 300
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} .s{width:60px;height:30px;background-color:rgb(238, 238, 238)} .cls{background-color:rgb(255, 0, 0)} :where(#s1, .cls){background-color:rgb(0, 0, 255)} :is(#s2, .zz){background-color:rgb(0, 128, 0)} .x2{background-color:rgb(255, 165, 0)} li:not(.skip, #keep){background-color:rgb(128, 0, 128)} p:not(:is(em, .warm)){background-color:rgb(0, 128, 128)}</style></head><body><div id=\"s1\" class=\"cls s\">s1</div><div id=\"s2\" class=\"x2 s\">s2</div><ul><li id=\"l1\" class=\"s\">l1</li><li id=\"l2\" class=\"skip s\">l2</li><li id=\"keep\" class=\"s\">keep</li></ul><p id=\"pp\" class=\"s\">pp</p><em id=\"ee\" class=\"warm s\">ee</em></body></html>",
+    "computedStyle": [
+      { "id": "s1", "props": ["background-color"] },
+      { "id": "s2", "props": ["background-color"] },
+      { "id": "l1", "props": ["background-color"] },
+      { "id": "l2", "props": ["background-color"] },
+      { "id": "keep", "props": ["background-color"] },
+      { "id": "pp", "props": ["background-color"] },
+      { "id": "ee", "props": ["background-color"] }
+    ],
+    "rects": ["s1", "s2", "l1", "l2", "keep", "pp", "ee"],
+    "textElements": ["s1", "s2", "l1", "l2", "keep", "pp", "ee"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

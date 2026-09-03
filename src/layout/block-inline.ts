@@ -258,6 +258,13 @@ export interface LayoutNode {
   isFloat: boolean;
   marginTop: number;
   marginBottom: number;
+  /**
+   * Set on block containers whose last in-flow child's bottom margin collapses
+   * out of the parent's bottom edge (CSS 2.1 §8.3.1: no bottom border/padding,
+   * not a BFC root): the parent's height excludes the escaped margin and this
+   * carries the collapsed value as the parent's effective margin-bottom.
+   */
+  escapedMarginBottom?: number;
   flowY: number;
   children: LayoutNode[];
   lines: LineBox[];
@@ -802,6 +809,19 @@ interface LayoutBlockInput {
    * the child sits flush with the parent's content top (CSS 2.1 §8.3.1).
    */
   collapseTop?: boolean;
+  /**
+   * A UA quirky margin-block-start (Blink `__qem`) is dropped when the element
+   * is a later in-flow sibling whose previous in-flow sibling self-collapses
+   * (zero-height box; probed: `<p>` after a zero-height `<div>` sits flush,
+   * after a sized one keeps its margin).
+   */
+  quirkTopZero?: boolean;
+  /**
+   * The collapsed quirky-margin chain from qemChainBelow: the child carries
+   * its subtree's quirky margin as its effective top margin, offsetting the
+   * outermost chain element instead of the holder itself.
+   */
+  chainTopMargin?: number;
 }
 
 export function layoutElementBox(
@@ -823,6 +843,7 @@ export function layoutElementBox(
   const children: LayoutNode[] = [];
   let lines: LineBox[] = [];
   let contentHeight = 0;
+  let nodeEscapedBottom: number | undefined;
 
   const bT = style.borderWidth.top;
   const bB = style.borderWidth.bottom;
@@ -982,9 +1003,10 @@ export function layoutElementBox(
     if (hasBlocks) {
       const childFm = new FloatManager(contentX, contentWidth);
       const state: LayoutBlockInput = { fm: childFm, contentX, contentWidth, y: contentY, prevBottomMargin: 0, cbDirection: style.direction };
-      const { nodes, height } = layoutBlockChildren(el, state, styles, paints, nextOrder, viewport);
+      const { nodes, height, escapedBottom } = layoutBlockChildren(el, state, styles, paints, nextOrder, viewport);
       children.push(...nodes);
       contentHeight = height;
+      nodeEscapedBottom = escapedBottom;
       // A BFC's height grows to include its floats.
       const lowest = childFm.lowestFloatBottom('both');
       if (Number.isFinite(lowest)) contentHeight = Math.max(contentHeight, lowest - contentY);
@@ -1015,6 +1037,7 @@ export function layoutElementBox(
     isFloat: false,
     marginTop: 0,
     marginBottom: 0,
+    escapedMarginBottom: nodeEscapedBottom,
     flowY: borderY,
     children,
     lines,
@@ -1086,7 +1109,12 @@ function layoutBlock(
   const { fm, contentX, contentWidth, y, prevBottomMargin } = ctx;
   const marginL = resolveLength(style.margin.left, contentWidth, viewport) ?? 0;
   const marginR = resolveLength(style.margin.right, contentWidth, viewport) ?? 0;
-  const marginT = resolveLength(style.margin.top, contentWidth, viewport) ?? 0;
+  const marginT =
+    ctx.quirkTopZero === true
+      ? 0
+      : ctx.chainTopMargin !== undefined
+        ? ctx.chainTopMargin
+        : (resolveLength(style.margin.top, contentWidth, viewport) ?? 0);
   const marginB = resolveLength(style.margin.bottom, contentWidth, viewport) ?? 0;
 
   const padL = resolveLength(style.padding.left, contentWidth, viewport) ?? 0;
@@ -1172,7 +1200,7 @@ function layoutBlock(
     viewport,
   );
   node.marginTop = marginT;
-  node.marginBottom = marginB;
+  node.marginBottom = node.escapedMarginBottom === undefined ? marginB : node.escapedMarginBottom;
   node.flowY = borderTop;
   return node;
 }
@@ -1341,6 +1369,54 @@ function layoutFloat(
   return node;
 }
 
+/**
+ * The quirky-margin chain margin below `el` (Blink's `__qem` on UA
+ * margin-block-start): a first in-flow child's quirky top margin collapses
+ * through consecutive borderless/paddingless first-child blocks (CSS 2.1
+ * §8.3.1), and the collapsed margin offsets the outermost chain element.
+ * Probed Chrome behavior: `<body>` terminates the chain (a first `<p>` sits
+ * flush and body keeps its own margin); a non-first-in-flow ancestor is
+ * pushed by the collapsed margin; an ancestor with top border/padding pushes
+ * the chain child below that border instead.
+ * Returns null when no chain runs through `el` — no quirky margin in the
+ * first-child subtree, or `el`'s own top border/padding stops the
+ * collapse-through.
+ */
+function qemChainBelow(
+  el: P5Element,
+  styles: Map<P5Element, ComputedStyle>,
+  contentWidth: number,
+  viewport?: Viewport,
+): number | null {
+  if (el.nodeName === 'body') return null;
+  const style = styles.get(el);
+  if (!style) return null;
+  if (
+    style.borderWidth.top !== 0 ||
+    (resolveLength(style.padding.top, contentWidth, viewport) ?? 0) !== 0
+  ) {
+    return null;
+  }
+  const ownTop = resolveLength(style.margin.top, contentWidth, viewport) ?? 0;
+  if (style.margin.top.quirk === true) return ownTop;
+  for (const child of el.childNodes) {
+    if (child.nodeName === '#comment') continue;
+    if (child.nodeName === '#text') {
+      if (/\S/.test((child as P5Text).value)) return null;
+      continue;
+    }
+    const cs = styles.get(child as P5Element);
+    if (!cs || cs.display === 'none') continue;
+    if (cs.position === 'absolute' || cs.position === 'fixed' || cs.float !== 'none') continue;
+    // Inline content forms an anonymous block ahead of any block child, so no
+    // element child here is the first in-flow child.
+    if (cs.display.startsWith('inline')) return null;
+    const sub = qemChainBelow(child as P5Element, styles, contentWidth, viewport);
+    return sub === null ? null : collapseMargins(ownTop, sub);
+  }
+  return null;
+}
+
 function layoutBlockChildren(
   parent: P5Element,
   ctx: LayoutBlockInput,
@@ -1348,10 +1424,12 @@ function layoutBlockChildren(
   paints: PaintOp[],
   nextOrder: () => number,
   viewport?: Viewport,
-): { nodes: LayoutNode[]; height: number } {
+): { nodes: LayoutNode[]; height: number; escapedBottom?: number } {
   const nodes: LayoutNode[] = [];
   let y = ctx.y;
   let prevBottomMargin = 0;
+  let prevNode: LayoutNode | null = null;
+  let lastInFlow: LayoutNode | null = null;
   const parentTag = parent.nodeName;
   const isOrderedList = parentTag === 'ol';
   let listIndex = 0;
@@ -1397,6 +1475,8 @@ function layoutBlockChildren(
     y += inlineRes.contentHeight;
     prevBottomMargin = 0;
     firstInFlow = false;
+    prevNode = nodes[nodes.length - 1];
+    lastInFlow = prevNode;
     inlineRun = [];
   };
 
@@ -1443,24 +1523,28 @@ function layoutBlockChildren(
       isListItem && style.listStylePosition === 'inside' ? insideMarkerAdvanceFor(style, listIndex) : null;
     insideMarkerAdvance = insideAdvance;
     insideMarkerOwner = insideAdvance !== null ? el : null;
-    const node = layoutBlock(
-      el,
-      style,
-      {
-        ...ctx,
-        y,
-        prevBottomMargin,
-        // A UA "quirky" margin-block-start collapses through its parent (Blink's
-        // `__qem`): the first in-flow child sits flush with the parent's content
-        // top and its margin extends above the parent's box. Author margins do
-        // not collapse into the parent this way.
-        collapseTop: firstInFlow && allowTopCollapse && style.margin.top.quirk === true,
-      },
-      styles,
-      paints,
-      nextOrder,
-      viewport,
-    );
+    // Quirky-margin chains (Blink `__qem`): a first in-flow holder collapses
+    // through a borderless parent (flush, vanishing at body, pushing the
+    // terminal chain element); a later-sibling holder keeps its margin unless
+    // the previous in-flow sibling self-collapses (zero-height box), in which
+    // case Chrome drops it; an intermediate chain element either sits flush
+    // (chain continues above) or carries the collapsed margin as its effective
+    // top margin.
+    const isQemHolder = style.margin.top.quirk === true;
+    const chain = qemChainBelow(el, styles, ctx.contentWidth, viewport);
+    const childCtx: LayoutBlockInput = { ...ctx, y, prevBottomMargin };
+    if (isQemHolder) {
+      if (firstInFlow) {
+        if (allowTopCollapse) childCtx.collapseTop = true;
+      } else if (prevNode !== null && prevNode.borderHeight === 0) {
+        childCtx.quirkTopZero = true;
+      }
+    } else if (chain !== null) {
+      if (firstInFlow && allowTopCollapse) childCtx.collapseTop = true;
+      else childCtx.chainTopMargin = chain;
+    }
+    const node = layoutBlock(el, style, childCtx, styles, paints, nextOrder, viewport);
+    prevNode = node;
     insideMarkerAdvance = null;
     insideMarkerOwner = null;
     firstInFlow = false;
@@ -1470,8 +1554,28 @@ function layoutBlockChildren(
     nodes.push(node);
     y = node.flowY + node.borderHeight + node.marginBottom;
     prevBottomMargin = node.marginBottom;
+    lastInFlow = node;
   }
   flushInlineRun();
+  // The last in-flow child's bottom margin collapses out of the parent's
+  // bottom edge when the parent has no bottom border/padding and is not a BFC
+  // root (CSS 2.1 §8.3.1): the parent's height ends at the child's border box
+  // and the collapsed margin becomes the parent's effective margin-bottom.
+  let escapedBottom: number | undefined;
+  if (
+    lastInFlow !== null &&
+    lastInFlow.marginBottom !== 0 &&
+    parentStyle !== undefined &&
+    !isScrollContainer(parentStyle.overflow) &&
+    parentStyle.borderWidth.bottom === 0 &&
+    (resolveLength(parentStyle.padding.bottom, ctx.contentWidth, viewport) ?? 0) === 0
+  ) {
+    escapedBottom = collapseMargins(
+      resolveLength(parentStyle.margin.bottom, ctx.contentWidth, viewport) ?? 0,
+      lastInFlow.marginBottom,
+    );
+    return { nodes, height: lastInFlow.flowY + lastInFlow.borderHeight - ctx.y, escapedBottom };
+  }
   return { nodes, height: y - ctx.y };
 }
 

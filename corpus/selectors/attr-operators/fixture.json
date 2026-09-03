@@ -1,0 +1,32 @@
+{
+  "name": "attr-operators",
+  "note": "Every css-selectors-4 §6.3 attribute operator exercised against matching and non-matching elements: [attr] presence, = exact, ~= whitespace-word, |= hyphen-prefix, ^=, $=, *=, quoted values, and the i (case-insensitive) / s (case-sensitive) flags. A matched element takes the operator rule's color; a non-match keeps the .b gray — computed background-color parity with Chrome proves the matcher agrees element by element.",
+  "harvest": {
+    "viewport": {
+      "width": 320,
+      "height": 380
+    },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} .b{width:60px;height:30px;background-color:rgb(238, 238, 238)} [k]{background-color:rgb(255, 0, 0)} [k=alpha]{background-color:rgb(0, 128, 0)} [k~=bravo]{background-color:rgb(0, 0, 255)} [lang|=en]{background-color:rgb(255, 165, 0)} [k^=pre]{background-color:rgb(128, 0, 128)} [k$=fix]{background-color:rgb(0, 128, 128)} [k*=mid]{background-color:rgb(255, 0, 255)} [case=VALUE i]{background-color:rgb(139, 69, 19)} [strict=UP]{background-color:rgb(70, 130, 180)}</style></head><body><div id=\"e-presence\" class=\"b\" k=\"alpha\"></div><div id=\"e-exact\" class=\"b\" k=\"alpha\"></div><div id=\"e-word\" class=\"b\" k=\"alpha bravo\"></div><div id=\"e-word-neg\" class=\"b\" k=\"alphabravo\"></div><div id=\"e-lang\" class=\"b\" lang=\"en-US\"></div><div id=\"e-lang-neg\" class=\"b\" lang=\"fr\"></div><div id=\"e-prefix\" class=\"b\" k=\"prefix\"></div><div id=\"e-suffix\" class=\"b\" k=\"suffix\"></div><div id=\"e-sub\" class=\"b\" k=\"xmidy\"></div><div id=\"e-ci\" class=\"b\" case=\"value\"></div><div id=\"e-cs-neg\" class=\"b\" strict=\"up\"></div><div id=\"e-none\" class=\"b\"></div></body></html>",
+    "computedStyle": [
+      { "id": "e-presence", "props": ["background-color"] },
+      { "id": "e-exact", "props": ["background-color"] },
+      { "id": "e-word", "props": ["background-color"] },
+      { "id": "e-word-neg", "props": ["background-color"] },
+      { "id": "e-lang", "props": ["background-color"] },
+      { "id": "e-lang-neg", "props": ["background-color"] },
+      { "id": "e-prefix", "props": ["background-color"] },
+      { "id": "e-suffix", "props": ["background-color"] },
+      { "id": "e-sub", "props": ["background-color"] },
+      { "id": "e-ci", "props": ["background-color"] },
+      { "id": "e-cs-neg", "props": ["background-color"] },
+      { "id": "e-none", "props": ["background-color"] }
+    ],
+    "rects": ["e-presence", "e-exact", "e-word", "e-word-neg", "e-lang", "e-lang-neg", "e-prefix", "e-suffix", "e-sub", "e-ci", "e-cs-neg", "e-none"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

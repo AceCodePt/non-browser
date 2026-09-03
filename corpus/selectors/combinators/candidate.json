@@ -1,0 +1,91 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "p1": {
+      "background-color": "rgb(255, 0, 0)"
+    },
+    "p2": {
+      "background-color": "rgb(255, 165, 0)"
+    },
+    "s1": {
+      "background-color": "rgb(238, 238, 238)"
+    },
+    "s2": {
+      "background-color": "rgb(0, 128, 0)"
+    },
+    "e1": {
+      "background-color": "rgb(0, 0, 255)"
+    },
+    "deep1": {
+      "background-color": "rgb(238, 238, 238)"
+    },
+    "deep2": {
+      "background-color": "rgb(238, 238, 238)"
+    },
+    "far": {
+      "background-color": "rgb(238, 238, 238)"
+    }
+  },
+  "rect": {
+    "wrap": {
+      "x": 0,
+      "y": 0,
+      "width": 300,
+      "height": 114
+    },
+    "p1": {
+      "x": 0,
+      "y": 0,
+      "width": 60,
+      "height": 30
+    },
+    "p2": {
+      "x": 0,
+      "y": 46,
+      "width": 60,
+      "height": 30
+    },
+    "s1": {
+      "x": 0,
+      "y": 92,
+      "width": 40,
+      "height": 22
+    },
+    "s2": {
+      "x": 40,
+      "y": 92,
+      "width": 31.68000030517578,
+      "height": 22
+    },
+    "e1": {
+      "x": 71.68000030517578,
+      "y": 92,
+      "width": 24.670000076293945,
+      "height": 22
+    },
+    "sec": {
+      "x": 0,
+      "y": 130,
+      "width": 300,
+      "height": 76
+    },
+    "deep1": {
+      "x": 0,
+      "y": 130,
+      "width": 60,
+      "height": 30
+    },
+    "deep2": {
+      "x": 0,
+      "y": 176,
+      "width": 60,
+      "height": 30
+    },
+    "far": {
+      "x": 0,
+      "y": 222,
+      "width": 21.09000015258789,
+      "height": 22
+    }
+  }
+}

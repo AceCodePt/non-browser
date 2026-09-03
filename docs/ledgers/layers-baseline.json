@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-03T05:45:52.661Z",
+  "generatedAt": "2026-09-03T07:41:12.742Z",
   "fixtures": {
     "border-radius/circle-50": {
       "sha256": "c9c1de75e34787220404d3e2c33096a6a882cab941a48bfcc7577185bed7a1d9",
@@ -376,6 +376,41 @@
       "sha256": "ad3b48e3409812d3ee1d654dcb7c855c79f821626798207aeb906dd8917d6989",
       "width": 480,
       "height": 200,
+      "rectCount": 2,
+      "computedStyleCount": 2
+    },
+    "custom-properties/calc-media": {
+      "sha256": "dc3f849d9df5b7e242e2f90c2c9229d5e4f640593a17b3657a5151e8940e35d8",
+      "width": 400,
+      "height": 200,
+      "rectCount": 2,
+      "computedStyleCount": 2
+    },
+    "custom-properties/fallback": {
+      "sha256": "0c92e6b8d7887dd135d7ab559677e6b1ab39b472cc00d61fca962624f3f9d185",
+      "width": 260,
+      "height": 240,
+      "rectCount": 5,
+      "computedStyleCount": 5
+    },
+    "custom-properties/inheritance": {
+      "sha256": "23ae8af86909e8c04507698ed9d50c123d58ba0c7265404a1ce496a8301edba3",
+      "width": 300,
+      "height": 260,
+      "rectCount": 3,
+      "computedStyleCount": 3
+    },
+    "custom-properties/invalid-cycles": {
+      "sha256": "0913e2987f34f3aa0fd68035b8e0cbd9009e24ed2454b679f915bc827ecb89f0",
+      "width": 260,
+      "height": 220,
+      "rectCount": 4,
+      "computedStyleCount": 4
+    },
+    "custom-properties/shorthands": {
+      "sha256": "97b6bab472fd67569db308dab125e4eeda6f49ca7e234dfe71bdf53e56b32cda",
+      "width": 300,
+      "height": 220,
       "rectCount": 2,
       "computedStyleCount": 2
     },
@@ -1232,6 +1267,34 @@
       "height": 200,
       "rectCount": 4,
       "computedStyleCount": 1
+    },
+    "selectors/attr-operators": {
+      "sha256": "024a8271896579f769b272e5794afc3a1cc32eb5c0d9f0716c8a37afc5aa83b5",
+      "width": 320,
+      "height": 380,
+      "rectCount": 12,
+      "computedStyleCount": 12
+    },
+    "selectors/combinators": {
+      "sha256": "2151adbac34c7f1a9aece46895e84b5dfabd57ddb6a5cb4f77220cea90e97db2",
+      "width": 300,
+      "height": 420,
+      "rectCount": 10,
+      "computedStyleCount": 8
+    },
+    "selectors/functional": {
+      "sha256": "10d1e23ad8763c98dc75cb42763fe16b032bd5ce4b4e10e15d4890ac128c3e73",
+      "width": 300,
+      "height": 300,
+      "rectCount": 7,
+      "computedStyleCount": 7
+    },
+    "selectors/ua-nested-lists": {
+      "sha256": "7df18e6ab5da6460e06c74a19004bd9dbed7b0b0c9a8b69332f435fd37883aea",
+      "width": 300,
+      "height": 320,
+      "rectCount": 5,
+      "computedStyleCount": 4
     },
     "spine/basic-text": {
       "sha256": "524325afaec23db4a2e365f4794fa3651b383dd9f491ecd74b05064c6948196a",
