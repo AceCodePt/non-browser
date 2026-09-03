@@ -90,6 +90,35 @@ export const UA_STYLES: UaRule[] = [
 
   { selectors: ['a'], declarations: decls({ color: 'rgb(0, 0, 238)', 'text-decoration': 'underline' }) },
 
+  // Modern text-level elements (Blink html.css): mark's system-color look,
+  // del/s strike-through, ins/u underline, small/sub/sup's relative font-size,
+  // and sub/sup's shifted baseline.
+  { selectors: ['mark'], declarations: decls({ 'background-color': 'rgb(255, 255, 0)', color: 'rgb(0, 0, 0)' }) },
+  { selectors: ['del', 's'], declarations: decls({ 'text-decoration': 'line-through' }) },
+  { selectors: ['ins'], declarations: decls({ 'text-decoration': 'underline' }) },
+  { selectors: ['small'], declarations: decls({ 'font-size': 'smaller' }) },
+  { selectors: ['sub'], declarations: decls({ 'vertical-align': 'sub', 'font-size': 'smaller' }) },
+  { selectors: ['sup'], declarations: decls({ 'vertical-align': 'super', 'font-size': 'smaller' }) },
+
+  // fieldset/legend (Blink html.css): the 2px groove border resolves to
+  // ThreeDFace (rgb(239,239,239) on this headless-Linux chrome), and the
+  // legend's placement over the top border is the fieldset layout in
+  // block-inline.ts (legend participates without table layout). The
+  // `min-inline-size: min-content` Blink also applies is out of scope — the
+  // corpus fieldset always stretches wider than its legend.
+  { selectors: ['fieldset'], declarations: decls({ 'margin-inline-start': '2px', 'margin-inline-end': '2px', border: '2px groove rgb(239, 239, 239)', 'padding-block-start': '0.35em', 'padding-block-end': '0.625em', 'padding-inline-start': '0.75em', 'padding-inline-end': '0.75em' }) },
+  { selectors: ['legend'], declarations: decls({ 'padding-inline-start': '2px', 'padding-inline-end': '2px' }) },
+
+  // details/summary (Blink html.css): details is a block container and the
+  // first-of-type summary becomes a list-item with a disclosure marker. The
+  // marker triangle is a declared divergence (see docs/ledgers/text-level-ua.md);
+  // the engine computes the list-item display and the marker's inline advance so
+  // summary text lands where Chrome's sits, but paints no triangle.
+  { selectors: ['details'], declarations: decls({ display: 'block' }) },
+  { selectors: ['summary'], declarations: decls({ display: 'block' }) },
+  { selectors: ['details > summary:first-of-type'], declarations: decls({ display: 'list-item', 'list-style-type': 'disclosure-closed', 'list-style-position': 'inside' }) },
+  { selectors: ['details[open] > summary:first-of-type'], declarations: decls({ 'list-style-type': 'disclosure-open' }) },
+
   // Form controls (Chrome UA defaults for appearance:auto, probed against
   // headless Chrome; see docs/ledgers/form-controls.md): all inline-block
   // border-box with the control font, hidden inputs display:none, and the

@@ -1,0 +1,38 @@
+{
+  "name": "text-level-inline",
+  "note": "UA defaults for modern text-level elements (corpus/text-level-ua, text-level UA feature): mark (yellow background + black text), del/s (line-through), ins (underline), small (font-size: smaller → 13.3333px at the 16px root), sub/sup (vertical-align sub/super + smaller font-size with Blink's baseline shift), abbr plain inline. The <q> element is plain inline (Chrome's open-quote/close-quote pseudo content is a declared divergence — its rect is not compared); all text, decorations and the mark fill fall under the documented text tier.",
+  "harvest": {
+    "viewport": { "width": 640, "height": 200 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'}</style></head><body><p id=\"p1\">This is <mark id=\"mark\">highlighted</mark>, <del id=\"del\">removed</del>, <ins id=\"ins\">added</ins>, <s id=\"s\">struck</s>, <small id=\"small\">small text</small>, x<sub id=\"sub\">sub</sub>y<sup id=\"sup\">sup</sup>z, <abbr id=\"abbr\">abbr</abbr> ends here.</p><p id=\"p2\"><q id=\"q\">quoted</q> after.</p></body></html>",
+    "measureText": [
+      { "text": "highlighted", "font": "16px 'Noto Sans'" },
+      { "text": "removed", "font": "16px 'Noto Sans'" },
+      { "text": "added", "font": "16px 'Noto Sans'" },
+      { "text": "struck", "font": "16px 'Noto Sans'" },
+      { "text": "small text", "font": "13.3333px 'Noto Sans'" },
+      { "text": "sub", "font": "13.3333px 'Noto Sans'" },
+      { "text": "sup", "font": "13.3333px 'Noto Sans'" },
+      { "text": "abbr", "font": "16px 'Noto Sans'" }
+    ],
+    "computedStyle": [
+      { "id": "p1", "props": ["display", "font-size", "font-weight", "font-style", "text-decoration-line", "background-color", "color", "vertical-align"] },
+      { "id": "mark", "props": ["display", "font-size", "font-weight", "font-style", "text-decoration-line", "background-color", "color", "vertical-align"] },
+      { "id": "del", "props": ["display", "font-size", "font-weight", "font-style", "text-decoration-line", "background-color", "color", "vertical-align"] },
+      { "id": "ins", "props": ["display", "font-size", "font-weight", "font-style", "text-decoration-line", "background-color", "color", "vertical-align"] },
+      { "id": "s", "props": ["display", "font-size", "font-weight", "font-style", "text-decoration-line", "background-color", "color", "vertical-align"] },
+      { "id": "small", "props": ["display", "font-size", "font-weight", "font-style", "text-decoration-line", "background-color", "color", "vertical-align"] },
+      { "id": "sub", "props": ["display", "font-size", "font-weight", "font-style", "text-decoration-line", "background-color", "color", "vertical-align"] },
+      { "id": "sup", "props": ["display", "font-size", "font-weight", "font-style", "text-decoration-line", "background-color", "color", "vertical-align"] },
+      { "id": "abbr", "props": ["display", "font-size", "font-weight", "font-style", "text-decoration-line", "background-color", "color", "vertical-align"] },
+      { "id": "q", "props": ["display", "font-size", "font-weight", "font-style", "text-decoration-line", "background-color", "color", "vertical-align"] }
+    ],
+    "rects": ["p1", "mark", "del", "ins", "s", "small", "sub", "sup", "abbr", "p2"],
+    "textElements": ["p1", "p2", "mark", "del", "ins", "s", "small", "sub", "sup", "abbr", "q"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

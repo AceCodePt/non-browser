@@ -70,7 +70,7 @@ export interface StyleDefaults {
 }
 
 const INLINE_TAGS = new Set([
-  'a', 'abbr', 'b', 'bdi', 'bdo', 'br', 'button', 'cite', 'code', 'data', 'dfn', 'em', 'i', 'kbd',
+  'a', 'abbr', 'b', 'bdi', 'bdo', 'br', 'button', 'cite', 'code', 'data', 'del', 'dfn', 'em', 'i', 'ins', 'kbd',
   'label', 'mark', 'q', 'ruby', 's', 'samp', 'small', 'span', 'strong', 'sub', 'sup', 'time', 'u',
   'var', 'wbr',
 ]);
@@ -426,6 +426,12 @@ export interface PaintOp {
       fontStyle?: 'normal' | 'italic';
       decorationLines?: TextDecorationPaint | null;
       /**
+       * The inline background painted behind this run's glyphs (an inline
+       * element's background-color, e.g. the UA mark yellow), over the run's
+       * content box.
+       */
+      background?: Color;
+      /**
        * Per-character x-offsets (from the run's x) for a letter-spaced run,
        * precomputed during layout so paint reuses layout's advance data instead
        * of re-measuring prefix advances. Absent when letterSpacing is 0.
@@ -610,6 +616,7 @@ function runsFromLines(lines: LineBox[], style: ComputedStyle, ox: number, oy: n
       fontWeight: l.fontWeight,
       fontStyle: l.fontStyle,
       decorationLines: l.decorationLines ?? null,
+      background: l.background,
       charXs: letterSpacing !== 0 ? letterSpacedOffsets(l.text, fontSize, family, letterSpacing, l.fontWeight, l.fontStyle) : undefined,
     };
   });
@@ -1005,6 +1012,9 @@ export function layoutElementBox(
   let lines: LineBox[] = [];
   let contentHeight = 0;
   let nodeEscapedBottom: number | undefined;
+  /** The amount the fieldset's border frame is inset from the top (see the
+   * legend block-start shift below); 0 for every other box. */
+  let borderShiftTop = 0;
 
   const bT = style.borderWidth.top;
   const bB = style.borderWidth.bottom;
@@ -1217,24 +1227,75 @@ export function layoutElementBox(
   } else {
     const hasBlocks = el.childNodes.some((c) => c.nodeName !== '#text' && c.nodeName !== '#comment');
     if (hasBlocks) {
-      const childFm = new FloatManager(contentX, contentWidth);
-      const state: LayoutBlockInput = {
-        fm: childFm,
-        contentX,
-        contentWidth,
-        y: contentY,
-        prevBottomMargin: 0,
-        cbDirection: style.direction,
-        scrollport: childScrollport,
-        cbClampRect: childCbClampRect,
-      };
-      const { nodes, height, escapedBottom } = layoutBlockChildren(el, state, styles, paints, nextOrder, viewport);
-      children.push(...nodes);
-      contentHeight = height;
-      nodeEscapedBottom = escapedBottom;
-      // A BFC's height grows to include its floats.
-      const lowest = childFm.lowestFloatBottom('both');
-      if (Number.isFinite(lowest)) contentHeight = Math.max(contentHeight, lowest - contentY);
+      if (el.nodeName === 'fieldset' && style.display === 'block') {
+        const legend = findRenderedLegend(el, styles);
+        if (legend !== null) {
+          const res = layoutFieldsetChildren(
+            el,
+            legend,
+            style,
+            styles,
+            paints,
+            nextOrder,
+            viewport,
+            contentX,
+            contentY,
+            contentWidth,
+            borderY,
+            childScrollport,
+            childCbClampRect,
+          );
+          children.push(...res.children);
+          contentHeight = res.height;
+          nodeEscapedBottom = res.escapedBottom;
+          // Blink paints a fieldset's block-start border centered on the
+          // rendered legend's box (NGFieldsetLayoutAlgorithm::LayoutLegend:
+          // "as a paint effect, the block-start border will be pushed so that
+          // the center of the border will be flush with the center of the
+          // border-box of the legend"). With a legend taller than the border
+          // this shifts the top edge (and the side edges' top ends) down; the
+          // border op's frame box is inset by that amount.
+          borderShiftTop = res.borderShiftTop;
+        } else {
+          const childFm = new FloatManager(contentX, contentWidth);
+          const state: LayoutBlockInput = {
+            fm: childFm,
+            contentX,
+            contentWidth,
+            y: contentY,
+            prevBottomMargin: 0,
+            cbDirection: style.direction,
+            scrollport: childScrollport,
+            cbClampRect: childCbClampRect,
+          };
+          const { nodes, height, escapedBottom } = layoutBlockChildren(el, state, styles, paints, nextOrder, viewport);
+          children.push(...nodes);
+          contentHeight = height;
+          nodeEscapedBottom = escapedBottom;
+          // A BFC's height grows to include its floats.
+          const lowest = childFm.lowestFloatBottom('both');
+          if (Number.isFinite(lowest)) contentHeight = Math.max(contentHeight, lowest - contentY);
+        }
+      } else {
+        const childFm = new FloatManager(contentX, contentWidth);
+        const state: LayoutBlockInput = {
+          fm: childFm,
+          contentX,
+          contentWidth,
+          y: contentY,
+          prevBottomMargin: 0,
+          cbDirection: style.direction,
+          scrollport: childScrollport,
+          cbClampRect: childCbClampRect,
+        };
+        const { nodes, height, escapedBottom } = layoutBlockChildren(el, state, styles, paints, nextOrder, viewport);
+        children.push(...nodes);
+        contentHeight = height;
+        nodeEscapedBottom = escapedBottom;
+        // A BFC's height grows to include its floats.
+        const lowest = childFm.lowestFloatBottom('both');
+        if (Number.isFinite(lowest)) contentHeight = Math.max(contentHeight, lowest - contentY);
+      }
     }
   }
 
@@ -1293,7 +1354,13 @@ export function layoutElementBox(
   };
 
   if (ownBg) ownBg.box.height = resolvedHeight;
-  if (ownBorder) ownBorder.box.height = resolvedHeight;
+  if (ownBorder) {
+    // A fieldset's border frame is inset by the legend's block-start shift
+    // (Blink centers the top border on the legend box); the shift shortens the
+    // frame's height by the same amount so the bottom edge stays put.
+    ownBorder.box.y += borderShiftTop;
+    ownBorder.box.height = resolvedHeight - borderShiftTop;
+  }
   if (controlOp) controlOp.box.height = resolvedHeight;
   for (const s of shadowPlaceholders) s.box.height = resolvedHeight;
   if (clipEntry) clipEntry.height = resolvedHeight;
@@ -1742,6 +1809,7 @@ function layoutBlockChildren(
   paints: PaintOp[],
   nextOrder: () => number,
   viewport?: Viewport,
+  excluded?: P5Element,
 ): { nodes: LayoutNode[]; height: number; escapedBottom?: number } {
   const nodes: LayoutNode[] = [];
   let y = ctx.y;
@@ -1805,6 +1873,7 @@ function layoutBlockChildren(
   };
 
   for (const child of expandContents(parent.childNodes, styles)) {
+    if (child === excluded) continue;
     if (child.nodeName === '#comment') continue;
     if (child.nodeName === '#text') {
       if (/\S/.test((child as P5Text).value)) inlineRun.push(child as unknown as P5Element);
@@ -1905,6 +1974,124 @@ function layoutBlockChildren(
   return { nodes, height: y - ctx.y };
 }
 
+/**
+ * The first in-flow `<legend>` child of a fieldset — the rendered legend that
+ * Blink pulls out of the content flow and positions over the top border
+ * (html.spec.whatwg.org #the-fieldset-and-legend-elements). Floated or
+ * positioned legends are ordinary in-flow children and never the rendered one.
+ */
+function findRenderedLegend(el: P5Element, styles: Map<P5Element, ComputedStyle>): P5Element | null {
+  for (const child of expandContents(el.childNodes, styles)) {
+    if (child.nodeName === '#text' || child.nodeName === '#comment') continue;
+    const childEl = child as P5Element;
+    if (childEl.nodeName !== 'legend') continue;
+    const s = styles.get(childEl);
+    if (!s || s.display === 'none') continue;
+    if (s.float !== 'none' || s.position === 'absolute' || s.position === 'fixed') continue;
+    return childEl;
+  }
+  return null;
+}
+
+interface FieldsetLayoutResult {
+  children: LayoutNode[];
+  height: number;
+  escapedBottom?: number;
+  /** The inset of the fieldset's border frame from the block-start edge —
+   * Blink paints the top border centered on the legend box (see below). */
+  borderShiftTop: number;
+}
+
+/**
+ * fieldset/legend block layout, mirroring Blink's NGFieldsetLayoutAlgorithm
+ * without a table layer. The rendered legend is measured, then placed over the
+ * block-start border (flush with the border-box top when the legend is taller
+ * than the border, centered within the border otherwise), and the remaining
+ * in-flow children flow below the legend's protrusion past the border. The
+ * fieldset's height grows by that protrusion because contentHeight counts from
+ * the content-box top. The legend shrinks to fit (Blink lays every legend in a
+ * fieldset as a shrink-to-fit BFC), so its border-box width is its content's
+ * max-content width plus its padding/border.
+ */
+function layoutFieldsetChildren(
+  el: P5Element,
+  legend: P5Element,
+  style: ComputedStyle,
+  styles: Map<P5Element, ComputedStyle>,
+  paints: PaintOp[],
+  nextOrder: () => number,
+  viewport: Viewport | undefined,
+  contentX: number,
+  contentY: number,
+  contentWidth: number,
+  borderY: number,
+  scrollport: Box | undefined,
+  cbClampRect: Box | undefined,
+): FieldsetLayoutResult {
+  const legendStyle = styles.get(legend)!;
+  const bT = style.borderWidth.top;
+  const legendW = atomicBoxSize(legend, legendStyle, styles, contentWidth, viewport).borderWidth;
+  const contentWidthOf = (w: number): number =>
+    Math.max(
+      0,
+      w - legendStyle.borderWidth.left - legendStyle.borderWidth.right -
+        (resolveLength(legendStyle.padding.left, w, viewport) ?? 0) -
+        (resolveLength(legendStyle.padding.right, w, viewport) ?? 0),
+    );
+  const contentXOf = (x: number): number =>
+    x + legendStyle.borderWidth.left + (resolveLength(legendStyle.padding.left, legendW, viewport) ?? 0);
+  const contentYOf = (y: number): number =>
+    y + legendStyle.borderWidth.top + (resolveLength(legendStyle.padding.top, legendW, viewport) ?? 0);
+  const layOutLegend = (y: number): LayoutNode =>
+    layoutElementBox(
+      legend,
+      legendStyle,
+      new FloatManager(contentX, contentWidth),
+      contentX,
+      y,
+      legendW,
+      contentXOf(contentX),
+      contentYOf(y),
+      contentWidthOf(legendW),
+      styles,
+      paints,
+      nextOrder,
+      viewport,
+    );
+
+  // Measure once (paint discarded) so the placement can depend on the height.
+  const snapshot = paints.length;
+  const legendHeight = layOutLegend(borderY).borderHeight;
+  paints.length = snapshot;
+
+  const blockOffset = Math.max(0, Math.floor((bT - legendHeight) / 2));
+  const protrusion = Math.max(0, blockOffset + legendHeight - bT);
+
+  const legendNode = layOutLegend(borderY + blockOffset);
+
+  const childFm = new FloatManager(contentX, contentWidth);
+  const state: LayoutBlockInput = {
+    fm: childFm,
+    contentX,
+    contentWidth,
+    y: contentY + protrusion,
+    prevBottomMargin: 0,
+    cbDirection: style.direction,
+    scrollport,
+    cbClampRect,
+  };
+  const { nodes, height, escapedBottom } = layoutBlockChildren(el, state, styles, paints, nextOrder, viewport, legend);
+  let contentHeight = height + protrusion;
+  const lowest = childFm.lowestFloatBottom('both');
+  if (Number.isFinite(lowest)) contentHeight = Math.max(contentHeight, lowest - contentY);
+  // The top border is painted centered on the legend box: the frame's top edge
+  // sits at legendCenter − border/2 (0 when the legend fits within the border,
+  // positive — pushing the border down past the fieldset's top edge — when the
+  // legend is taller, matching Blink's paint effect).
+  const borderShiftTop = Math.max(0, blockOffset + legendHeight / 2 - bT / 2);
+  return { children: [legendNode, ...nodes], height: contentHeight, escapedBottom, borderShiftTop };
+}
+
 function decorationPaint(style: ComputedStyle): TextDecorationPaint | null {
   if (style.textDecorationLines.length === 0) return null;
   return {
@@ -1958,6 +2145,10 @@ function firstLineOf(node: LayoutNode): LineBox | null {
 function listMarkerFor(node: LayoutNode, counter: number): ListMarker | null {
   const style = node.style;
   if (style.display !== 'list-item' || style.listStyleType === 'none') return null;
+  // The disclosure markers (details > summary:first-of-type) compute and
+  // advance like a symbol marker, but their triangle paint is a declared
+  // divergence (docs/ledgers/text-level-ua.md) — no marker box is rendered.
+  if (style.listStyleType === 'disclosure-closed' || style.listStyleType === 'disclosure-open') return null;
   const first = firstLineOf(node);
   if (!first) return null;
   const metrics = activeFontMetrics();
@@ -2023,6 +2214,13 @@ function markerShape(metrics: FontVerticalMetrics | null, fontSize: number): { a
  */
 function insideMarkerAdvanceFor(style: ComputedStyle, counter: number): number {
   const metrics = activeFontMetrics();
+  // The disclosure markers (summary) use Blink's closure geometry: a 0.66em
+  // marker box plus a 0.4em trailing margin (ListMarker::InlineMarginsForInside
+  // / DisclosureSymbolSize) — the advance that puts summary text where Chrome
+  // puts it after the triangle.
+  if (style.listStyleType === 'disclosure-closed' || style.listStyleType === 'disclosure-open') {
+    return style.fontSize * 0.66 + style.fontSize * 0.4;
+  }
   if (style.listStyleType === 'disc' || style.listStyleType === 'circle' || style.listStyleType === 'square') {
     const { symbolWidth } = markerShape(metrics, style.fontSize);
     return -1 + symbolWidth + style.fontSize;
@@ -2130,6 +2328,13 @@ interface TextRunStyle {
   lineHeight: number;
   fontWeight: number;
   fontStyle: 'normal' | 'italic';
+  /**
+   * The run's baseline offset from the line baseline (positive = below), from
+   * `vertical-align: sub`/`super` — Blink shifts the baseline by the parent
+   * box's font size (`font_size / 5 + 1` down, `-(font_size / 3 + 1)` up,
+   * LayoutUnit-truncated; inline_box_state.cc VerticalPositionForBox).
+   */
+  baselineShift: number;
 }
 
 interface AtomicPiece {
@@ -2146,7 +2351,7 @@ interface AtomicPiece {
 
 type InlinePiece =
   | { kind: 'word'; text: string; style: TextRunStyle; owner: P5Element | null }
-  | { kind: 'space'; text: string }
+  | { kind: 'space'; text: string; style: TextRunStyle }
   | { kind: 'break' }
   | { kind: 'wbr' }
   | AtomicPiece;
@@ -2157,7 +2362,7 @@ interface InlineLayoutResult {
   contentHeight: number;
 }
 
-function runStyleOf(style: ComputedStyle): TextRunStyle {
+function runStyleOf(style: ComputedStyle, baselineShift = 0): TextRunStyle {
   return {
     fontSize: style.fontSize,
     family: style.fontFamily,
@@ -2166,6 +2371,7 @@ function runStyleOf(style: ComputedStyle): TextRunStyle {
     lineHeight: style.lineHeight,
     fontWeight: style.fontWeight,
     fontStyle: style.fontStyle,
+    baselineShift,
   };
 }
 
@@ -2181,8 +2387,41 @@ function sameRunStyle(a: TextRunStyle, b: TextRunStyle): boolean {
     a.letterSpacing === b.letterSpacing &&
     a.lineHeight === b.lineHeight &&
     a.fontWeight === b.fontWeight &&
-    a.fontStyle === b.fontStyle
+    a.fontStyle === b.fontStyle &&
+    a.baselineShift === b.baselineShift
   );
+}
+
+/**
+ * The baseline shift for a box with `vertical-align: sub`/`super` relative to
+ * its parent box's baseline, computed from the PARENT box's font size (Blink
+ * `InlineBoxState::ComputeVerticalAlignShift`, inline_box_state.cc): sub
+ * shifts down by `parent_font_size/5 + 1`, super up by `parent_font_size/3 + 1`,
+ * with LayoutUnit's truncating integer division (raw 1/64px units, so a 16px
+ * parent gives +4.1875px / −6.328125px — exactly Chrome's sub/sup rects).
+ */
+function verticalAlignShift(va: VerticalAlign, parentFontSize: number): number {
+  if (va === 'sub') {
+    const raw = Math.round(parentFontSize * 64);
+    return Math.floor(raw / 5) / 64 + 1;
+  }
+  if (va === 'super') {
+    const raw = Math.round(parentFontSize * 64);
+    return -(Math.floor(raw / 3) / 64 + 1);
+  }
+  return 0;
+}
+
+/**
+ * The background an inline run paints behind its glyphs (an inline element's
+ * background-color, e.g. the UA mark yellow): the owner's computed background
+ * when it has alpha. Runs of elements without a background paint nothing.
+ */
+function backgroundOfRun(owner: P5Element | null, styles: Map<P5Element, ComputedStyle>): Color | undefined {
+  if (!owner) return undefined;
+  const s = styles.get(owner);
+  if (!s || s.backgroundColor.a <= 0) return undefined;
+  return s.backgroundColor;
 }
 
 /**
@@ -2195,7 +2434,7 @@ function sameRunStyle(a: TextRunStyle, b: TextRunStyle): boolean {
  * text-align harness asserts); `pre-wrap` tabs are excluded because Pretext
  * advances them to tab stops while the walker measures them as text.
  */
-function pureTextDelegatable(pieces: InlinePiece[], style: ComputedStyle, el: P5Element, text: string): boolean {
+function pureTextDelegatable(pieces: InlinePiece[], style: ComputedStyle, el: P5Element, text: string, styles: Map<P5Element, ComputedStyle>): boolean {
   if (style.textAlign === 'justify') return false;
   if (style.whiteSpace === 'pre-wrap' && /[\t\r\f]/.test(text)) return false;
   const blockRun = runStyleOf(style);
@@ -2206,6 +2445,13 @@ function pureTextDelegatable(pieces: InlinePiece[], style: ComputedStyle, el: P5
     if (p.kind === 'word') {
       if (!sameRunStyle(p.style, blockRun)) return false;
       if (p.owner && p.owner !== el && p.owner.attrs.some((a) => a.name === 'id')) return false;
+      // A foreign-owned run with a background or text decoration needs the
+      // per-run paint path (mark's yellow fill, del/s/ins/a underlines) — the
+      // flat layoutTextLines path would merge it back into the block run.
+      if (p.owner && p.owner !== el) {
+        const os = styles.get(p.owner);
+        if (os && (os.backgroundColor.a > 0 || os.textDecorationLines.length > 0)) return false;
+      }
     }
   }
   return pieces.some((p) => p.kind === 'word' || p.kind === 'space');
@@ -2219,13 +2465,16 @@ function pushTextPieces(raw: string, style: TextRunStyle, owner: P5Element | nul
       run = '';
     }
   };
+  const pushSpace = (text: string): void => {
+    out.push({ kind: 'space', text, style });
+  };
   if (ws === 'pre' || ws === 'pre-wrap') {
     let spaceRun = '';
     for (const ch of raw) {
       if (ch === '\n') {
         flushWord();
         if (spaceRun) {
-          out.push({ kind: 'space', text: spaceRun });
+          pushSpace(spaceRun);
           spaceRun = '';
         }
         out.push({ kind: 'break' });
@@ -2234,14 +2483,14 @@ function pushTextPieces(raw: string, style: TextRunStyle, owner: P5Element | nul
         spaceRun += ch;
       } else {
         if (spaceRun) {
-          out.push({ kind: 'space', text: spaceRun });
+          pushSpace(spaceRun);
           spaceRun = '';
         }
         run += ch;
       }
     }
     flushWord();
-    if (spaceRun) out.push({ kind: 'space', text: spaceRun });
+    if (spaceRun) pushSpace(spaceRun);
     return;
   }
   if (ws === 'pre-line') {
@@ -2250,7 +2499,7 @@ function pushTextPieces(raw: string, style: TextRunStyle, owner: P5Element | nul
       if (ch === '\n') {
         flushWord();
         if (spacePending) {
-          out.push({ kind: 'space', text: ' ' });
+          pushSpace(' ');
           spacePending = false;
         }
         out.push({ kind: 'break' });
@@ -2259,21 +2508,21 @@ function pushTextPieces(raw: string, style: TextRunStyle, owner: P5Element | nul
         spacePending = true;
       } else {
         if (spacePending) {
-          out.push({ kind: 'space', text: ' ' });
+          pushSpace(' ');
           spacePending = false;
         }
         run += ch;
       }
     }
     flushWord();
-    if (spacePending) out.push({ kind: 'space', text: ' ' });
+    if (spacePending) pushSpace(' ');
     return;
   }
   const norm = raw.replace(/[ \t\r\n\f]+/g, ' ');
   for (let i = 0; i < norm.length; i++) {
     if (norm[i] === ' ') {
       flushWord();
-      out.push({ kind: 'space', text: ' ' });
+      pushSpace(' ');
     } else {
       run += norm[i];
     }
@@ -2329,14 +2578,14 @@ function piecesContentSizes(pieces: InlinePiece[], style: ComputedStyle, ws: Whi
   const preserve = ws === 'pre' || ws === 'pre-wrap';
   let min = 0;
   let max = 0;
-  let prevWasSpace = false;
+  let prevSpaceStyle: TextRunStyle | null = null;
   for (const p of pieces) {
     if (p.kind === 'break' || p.kind === 'wbr') continue;
     if (p.kind === 'space') {
       if (preserve) {
-        max += measureTextWidth(p.text, style.fontSize, style.fontFamily, style.letterSpacing) + wordSpacing * p.text.length;
+        max += measureTextWidth(p.text, p.style.fontSize, p.style.family, p.style.letterSpacing, p.style.fontWeight, p.style.fontStyle) + wordSpacing * p.text.length;
       }
-      prevWasSpace = true;
+      prevSpaceStyle = p.style;
       continue;
     }
     const w =
@@ -2344,9 +2593,14 @@ function piecesContentSizes(pieces: InlinePiece[], style: ComputedStyle, ws: Whi
         ? measureTextWidth(p.text, p.style.fontSize, p.style.family, p.style.letterSpacing, p.style.fontWeight, p.style.fontStyle)
         : p.marginLeft + p.borderWidth + p.marginRight;
     min = Math.max(min, p.kind === 'word' ? minTextWidth(p.text, p.style.fontSize, p.style.family, p.style.letterSpacing, style.overflowWrap === 'anywhere', p.style.fontWeight, p.style.fontStyle) : w);
-    if (prevWasSpace && !preserve) max += measureTextWidth(' ', style.fontSize, style.fontFamily, style.letterSpacing) + wordSpacing;
+    // A collapsed inter-word space is measured with the space's own style —
+    // the text node it came from — so a space before a font-size-changing
+    // element keeps the preceding run's advance (Chrome).
+    if (prevSpaceStyle !== null && !preserve) {
+      max += measureTextWidth(' ', prevSpaceStyle.fontSize, prevSpaceStyle.family, prevSpaceStyle.letterSpacing, prevSpaceStyle.fontWeight, prevSpaceStyle.fontStyle) + wordSpacing;
+    }
     max += w;
-    prevWasSpace = false;
+    prevSpaceStyle = null;
   }
   return { min, max };
 }
@@ -2380,6 +2634,7 @@ function buildPieces(
   refWidth: number,
   viewport: Viewport | undefined,
   ws: WhiteSpaceValue = style.whiteSpace,
+  baselineShift = 0,
 ): InlinePiece[] {
   const out: InlinePiece[] = [];
   // A button-ish input's label is its `value` attribute (UA defaults Submit/
@@ -2388,14 +2643,14 @@ function buildPieces(
   if (kind === 'button') {
     const label = controlLabel(el, kind);
     if (label !== null) {
-      pushTextPieces(label, runStyleOf(style), el, out, ws);
+      pushTextPieces(label, runStyleOf(style, baselineShift), el, out, ws);
       return out;
     }
   }
   if (style.before) pushPseudoPieces(style.before, el, out, ws, style.textTransform);
   for (const child of expandContents(el.childNodes, styles)) {
     if (child.nodeName === '#text') {
-      pushTextPieces(applyTextTransform((child as P5Text).value, style.textTransform), runStyleOf(style), el, out, ws);
+      pushTextPieces(applyTextTransform((child as P5Text).value, style.textTransform), runStyleOf(style, baselineShift), el, out, ws);
       continue;
     }
     if (child.nodeName === '#comment') continue;
@@ -2437,7 +2692,10 @@ function buildPieces(
       });
       continue;
     }
-    for (const p of buildPieces(childEl, s, styles, refWidth, viewport, s.whiteSpace)) out.push(p);
+    // The child box's own vertical-align shift is computed from THIS box's
+    // font size (its parent box), and accumulates with the ancestors' shifts.
+    const childShift = baselineShift + verticalAlignShift(s.verticalAlign, style.fontSize);
+    for (const p of buildPieces(childEl, s, styles, refWidth, viewport, s.whiteSpace, childShift)) out.push(p);
   }
   if (style.after) pushPseudoPieces(style.after, el, out, ws, style.textTransform);
   return out;
@@ -2473,6 +2731,7 @@ function walkLine(pieces: InlinePiece[], style: ComputedStyle, stretch = 0, ws: 
   let runStyle: TextRunStyle | null = null;
   let runOwner: P5Element | null = null;
   let prevWasSpace = false;
+  let prevSpaceStyle: TextRunStyle | null = null;
   let hasContent = false;
   const flush = (): void => {
     if (!runText) return;
@@ -2487,18 +2746,21 @@ function walkLine(pieces: InlinePiece[], style: ComputedStyle, stretch = 0, ws: 
   for (const p of pieces) {
     if (p.kind === 'space') {
       prevWasSpace = true;
+      prevSpaceStyle = p.style;
       if (preserve) {
         // Preserved space run: attach to the current run (or start one) and
         // advance x by its full width. Spaces carry no ink, so attaching them
         // to a run keeps the painted text identical while the width/geometry
-        // (line box, span rects) accounts for the preserved run.
+        // (line box, span rects) accounts for the preserved run. The space
+        // keeps its own text node's font (a space at a font boundary measures
+        // with the run it came from, matching Chrome).
         if (runStyle === null) {
-          runStyle = runStyleOf(style);
+          runStyle = p.style;
           runOwner = null;
           runX = x;
         }
         runText += p.text;
-        x += measureTextWidth(p.text, runStyle.fontSize, runStyle.family, runStyle.letterSpacing, runStyle.fontWeight, runStyle.fontStyle) + stretch * p.text.length;
+        x += measureTextWidth(p.text, p.style.fontSize, p.style.family, p.style.letterSpacing, p.style.fontWeight, p.style.fontStyle) + stretch * p.text.length;
       }
       continue;
     }
@@ -2509,8 +2771,10 @@ function walkLine(pieces: InlinePiece[], style: ComputedStyle, stretch = 0, ws: 
           // The whitespace separating inline elements belongs to the line's
           // advance (an anonymous inline box): advance x by the space but do
           // not fold it into the run's text, so run boxes never double-count
-          // it (matching Chrome's per-box fragments).
-          x += spaceW(p.style);
+          // it (matching Chrome's per-box fragments). The space measures with
+          // its own text node's font — the run it came from, not the following
+          // element's.
+          x += spaceW(prevSpaceStyle ?? runStyleOf(style));
         }
         runX = x;
         runStyle = p.style;
@@ -2530,7 +2794,7 @@ function walkLine(pieces: InlinePiece[], style: ComputedStyle, stretch = 0, ws: 
       continue;
     } else {
       flush();
-      if (prevWasSpace && hasContent && !preserve) x += spaceW(runStyleOf(style));
+      if (prevWasSpace && hasContent && !preserve) x += spaceW(prevSpaceStyle ?? runStyleOf(style));
       atomics.push({ piece: p, x: x + p.marginLeft });
       x += p.marginLeft + p.borderWidth + p.marginRight;
       hasContent = true;
@@ -2648,7 +2912,7 @@ function layoutInlineContent(
   // boxes for this content (the walker below is only needed to mix atomics and
   // foreign-style runs) and routes the word-fill through the Pretext breaker.
   const inlineText = collectInlineText(el, styles);
-  if (pureTextDelegatable(pieces, style, el, inlineText)) {
+  if (pureTextDelegatable(pieces, style, el, inlineText, styles)) {
     const flat = layoutTextLines({
       text: inlineText,
       x: 0,
@@ -2781,7 +3045,7 @@ function layoutInlineContent(
             // (Chrome keeps a single space, no ink, at the wrap point).
             if (ws === 'pre-wrap' && lastBreakWasSpace && lastBreak >= 0) {
               onLine.length = lastBreak;
-              onLine.push({ kind: 'space', text: ' ' });
+              onLine.push({ kind: 'space', text: ' ', style: runStyleOf(style) });
             }
             break;
           }
@@ -2832,8 +3096,11 @@ function layoutInlineContent(
         maxDescent = lineDescentContribution(style.fontSize, style.lineHeight, metrics);
       }
       for (const r of walked.runs) {
-        const a = lineAscentContribution(r.style.fontSize, r.style.lineHeight, metrics);
-        const d = lineDescentContribution(r.style.fontSize, r.style.lineHeight, metrics);
+        // A sub/super run shifts its whole content box down/up by its baseline
+        // shift, so its line-box contributions are the run's own ascent/descent
+        // minus/plus the shift (CSS 2.1 §10.8.1 with a shifted baseline).
+        const a = lineAscentContribution(r.style.fontSize, r.style.lineHeight, metrics) - r.style.baselineShift;
+        const d = lineDescentContribution(r.style.fontSize, r.style.lineHeight, metrics) + r.style.baselineShift;
         if (a > maxAscent) maxAscent = a;
         if (d > maxDescent) maxDescent = d;
       }
@@ -2886,13 +3153,21 @@ function layoutInlineContent(
         // text's right edge), which is the correct visual order.
         const spanText = r.text.replace(/^ /, '');
         const runBox = { x: rtl ? origin - r.x - r.width : origin + r.x, y, width: r.width, height: lineHeight };
+        // A sub/super run has its own baseline (`baseline + shift`); its line
+        // box y/height are its font's content box so decorations and inline
+        // backgrounds land on the run's own geometry (Blink paints them from
+        // the fragment's metrics), not the line's.
+        const runBaseline = baseline + r.style.baselineShift;
+        const runAscent = metrics ? roundedAscent(metrics, r.style.fontSize) : fallbackAscent(r.style.fontSize);
+        const runDescent = metrics ? roundedDescent(metrics, r.style.fontSize) : 0;
+        const runTop = runBaseline - runAscent;
         if (r.owner && r.owner !== el) {
           // A span's getBoundingClientRect is the union of its inline boxes'
           // content boxes (baseline ± rounded font metrics), not the line boxes.
           const cb = metrics
             ? {
-                top: baseline - roundedAscent(metrics, r.style.fontSize),
-                bottom: baseline + roundedDescent(metrics, r.style.fontSize),
+                top: runBaseline - runAscent,
+                bottom: runBaseline + runDescent,
               }
             : { top: runBox.y, bottom: runBox.y + runBox.height };
           const spanW = measureTextWidth(spanText, r.style.fontSize, r.style.family, r.style.letterSpacing, r.style.fontWeight, r.style.fontStyle);
@@ -2909,17 +3184,19 @@ function layoutInlineContent(
         }
         lines.push({
           x: runBox.x,
-          y: runBox.y,
+          y: runTop,
           width: runBox.width,
-          height: runBox.height,
+          height: runAscent + runDescent,
           text: r.text,
           startWord: 0,
           endWord: 1,
-          baseline,
+          baseline: runBaseline,
           fontSize: r.style.fontSize,
           family: r.style.family,
           color: r.style.color,
           letterSpacing: r.style.letterSpacing,
+          decorationLines: decorationPaintForRun(r.owner, styles),
+          background: backgroundOfRun(r.owner, styles),
         });
       }
       for (const a of walked.atomics) {

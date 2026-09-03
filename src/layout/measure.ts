@@ -114,6 +114,9 @@ export interface LineBox {
   fontWeight?: number;
   fontStyle?: 'normal' | 'italic';
   decorationLines?: import('./block-inline.js').TextDecorationPaint | null;
+  /** The run's inline background (an inline element's background-color, e.g.
+   * the UA mark yellow), painted behind the run's glyphs over its content box. */
+  background?: Color;
 }
 
 export function wrapWords(

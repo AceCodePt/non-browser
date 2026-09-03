@@ -249,7 +249,7 @@ const PROP_GROUPS: PropGroup[] = [
   { props: ['overflow'], validate: keywordSet('visible', 'hidden', 'clip', 'auto', 'scroll') },
   { props: ['white-space'], validate: keywordSet('normal', 'nowrap', 'pre', 'pre-wrap', 'pre-line') },
   { props: ['text-align'], validate: keywordSet('left', 'center', 'right', 'justify', 'start', 'end') },
-  { props: ['vertical-align'], validate: keywordSet('baseline', 'top', 'middle', 'bottom') },
+  { props: ['vertical-align'], validate: keywordSet('baseline', 'sub', 'super', 'top', 'middle', 'bottom') },
   { props: ['direction'], validate: keywordSet('ltr', 'rtl') },
   {
     props: ['list-style-type'],

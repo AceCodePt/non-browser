@@ -1,0 +1,72 @@
+{
+  "measureText": {
+    "16px 'Noto Sans' | Overview": 69.79000091552734,
+    "16px 'Noto Sans' | Details": 51.380001068115234,
+    "16px 'Noto Sans' | The body content.": 135.64999389648438
+  },
+  "computedStyle": {
+    "det": {
+      "display": "block",
+      "font-size": "16px"
+    },
+    "sum": {
+      "display": "list-item",
+      "list-style-type": "disclosure-closed",
+      "list-style-position": "inside",
+      "padding-top": "0px",
+      "padding-bottom": "0px",
+      "padding-left": "0px",
+      "padding-right": "0px",
+      "font-size": "16px",
+      "font-weight": "400"
+    },
+    "deto": {
+      "display": "block",
+      "font-size": "16px"
+    },
+    "sumo": {
+      "display": "list-item",
+      "list-style-type": "disclosure-open",
+      "list-style-position": "inside",
+      "font-size": "16px"
+    },
+    "dp": {
+      "display": "block",
+      "font-size": "16px",
+      "margin-top": "16px",
+      "margin-bottom": "16px"
+    }
+  },
+  "rect": {
+    "det": {
+      "x": 0,
+      "y": 0,
+      "width": 640,
+      "height": 22
+    },
+    "sum": {
+      "x": 0,
+      "y": 0,
+      "width": 640,
+      "height": 22
+    },
+    "deto": {
+      "x": 0,
+      "y": 22,
+      "width": 640,
+      "height": 60
+    },
+    "sumo": {
+      "x": 0,
+      "y": 22,
+      "width": 640,
+      "height": 22
+    },
+    "dp": {
+      "x": 0,
+      "y": 60,
+      "width": 640,
+      "height": 22
+    }
+  }
+}
