@@ -86,7 +86,18 @@ export interface CanvasLike {
   restore(): void;
   clip(fillRule?: 'nonzero' | 'evenodd'): void;
   fillPath(color: CanvasColor, fillRule?: 'nonzero' | 'evenodd'): void;
-  strokePath(color: CanvasColor, lineWidth: number): void;
+  /**
+   * Stroke the current path. `dash` optionally applies a two-interval dash
+   * pattern (`segments = [on, off]`, `phase` offset into the pattern at the
+   * path start, `cap` the line cap — round caps turn zero-length `on`
+   * intervals into dots). Chrome's dash effect is Skia's, so a phase-0
+   * two-interval pattern on the same path rasterizes identically.
+   */
+  strokePath(
+    color: CanvasColor,
+    lineWidth: number,
+    dash?: { segments: [number, number]; phase?: number; cap?: 'butt' | 'round' },
+  ): void;
 
   /**
    * Paint the shadow of the current path (a closed shape) translated by

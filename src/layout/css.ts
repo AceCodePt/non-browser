@@ -353,7 +353,7 @@ export interface ComputedStyle {
   padding: Record<Side, Length>;
   borderWidth: Record<Side, number>;
   borderColor: Record<Side, Color>;
-  borderStyle: Record<Side, 'none' | 'solid' | 'inset' | 'outset'>;
+  borderStyle: Record<Side, BorderStyleKeyword>;
   borderRadius: BorderRadius;
   backgroundColor: Color;
   /**
@@ -1283,7 +1283,30 @@ function parseBoxShorthand(raw: string): Record<Side, Length> {
   return { top: t, right: r, bottom: b, left: l };
 }
 
-type BorderStyleKeyword = 'none' | 'solid' | 'inset' | 'outset';
+export type BorderStyleKeyword =
+  | 'none'
+  | 'hidden'
+  | 'solid'
+  | 'inset'
+  | 'outset'
+  | 'dashed'
+  | 'dotted'
+  | 'double'
+  | 'groove'
+  | 'ridge';
+
+const BORDER_STYLE_KEYWORDS: readonly BorderStyleKeyword[] = [
+  'none',
+  'hidden',
+  'solid',
+  'inset',
+  'outset',
+  'dashed',
+  'dotted',
+  'double',
+  'groove',
+  'ridge',
+];
 
 const BORDER_WIDTH_KEYWORDS: Record<string, number> = { thin: 1, medium: 3, thick: 5 };
 
@@ -1298,12 +1321,12 @@ function parseBorderShorthandParts(
   defaultColor: Color,
 ): { width: number; style: BorderStyleKeyword; color: Color } | null {
   let width = 0;
-  let style: BorderStyleKeyword = 'solid';
+  let style: BorderStyleKeyword = 'none';
   let color: Color | null = null;
   let sawWidth = false;
   for (const p of splitTopLevel(raw.trim())) {
-    if (p === 'solid' || p === 'none' || p === 'inset' || p === 'outset') {
-      style = p;
+    if (BORDER_STYLE_KEYWORDS.includes(p as BorderStyleKeyword)) {
+      style = p as BorderStyleKeyword;
       continue;
     }
     if (/^-?[\d.]+px$/.test(p)) {
@@ -1328,7 +1351,7 @@ function parseBorderShorthandParts(
 
 function parseBorderStyleShorthand(raw: string): Record<Side, BorderStyleKeyword> {
   const kw = (v: string): BorderStyleKeyword =>
-    v === 'inset' ? 'inset' : v === 'outset' ? 'outset' : v === 'solid' ? 'solid' : 'none';
+    BORDER_STYLE_KEYWORDS.includes(v as BorderStyleKeyword) ? (v as BorderStyleKeyword) : 'none';
   const parts = raw.trim().split(/\s+/).map(kw);
   const [t = 'none', r = t, b = t, l = r] = parts;
   return { top: t, right: r, bottom: b, left: l };
@@ -2020,7 +2043,7 @@ export function makeStyle(rawDecls: Declaration[], defaults: Defaults): Computed
   const borderWidth: Record<Side, number> = { top: 0, right: 0, bottom: 0, left: 0 };
   // Default border color is currentColor (the element's color), like Blink.
   const borderColor: Record<Side, Color> = { top: elementColor, right: elementColor, bottom: elementColor, left: elementColor };
-  const borderStyle: Record<Side, 'none' | 'solid' | 'inset' | 'outset'> = { top: 'none', right: 'none', bottom: 'none', left: 'none' };
+  const borderStyle: Record<Side, BorderStyleKeyword> = { top: 'none', right: 'none', bottom: 'none', left: 'none' };
   const borderRadius = (() => {
     const r = parseBorderRadius(decls);
     for (const corner of [r.topLeft, r.topRight, r.bottomRight, r.bottomLeft]) {
@@ -2068,12 +2091,16 @@ export function makeStyle(rawDecls: Declaration[], defaults: Defaults): Computed
       borderStyle[s] = bs ? bs[s] : (() => {
         const d = findDecl(decls, `border-${s}-style`);
         const v = d ? d.value.trim() : '';
-        if (v === 'inset') return 'inset';
-        if (v === 'outset') return 'outset';
-        if (v === 'solid') return 'solid';
-        return 'none';
+        return BORDER_STYLE_KEYWORDS.includes(v as BorderStyleKeyword) ? (v as BorderStyleKeyword) : 'none';
       })();
     }
+  }
+
+  // none/hidden never paint and contribute zero used width (css-backgrounds-3
+  // §4.2: "hidden: Same as 'none'"), so the border box grows by nothing even
+  // when a border-width longhand or shorthand specifies one.
+  for (const s of SIDES) {
+    if (borderStyle[s] === 'none' || borderStyle[s] === 'hidden') borderWidth[s] = 0;
   }
 
   const displayDecl = findDecl(decls, 'display');
