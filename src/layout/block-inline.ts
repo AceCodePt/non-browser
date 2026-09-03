@@ -1558,14 +1558,16 @@ function layoutBlockChildren(
   }
   flushInlineRun();
   // The last in-flow child's bottom margin collapses out of the parent's
-  // bottom edge when the parent has no bottom border/padding and is not a BFC
-  // root (CSS 2.1 §8.3.1): the parent's height ends at the child's border box
-  // and the collapsed margin becomes the parent's effective margin-bottom.
+  // bottom edge when the parent has auto height (a specified height keeps the
+  // margin inside, CSS 2.1 §8.3.1), no bottom border/padding and is not a BFC
+  // root: the parent's height ends at the child's border box and the collapsed
+  // margin becomes the parent's effective margin-bottom.
   let escapedBottom: number | undefined;
   if (
     lastInFlow !== null &&
     lastInFlow.marginBottom !== 0 &&
     parentStyle !== undefined &&
+    parentStyle.height.auto === true &&
     !isScrollContainer(parentStyle.overflow) &&
     parentStyle.borderWidth.bottom === 0 &&
     (resolveLength(parentStyle.padding.bottom, ctx.contentWidth, viewport) ?? 0) === 0

@@ -1,0 +1,23 @@
+{
+  "name": "root-empty",
+  "note": "Root and emptiness: :root matches the html element (through its #document parent) composed as :root > body, :empty matches elements whose only children are comments, and any text node — including whitespace-only text — makes an element non-empty (Selectors §6.6.7).",
+  "harvest": {
+    "viewport": { "width": 300, "height": 220 },
+    "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans'} :root > body{background-color:rgb(0, 0, 255)} body{background-color:rgb(238, 238, 238)} div{width:60px;height:30px} .e1:empty{background-color:rgb(255, 0, 0)} .e2:empty{background-color:rgb(0, 128, 0)} .ws:empty{background-color:rgb(128, 0, 128)} .tx:empty{background-color:rgb(0, 128, 128)}</style></head><body id=\"bd\"><div id=\"e1\" class=\"e1\"></div><div id=\"e2\" class=\"e2\"><!-- only a comment --></div><div id=\"ws\" class=\"ws\"> </div><div id=\"tx\" class=\"tx\">text</div></body></html>",
+    "computedStyle": [
+      { "id": "bd", "props": ["background-color"] },
+      { "id": "e1", "props": ["background-color"] },
+      { "id": "e2", "props": ["background-color"] },
+      { "id": "ws", "props": ["background-color"] },
+      { "id": "tx", "props": ["background-color"] }
+    ],
+    "rects": ["e1", "e2", "ws", "tx"],
+    "textElements": ["tx"]
+  },
+  "expected": {
+    "measureText": "pass",
+    "computedStyle": "pass",
+    "rect": "pass",
+    "screenshot": "pass"
+  }
+}

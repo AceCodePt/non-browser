@@ -1,0 +1,67 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "r1": {
+      "background-color": "rgb(255, 0, 0)"
+    },
+    "mid": {
+      "background-color": "rgba(0, 0, 0, 0)"
+    },
+    "r2": {
+      "background-color": "rgba(0, 0, 0, 0)"
+    },
+    "nest": {
+      "background-color": "rgb(0, 0, 255)"
+    },
+    "pa": {
+      "background-color": "rgba(0, 0, 0, 0)"
+    },
+    "pb": {
+      "background-color": "rgb(255, 0, 255)"
+    }
+  },
+  "rect": {
+    "r1": {
+      "x": 0,
+      "y": 0,
+      "width": 60,
+      "height": 30
+    },
+    "mid": {
+      "x": 0,
+      "y": 30,
+      "width": 60,
+      "height": 30
+    },
+    "r2": {
+      "x": 0,
+      "y": 60,
+      "width": 60,
+      "height": 30
+    },
+    "nestwrap": {
+      "x": 0,
+      "y": 106,
+      "width": 60,
+      "height": 30
+    },
+    "nest": {
+      "x": 0,
+      "y": 106,
+      "width": 60,
+      "height": 22
+    },
+    "pa": {
+      "x": 0,
+      "y": 136,
+      "width": 60,
+      "height": 30
+    },
+    "pb": {
+      "x": 0,
+      "y": 166,
+      "width": 60,
+      "height": 30
+    }
+  }
+}

@@ -193,6 +193,7 @@ the charter and the corpus cannot silently diverge:
 | selectors | combinators: descendant, > (child), + (adjacent), ~ (sibling) | yes | corpus/selectors | > |
 | selectors | :not() / :is() / :where() with selector-list arguments | yes | corpus/selectors | :where( |
 | selectors | :is() takes max argument specificity; :where() contributes zero | yes | corpus/selectors | :is( |
+| selectors | structural + root pseudo-classes (:root, :empty, first/last/only-child, :nth-child(An+B), :nth-last-child, first/last/only-of-type, :nth-of-type) | yes | corpus/selectors-structural | :nth-child( |
 | ua-stylesheet | nested-list rules authored with :is() (Blink html.css parity) | yes | corpus/selectors | :is(dl, ol, ul) |
 
 ### Deferred / Not in v1 (no silent absence)

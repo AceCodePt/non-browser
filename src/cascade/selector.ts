@@ -5,10 +5,13 @@
  * combinators (descendant ` `, child `>`, adjacent `+`, general sibling `~`),
  * attribute selectors with all operators ([attr], =, ~=, |=, ^=, $=, *=) plus
  * the i/s case flags, the functional pseudo-classes :not()/:is()/:where() with
- * full selector-list arguments (balanced-paren, string-aware parsing), and
- * ::before/::after. Specificity is computed per CSS Selectors §9.2 with §3.2's
- * functional rules: :is() and :not() contribute the component-wise maximum of
- * their arguments' specificities, :where() contributes zero.
+ * full selector-list arguments (balanced-paren, string-aware parsing), the
+ * structural and root pseudo-classes (:root, :empty, :first/last/only-child,
+ * :nth-child(An+B), :nth-last-child, :first/last/only-of-type,
+ * :nth-of-type(An+B), :nth-last-of-type), and ::before/::after. Specificity is
+ * computed per CSS Selectors §9.2 with §3.2's functional rules: :is() and
+ * :not() contribute the component-wise maximum of their arguments'
+ * specificities, :where() contributes zero.
  *
  * A selector that fails to parse returns null and the caller drops the rule —
  * parse-error recovery, like a browser.
@@ -28,12 +31,32 @@ export interface FunctionalPseudo {
   selectors: ComplexSelector[];
 }
 
+/** Structural/root pseudo-classes; nth-* carry the parsed An+B. */
+export interface StructuralPseudo {
+  kind:
+    | 'root'
+    | 'empty'
+    | 'first-child'
+    | 'last-child'
+    | 'only-child'
+    | 'nth-child'
+    | 'nth-last-child'
+    | 'first-of-type'
+    | 'last-of-type'
+    | 'only-of-type'
+    | 'nth-of-type'
+    | 'nth-last-of-type';
+  an: number;
+  bn: number;
+}
+
 export interface CompoundSelector {
   tag: string | null;
   id: string | null;
   classes: string[];
   attrs: AttrSelector[];
   functional: FunctionalPseudo[];
+  structural: StructuralPseudo[];
   pseudo: 'before' | 'after' | null;
 }
 
@@ -48,6 +71,46 @@ export type Specificity = [number, number, number];
 
 const ATTR_OPS = ['~=', '|=', '^=', '$=', '*='];
 
+const STRUCTURAL_PSEUDOS = new Set([
+  'root',
+  'empty',
+  'first-child',
+  'last-child',
+  'only-child',
+  'nth-child',
+  'nth-last-child',
+  'first-of-type',
+  'last-of-type',
+  'only-of-type',
+  'nth-of-type',
+  'nth-last-of-type',
+]);
+
+/**
+ * css-selectors-4 §6.5 An+B microgrammar: odd/even, bare integers, An forms
+ * with optional sign and whitespace around the trailing +/-B, case-insensitive
+ * `n`. Anything else (e.g. `n+b`, `2n++1`, `+ n`) is invalid and fails the
+ * whole selector (parse-error recovery).
+ */
+export function parseAnPlusB(text: string): { an: number; bn: number } | null {
+  const s = text.trim().toLowerCase();
+  if (s === 'odd') return { an: 2, bn: 1 };
+  if (s === 'even') return { an: 2, bn: 0 };
+  const full = /^([+-]?)(\d*)n\s*([+-])\s*(\d+)$/.exec(s);
+  if (full) {
+    const a = (full[1] === '-' ? -1 : 1) * (full[2] === '' ? 1 : Number.parseInt(full[2], 10));
+    const b = (full[3] === '-' ? -1 : 1) * Number.parseInt(full[4], 10);
+    return { an: a, bn: b };
+  }
+  const anOnly = /^([+-]?\d*)n$/.exec(s);
+  if (anOnly) {
+    const a = (anOnly[1].startsWith('-') ? -1 : 1) * (anOnly[1].replace(/[+-]/, '') === '' ? 1 : Number.parseInt(anOnly[1].replace(/[+-]/, ''), 10));
+    return { an: a, bn: 0 };
+  }
+  if (/^[+-]?\d+$/.test(s)) return { an: 0, bn: Number.parseInt(s, 10) };
+  return null;
+}
+
 function isIdentChar(c: string): boolean {
   return /[A-Za-z0-9_-]/.test(c);
 }
@@ -59,7 +122,7 @@ function startsSimple(c: string): boolean {
 }
 
 function emptyCompound(): CompoundSelector {
-  return { tag: null, id: null, classes: [], attrs: [], functional: [], pseudo: null };
+  return { tag: null, id: null, classes: [], attrs: [], functional: [], structural: [], pseudo: null };
 }
 
 class SelectorParser {
@@ -244,8 +307,10 @@ class SelectorParser {
    * One pseudo at this.i (the ':'). `::name` and the legacy single-colon
    * `:before`/`:after` set the compound's pseudo-element slot; `:not(...)` /
    * `:is(...)` / `:where(...)` parse a balanced argument block as a selector
-   * list. Any other pseudo-class fails the selector — the engine does not
-   * match it (interaction/structural states are outside this surface).
+   * list; structural/root pseudo-classes match per css-selectors-4 §6.5-§6.7,
+   * the nth-* ones parsing their An+B argument. Any other pseudo-class fails
+   * the selector — the engine does not match it (interaction states and
+   * form-control state are outside this surface).
    */
   private parsePseudo(compound: CompoundSelector): boolean {
     this.i++; // ':'
@@ -257,17 +322,33 @@ class SelectorParser {
     const name = this.readIdent().toLowerCase();
     if (!name) return false;
     if (this.text[this.i] === '(') {
-      if (element || (name !== 'not' && name !== 'is' && name !== 'where')) return false;
-      const close = this.findMatchingParen();
-      if (close === null) return false;
-      const list = parseSelectorList(this.text.slice(this.i + 1, close));
-      if (!list) return false;
-      compound.functional.push({ kind: name, selectors: list });
-      this.i = close + 1;
-      return true;
+      if (element) return false;
+      if (name === 'not' || name === 'is' || name === 'where') {
+        const close = this.findMatchingParen();
+        if (close === null) return false;
+        const list = parseSelectorList(this.text.slice(this.i + 1, close));
+        if (!list) return false;
+        compound.functional.push({ kind: name, selectors: list });
+        this.i = close + 1;
+        return true;
+      }
+      if (name === 'nth-child' || name === 'nth-last-child' || name === 'nth-of-type' || name === 'nth-last-of-type') {
+        const close = this.findMatchingParen();
+        if (close === null) return false;
+        const anb = parseAnPlusB(this.text.slice(this.i + 1, close));
+        if (!anb) return false;
+        compound.structural.push({ kind: name, an: anb.an, bn: anb.bn });
+        this.i = close + 1;
+        return true;
+      }
+      return false;
     }
     if (name === 'before' || name === 'after') {
       compound.pseudo = name;
+      return true;
+    }
+    if (STRUCTURAL_PSEUDOS.has(name)) {
+      compound.structural.push({ kind: name as StructuralPseudo['kind'], an: 0, bn: 0 });
       return true;
     }
     return false;
@@ -382,6 +463,68 @@ function matchFunctional(f: FunctionalPseudo, el: P5Element): boolean {
   return f.kind === 'not' ? !any : any;
 }
 
+/** The raw parent, including the #document above the root element. */
+function rawParent(el: P5Element): P5Element | null {
+  return (el as unknown as { parentNode?: P5Element | null }).parentNode ?? null;
+}
+
+function isElementNode(n: unknown): n is P5Element {
+  return typeof n === 'object' && n !== null && (n as P5Element).nodeName !== undefined && (n as P5Element).nodeName !== '#text' && (n as P5Element).nodeName !== '#comment';
+}
+
+function elementSiblings(el: P5Element): P5Element[] {
+  const p = rawParent(el);
+  return ((p as unknown as { childNodes?: unknown[] })?.childNodes ?? []).filter(isElementNode);
+}
+
+/** Position of el among its element siblings (0-based). */
+function elementIndex(el: P5Element): number {
+  return elementSiblings(el).indexOf(el);
+}
+
+/** 1-based position matches an+b iff ∃n ≥ 0: position = an·n + b. */
+function matchesAnB(an: number, bn: number, position: number): boolean {
+  if (an === 0) return position === bn;
+  const d = position - bn;
+  return d % an === 0 && d / an >= 0;
+}
+
+function matchStructural(st: StructuralPseudo, el: P5Element): boolean {
+  switch (st.kind) {
+    case 'root':
+      // The root element's parent is the #document itself.
+      return rawParent(el) !== null && (rawParent(el) as P5Element).nodeName === '#document';
+    case 'empty':
+      // Selectors §6.6.7: children other than comments make the element
+      // non-empty — text nodes, including whitespace-only ones, count.
+      return el.childNodes.every((c) => c.nodeName === '#comment');
+    case 'first-child':
+      return elementIndex(el) === 0;
+    case 'last-child':
+      return elementIndex(el) === elementSiblings(el).length - 1;
+    case 'only-child':
+      return elementSiblings(el).length === 1;
+    case 'nth-child':
+      return matchesAnB(st.an, st.bn, elementIndex(el) + 1);
+    case 'nth-last-child':
+      return matchesAnB(st.an, st.bn, elementSiblings(el).length - elementIndex(el));
+    case 'first-of-type':
+      return elementSiblings(el).filter((s) => s.nodeName === el.nodeName)[0] === el;
+    case 'last-of-type':
+      return elementSiblings(el).filter((s) => s.nodeName === el.nodeName).at(-1) === el;
+    case 'only-of-type':
+      return elementSiblings(el).filter((s) => s.nodeName === el.nodeName).length === 1;
+    case 'nth-of-type':
+      return matchesAnB(st.an, st.bn, elementSiblings(el).filter((s) => s.nodeName === el.nodeName).indexOf(el) + 1);
+    case 'nth-last-of-type':
+      return matchesAnB(
+        st.an,
+        st.bn,
+        elementSiblings(el).filter((s) => s.nodeName === el.nodeName).length - elementSiblings(el).filter((s) => s.nodeName === el.nodeName).indexOf(el),
+      );
+  }
+}
+
 function matchCompound(compound: CompoundSelector, el: P5Element): boolean {
   if (compound.tag && el.nodeName !== compound.tag) return false;
   if (compound.id !== null) {
@@ -397,6 +540,9 @@ function matchCompound(compound: CompoundSelector, el: P5Element): boolean {
   }
   for (const a of compound.attrs) {
     if (!matchAttr(el, a)) return false;
+  }
+  for (const st of compound.structural) {
+    if (!matchStructural(st, el)) return false;
   }
   for (const f of compound.functional) {
     if (!matchFunctional(f, el)) return false;
@@ -485,7 +631,7 @@ function specificityOfFunctional(f: FunctionalPseudo): Specificity {
 
 function compoundSpecificity(compound: CompoundSelector): Specificity {
   let a = compound.id ? 1 : 0;
-  let b = compound.classes.length + compound.attrs.length;
+  let b = compound.classes.length + compound.attrs.length + compound.structural.length;
   let c = (compound.tag ? 1 : 0) + (compound.pseudo ? 1 : 0);
   for (const f of compound.functional) {
     const s = specificityOfFunctional(f);

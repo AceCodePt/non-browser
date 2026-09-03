@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-03T07:41:12.742Z",
+  "generatedAt": "2026-09-03T08:06:06.517Z",
   "fixtures": {
     "border-radius/circle-50": {
       "sha256": "c9c1de75e34787220404d3e2c33096a6a882cab941a48bfcc7577185bed7a1d9",
@@ -1295,6 +1295,34 @@
       "height": 320,
       "rectCount": 5,
       "computedStyleCount": 4
+    },
+    "selectors-structural/child-position": {
+      "sha256": "e599089c2be1c192258351476fb9dc12635d014294eb52209874ea17b88178bd",
+      "width": 300,
+      "height": 320,
+      "rectCount": 7,
+      "computedStyleCount": 6
+    },
+    "selectors-structural/nth-anb": {
+      "sha256": "4dc6b787101df33afa44ac5906faf0ab0cace723044b3bcea39ea4282e7aa20c",
+      "width": 300,
+      "height": 260,
+      "rectCount": 7,
+      "computedStyleCount": 7
+    },
+    "selectors-structural/of-type-compose": {
+      "sha256": "a9f19b0ba3a4aff23d6822a260d16140d9e7fb766f4574379c8debc0a7e4c81c",
+      "width": 300,
+      "height": 260,
+      "rectCount": 6,
+      "computedStyleCount": 6
+    },
+    "selectors-structural/root-empty": {
+      "sha256": "eb8651f8647e884e085d8c70e99703ba45e08b34fcf20398e0d04f4ef7fd0af0",
+      "width": 300,
+      "height": 220,
+      "rectCount": 5,
+      "computedStyleCount": 5
     },
     "spine/basic-text": {
       "sha256": "524325afaec23db4a2e365f4794fa3651b383dd9f491ecd74b05064c6948196a",
