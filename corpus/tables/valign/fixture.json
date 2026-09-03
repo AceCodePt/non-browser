@@ -1,0 +1,35 @@
+{
+ "note": "Cell vertical-align: tall row with default middle and explicit bottom, then a baseline row where cells of different font sizes align by first-line baseline.",
+ "harvest": {
+  "viewport": {
+   "width": 420,
+   "height": 200
+  },
+  "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans';font-size:16px}td{border:1px solid #666}</style></head><body><table id=\"t\"><tr><td id=\"a\" style=\"height:80px;background:#4a90d9\">tall row content</td><td id=\"b\" style=\"background:#d9534f\">middle</td><td id=\"c\" style=\"background:#90b04f;vertical-align:bottom\">bottom</td></tr><tr><td id=\"d\" style=\"font-size:28px;background:#e0a0a0\">Big</td><td id=\"e\" style=\"font-size:12px;background:#f0c040;vertical-align:baseline\">base</td><td id=\"f\" style=\"background:#40c0a0;vertical-align:baseline\">line</td></tr></table></body></html>",
+  "measureText": [],
+  "rects": [
+   "t",
+   "a",
+   "b",
+   "c",
+   "d",
+   "e",
+   "f"
+  ],
+  "textElements": [
+   "a",
+   "b",
+   "c",
+   "d",
+   "e",
+   "f"
+  ]
+ },
+ "name": "valign",
+ "expected": {
+  "measureText": "pass",
+  "computedStyle": "pass",
+  "rect": "pass",
+  "screenshot": "pass"
+ }
+}

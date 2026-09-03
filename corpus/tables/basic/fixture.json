@@ -1,0 +1,41 @@
+{
+ "note": "Plain 3x2 HTML table: UA defaults (border-spacing 2px on all grid edges, td/th 1px padding, th bold+center, td/th vertical-align middle), borders and backgrounds on every cell for the screenshot layer.",
+ "harvest": {
+  "viewport": {
+   "width": 360,
+   "height": 160
+  },
+  "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans';font-size:16px}table{border:1px solid #333;background:#f5f5f5}th{background:#4a90d9;color:#fff;border:1px solid #2a60a9}td{border:1px solid #999;background:#fff}</style></head><body><table id=\"t\"><tr><th id=\"h1\">Name</th><th id=\"h2\">Qty</th><th id=\"h3\">Price</th></tr><tr><td id=\"a\">Widget</td><td id=\"b\">4</td><td id=\"c\">$9.99</td></tr><tr><td id=\"d\">Gadget</td><td id=\"e\">12</td><td id=\"f\">$1,234.50</td></tr></table></body></html>",
+  "measureText": [],
+  "rects": [
+   "t",
+   "h1",
+   "h2",
+   "h3",
+   "a",
+   "b",
+   "c",
+   "d",
+   "e",
+   "f"
+  ],
+  "textElements": [
+   "h1",
+   "h2",
+   "h3",
+   "a",
+   "b",
+   "c",
+   "d",
+   "e",
+   "f"
+  ]
+ },
+ "name": "basic",
+ "expected": {
+  "measureText": "pass",
+  "computedStyle": "pass",
+  "rect": "pass",
+  "screenshot": "pass"
+ }
+}

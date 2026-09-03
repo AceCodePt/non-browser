@@ -1,0 +1,30 @@
+{
+ "note": "Border-spacing 8px on every grid edge (first/last columns and rows included) and empty-cells:hide: the empty cell paints no background or border but keeps its grid slot.",
+ "harvest": {
+  "viewport": {
+   "width": 400,
+   "height": 180
+  },
+  "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans';font-size:16px}</style></head><body><table id=\"t\" style=\"border-spacing:8px;empty-cells:hide;border:1px solid #333;background:#f5f5f5\"><tr><td id=\"c1\" style=\"border:2px solid #4a90d9;background:#fff\">shown</td><td id=\"c2\" style=\"border:2px solid #d9534f;background:#fff\"></td></tr><tr><td id=\"c3\" style=\"border:2px solid #90b04f;background:#fff\">also shown</td><td id=\"c4\" style=\"border:2px solid #f0c040;background:#fff\">visible</td></tr></table></body></html>",
+  "measureText": [],
+  "rects": [
+   "t",
+   "c1",
+   "c2",
+   "c3",
+   "c4"
+  ],
+  "textElements": [
+   "c1",
+   "c3",
+   "c4"
+  ]
+ },
+ "name": "spacing-empty",
+ "expected": {
+  "measureText": "pass",
+  "computedStyle": "pass",
+  "rect": "pass",
+  "screenshot": "pass"
+ }
+}

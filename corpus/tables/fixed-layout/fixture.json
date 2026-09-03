@@ -1,0 +1,33 @@
+{
+ "note": "table-layout:fixed at width:300px: col element widths beat cell widths, autos share the remainder equally, a colspan row spans the fixed columns.",
+ "harvest": {
+  "viewport": {
+   "width": 400,
+   "height": 140
+  },
+  "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans';font-size:16px}td{border:1px solid #666}</style></head><body><table id=\"t\" style=\"table-layout:fixed;width:300px\"><col style=\"width:120px\"><col style=\"width:60px\"><tr><td id=\"c1\" style=\"background:#4a90d9\">120px col</td><td id=\"c2\" style=\"background:#d9534f\">60px col</td><td id=\"c3\" style=\"background:#90b04f\">auto shares the rest of the width here</td></tr><tr><td id=\"c4\" colspan=\"2\" style=\"background:#e0a0a0\">spans first two</td><td id=\"c5\" style=\"background:#f0c040\">b</td></tr></table></body></html>",
+  "measureText": [],
+  "rects": [
+   "t",
+   "c1",
+   "c2",
+   "c3",
+   "c4",
+   "c5"
+  ],
+  "textElements": [
+   "c1",
+   "c2",
+   "c3",
+   "c4",
+   "c5"
+  ]
+ },
+ "name": "fixed-layout",
+ "expected": {
+  "measureText": "pass",
+  "computedStyle": "pass",
+  "rect": "pass",
+  "screenshot": "pass"
+ }
+}
