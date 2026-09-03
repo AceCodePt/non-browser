@@ -2035,6 +2035,7 @@ type InlinePiece =
   | { kind: 'word'; text: string; style: TextRunStyle; owner: P5Element | null }
   | { kind: 'space'; text: string }
   | { kind: 'break' }
+  | { kind: 'wbr' }
   | AtomicPiece;
 
 interface InlineLayoutResult {
@@ -2087,6 +2088,8 @@ function pureTextDelegatable(pieces: InlinePiece[], style: ComputedStyle, el: P5
   const blockRun = runStyleOf(style);
   for (const p of pieces) {
     if (p.kind === 'atomic') return false;
+    // Forced breaks and soft opportunities need the segmenting piece walker.
+    if (p.kind === 'break' || p.kind === 'wbr') return false;
     if (p.kind === 'word') {
       if (!sameRunStyle(p.style, blockRun)) return false;
       if (p.owner && p.owner !== el && p.owner.attrs.some((a) => a.name === 'id')) return false;
@@ -2207,7 +2210,7 @@ function piecesContentSizes(pieces: InlinePiece[], style: ComputedStyle, ws: Whi
   let max = 0;
   let prevWasSpace = false;
   for (const p of pieces) {
-    if (p.kind === 'break') continue;
+    if (p.kind === 'break' || p.kind === 'wbr') continue;
     if (p.kind === 'space') {
       if (preserve) {
         max += measureTextWidth(p.text, style.fontSize, style.fontFamily, style.letterSpacing);
@@ -2268,6 +2271,19 @@ function buildPieces(
     const childEl = child as P5Element;
     const s = styles.get(childEl);
     if (!s || s.display === 'none') continue;
+    if (childEl.nodeName === 'br') {
+      // <br> is a forced break at the current position: it contributes no
+      // advance and closes the line box (css-text-3 §5.1), in every
+      // white-space mode.
+      out.push({ kind: 'break' });
+      continue;
+    }
+    if (childEl.nodeName === 'wbr') {
+      // The <wbr> element is a zero-width soft wrap opportunity: the breaker
+      // may break here but need not (HTML Standard, the wbr element).
+      out.push({ kind: 'wbr' });
+      continue;
+    }
     if (s.display === 'block' || s.display === 'list-item' || s.display === 'grid' || s.display === 'flex' || s.float !== 'none' || s.position !== 'static') {
       continue;
     }
@@ -2376,9 +2392,10 @@ function walkLine(pieces: InlinePiece[], style: ComputedStyle, stretch = 0, ws: 
       x += measureTextWidth(p.text, p.style.fontSize, p.style.family, p.style.letterSpacing, p.style.fontWeight, p.style.fontStyle);
       hasContent = true;
       prevWasSpace = false;
-    } else if (p.kind === 'break') {
+    } else if (p.kind === 'break' || p.kind === 'wbr') {
       // Forced breaks are split out into segments before walkLine runs; a
-      // stray break piece contributes nothing to a line.
+      // stray break piece contributes nothing to a line. A wbr is a zero-width
+      // opportunity marker with no rendering of its own.
       continue;
     } else {
       flush();
@@ -2553,6 +2570,7 @@ function layoutInlineContent(
 
       const onLine: InlinePiece[] = [];
       let lastBreak = -1;
+      let lastBreakWasSpace = false;
       let lineHasContent = false;
       let i = idx;
       if (noWrap) {
@@ -2566,12 +2584,21 @@ function layoutInlineContent(
           if (p.kind === 'space') {
             onLine.push(p);
             lastBreak = onLine.length - 1;
+            lastBreakWasSpace = true;
+            continue;
+          }
+          if (p.kind === 'wbr') {
+            // A soft opportunity: the break may happen right after it (the
+            // zero-width marker stays on the line, contributing no advance).
+            onLine.push(p);
+            lastBreak = onLine.length;
+            lastBreakWasSpace = false;
             continue;
           }
           const trial = walkLine([...onLine, p], style, 0, ws).width;
           if (lineHasContent && trial > availWidth) {
             if (lastBreak >= 0) {
-              if (ws === 'pre-wrap') {
+              if (ws === 'pre-wrap' && lastBreakWasSpace) {
                 // A preserved space run at the wrap point collapses to one hung
                 // space on the line (Chrome keeps a single space, no ink).
                 onLine.length = lastBreak;

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-03T10:18:12.547Z",
+  "generatedAt": "2026-09-03T10:43:16.256Z",
   "fixtures": {
     "aspect-ratio/block-surface": {
       "sha256": "5d45b9b9ab2c56340a50cd75f738e67c96b080949461231c0e352638dd3b3567",
@@ -126,6 +126,34 @@
       "height": 120,
       "rectCount": 1,
       "computedStyleCount": 1
+    },
+    "br-wbr/align-whitespace": {
+      "sha256": "86481b99d65ac5490fdb13207f6fa151c615b030048a0f76e04811f72d90cc60",
+      "width": 300,
+      "height": 300,
+      "rectCount": 4,
+      "computedStyleCount": 2
+    },
+    "br-wbr/basic": {
+      "sha256": "02f169a5c14cee86a55b445b0b9fe6ffe7e625833c0b0b132c1b00b9c0ddf772",
+      "width": 300,
+      "height": 260,
+      "rectCount": 4,
+      "computedStyleCount": 1
+    },
+    "br-wbr/list-markers": {
+      "sha256": "2e571424de179be5093c5d495a2ddb2a6e2cb1439b5fe95a88caf18aa0958f69",
+      "width": 300,
+      "height": 220,
+      "rectCount": 2,
+      "computedStyleCount": 2
+    },
+    "br-wbr/wbr-opportunity": {
+      "sha256": "0d11ce13d72f4450f1b298f5e1224a7750578d0c5b21ae2bcf40137239a0eccb",
+      "width": 300,
+      "height": 200,
+      "rectCount": 4,
+      "computedStyleCount": 2
     },
     "breaker/cjk-japanese": {
       "sha256": "4b144451efc00ab047e54f2e71428bab582fb82969e7d56f1851fdd4219e62ff",

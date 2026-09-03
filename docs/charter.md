@@ -201,6 +201,7 @@ the charter and the corpus cannot silently diverge:
 | display | display: contents box suppression — children (block/flex/grid) join the grandparent's formatting context, no box, zero rect; replaced elements compute 'none' (css-display-3 §2) | yes | corpus/display-contents | display:contents |
 | sizing | aspect-ratio property — ratio-derived auto dimension on block surfaces (content-box/border-box), min/max clamping, replaced-element natural-ratio transfer with attribute hints (css-sizing-4 §5) | yes | corpus/aspect-ratio | aspect-ratio |
 | positioning | position: sticky — in-flow at static position, scroll-0 constraint pass against the nearest scrollport with containing-block clamp, CB for abs descendants, z-index stacking (css-position-3 §3.6) | yes | corpus/sticky | position: sticky |
+| text | forced line breaks: <br> closes the line box in every white-space mode, <wbr> is a zero-width soft wrap opportunity; empty interior lines, text-align edges, list markers (css-text-3 §5.1) | yes | corpus/br-wbr | <wbr> |
 | ua-stylesheet | nested-list rules authored with :is() (Blink html.css parity) | yes | corpus/selectors | :is(dl, ol, ul) |
 
 ### Deferred / Not in v1 (no silent absence)

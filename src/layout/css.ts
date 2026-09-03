@@ -1837,16 +1837,6 @@ export function makeStyle(rawDecls: Declaration[], defaults: Defaults): Computed
     return resolveEmLength(parseLength(d.value), fontSize);
   };
 
-  const marginLonghand = (name: string, dflt: Length, quirkDecls: string[]): Length => {
-    const d = findDecl(decls, name);
-    if (d) {
-      const l = parseLength(d.value);
-      if (quirkDecls.includes(name) && d.quirk) l.quirk = true;
-      return l;
-    }
-    return dflt;
-  };
-
   const sideLens = (shorthand: string): Record<Side, Length> => {
     const sh = findDecl(decls, shorthand);
     const dflt = shorthand === 'padding' ? defaults.paddingDefault ?? pxLength(0) : pxLength(0);
@@ -1867,33 +1857,48 @@ export function makeStyle(rawDecls: Declaration[], defaults: Defaults): Computed
     return d && d.value.trim() === 'rtl' ? 'rtl' : (defaults.directionInherited ?? 'ltr');
   })();
 
-  // --- margins: the logical longhands (margin-block-start/end,
-  // margin-inline-start/end) feed the physical sides, and the `margin`
-  // shorthand wins over everything (CSS logical/physical is resolved in source
-  // order in Blink; for the UA fixtures these never coexist). The UA
-  // margin-block-start carries the quirky-margin marker (Blink `__qem`).
-  // The inline longhands map per `direction` (css-writing-modes-4 §2.2). ---
+  // --- margins: each physical side takes its cascade winner among the
+  // physical longhand, the logical longhand mapped per `direction`, and the
+  // `margin` shorthand — the first declaration in the winner-first list
+  // (shorthands expand to longhands at their own cascade position, so a
+  // higher-specificity/later `margin-top` beats an earlier `margin`). The UA
+  // margin-block-start carries the quirky-margin marker (Blink `__qem`). ---
   const margin = (() => {
-    const sh = findDecl(decls, 'margin');
-    const top = marginLonghand('margin-block-start', len('margin-top', pxLength(0)), ['margin-block-start']);
-    const bottom = marginLonghand('margin-block-end', len('margin-bottom', pxLength(0)), ['margin-block-end']);
-    const left = marginLonghand(direction === 'rtl' ? 'margin-inline-end' : 'margin-inline-start', len('margin-left', pxLength(0)), []);
-    const right = marginLonghand(direction === 'rtl' ? 'margin-inline-start' : 'margin-inline-end', len('margin-right', pxLength(0)), []);
-    if (sh) return parseBoxShorthand(sh.value);
-    return { top, right, bottom, left };
+    const side = (s: Side, inlineLogical: string): Length => {
+      const d = findDeclAny(decls, [`margin-${s}`, inlineLogical, 'margin']);
+      if (!d) return pxLength(0);
+      if (d.property === 'margin') return parseBoxShorthand(d.value)[s];
+      const l = parseLength(d.value);
+      if ((s === 'top' || s === 'bottom') && d.property === `margin-block-${s === 'top' ? 'start' : 'end'}` && d.quirk) {
+        l.quirk = true;
+      }
+      return l;
+    };
+    return {
+      top: side('top', 'margin-block-start'),
+      bottom: side('bottom', 'margin-block-end'),
+      left: side('left', direction === 'rtl' ? 'margin-inline-end' : 'margin-inline-start'),
+      right: side('right', direction === 'rtl' ? 'margin-inline-start' : 'margin-inline-end'),
+    };
   })();
 
-  // --- padding: the inline logical longhands feed the physical sides per
-  // `direction` (the inline-start side holds the list gutter). ---
+  // --- padding: the same cascade scan as margins (the inline logical
+  // longhands feed the physical sides per `direction` — the inline-start side
+  // holds the list gutter), falling back to the UA per-tag default. ---
   const padding = (() => {
-    const sh = findDecl(decls, 'padding');
     const dflt = defaults.paddingDefault ?? pxLength(0);
-    const top = len('padding-top', dflt);
-    const right = len(direction === 'rtl' ? 'padding-inline-start' : 'padding-inline-end', len('padding-right', dflt));
-    const bottom = len('padding-bottom', dflt);
-    const left = len(direction === 'rtl' ? 'padding-inline-end' : 'padding-inline-start', len('padding-left', dflt));
-    if (sh) return parseBoxShorthand(sh.value);
-    return { top, right, bottom, left };
+    const side = (s: Side, inlineLogical: string): Length => {
+      const d = findDeclAny(decls, [`padding-${s}`, inlineLogical, 'padding']);
+      if (!d) return dflt;
+      if (d.property === 'padding') return parseBoxShorthand(d.value)[s];
+      return parseLength(d.value);
+    };
+    return {
+      top: side('top', 'padding-block-start'),
+      bottom: side('bottom', 'padding-block-end'),
+      left: side('left', direction === 'rtl' ? 'padding-inline-end' : 'padding-inline-start'),
+      right: side('right', direction === 'rtl' ? 'padding-inline-start' : 'padding-inline-end'),
+    };
   })();
 
   const resolveEm = (sides: Record<Side, Length>): Record<Side, Length> => ({
