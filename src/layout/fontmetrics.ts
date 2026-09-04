@@ -8,7 +8,6 @@
  */
 
 import { readFileSync } from 'node:fs';
-import { createHash } from 'node:crypto';
 import { getActiveBrowserConfig, resolveFontFamily } from '../config/browser-config.js';
 
 export interface FontVerticalMetrics {
@@ -83,10 +82,6 @@ export function fontVerticalMetrics(filePath: string): FontVerticalMetrics {
   };
   cache.set(filePath, metrics);
   return metrics;
-}
-
-export function fontMetricsKey(filePath: string): string {
-  return createHash('sha1').update(filePath).digest('hex').slice(0, 12);
 }
 
 /**
