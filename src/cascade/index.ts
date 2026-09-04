@@ -8,5 +8,6 @@
 export * from './media.js';
 export * from './selector.js';
 export * from './stylesheet.js';
+export * from './supports.js';
 export * from './ua.js';
 export * from './phases/media-queries.js';

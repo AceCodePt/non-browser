@@ -78,7 +78,7 @@ export function loadTolerances(path: string): Tolerances {
     maxPx: numValue(measureTextRaw, 'maxPx', CHARTER_DEFAULTS.layers.measureText.maxPx),
   };
   const computedStyle: ComputedStyleTolerance = {
-    mode: computedStyleRaw.mode === 'exact' ? 'exact' : 'exact',
+    mode: 'exact',
   };
   const rect: RectTolerance = {
     maxPx: numValue(rectRaw, 'maxPx', CHARTER_DEFAULTS.layers.rect.maxPx),
