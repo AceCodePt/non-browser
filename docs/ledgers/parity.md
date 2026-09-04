@@ -7,9 +7,9 @@ charter (§2, §9, §10), and `tolerances.json`.
 
 ## Method
 
-`npm run verify` (and each `npm run verify:*` script) renders every corpus
-fixture with the engine and collects the same quantities from headless Chrome
-151 (Playwright) as the oracle:
+`npm run verify:all` — the full gate (`npm run verify` is its fast subset) —
+renders every corpus fixture with the engine and collects the same quantities
+from headless Chrome 151 (Playwright) as the oracle:
 
 - layer-1 `measureText` — shaped advance per string (engine Canvas interface vs
   Chrome `ctx.measureText`), mean ≤ 0.01px, no string > 0.5px.

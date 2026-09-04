@@ -14,6 +14,9 @@ npm install
 npm run verify        # engine vs real Chrome, four layers, sub-pixel tolerances
 ```
 
+`npm run verify:extra` runs the daemon-driven task-acceptance gates the default
+gate excludes (currently `verify:paint-fallback`).
+
 ## At a glance (every number below is reproduced by a `verify:<feature>` script; `npm run verify:all` runs the full gate)
 
 | Quantity | Result | What it means |
