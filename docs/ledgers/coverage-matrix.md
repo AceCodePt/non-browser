@@ -67,28 +67,38 @@ archive-audit cross-reference already asserts this for the non-landed archives
 
 ## Deferred / not in v1 (explicit absence)
 
-Charter §11 — *Deferred / Not in v1* records these; each is cross-referenced to
-the archive-audit classification so a reader can see the evidence:
+Charter §11 — *Deferred / Not in v1* records these as a machine-checked table
+(`scripts/check-charter.mjs` fails on drift); each row below mirrors the charter
+row and adds the archive-audit classification so a reader can see the evidence.
+Surfaces previously listed here as EMPTY/never-landed are now claimed by §11
+matrix rows with corpus tokens and are no longer deferred — per-element opacity
+(§11 `opacity`, `corpus/opacity`), box-shadow/text-shadow (§11 `box-shadow`/
+`text-shadow`, `corpus/box-shadow`), calc()/min()/max()/clamp() (§11
+value-functions rows, `corpus/calc`), custom properties/var() (§11
+custom-properties rows, `corpus/custom-properties`), @supports declaration
+conditions (§11 `@supports` rows, `corpus/supports`), @container container
+queries (§11 `@container` row, `corpus/media-queries`), and the
+collapsing-borders model (landed via `tables-border-collapse`).
 
-| Absent surface | Status | Archive-audit classification | Owner / successor |
+| Absent surface | Charter status | Archive-audit classification | Evidence |
 | --- | --- | --- | --- |
-| url() raster backgrounds (image decode) | parsed + serialized, never painted (chartered-out) | explicit disposition, `docs/ledgers/backgrounds.md` | `corpus/backgrounds/url-unsupported` pins the contract |
-| per-element opacity (box-level compositing) | EMPTY archive | `opacity-compositing` EMPTY | `tasks/opacity-subtree-compositing` |
-| box-shadow / text-shadow | EMPTY archive | `box-shadow-paint` EMPTY | `tasks/shadow-paint` |
-| tables layout (border-collapse: collapse box model) | separate-borders model implemented (charter §11 tables row, `corpus/tables/`, `docs/ledgers/tables.md`); collapse is the follow-on | `tables-layout` PARTIAL (display parsing + UA defaults) — executed by the tables-layout slice | `tables-border-collapse` |
-| calc()/min()/max()/clamp() | never landed | not an archived task | `tasks/calc-values` |
-| custom properties / var() | EMPTY archive | `cascade-custom-props` EMPTY | none |
-| cascade layers / !important | EMPTY archive | `cascade-layers-important` EMPTY | none |
-| @import / @font-face / @keyframes | at-rules skipped | `parse-stylesheets` PARTIAL | none |
-| @supports | declaration conditions + not/and/or, parse-time evaluation | `supports-at-rule` EXECUTED | `docs/ledgers/supports.md` |
-| @container container queries | declared typed gap | `cascade-media-queries` EXECUTED, gap in ledger | `docs/ledgers/media-queries.md` |
+| url() raster backgrounds (image decode) | chartered-out — declared in the §11 `background-layers` row, parsed + serialized, never painted | explicit disposition, `docs/ledgers/backgrounds.md` | `corpus/backgrounds/url-unsupported` pins the contract |
+| tables collapsing-borders model (`border-collapse`) | declared-divergence | `tables-layout` PARTIAL → landed via `tables-border-collapse` | `corpus/tables-collapse/`, `docs/ledgers/tables.md` |
+| Cascade layers / !important (`@layer`) | absent | `cascade-layers-important` EMPTY | none |
+| @import / @font-face / @keyframes (`@import`) | absent | `parse-stylesheets` PARTIAL | none |
+| @supports selector() / font-tech() / font-format() conditions (`font-tech(`) | absent | `supports-at-rule` EXECUTED (declaration conditions + not/and/or) | `docs/ledgers/supports.md` |
+| @container `block-size`/`size` containment | declared-divergence | `cascade-media-queries` EXECUTED, gap in ledger | `docs/ledgers/media-queries.md` |
+| Legacy HTML elements and legacy CSS (`marquee`) | absent | modern-compat legacy-removal policy (not an archived task) | `docs/ledgers/legacy-removal.md`; typed gaps on `corpus/legacy-removal/legacy-elements` |
 
 The table CSS 2.1 §17 properties (border-collapse, border-spacing, caption-side,
 table-layout, empty-cells) previously had no layout effect; the tables-layout
 slice landed the separate-borders model (auto/fixed layout, anonymous boxes,
 spanning, captions, border-spacing, empty-cells) with corpus/tables/ and a
-charter §11 row. `border-collapse: collapse` remains unclaimed — the follow-on
-`tables-border-collapse` slice owns it.
+charter §11 row. `border-collapse: collapse` then landed via
+`tables-border-collapse` (corpus/tables-collapse/) — it stays listed above as a
+`declared-divergence` because the charter records the exact width-accounting
+behavior it reproduces (Blink merges the hidden winner yet lays the cell against
+the neighbor's width) as a corpus-gated, ledger-documented claim.
 
 ## Agreement with archive-audit.md
 
@@ -98,23 +108,36 @@ charter §11 row. `border-collapse: collapse` remains unclaimed — the follow-o
   pseudo-elements-content → `content`; cascade-media-queries → `@media`;
   layout-grid (+ the grid corpora) → the grid rows; paint-text → `color`,
   `font-size`, `line-height`, `text-decoration`.
-- Every EMPTY/PARTIAL archive is recorded deferred above with the audit's exact
-  classification (box-shadow-paint, opacity-compositing, tables-layout,
-  cascade-custom-props, cascade-layers-important,
-  parse-stylesheets, text-font-fallback's non-local machinery is instead covered
-  by cross-family/firefox-track as the audit notes). The paint-shapes outline
+- Every EMPTY/PARTIAL archive is either recorded deferred above with the audit's
+  exact classification (cascade-layers-important, parse-stylesheets) or — where
+  its owning task later landed — claimed by a §11 matrix row with its corpus
+  token: opacity-compositing → `opacity` (corpus/opacity),
+  box-shadow-paint → `box-shadow`/`text-shadow` (corpus/box-shadow),
+  cascade-custom-props → the custom-properties rows (corpus/custom-properties),
+  tables-layout → the tables rows (corpus/tables, corpus/tables-collapse); the
+  calc()/min()/max()/clamp() surface is claimed by the value-functions rows
+  (corpus/calc) and @supports by the @supports rows (corpus/supports).
+  `text-font-fallback`'s non-local machinery is instead covered by
+  cross-family/firefox-track as the audit notes. The paint-shapes outline
   portion left the deferral list when its owning task landed (charter §11 row
   `outline`, docs/ledgers/outline.md). No EMPTY archive is claimed
   as implemented, and no implemented feature is left without a row or a deferral.
 
 ## Verification
 
-- `node scripts/check-charter.mjs` → **exit 0** after the amendment (all 53
-  rows well-formed; every `Implemented: yes` token found in `src/**/*.ts`; every
-  `Tested` corpus dir exists and a fixture under it exercises the token).
+- `node scripts/check-charter.mjs` → **exit 0** after this amendment (105 §11
+  data rows well-formed — the count check-charter prints at HEAD; every
+  `Implemented: yes` token found in `src/**/*.ts`; every `Tested` corpus dir
+  exists and a fixture under it exercises the token; the 6 Deferred rows
+  enforced — `absent` tokens absent from src, `declared-divergence` tokens
+  present with a cited `docs/ledgers/*.md` doc).
 - Enforcement seam proven live, not assumed: injecting a row with a token absent
   from `src/`, a nonexistent corpus dir, or a real corpus dir whose fixtures
   don't exercise the token each made check-charter exit 1; the injected rows were
+  then reverted. The Deferred enforcement was likewise proven live at this
+  amendment: flipping the `border-collapse` row to `absent` (its token is
+  present in src) and flipping the `@import` row to `declared-divergence` (its
+  token is absent from src) each made check-charter exit 1; both flips were
   then reverted. The seam now covers the newly claimed surface, so a fixture that
   stops exercising a claimed property (or a corpus dir that disappears) fails
   loudly instead of narrowing the matrix silently.

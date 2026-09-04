@@ -20,10 +20,12 @@ fixture with the engine and collects the same quantities from headless Chrome
   (`tolerances.json` v2 — see `text-mask.md`).
 
 All four-layer spine fixture numbers below are the latest recorded run
-(2026-08-14, node 26.7.0 / icu 78.3, Chrome 151.0.7922.34, Playwright); the
-full `npm run verify` (now including `verify:stress`) re-ran green on
-2026-08-17, exit 0, with the fresh four-layer and stress reports under
-`docs/reports/`.
+(2026-08-14, node 26.7.0 / icu 78.3, Chrome 151.0.7922.34, Playwright). The
+corpora backing the regenerated coverage-matrix deferred claims were re-run on
+2026-09-04 (node 26.8.1 / icu 78.3) — `npm run verify:calc`, `npm run
+verify:shadow`, `npm run verify:opacity`, `npm run verify:colors`, `npm run
+verify:custom-properties` — all exit 0, with the fresh reports under
+`docs/reports/` (rows in the Other Verifiers table below).
 
 ## Latest Run
 
@@ -52,6 +54,11 @@ measureText strings).
 | `verify:firefox` | PASS | screenshot 0 exceeding; engine breaker (through Pretext) max Δ 0.0000px per line |
 | `verify:inline-block` | PASS 4/4 | rect max Δ 0.029px, screenshot ≤ 0.66% exceeding (badge backgrounds compared strictly, text under the tier) |
 | `verify:layout-{flexbox,grid,floats,positioning}`, `verify:paint-text`, `verify:firefox`, `verify:report` | PASS | rect max Δ 0.0000px, non-text screenshot 0 exceeding everywhere; text compared under the tier (0 exceeding on non-text, text under `layers.screenshot.text`) |
+| `verify:calc` (2026-09-04) | PASS 7/7 | `corpus/calc` — rect max Δ 0.0000px, screenshot 0 exceeding non-text (0 text pixels), computedStyle 0 mismatches |
+| `verify:shadow` (2026-09-04) | PASS 9/9 | `corpus/box-shadow` — rect max Δ 0.0000px, computedStyle 0 mismatches; screenshot non-text 0.44% exceeding on the worst fixture (strict band), text under the tier |
+| `verify:opacity` (2026-09-04) | PASS 5/5 | `corpus/opacity` — rect max Δ 0.0000px, computedStyle 0 mismatches, screenshot 0 exceeding non-text |
+| `verify:colors` (2026-09-04) | PASS 4/4 | `corpus/colors` — rect max Δ 0.0000px, computedStyle 0 mismatches; screenshot ≤ 0.41% exceeding non-text on the worst fixture (strict band), text under the tier |
+| `verify:custom-properties` (2026-09-04) | PASS 5/5 | `corpus/custom-properties` — rect max Δ 0.0000px, computedStyle 0 mismatches; screenshot ≤ 0.17% exceeding non-text on the worst fixture (strict band), text under the tier |
 
 `check-charter`: PASS — charter ratified, runtime within pin.
 
@@ -89,18 +96,23 @@ the fix history on this branch.
 
 ## Known Gaps (typed, trend toward zero)
 
-Two fixtures currently declare a typed `expected.<layer>: { result:'fail',
-reason, sunset }` gap (single per-layer form per improvement-plan §4). Every gap
-carries its owner (reason) and expiry (sunset) as data in the fixture; the
-verify scripts assert each still diverges, so a declaration can only move toward
-zero by closing (flipping to `pass`) — never by silent removal. Current count: 2
-declarations (`measure-corpus/known-gaps` retired once its last two entries —
-proportional-font tabs and Arabic joining-script letter-spacing — were
-reclassified into the pass corpus, closing 7 → 0).
+Two fixtures currently declare typed `expected.<layer>: { result:'fail', reason,
+sunset }` gaps (single per-layer form per improvement-plan §4) — **4
+declarations** in total, matching the `check-charter` census (it prints "4 typed
+gap declaration(s)" at this HEAD): `corpus/legacy-removal/legacy-elements`
+declares `computedStyle` + `rect` + `screenshot`, and
+`corpus/harness-tolerances/regression-divergence` declares `screenshot`.
+Every gap carries its owner (reason) and expiry (sunset) as data in the fixture;
+the verify scripts assert each still diverges, so a declaration can only move
+toward zero by closing (flipping to `pass`) — never by silent removal.
+`media-queries/container-gap` flipped to `pass` when container layout landed (its
+former `computedStyle` gap declaration is retired).
 
 | Fixture | Layer | Reason (summary) | Sunset |
 | --- | --- | --- | --- |
-| `media-queries/container-gap` | computedStyle | engine parses `@container` but layout never applies it (no container sizing); Chrome resolves the 400px container and paints `#child` red (see `media-queries.md`) | when layout resolves container sizes (`container-type`/`container-name` plumbing lands) |
+| `legacy-removal/legacy-elements` | computedStyle | engine renders deprecated elements as generic block boxes while Chrome applies its UA stylesheet (center text-align, tt inline+monospace, dir/menu list padding) — intentional by design (modern-compat policy) | permanent by design |
+| `legacy-removal/legacy-elements` | rect | legacy elements stack as 400px-wide blocks in the engine vs Chrome's mixed inline/block flow with centering and list padding — intentional by design | permanent by design |
+| `legacy-removal/legacy-elements` | screenshot | the whole layout differs (7 stacked blocks vs Chrome's mixed flow), non-text pixels exceed the ≤1% band — intentional by design | permanent by design |
 | `harness-tolerances/regression-divergence` | screenshot | deliberate 48x24px divergence proving the screenshot gate fails as designed (regression self-test, not an engine gap) | permanent — retire only when the screenshot layer gains a fixture-free divergence-injection check |
 
 Gap count over runs: 3 (as of 2026-08-14) before the coverage-matrix-sweep

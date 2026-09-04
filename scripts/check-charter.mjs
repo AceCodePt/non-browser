@@ -13,6 +13,12 @@
  * either `'pass'` or a typed gap declaration `{ result:'fail', reason, sunset }`,
  * and a gap without a non-empty `reason` or `sunset` fails the check. Exit 0 =
  * charter in force and corpus gap schema clean.
+ *
+ * Also enforces the charter §11 coverage matrix and its *Deferred / Not in v1*
+ * table (the no-silent-absence contract): matrix rows' Implemented/Tested
+ * claims must hold against src + corpus, and each Deferred row's
+ * `absent`/`declared-divergence` status must match whether its token appears in
+ * the engine source (comments stripped) and cites its ledger doc.
  */
 
 import { readFileSync, readdirSync, statSync } from 'node:fs';
@@ -164,6 +170,58 @@ function tokenInSource(token) {
   return false;
 }
 
+// The matrix check above matches raw source text, so a token in a comment
+// counts as present there. The Deferred absence check needs the code-only view:
+// a comment naming a skipped at-rule (e.g. `@import` in the stylesheet header)
+// is documentation of an absence, not a landing — treating it as code would
+// make every `absent` row impossible to satisfy.
+function stripComments(code) {
+  let out = '';
+  let i = 0;
+  const n = code.length;
+  let inStr = null;
+  while (i < n) {
+    const c = code[i];
+    if (inStr) {
+      out += c;
+      if (c === '\\' && i + 1 < n) {
+        out += code[i + 1];
+        i += 2;
+        continue;
+      }
+      if (c === inStr) inStr = null;
+      i++;
+      continue;
+    }
+    if (c === '"' || c === "'" || c === '`') {
+      inStr = c;
+      out += c;
+      i++;
+      continue;
+    }
+    if (c === '/' && code[i + 1] === '/') {
+      while (i < n && code[i] !== '\n') i++;
+      continue;
+    }
+    if (c === '/' && code[i + 1] === '*') {
+      i += 2;
+      while (i < n && !(code[i] === '*' && code[i + 1] === '/')) i++;
+      i += 2;
+      continue;
+    }
+    out += c;
+    i++;
+  }
+  return out;
+}
+
+function tokenInSourceCode(token) {
+  for (const p of walkTsFiles(SRC_DIR)) {
+    if (stripComments(readFileSync(p, 'utf8')).includes(token)) return true;
+  }
+  return false;
+}
+
 function tokenInCorpusDir(corpusDir, token) {
   const root = resolve(corpusDir);
   if (!statSync(root, { throwIfNoEntry: false })?.isDirectory()) return null;
@@ -175,6 +233,7 @@ function tokenInCorpusDir(corpusDir, token) {
 
 const matrixMarker = /^##\s+11\.\s+Coverage Matrix/m;
 const matrixLines = [];
+let matrixRowCount = 0;
 {
   const lines = charter.split('\n');
   const start = lines.findIndex((l) => matrixMarker.test(l));
@@ -182,7 +241,7 @@ const matrixLines = [];
     fail('charter.md missing: coverage matrix (§11)');
   } else {
     let i = start + 1;
-    while (i < lines.length && !/^##\s/.test(lines[i])) {
+    while (i < lines.length && !/^#{2,}\s/.test(lines[i])) {
       const t = lines[i].trim();
       if (t.startsWith('|')) matrixLines.push(lines[i]);
       i++;
@@ -192,6 +251,7 @@ const matrixLines = [];
       fail('coverage matrix (§11) missing its Feature|Property|Implemented|Tested|Token header row');
     } else {
       const rows = matrixLines.slice(headerIdx + 1).filter((l) => !/^\|\s*:?-{2,}/.test(l.trim()));
+      matrixRowCount = rows.length;
       if (rows.length === 0) {
         fail('coverage matrix (§11) has no data rows');
       }
@@ -226,8 +286,75 @@ const matrixLines = [];
   }
 }
 
+// --- deferred / not-in-v1 table (charter §11) ---
+// Enforce the no-silent-absence contract the prose section documents:
+//   - `absent`: the row's token must NOT appear in the engine source
+//     (comments stripped — a comment naming a skipped at-rule is not an
+//     implementation), so a silent landing of the surface fails loudly;
+//   - `declared-divergence`: the token MUST appear in the engine source AND
+//     the row must cite its ledger doc (`docs/ledgers/*.md`), so a documented
+//     divergence cannot lose its citation or its implementation.
+// The first backtick token in the Absent surface column is the check token.
+const deferredMarker = /^###\s+Deferred\s*\/\s*Not in v1/m;
+let deferredRowCount = 0;
+{
+  const lines = charter.split('\n');
+  const start = lines.findIndex((l) => deferredMarker.test(l));
+  if (start === -1) {
+    fail('charter.md missing: Deferred / Not in v1 (§11) section');
+  } else {
+    const deferredLines = [];
+    let i = start + 1;
+    while (i < lines.length && !/^#{2,}\s/.test(lines[i])) {
+      const t = lines[i].trim();
+      if (t.startsWith('|')) deferredLines.push(lines[i]);
+      i++;
+    }
+    const headerIdx = deferredLines.findIndex((l) => /^\|\s*Absent surface\s*\|\s*Status\s*\|\s*Evidence/m.test(l));
+    if (headerIdx === -1) {
+      fail('Deferred / Not in v1 (§11) missing its Absent surface|Status|Evidence header row');
+    } else {
+      const rows = deferredLines.slice(headerIdx + 1).filter((l) => !/^\|\s*:?-{2,}/.test(l.trim()));
+      deferredRowCount = rows.length;
+      if (rows.length === 0) {
+        fail('Deferred / Not in v1 (§11) has no data rows');
+      }
+      for (const row of rows) {
+        const cells = row
+          .split('|')
+          .map((c) => c.trim())
+          .filter((c, idx) => !(idx === 0 && c === '') && !(idx === row.split('|').length - 1 && c === ''));
+        const [surface, status, evidence] = cells;
+        if (cells.length !== 3) {
+          fail(`Deferred row malformed (${cells.length} cells, want 3): ${row.trim()}`);
+          continue;
+        }
+        const token = surface.match(/`([^`]+)`/)?.[1];
+        if (!token) {
+          fail(`Deferred row '${surface}': Absent surface must name its check token in backticks`);
+          continue;
+        }
+        if (status !== 'absent' && status !== 'declared-divergence') {
+          fail(`Deferred row '${surface}': Status must be 'absent' or 'declared-divergence' (got '${status}')`);
+          continue;
+        }
+        if (status === 'absent') {
+          if (tokenInSourceCode(token)) {
+            fail(`Deferred row '${surface}': Status=absent but token '${token}' found in src/**/*.ts (comments stripped)`);
+          }
+        } else if (!tokenInSourceCode(token)) {
+          fail(`Deferred row '${surface}': Status=declared-divergence but token '${token}' not found in src/**/*.ts (comments stripped)`);
+        } else if (!/docs\/ledgers\/[a-z0-9-]+\.md/.test(evidence)) {
+          fail(`Deferred row '${surface}': Status=declared-divergence must cite a docs/ledgers/*.md doc in Evidence`);
+        }
+      }
+    }
+  }
+}
+
 if (failed) {
   console.error('check-charter: FAIL — see errors above');
   process.exit(1);
 }
+console.log(`check-charter: coverage matrix — ${matrixRowCount} data rows, ${deferredRowCount} deferred rows enforced`);
 console.log('check-charter: PASS — charter ratified and runtime within pin');

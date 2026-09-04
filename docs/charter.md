@@ -226,36 +226,16 @@ Every implemented-but-unclaimed property above the row set is claimed with its
 own row and corpus token. The following absent surfaces are recorded **here** so
 omission is explicit, never silent (the coverage-matrix reconcile ledger,
 `docs/ledgers/coverage-matrix.md`, cross-references each to the archive-audit
-classification):
+classification). `scripts/check-charter.mjs` parses this table and fails on
+drift: an `absent` row's token must not appear in the engine source, and a
+`declared-divergence` row's token must appear there and cite its ledger doc.
+The first backtick token in the Absent surface column is the check token.
 
-- **tables layout, collapsing-borders model** — implemented (charter §11
-  tables row, `corpus/tables-collapse/`, `docs/ledgers/tables.md`): both
-  border models coexist; the separate model owns the tables-layout corpus.
-  Chrome's exact width accounting for `hidden` borders in multi-row conflict
-  tables (Blink merges the hidden winner yet lays the cell against the
-  neighbor's width through column stretching) is reproduced and corpus-gated.
-- **Cascade layers / !important** — intentionally **not supported by design**
-  (not a gap): `!important` and `@layer` are excluded from the compatibility
-  surface because they override the normal cascade in ways a deterministic
-  renderer must not silently accept; `cascade-layers-important` archived EMPTY.
-- **@import / @font-face / @keyframes** — not parsed; `parse-stylesheets` is
-  archived PARTIAL (the stylesheet parser explicitly skips these at-rules).
-- **@supports selector() / font-tech() / font-format() conditions** — not
-  evaluated (general-enclosed → false). Declaration conditions over features
-  Chrome supports but this engine lacks (e.g. filter) evaluate false
-  here: the engine cannot truthfully honor the queried declaration, so such
-  blocks drop where Chrome applies them (see docs/ledgers/supports.md and the
-  decl-conditions fixture note).
-- **@container `size` / `block-size` containment** — `container-type: inline-size`
-  is implemented (charter row above); the full `size` and `block-size`
-  containment values parse but establish no container in v1, documented in
-  `docs/ledgers/media-queries.md`.
-- **Legacy HTML elements and legacy CSS** — intentionally **not supported by
-  design** (not a gap): deprecated elements (`center`, `tt`, `dir`, `menu`,
-  `font`, `marquee`, `big`, `blink`, `strike`, `plaintext`, `xmp`, `nobr`),
-  presentational attributes, and vendor-prefixed properties get no UA rules and
-  render as generic boxes. The engine intentionally diverges from Chrome here —
-  a declared typed gap on `corpus/legacy-removal` — and the exclusions are
-  stated in the README and `docs/ledgers/legacy-removal.md`. Modern-only syntax
-  is the target; legacy comma `rgb()/rgba()` remains supported (current usage,
-  not treated as legacy).
+| Absent surface | Status | Evidence |
+| --- | --- | --- |
+| tables collapsing-borders model (`border-collapse`) | declared-divergence | implemented (charter §11 tables row, `corpus/tables-collapse/`, `docs/ledgers/tables.md`): both border models coexist; the separate model owns the tables-layout corpus. Chrome's exact width accounting for `hidden` borders in multi-row conflict tables (Blink merges the hidden winner yet lays the cell against the neighbor's width through column stretching) is reproduced and corpus-gated. |
+| Cascade layers / !important (`@layer`) | absent | intentionally **not supported by design** (not a gap): `!important` and `@layer` are excluded from the compatibility surface because they override the normal cascade in ways a deterministic renderer must not silently accept; `cascade-layers-important` archived EMPTY. |
+| @import / @font-face / @keyframes (`@import`) | absent | not parsed; `parse-stylesheets` is archived PARTIAL (the stylesheet parser explicitly skips these at-rules). |
+| @supports selector() / font-tech() / font-format() conditions (`font-tech(`) | absent | not evaluated (general-enclosed → false). Declaration conditions over features Chrome supports but this engine lacks (e.g. filter) evaluate false here: the engine cannot truthfully honor the queried declaration, so such blocks drop where Chrome applies them (see `docs/ledgers/supports.md` and the decl-conditions fixture note). |
+| @container `block-size`/`size` containment | declared-divergence | `container-type: inline-size` is implemented (charter row above); the full `size` and `block-size` containment values parse but establish no container in v1 (`docs/ledgers/media-queries.md`). |
+| Legacy HTML elements and legacy CSS (`marquee`) | absent | intentionally **not supported by design** (not a gap): deprecated elements (`center`, `tt`, `dir`, `menu`, `font`, `marquee`, `big`, `blink`, `strike`, `plaintext`, `xmp`, `nobr`), presentational attributes, and vendor-prefixed properties get no UA rules and render as generic boxes. The engine intentionally diverges from Chrome here — a declared typed gap on `corpus/legacy-removal` — and the exclusions are stated in the README and `docs/ledgers/legacy-removal.md`. Modern-only syntax is the target; legacy comma `rgb()/rgba()` remains supported (current usage, not treated as legacy). |
