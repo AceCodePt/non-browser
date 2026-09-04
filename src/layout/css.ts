@@ -1713,10 +1713,6 @@ interface Defaults {
   listStyleTypeDefault?: ListStyleType;
   /** inherited list-style-position (default outside, matching the CSS initial). */
   listStylePositionDefault?: 'inside' | 'outside';
-  paddingDefault?: Length;
-  verticalAlignDefault?: VerticalAlign;
-  /** UA-level default text-align (e.g. th gets 'center'); wins over inherited. */
-  textAlignDefault?: TextAlign;
   textAlignInherited?: TextAlign;
   textAlignComputedInherited?: string;
   /** the inherited computed text-align keyword ('start'/'end'/'left'/'right'/
@@ -1730,12 +1726,9 @@ interface Defaults {
   textIndentHangingInherited?: boolean;
   textIndentEachLineInherited?: boolean;
   wordSpacingInherited?: Length;
-  borderCollapseDefault?: 'separate' | 'collapse';
   /** inherited border-collapse (the property inherits; a table's UA default
    * wins over it). */
   borderCollapseInherited?: 'separate' | 'collapse';
-  borderSpacingDefault?: number;
-  borderSpacingVDefault?: number;
   tableLayoutDefault?: 'auto' | 'fixed';
   captionSideDefault?: 'top' | 'bottom';
   /** inherited `direction` (direction inherits; initial ltr). */
@@ -2095,7 +2088,7 @@ export function makeStyle(rawDecls: Declaration[], defaults: Defaults): Computed
 
   const sideLens = (shorthand: string): Record<Side, Length> => {
     const sh = findDecl(decls, shorthand);
-    const dflt = shorthand === 'padding' ? defaults.paddingDefault ?? pxLength(0) : pxLength(0);
+    const dflt = pxLength(0);
     const top = len(`${shorthand}-top`, dflt);
     const right = len(`${shorthand}-right`, dflt);
     const bottom = len(`${shorthand}-bottom`, dflt);
@@ -2155,7 +2148,7 @@ export function makeStyle(rawDecls: Declaration[], defaults: Defaults): Computed
   // longhands feed the physical sides per `direction` — the inline-start side
   // holds the list gutter), falling back to the UA per-tag default. ---
   const padding = (() => {
-    const dflt = defaults.paddingDefault ?? pxLength(0);
+    const dflt = pxLength(0);
     const side = (s: Side, inlineLogical: string): Length => {
       const d = findDeclAny(decls, [`padding-${s}`, inlineLogical, 'padding']);
       if (!d) return dflt;
@@ -2308,8 +2301,8 @@ export function makeStyle(rawDecls: Declaration[], defaults: Defaults): Computed
   const verticalAlign: VerticalAlign = verticalAlignDecl
     ? (VERTICAL_ALIGN_KEYWORDS.includes(verticalAlignDecl.value.trim() as VerticalAlign)
         ? (verticalAlignDecl.value.trim() as VerticalAlign)
-        : (defaults.verticalAlignDefault ?? 'baseline'))
-    : (defaults.verticalAlignDefault ?? 'baseline');
+        : 'baseline')
+    : 'baseline';
 
   const textAlignDecl = findDecl(decls, 'text-align');
   // The inherited text-align is its *computed* keyword (start/end/left/...),
@@ -2335,23 +2328,24 @@ export function makeStyle(rawDecls: Declaration[], defaults: Defaults): Computed
   // through as the used value for line stretching.
   const textAlign: TextAlign = textAlignDecl
     ? usedFromKeyword(textAlignDecl.value.trim())
-    : (defaults.textAlignDefault ?? usedFromKeyword(textAlignInheritedKeyword));
+    : usedFromKeyword(textAlignInheritedKeyword);
   // Computed value matches Chrome's `getComputedStyle().textAlign` verbatim:
   // the authored keyword (start/end kept logical under LTR), else the inherited
-  // computed value, else the UA default, else the initial `start` (CSS Text 3
-  // changed the initial from CSS2.1's `left`; Chrome's computed initial is
-  // 'start' while the used value stays left in LTR).
+  // computed value, else the initial `start` (CSS Text 3 changed the initial
+  // from CSS2.1's `left`; Chrome's computed initial is 'start' while the used
+  // value stays left in LTR).
   const textAlignComputed: string = textAlignDecl
     ? textAlignDecl.value.trim()
-    : defaults.textAlignDefault ?? defaults.textAlignComputedInherited ?? 'start';
+    : defaults.textAlignComputedInherited ?? 'start';
 
   const borderCollapseDecl = findDecl(decls, 'border-collapse');
-  // border-collapse inherits (CSS 2.1 §17.6); the UA table rule's `separate`
-  // default (tagDefaults) beats inheritance, matching Blink's html.css.
+  // border-collapse inherits (CSS 2.1 §17.6), but a declared value wins: the UA
+  // table rule's `separate` (cascade/ua.ts) beats an inherited collapse,
+  // matching Blink's html.css. An invalid value is dropped like Chrome's
+  // parse-error recovery, falling through to the inherited value.
+  const bcValue = borderCollapseDecl?.value.trim();
   const borderCollapse: 'separate' | 'collapse' =
-    borderCollapseDecl && borderCollapseDecl.value.trim() === 'collapse'
-      ? 'collapse'
-      : (defaults.borderCollapseDefault ?? defaults.borderCollapseInherited ?? 'separate');
+    bcValue === 'collapse' ? 'collapse' : bcValue === 'separate' ? 'separate' : (defaults.borderCollapseInherited ?? 'separate');
   const borderSpacingDecl = findDecl(decls, 'border-spacing');
   const parseSpacing = (): { h: number; v: number } => {
     if (borderSpacingDecl) {
@@ -2365,7 +2359,7 @@ export function makeStyle(rawDecls: Declaration[], defaults: Defaults): Computed
       const v = pxOf(parts[1]) || h;
       return { h, v };
     }
-    return { h: defaults.borderSpacingDefault ?? 0, v: defaults.borderSpacingVDefault ?? defaults.borderSpacingDefault ?? 0 };
+    return { h: 0, v: 0 };
   };
   const spacing = parseSpacing();
   const captionSideDecl = findDecl(decls, 'caption-side');

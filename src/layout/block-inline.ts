@@ -28,7 +28,7 @@ import type { Box } from './types.js';
 import type { PseudoDecls } from '../cascade/phases/media-queries.js';
 import { resolveUaDecls } from '../cascade/ua.js';
 import { controlBorderBoxWidth, controlContentHeight, controlKindFor, controlLabel, themePaintSpec, type ControlKind, type ControlPaintSpec } from './controls.js';
-import { layoutTableContent, setTableAvailableInlineSize, tableBorderBoxWidth, tablePreferredWidth } from './tables.js';
+import { layoutTableContent, tableBorderBoxWidth, tablePreferredWidth } from './tables.js';
 
 export { FloatManager };
 export type { FormattingContext };
@@ -50,8 +50,6 @@ export interface StyleDefaults {
   fontStyle?: 'normal' | 'italic';
   listStyleType?: ListStyleType;
   listStylePosition?: 'inside' | 'outside';
-  padding?: import('./css.js').Length;
-  verticalAlign?: VerticalAlign;
   textAlign?: TextAlign;
   textAlignInherited?: TextAlign;
   textAlignComputedInherited?: string;
@@ -63,9 +61,6 @@ export interface StyleDefaults {
   textIndentHangingInherited?: boolean;
   textIndentEachLineInherited?: boolean;
   wordSpacingInherited?: import('./css.js').Length;
-  borderCollapse?: 'separate' | 'collapse';
-  borderSpacing?: number;
-  borderSpacingV?: number;
   /** inherited empty-cells (css-tables-3: the property inherits). */
   emptyCells?: 'show' | 'hide';
   /** inherited border-collapse (the property inherits; a table's UA default
@@ -101,34 +96,6 @@ function defaultDisplayFor(tag: string): DisplayValue {
   return INLINE_TAGS.has(t) ? 'inline' : 'block';
 }
 
-/**
- * UA-level style defaults for a table-related tag (Chrome's html.css table
- * rules): `table` gets border-collapse:separate + border-spacing:2px, `tr` gets
- * vertical-align:middle, `td`/`th` get 1px padding and vertical-align:middle,
- * and `th` gets text-align:center.
- */
-function tableDefaultsFor(tag: string): Partial<StyleDefaults> {
-  const t = tag.toLowerCase();
-  if (t === 'table') {
-    return { borderCollapse: 'separate', borderSpacing: 2, borderSpacingV: 2 };
-  }
-  if (t === 'caption') {
-    return { textAlign: 'center' };
-  }
-  if (t === 'thead' || t === 'tbody' || t === 'tfoot' || t === 'tr') {
-    return { verticalAlign: 'middle' };
-  }
-  if (t === 'td' || t === 'th') {
-    return {
-      padding: pxLength(1),
-      verticalAlign: 'middle',
-      fontWeight: t === 'th' ? 700 : undefined,
-      textAlign: t === 'th' ? 'center' : undefined,
-    };
-  }
-  return {};
-}
-
 export function resolveStyles(
   root: P5Element,
   defaults: StyleDefaults,
@@ -156,24 +123,17 @@ export function resolveStyles(
     if (cascade && cascade.length > 0) base.push(...cascade);
     if (inline.length > 0) base.push(...inline);
     const decls = base.reverse();
-    const tagDefaults = tableDefaultsFor(el.nodeName);
     const style = makeStyle(decls, {
       ...d,
       display: defaultDisplayFor(el.nodeName),
-      paddingDefault: tagDefaults.padding,
-      verticalAlignDefault: tagDefaults.verticalAlign,
-      textAlignDefault: tagDefaults.textAlign,
       textAlignInherited: d.textAlignInherited ?? d.textAlign ?? 'left',
       textAlignComputedInherited: d.textAlignComputedInherited,
       textAlignInheritedKeyword: d.textAlignInheritedKeyword ?? 'start',
       directionInherited: d.direction,
       whiteSpaceDefault: d.whiteSpace ?? 'normal',
       emptyCellsDefault: d.emptyCells,
-      borderCollapseDefault: tagDefaults.borderCollapse,
       borderCollapseInherited: d.borderCollapseInherited,
-      borderSpacingDefault: tagDefaults.borderSpacing,
-      borderSpacingVDefault: tagDefaults.borderSpacingV,
-      fontWeightDefault: tagDefaults.fontWeight ?? d.fontWeight,
+      fontWeightDefault: d.fontWeight,
       fontStyleDefault: d.fontStyle,
       listStyleTypeDefault: d.listStyleType,
       listStylePositionDefault: d.listStylePosition,
@@ -1037,6 +997,10 @@ export function layoutElementBox(
   forcedHeight?: number,
   scrollport?: Box,
   textIndentPx?: number,
+  /** The containing-block available inline size, for the table branch: hoisted
+   * content and fixed-layout percentage widths resolve against it (threaded,
+   * not a module global). */
+  availableInlineSize?: number,
 ): LayoutNode {
   const children: LayoutNode[] = [];
   let lines: LineBox[] = [];
@@ -1279,6 +1243,7 @@ export function layoutElementBox(
       // above).
       contentX: collapseTableBox ? borderX : contentX,
       contentWidth: collapseTableBox ? borderWidth : contentWidth,
+      availableInlineSize: availableInlineSize ?? contentWidth,
       borderY,
       key: ownKey,
       paints,
@@ -1593,7 +1558,6 @@ function layoutBlock(
     // min/max sums; percentages resolve against the containing block. The
     // available width also feeds the fixed-layout pass and hoisted content.
     const available = Math.max(0, contentWidth - marginL - marginR);
-    setTableAvailableInlineSize(available);
     borderBoxWidth = tableBorderBoxWidth(el, style, styles, available, viewport);
     const maxWpx = resolveLength(style.maxWidth, contentWidth, viewport);
     const minWpx = resolveLength(style.minWidth, contentWidth, viewport);
@@ -1714,6 +1678,7 @@ function layoutBlock(
     undefined,
     ctx.scrollport,
     resolveLength(style.textIndent, contentWidth, viewport) ?? 0,
+    style.display === 'table' ? Math.max(0, contentWidth - marginL - marginR) : undefined,
   );
   node.marginTop = marginT;
   node.marginBottom = node.escapedMarginBottom === undefined ? marginB : node.escapedMarginBottom;
@@ -2492,6 +2457,9 @@ interface AtomicPiece {
   marginBottom: number;
   borderWidth: number;
   contentWidth: number;
+  /** The piece's containing-block available inline size (inline-table hoisted
+   * content and fixed-layout percentages resolve against it). */
+  availableInlineSize: number;
 }
 
 export type InlinePiece =
@@ -2685,7 +2653,7 @@ function atomicBoxSize(
   styles: Map<P5Element, ComputedStyle>,
   refWidth: number,
   viewport: Viewport | undefined,
-): { borderWidth: number; contentWidth: number } {
+): { borderWidth: number; contentWidth: number; availableInlineSize: number } {
   const padL = resolveLength(style.padding.left, refWidth, viewport) ?? 0;
   const padR = resolveLength(style.padding.right, refWidth, viewport) ?? 0;
   const bL = style.borderWidth.left;
@@ -2693,6 +2661,7 @@ function atomicBoxSize(
   const padBorderH = padL + padR + bL + bR;
   const specW = resolveLength(style.width, refWidth, viewport);
   let borderWidth: number;
+  let availableInlineSize = Math.max(0, refWidth);
   if (specW !== null) {
     borderWidth = style.boxSizing === 'border-box' ? specW : specW + padBorderH;
   } else {
@@ -2707,7 +2676,8 @@ function atomicBoxSize(
       // block-level one (available = the containing block minus its margins).
       const mL = resolveLength(style.margin.left, refWidth, viewport) ?? 0;
       const mR = resolveLength(style.margin.right, refWidth, viewport) ?? 0;
-      borderWidth = tableBorderBoxWidth(el, style, styles, Math.max(0, refWidth - mL - mR), viewport);
+      availableInlineSize = Math.max(0, refWidth - mL - mR);
+      borderWidth = tableBorderBoxWidth(el, style, styles, availableInlineSize, viewport);
     } else {
       const pieces = buildPieces(el, style, styles, refWidth, viewport, style.whiteSpace);
       const sizes = piecesContentSizes(pieces, style, style.whiteSpace, resolveLength(style.wordSpacing, refWidth, viewport) ?? 0);
@@ -2730,7 +2700,7 @@ function atomicBoxSize(
   const maxW = resolveLength(style.maxWidth, refWidth, viewport);
   if (minW !== null) borderWidth = Math.max(borderWidth, minW);
   if (maxW !== null) borderWidth = Math.min(borderWidth, maxW);
-  return { borderWidth, contentWidth: Math.max(0, borderWidth - padBorderH) };
+  return { borderWidth, contentWidth: Math.max(0, borderWidth - padBorderH), availableInlineSize };
 }
 
 export function piecesContentSizes(pieces: InlinePiece[], style: ComputedStyle, ws: WhiteSpaceValue, wordSpacing = 0): { min: number; max: number } {
@@ -2837,7 +2807,7 @@ export function buildPieces(
       const mR = resolveLength(s.margin.right, refWidth, viewport) ?? 0;
       const mT = resolveLength(s.margin.top, refWidth, viewport) ?? 0;
       const mB = resolveLength(s.margin.bottom, refWidth, viewport) ?? 0;
-      const { borderWidth, contentWidth } = atomicBoxSize(childEl, s, styles, refWidth, viewport);
+      const { borderWidth, contentWidth, availableInlineSize } = atomicBoxSize(childEl, s, styles, refWidth, viewport);
       out.push({
         kind: 'atomic',
         el: childEl,
@@ -2848,6 +2818,7 @@ export function buildPieces(
         marginBottom: mB,
         borderWidth,
         contentWidth,
+        availableInlineSize,
       });
       continue;
     }
@@ -2999,6 +2970,10 @@ function measureAtomic(
     paints,
     nextOrder,
     viewport,
+    undefined,
+    undefined,
+    undefined,
+    piece.availableInlineSize,
   );
   paints.length = snapshot;
   return { piece, borderHeight: node.borderHeight, baselineOffset: atomicBaselineOffset(node, s) };
@@ -3397,6 +3372,10 @@ function layoutInlineContent(
           paints,
           nextOrder,
           viewport,
+          undefined,
+          undefined,
+          undefined,
+          a.piece.availableInlineSize,
         );
         children.push(node);
       }

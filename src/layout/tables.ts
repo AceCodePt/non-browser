@@ -1469,14 +1469,6 @@ function distributeExcessBlockSize(
 // ---------------------------------------------------------------------------
 // Layout
 
-/**
- * Available inline size seen by the most recent tableBorderBoxWidth call:
- * hoisted HTML-table content lays out at the table's containing-block width,
- * not the table's shrink-to-fit width. Layout is single-threaded recursion —
- * the same module-state pattern as block-inline's stacks.
- */
-let lastAvailableInlineSize = 0;
-
 export interface TableLayoutInput {
   el: P5Element;
   style: ComputedStyle;
@@ -1488,6 +1480,12 @@ export interface TableLayoutInput {
    * the strut halves. */
   contentX: number;
   contentWidth: number;
+  /** The table's containing-block available inline size (its containing block
+   * minus its margins): hoisted HTML-table content lays out at this width, not
+   * the table's shrink-to-fit width, and fixed-layout percentage widths
+   * resolve against it. Threaded from the caller (layoutBlock), never a
+   * module global. */
+  availableInlineSize: number;
   /** The element's border-box top: hoisted content, then captions, then box. */
   borderY: number;
   /** The table box's own paint key (collapsed border segments paint under it). */
@@ -1521,7 +1519,7 @@ interface CellMeasure {
 }
 
 export function layoutTableContent(input: TableLayoutInput): TableLayoutResult {
-  const { el, style, styles, borderX, contentX, contentWidth, borderY, paints, nextOrder, viewport } = input;
+  const { el, style, styles, borderX, contentX, contentWidth, availableInlineSize, borderY, paints, nextOrder, viewport } = input;
   const isFixedLayout = style.tableLayout === 'fixed';
   const isCollapsed = style.borderCollapse === 'collapse';
   const bT = style.borderWidth.top;
@@ -1553,7 +1551,7 @@ export function layoutTableContent(input: TableLayoutInput): TableLayoutResult {
   if (children.hoisted.length > 0) {
     const hoistedEl = syntheticElement(el, children.hoisted);
     const hoistedStyle = anonymousStyle(style, 'block');
-    const width = Math.max(0, lastAvailableInlineSize);
+    const width = Math.max(0, availableInlineSize);
     const node = layoutElementBox(
       hoistedEl,
       hoistedStyle,
@@ -1627,7 +1625,7 @@ export function layoutTableContent(input: TableLayoutInput): TableLayoutResult {
 
   let colWidths: number[];
   if (isFixedLayout) {
-    if (resolveLength(style.width, lastAvailableInlineSize, viewport) !== null) {
+    if (resolveLength(style.width, availableInlineSize, viewport) !== null) {
       colWidths = distributeFixedSize(assignable, columns);
     } else {
       colWidths = columns.map((c) => c.max);
@@ -2038,11 +2036,6 @@ function pushCollapsedBorderSegments(
       for (let r = cell.startRow; r < cell.startRow + rs; r++) pushVertical(r, cell.startCol, 'left');
     }
   }
-}
-
-/** Set the containing-block width hoisted HTML-table content lays out at. */
-export function setTableAvailableInlineSize(width: number): void {
-  lastAvailableInlineSize = width;
 }
 
 /** A cell is empty (empty-cells:hide) when it has no element children and no

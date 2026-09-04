@@ -3,10 +3,11 @@
 Owning module: `src/layout/tables.ts` (formatting context, column model,
 row/block sizing, captions, collapsed borders); wiring in
 `src/layout/block-inline.ts` (`layoutElementBox` table branch, `layoutBlock`
-table width + auto-margin centering, inline-table atomics, `tableDefaultsFor`);
-corpus `corpus/tables/` (separate model) and `corpus/tables-collapse/`
-(collapsed model); verify `scripts/verify-tables.mjs` and
-`scripts/verify-tables-collapse.mjs`.
+table width + auto-margin centering, inline-table atomics); table-tag UA
+defaults in `src/cascade/ua.ts` (border-collapse/spacing, cell padding + valign,
+th weight/align, caption align); corpus `corpus/tables/` (separate model) and
+`corpus/tables-collapse/` (collapsed model); verify `scripts/verify-tables.mjs`
+and `scripts/verify-tables-collapse.mjs`.
 
 ## Scope
 
