@@ -1679,6 +1679,11 @@ export function layoutTableContent(input: TableLayoutInput): TableLayoutResult {
       const s = cell.style;
       const insets = collapse?.insets.get(cell) ?? { top: 0, right: 0, bottom: 0, left: 0 };
       const cellStyle = isCollapsed ? collapseCellStyle(s) : s;
+      // The content box sits inside the cell's own borders (separate) or the
+      // half-border insets (collapse — the cellStyle borders are zeroed).
+      const effB = isCollapsed
+        ? insets
+        : { top: s.borderWidth.top, right: s.borderWidth.right, bottom: s.borderWidth.bottom, left: s.borderWidth.left };
       const snapshot = paints.length;
       const node = layoutElementBox(
         cell.el,
@@ -1687,9 +1692,9 @@ export function layoutTableContent(input: TableLayoutInput): TableLayoutResult {
         0,
         0,
         w,
-        insets.left + (resolveLength(s.padding.left, w, viewport) ?? 0),
-        insets.top + (resolveLength(s.padding.top, w, viewport) ?? 0),
-        Math.max(0, w - insets.left - insets.right - (resolveLength(s.padding.left, w, viewport) ?? 0) - (resolveLength(s.padding.right, w, viewport) ?? 0)),
+        effB.left + (resolveLength(s.padding.left, w, viewport) ?? 0),
+        effB.top + (resolveLength(s.padding.top, w, viewport) ?? 0),
+        Math.max(0, w - effB.left - effB.right - (resolveLength(s.padding.left, w, viewport) ?? 0) - (resolveLength(s.padding.right, w, viewport) ?? 0)),
         styles,
         paints,
         nextOrder,
@@ -1701,7 +1706,7 @@ export function layoutTableContent(input: TableLayoutInput): TableLayoutResult {
       // feeds the row raw, probed: td height:80 with 1px padding yields an
       // 80px row) and the specified height itself.
       const specH = resolveLength(s.height, w, viewport);
-      const pbv = borderPaddingBlock(cellStyle, w, viewport) + insets.top + insets.bottom;
+      const pbv = borderPaddingBlock(cellStyle, w, viewport) + (isCollapsed ? insets.top + insets.bottom : 0);
       measures.set(cell, {
         contentHeight: node.contentHeight + pbv,
         cssHeight: specH,
@@ -1816,9 +1821,13 @@ export function layoutTableContent(input: TableLayoutInput): TableLayoutResult {
         const bBc = s.borderWidth.bottom;
         // Collapse cells carry no own borders; the half-insets take their
         // place in the vertical-align algebra (the insets bound the content
-        // box, and the shared border paints centered on the cell edge).
+        // box, and the shared border paints centered on the cell edge). The
+        // separate model keeps the cell's own border widths as the inset.
         const vTopBorder = isCollapsed ? insets.top : bTc;
         const vBottomBorder = isCollapsed ? insets.bottom : bBc;
+        const effL = isCollapsed ? insets.left : bLc;
+        const effR = isCollapsed ? insets.right : s.borderWidth.right;
+        const effT = vTopBorder;
         const padTc = resolveLength(s.padding.top, w, viewport) ?? 0;
         const padBc = resolveLength(s.padding.bottom, w, viewport) ?? 0;
         let contentShift = 0;
@@ -1840,9 +1849,9 @@ export function layoutTableContent(input: TableLayoutInput): TableLayoutResult {
           x,
           rowY,
           w,
-          x + insets.left + (resolveLength(s.padding.left, w, viewport) ?? 0),
-          rowY + insets.top + padTc + contentShift,
-          Math.max(0, w - insets.left - insets.right - (resolveLength(s.padding.left, w, viewport) ?? 0) - (resolveLength(s.padding.right, w, viewport) ?? 0)),
+          x + effL + (resolveLength(s.padding.left, w, viewport) ?? 0),
+          rowY + effT + padTc + contentShift,
+          Math.max(0, w - effL - effR - (resolveLength(s.padding.left, w, viewport) ?? 0) - (resolveLength(s.padding.right, w, viewport) ?? 0)),
           styles,
           paints,
           nextOrder,

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-03T17:35:51.800Z",
+  "generatedAt": "2026-09-04T05:38:16.674Z",
   "fixtures": {
     "aspect-ratio/block-surface": {
       "sha256": "5d45b9b9ab2c56340a50cd75f738e67c96b080949461231c0e352638dd3b3567",
@@ -2547,6 +2547,48 @@
       "width": 420,
       "height": 200,
       "rectCount": 7,
+      "computedStyleCount": 0
+    },
+    "tables-collapse/basic-2x2": {
+      "sha256": "ea30726bb90b692127057aaf0d051d997f8d9cfa57a76a9c476f3f1a73ef0e30",
+      "width": 360,
+      "height": 180,
+      "rectCount": 5,
+      "computedStyleCount": 2
+    },
+    "tables-collapse/coexistence": {
+      "sha256": "57a449720748f1fddd2f7c1afff5fd250a32ad8de6c8cc4f245de29b274b3302",
+      "width": 400,
+      "height": 260,
+      "rectCount": 6,
+      "computedStyleCount": 4
+    },
+    "tables-collapse/conflict-resolution": {
+      "sha256": "f74102c8b62a2b62bd4dfab0c991eaf5d2ea020ebfc8ff7fb47e9e15f667ca36",
+      "width": 420,
+      "height": 180,
+      "rectCount": 7,
+      "computedStyleCount": 0
+    },
+    "tables-collapse/hidden-borders": {
+      "sha256": "8f2952cc1a7e22634a9e49d3bc01cc2daa7562421e4c90572c38717fcfaa7e6a",
+      "width": 360,
+      "height": 200,
+      "rectCount": 5,
+      "computedStyleCount": 0
+    },
+    "tables-collapse/row-col-borders": {
+      "sha256": "e6b686e29aef68537e238a4dc57f069abcf11f27ad75ed1dc5b2bcaf2072198f",
+      "width": 380,
+      "height": 240,
+      "rectCount": 9,
+      "computedStyleCount": 0
+    },
+    "tables-collapse/table-border": {
+      "sha256": "775779f028ead731be20be1cb3c36a97c3b3c5487b264c91528f12cc70964490",
+      "width": 380,
+      "height": 260,
+      "rectCount": 5,
       "computedStyleCount": 0
     },
     "text-align/center-paragraph": {
