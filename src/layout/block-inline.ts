@@ -849,6 +849,18 @@ function collectRects(rootNode: LayoutNode, floats: FloatManager, out: Record<st
   }
 }
 
+/**
+ * css-display-3 §2.3: the used display values that produce a block-level box
+ * (block, list-item, table, and the block-level grid/flex containers). The
+ * inline walkers below skip such children — each generates its own line box
+ * instead of contributing this element's inline content. The inline variants
+ * (inline-block/inline-table/inline-grid/inline-flex) must stay out of this
+ * set: they remain part of the inline flow.
+ */
+export function isBlockLevel(display: DisplayValue): boolean {
+  return display === 'block' || display === 'list-item' || display === 'grid' || display === 'flex' || display === 'table';
+}
+
 function hasInlineContent(el: P5Element, styles: Map<P5Element, ComputedStyle>): boolean {
   const self = styles.get(el);
   // Generated ::before/::after text counts as inline content (an empty string
@@ -869,7 +881,9 @@ function hasInlineContent(el: P5Element, styles: Map<P5Element, ComputedStyle>):
         if (hasInlineContent(child as P5Element, styles)) return true;
         continue;
       }
-      if (s.display === 'block' || s.display === 'list-item' || s.display === 'grid' || s.display === 'flex' || s.display === 'table' || s.float !== 'none') continue;
+      // A float is out of flow (CSS 2.1 §9.5) and laid out by the float
+      // machinery, so like a block-level box it cannot be inline content here.
+      if (isBlockLevel(s.display) || s.float !== 'none') continue;
       return true;
     }
   }
@@ -885,7 +899,10 @@ function hasBlockLevelChild(el: P5Element, styles: Map<P5Element, ComputedStyle>
       if (hasBlockLevelChild(child as P5Element, styles)) return true;
       continue;
     }
-    if (s.display === 'block' || s.display === 'list-item' || s.display === 'grid' || s.display === 'flex' || s.display === 'table' || s.float !== 'none' || s.position !== 'static') {
+    // Out-of-flow children (float, position) are placed by the block branch's
+    // float/positioned machinery, so either forces the block path here — the
+    // inline-content branch keys off this pair.
+    if (isBlockLevel(s.display) || s.float !== 'none' || s.position !== 'static') {
       return true;
     }
   }
@@ -934,7 +951,10 @@ export function collectInlineText(el: P5Element, styles: Map<P5Element, Computed
       out += applyTextTransform((child as P5Text).value, transform);
     } else if (child.nodeName !== '#comment') {
       const s = styles.get(child as P5Element);
-      if (s && (s.display === 'block' || s.display === 'list-item' || s.display === 'grid' || s.display === 'flex' || s.display === 'table')) continue;
+      // Deliberately no float/position skip here: this walker aggregates the
+      // element's inline text for widths and the pure-text shortcut, so
+      // out-of-flow children keep contributing their text.
+      if (s && isBlockLevel(s.display)) continue;
       out += collectInlineText(child as P5Element, styles);
     }
   }
@@ -2774,7 +2794,9 @@ export function buildPieces(
       out.push({ kind: 'wbr' });
       continue;
     }
-    if (s.display === 'block' || s.display === 'list-item' || s.display === 'grid' || s.display === 'flex' || s.display === 'table' || s.float !== 'none' || s.position !== 'static') {
+    // Floated/positioned children are laid out by the block machinery, not the
+    // line box — contrast collectInlineText, which keeps their text for widths.
+    if (isBlockLevel(s.display) || s.float !== 'none' || s.position !== 'static') {
       continue;
     }
     if (isInlineBoxStyle(s)) {
