@@ -11,9 +11,9 @@
  * or → and → not with parenthesized grouping.
  */
 
-import { parseColorOrNull, parseLength, parseShadowList, parseTemplateAreas, parseTrackList } from '../layout/css.js';
+import { parseColorOrNull, parseLength, parseShadowList, parseTemplateAreas, parseTrackList, splitTopLevel } from '../layout/css.js';
 import { parseMathValue } from '../layout/calc.js';
-import { splitTopLevel, tokenize, type Token } from './media.js';
+import { splitTopLevel as splitTopLevelTokens, tokenize, type Token } from './media.js';
 
 export type SupportsCondition =
   | { type: 'decl'; property: string; value: string }
@@ -22,26 +22,6 @@ export type SupportsCondition =
   | { type: 'and'; children: SupportsCondition[] }
   | { type: 'or'; children: SupportsCondition[] };
 
-/** Split a declaration value on top-level whitespace (paren-aware), like
- * css.ts's private splitTopLevel — shorthand validators need component parts. */
-function splitValue(value: string): string[] {
-  const out: string[] = [];
-  let depth = 0;
-  let cur = '';
-  for (const c of value) {
-    if (c === '(') depth++;
-    else if (c === ')') depth--;
-    if (/\s/.test(c) && depth === 0) {
-      if (cur) out.push(cur);
-      cur = '';
-    } else {
-      cur += c;
-    }
-  }
-  if (cur) out.push(cur);
-  return out;
-}
-
 /** css-conditional-3 §4.1: or binds loosest, then and, then unary not. */
 export function parseSupportsCondition(prelude: string): SupportsCondition | null {
   return parseSupportsOr(tokenize(prelude));
@@ -49,7 +29,7 @@ export function parseSupportsCondition(prelude: string): SupportsCondition | nul
 
 function parseSupportsOr(tokens: Token[]): SupportsCondition | null {
   if (tokens.length === 0) return null;
-  const parts = splitTopLevel(tokens, 'or');
+  const parts = splitTopLevelTokens(tokens, 'or');
   if (parts.length > 1) {
     const children: SupportsCondition[] = [];
     for (const p of parts) {
@@ -63,7 +43,7 @@ function parseSupportsOr(tokens: Token[]): SupportsCondition | null {
 }
 
 function parseSupportsAnd(tokens: Token[]): SupportsCondition | null {
-  const parts = splitTopLevel(tokens, 'and');
+  const parts = splitTopLevelTokens(tokens, 'and');
   if (parts.length > 1) {
     const children: SupportsCondition[] = [];
     for (const p of parts) {
@@ -106,7 +86,7 @@ function parseSupportsOperand(tokens: Token[]): SupportsCondition | null {
 }
 
 function hasTopLevelLogical(tokens: Token[]): boolean {
-  return splitTopLevel(tokens, 'and').length > 1 || splitTopLevel(tokens, 'or').length > 1;
+  return splitTopLevelTokens(tokens, 'and').length > 1 || splitTopLevelTokens(tokens, 'or').length > 1;
 }
 
 // --- declaration evaluation against the engine's real surface ---
@@ -131,11 +111,11 @@ const keywordSet = (...words: string[]) => (v: string): boolean => words.include
 
 const BLACK: { r: number; g: number; b: number; a: number } = { r: 0, g: 0, b: 0, a: 1 };
 
-const lengthList = (v: string): boolean => splitValue(v).every(isLength);
+const lengthList = (v: string): boolean => splitTopLevel(v).every(isLength);
 
 /** 1-4 length parts, the box-shorthand grammar margin/padding/inset take. */
 const boxLengths = (v: string): boolean => {
-  const parts = splitValue(v);
+  const parts = splitTopLevel(v);
   return parts.length >= 1 && parts.length <= 4 && parts.every(isLength);
 };
 
@@ -174,7 +154,7 @@ const PROP_GROUPS: PropGroup[] = [
   {
     props: ['border'],
     validate: (v) => {
-      const parts = splitValue(v);
+      const parts = splitTopLevel(v);
       return (
         parts.length >= 1 &&
         parts.length <= 3 &&
@@ -191,7 +171,7 @@ const PROP_GROUPS: PropGroup[] = [
   },
   {
     props: ['border-style', ...eachSideProps('border-', '-style')],
-    validate: (v) => splitValue(v).every((p) => BORDER_STYLES.includes(p.toLowerCase())),
+    validate: (v) => splitTopLevel(v).every((p) => BORDER_STYLES.includes(p.toLowerCase())),
   },
   {
     props: ['border-radius'],
@@ -230,7 +210,7 @@ const PROP_GROUPS: PropGroup[] = [
   {
     props: ['font'],
     validate: (v) => {
-      const first = splitValue(v)[0] ?? '';
+      const first = splitTopLevel(v)[0] ?? '';
       return isLength(first) || FONT_SIZE_KEYWORDS.includes(first.toLowerCase()) || FONT_WEIGHTS.includes(first.toLowerCase());
     },
   },
@@ -259,7 +239,7 @@ const PROP_GROUPS: PropGroup[] = [
   {
     props: ['list-style'],
     validate: (v) => {
-      const parts = splitValue(v);
+      const parts = splitTopLevel(v);
       return parts.length >= 1 && parts.length <= 3;
     },
   },
@@ -271,7 +251,7 @@ const PROP_GROUPS: PropGroup[] = [
   {
     props: ['flex'],
     validate: (v) => {
-      const parts = splitValue(v);
+      const parts = splitTopLevel(v);
       return parts.length >= 1 && parts.length <= 3 && parts.some((p) => isNumber(p) || p.toLowerCase() === 'auto');
     },
   },
@@ -305,7 +285,7 @@ const PROP_GROUPS: PropGroup[] = [
   { props: ['empty-cells'], validate: keywordSet('show', 'hide') },
   {
     props: ['text-decoration', 'text-decoration-line'],
-    validate: (v) => splitValue(v).every((p) => ['none', 'underline', 'overline', 'line-through'].includes(p.toLowerCase())),
+    validate: (v) => splitTopLevel(v).every((p) => ['none', 'underline', 'overline', 'line-through'].includes(p.toLowerCase())),
   },
   { props: ['box-shadow', 'text-shadow'], validate: (v) => parseShadowList(v, BLACK) !== null },
   {
@@ -324,7 +304,7 @@ const PROP_GROUPS: PropGroup[] = [
   {
     props: ['outline'],
     validate: (v) => {
-      const parts = splitValue(v);
+      const parts = splitTopLevel(v);
       if (parts.length < 1 || parts.length > 3) return false;
       let width = false;
       let style = false;

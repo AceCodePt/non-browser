@@ -21,6 +21,7 @@ import type { Declaration } from '../layout/css.js';
 import { parseDeclarationBlock } from '../layout/css.js';
 import { parseMediaQueryList, type MediaQuery, type Token, tokenize, splitTopLevel, hasTopLevelOperator } from './media.js';
 import { evaluateSupportsCondition, parseSupportsCondition } from './supports.js';
+import { splitSelectorList } from './selector.js';
 
 export interface ContainerGroup {
   name: string | null;
@@ -124,46 +125,6 @@ function readIdentEnd(s: string, start: number): number {
   let i = start;
   while (i < s.length && /[A-Za-z0-9_-]/.test(s[i])) i++;
   return i;
-}
-
-/**
- * Split a selector prelude on top-level commas. Tracks parens (so
- * `:not(.a, .b)` stays intact), brackets (attribute selectors), and quoted
- * strings, and returns the raw substrings — so `::before`, `:hover`, and
- * attribute commas survive untouched.
- */
-function splitSelectors(prelude: string): string[] {
-  const out: string[] = [];
-  let depth = 0;
-  let bracket = 0;
-  let quote: string | null = null;
-  let cur = '';
-  for (let i = 0; i < prelude.length; i++) {
-    const c = prelude[i];
-    if (quote) {
-      cur += c;
-      if (c === '\\' && i + 1 < prelude.length) cur += prelude[++i];
-      else if (c === quote) quote = null;
-      continue;
-    }
-    if (c === '"' || c === "'") {
-      quote = c;
-      cur += c;
-      continue;
-    }
-    if (c === '(') depth++;
-    else if (c === ')') depth--;
-    else if (c === '[') bracket++;
-    else if (c === ']') bracket--;
-    if (c === ',' && depth === 0 && bracket === 0) {
-      out.push(cur.trim());
-      cur = '';
-      continue;
-    }
-    cur += c;
-  }
-  out.push(cur.trim());
-  return out.filter(Boolean);
 }
 
 export function parseContainerPrelude(prelude: string): ContainerGroup {
@@ -340,7 +301,7 @@ function parseTopLevel(css: string, inherited: ParseState, rules: CascadeRule[],
     }
     const open = css.indexOf('{', i);
     if (open < 0) break;
-    const selectors = splitSelectors(css.slice(i, open));
+    const selectors = splitSelectorList(css.slice(i, open)).filter(Boolean);
     const block = readBalancedBlock(css, open);
     i = findClosingBrace(css, open) + 1;
     if (selectors.length === 0) continue;

@@ -18,7 +18,10 @@ import type { P5Element } from '../../layout/types.js';
 import type { Declaration } from '../../layout/css.js';
 import { parseStylesheet, parseContainerPrelude, type CascadeRule, type ContainerGroup } from '../stylesheet.js';
 import {
+  compareAspectRatio,
+  compareNum,
   evaluateMediaQueryList,
+  parseRatio,
   type MediaCondition,
   type MediaEnvironment,
   type MediaQuery,
@@ -96,56 +99,14 @@ function evaluateContainerFeature(
   if (!Number.isFinite(value)) return false;
   switch (cond.name) {
     case 'width':
-      return compare(container.width, value, cond.op);
+      return compareNum(container.width, value, cond.op);
     case 'height':
-      return compare(container.height, value, cond.op);
+      return compareNum(container.height, value, cond.op);
     case 'aspect-ratio': {
-      const parts = cond.value!.split('/');
-      const a = parseFloat(parts[0]);
-      const b = parts.length > 1 ? parseFloat(parts[1]) : 1;
-      if (!Number.isFinite(a) || !Number.isFinite(b) || b === 0) return false;
-      const lhs = container.width * b;
-      const rhs = container.height * a;
-      switch (cond.op) {
-        case 'eq':
-          return lhs === rhs;
-        case 'min':
-          return lhs >= rhs;
-        case 'max':
-          return lhs <= rhs;
-        case 'lt':
-          return lhs < rhs;
-        case 'gt':
-          return lhs > rhs;
-        case 'lte':
-          return lhs <= rhs;
-        case 'gte':
-          return lhs >= rhs;
-        default:
-          return false;
-      }
+      const r = parseRatio(cond.value!);
+      if (!r) return false;
+      return compareAspectRatio(container.width, container.height, r[0], r[1], cond.op);
     }
-    default:
-      return false;
-  }
-}
-
-function compare(current: number, target: number, op: MediaOp): boolean {
-  switch (op) {
-    case 'eq':
-      return current === target;
-    case 'min':
-      return current >= target;
-    case 'max':
-      return current <= target;
-    case 'lt':
-      return current < target;
-    case 'gt':
-      return current > target;
-    case 'lte':
-      return current <= target;
-    case 'gte':
-      return current >= target;
     default:
       return false;
   }

@@ -418,30 +418,26 @@ class SelectorParser {
   }
 }
 
-/** Parse a comma-separated selector list (each entry a full complex selector). */
-export function parseSelectorList(input: string): ComplexSelector[] | null {
-  const out: ComplexSelector[] = [];
+/** Split a selector prelude on top-level commas. Tracks parens (so
+ * `:not(.a, .b)` stays intact), brackets (attribute selectors), and quoted
+ * strings, and returns the trimmed raw substrings — so `::before`, `:hover`,
+ * and attribute commas survive untouched. Empty segments are kept (not
+ * filtered): the stylesheet parser drops them — a broken list still yields
+ * its valid parts, parsed individually later — while a functional-pseudo
+ * argument list must be fully valid, so an empty segment invalidates the
+ * whole selector. */
+export function splitSelectorList(prelude: string): string[] {
+  const out: string[] = [];
   let depth = 0;
-  let quote: string | null = null;
   let bracket = 0;
+  let quote: string | null = null;
   let cur = '';
-  const flush = (): boolean => {
-    const trimmed = cur.trim();
-    cur = '';
-    if (trimmed === '') return false;
-    const sel = parseSelector(trimmed);
-    if (!sel) return false;
-    out.push(sel);
-    return true;
-  };
-  for (let i = 0; i < input.length; i++) {
-    const c = input[i];
+  for (let i = 0; i < prelude.length; i++) {
+    const c = prelude[i];
     if (quote) {
       cur += c;
-      if (c === '\\' && i + 1 < input.length) {
-        cur += input[i + 1];
-        i++;
-      } else if (c === quote) quote = null;
+      if (c === '\\' && i + 1 < prelude.length) cur += prelude[++i];
+      else if (c === quote) quote = null;
       continue;
     }
     if (c === '"' || c === "'") {
@@ -449,17 +445,31 @@ export function parseSelectorList(input: string): ComplexSelector[] | null {
       cur += c;
       continue;
     }
-    if (c === '[') bracket++;
-    else if (c === ']') bracket--;
-    else if (c === '(') depth++;
+    if (c === '(') depth++;
     else if (c === ')') depth--;
+    else if (c === '[') bracket++;
+    else if (c === ']') bracket--;
     if (c === ',' && depth === 0 && bracket === 0) {
-      if (!flush()) return null;
+      out.push(cur.trim());
+      cur = '';
       continue;
     }
     cur += c;
   }
-  if (!flush()) return null;
+  out.push(cur.trim());
+  return out;
+}
+
+/** Parse a comma-separated selector list (each entry a full complex selector).
+ * An empty segment or any unparseable entry invalidates the whole list. */
+export function parseSelectorList(input: string): ComplexSelector[] | null {
+  const out: ComplexSelector[] = [];
+  for (const segment of splitSelectorList(input)) {
+    if (segment === '') return null;
+    const sel = parseSelector(segment);
+    if (!sel) return null;
+    out.push(sel);
+  }
   return out.length > 0 ? out : null;
 }
 
