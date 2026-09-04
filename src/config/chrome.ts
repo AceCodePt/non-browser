@@ -35,13 +35,14 @@ const repoFontsDir = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '
  * repo-vendored copy, registered RELATIVE to the repo root (`fonts/<file>`) so
  * the registered set carries no machine-specific absolute path and reproduces
  * on another machine checked out anywhere. Null when neither exists — callers
- * then omit the face and the fallback table handles its generic.
+ * then omit the face and the fallback table handles its generic. The safari
+ * config resolves its fixed-pitch face through this same authority.
  */
-function fontPath(envVar: string | undefined, repoFile: string): string | null {
+export function fontPath(envVar: string | undefined, repoFile: string): string | null {
   if (envVar) {
     const p = resolve(envVar);
     if (existsSync(p)) return p;
-    console.warn(`chrome-config: ${envVar} set but missing (${p}); falling back to repo copy`);
+    console.warn(`${envVar} set but missing (${p}); falling back to repo copy`);
   }
   return existsSync(join(repoFontsDir, repoFile)) ? `fonts/${repoFile}` : null;
 }
@@ -128,7 +129,6 @@ export const chromeConfig: BrowserConfig = {
     'Source Code Pro': ['Latn'],
     'Hack Nerd Font': ['Latn'],
     'Droid Sans Fallback': ['Hani'],
-    'Droid Sans Japanese': ['Hani'],
     'Droid Arabic Kufi': ['Arab'],
     'Droid Sans Hebrew': ['Hebr'],
     'Droid Sans Devanagari': ['Deva'],
