@@ -46,6 +46,18 @@ export class SkiaCanvas implements CanvasLike {
     return this.canvas.height;
   }
 
+  // Shared by the measurement and paint paths so the two cannot drift on how a
+  // run is measured.
+  private readonly measureWidth = (t: string, f: string): number => {
+    if (f !== this.ctx.font) this.ctx.font = f;
+    return this.ctx.measureText(t).width;
+  };
+
+  // GlobalFonts.has pays a native round-trip (~0.17ms); the family probe is
+  // memoized per font-registration epoch, so resolveFallbackRuns's per-grapheme
+  // hasFamily calls stop re-paying it.
+  private readonly hasFamily = (family: string): boolean => cachedFamilyHas(family, (f) => GlobalFonts.has(f));
+
   measureText(text: string, font: string): CanvasTextMetrics {
     // The width shim (tabs + script-run fallback) only runs on a cache miss;
     // repeated break-candidate re-measures hit the memo instead. A fresh object
@@ -54,22 +66,14 @@ export class SkiaCanvas implements CanvasLike {
       this.ctx.font = font;
       const m = this.ctx.measureText(text);
       const config = getActiveBrowserConfig();
-      const measure = (t: string, f: string): number => {
-        if (f !== this.ctx.font) this.ctx.font = f;
-        return this.ctx.measureText(t).width;
-      };
-      // GlobalFonts.has pays a native round-trip (~0.17ms); the family probe is
-      // memoized per font-registration epoch, so resolveFallbackRuns's
-      // per-grapheme hasFamily calls stop re-paying it.
-      const hasFamily = (family: string): boolean => cachedFamilyHas(family, (f) => GlobalFonts.has(f));
       // A tab-bearing string is measured by the tab shim (which applies the
       // per-glyph fallback to each non-tab segment), so the whole-string
       // script-run shim below only ever runs on tab-free text.
-      const tabbed = measureTextWithTabs(text, font, config, measure, hasFamily);
+      const tabbed = measureTextWithTabs(text, font, config, this.measureWidth, this.hasFamily);
       // Per-glyph script-run fallback (Chrome's fontconfig resolution), shared by
       // the engine's measureTextWidth and Pretext's measurement context. Returns
       // the plain single-face width when one registered face covers the string.
-      const shimmed = tabbed ?? measureTextWithFallback(text, font, config, measure, hasFamily);
+      const shimmed = tabbed ?? measureTextWithFallback(text, font, config, this.measureWidth, this.hasFamily);
       return {
         width: shimmed ?? m.width,
         actualBoundingBoxAscent: m.actualBoundingBoxAscent ?? 0,
@@ -140,11 +144,6 @@ export class SkiaCanvas implements CanvasLike {
   }
   drawText(text: string, x: number, baselineY: number, font: string, color: CanvasColor): void {
     const config = getActiveBrowserConfig();
-    const hasFamily = (family: string): boolean => cachedFamilyHas(family, (f) => GlobalFonts.has(f));
-    const measure = (t: string, f: string): number => {
-      if (f !== this.ctx.font) this.ctx.font = f;
-      return this.ctx.measureText(t).width;
-    };
     // Paint the same per-run faces the measurement shim resolves, each run at
     // its accumulated advance, so painted glyphs match the measured width (and
     // Chrome's per-glyph fallback) instead of one face painting the whole
@@ -153,9 +152,9 @@ export class SkiaCanvas implements CanvasLike {
     // without re-running shorthand parsing, script segmentation, or the native
     // per-run measures.
     const resolved = cachedResolvedRuns(font, text, () => {
-      const runs = resolveFallbackRuns(text, font, config, hasFamily);
+      const runs = resolveFallbackRuns(text, font, config, this.hasFamily);
       if (runs === null) return null;
-      return runs.map((run) => ({ ...run, width: measure(run.text, run.font) }));
+      return runs.map((run) => ({ ...run, width: this.measureWidth(run.text, run.font) }));
     });
     this.ctx.fillStyle = cssColor(color);
     if (resolved === null) {

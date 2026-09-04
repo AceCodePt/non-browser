@@ -125,6 +125,10 @@ export function installPretextMeasurement(canvas: CanvasLike): void {
   (globalThis as Record<PropertyKey, unknown>)[shimSymbol] = canvas;
 }
 
+/** A Segmenter is stateless, so one instance serves every call (matching the
+ * singletons at script-fallback.ts:122 and css.ts:2840-2841). */
+const graphemeSegmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+
 /**
  * Segment text into extended grapheme clusters via `Intl.Segmenter` (charter
  * §6). This is the segmentation primitive Pretext consumes at grapheme
@@ -132,9 +136,8 @@ export function installPretextMeasurement(canvas: CanvasLike): void {
  * `npm run verify:segmenter` (corpus/segmenter-icu/, ledger docs/ledgers/icu.md).
  */
 export function segmentGraphemes(text: string): string[] {
-  const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
   const out: string[] = [];
-  for (const s of segmenter.segment(text)) out.push(s.segment);
+  for (const s of graphemeSegmenter.segment(text)) out.push(s.segment);
   return out;
 }
 
