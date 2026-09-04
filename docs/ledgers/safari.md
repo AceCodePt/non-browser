@@ -59,6 +59,14 @@ measure — the probe fixtures must stay confirmed against the real oracle.)
 
 ## Platform status
 
+**Probe-only:** this track has no verification loop or corpus (unlike firefox's
+`verify-firefox.mjs` + `corpus/firefox-track/`); the safari config is exercised
+only through the cross-browser probe and the seam tests above, per charter §4,
+until the WebKit oracle is provisioned on macOS CI. The fallback-table rows in
+this ledger are hand-mirrors of `src/config/safari.ts` pending a sync check —
+see QA-13 in `docs/ledgers/quality-audit.md`; no separate verification machinery
+is built for this track.
+
 Playwright's WebKit build (its `webkit-2336` browser, the pin this repo records
 in `package-lock.json`) is built for Ubuntu 24.04 arm64 and requires glibc ≥
 2.35–2.38; this host is Oracle Linux 9 aarch64 with glibc 2.34, so

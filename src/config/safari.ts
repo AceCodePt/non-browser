@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { fontPath } from './chrome.js';
 import type { BrowserConfig, FontRegistration } from './browser-config.js';
 
 /**
@@ -30,9 +30,12 @@ const liberationMono: FontRegistration = {
 
 // WebKit's generic `monospace` resolves via fontconfig to this machine's
 // fixed-pitch face; register it so pre/code (and the safari mono fixture)
-// measure and paint with the same glyphs WebKit uses.
-const HACK_MONO = '/home/sagi/.local/share/fonts/HackNerdFont-Regular.ttf';
-const hasHackMono = existsSync(HACK_MONO);
+// measure and paint with the same glyphs WebKit uses. Resolution shares the
+// chrome config's fontPath authority (SAFARI_MONO_FONT override, else the
+// vendored copy) so no home directory is hard-coded; when absent the face is
+// omitted and the fallback table handles the generic.
+const HACK_MONO = fontPath(process.env.SAFARI_MONO_FONT, 'HackNerdFont-Regular.ttf');
+const hasHackMono = HACK_MONO !== null;
 
 export const safariConfig: BrowserConfig = {
   browser: 'safari',
