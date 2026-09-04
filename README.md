@@ -37,9 +37,10 @@ estimate. The last section tells you exactly what they do *not* prove.
 
 The engine's parity against Chrome is not claimed — it is measured on every
 `verify:all` run, per fixture, per layer, against live headless Chrome. The
-latest full run (2026-08-17) wrote a report per verify script — spine,
-sweep, cross-family, UA styles, and page-scale stress — covering every corpus
-fixture, and exited **0 (all green)**. Collapsed to one number per layer:
+latest full `verify:all` run (2026-09-04) wrote a report per verify script —
+spine, sweep, cross-family, UA styles, and page-scale stress, every script
+wired into the gate — covering every corpus fixture, and exited **0 (all
+green)**. Collapsed to one number per layer:
 
 | Layer | Fixtures | Result | Parity |
 | --- | --- | --- | --- |
@@ -60,9 +61,11 @@ for exact line-count breaking.** The caveats that keep the whole number off
 100% are the breaker divergence above (95%), `@container` `size`/`block-size`
 containment (inline-size is implemented; full two-axis containment is deferred),
 and the type-level arbitrary-HTML gap — parity is proven for what the corpus
-exercises. There is exactly one
-intentional `FAIL` in the run: the harness's own regression-divergence fixture,
-which must fail to prove the screenshot gate catches divergence.
+exercises. The only intentional `FAIL` declarations in the run are typed:
+`corpus/legacy-removal/legacy-elements` (computedStyle/rect/screenshot — the
+engine deliberately renders deprecated elements as generic boxes) and the
+harness's own regression-divergence fixture, which must fail to prove the
+screenshot gate catches divergence.
 
 ## Why no browser
 
@@ -224,7 +227,10 @@ reading:
   A property-coverage audit
   (`src/layout/property-coverage.ts`) reports which declared CSS properties the
   engine recognizes vs silently ignores, so unsupported properties can't slip
-  past unseen. Tables and image decoding are out of v1 (charter §3).
+  past unseen. Tables (both border models — `corpus/tables` and
+  `corpus/tables-collapse`) are implemented and corpus-verified; image decoding
+  and the other charter §3 out-of-scope surfaces (animation, SVG, canvas-API
+  output, DPR scaling) remain out of v1.
 - **The engine's shipped text layout is the Pretext breaker.** `layoutTextLines`
   breaks through `@chenglou/pretext` (`breakNextLine`) for every wrapping mode;
   the greedy wrapper survives only as the `CASCADE_BREAKER=greedy` fallback that
@@ -235,12 +241,15 @@ reading:
   font fallback; numbers reproduce where the same fonts resolve the same way.
   Font registration is `src/config/`; a machine-independent font bundle is open
   work.
-- **Two typed gaps remain by design** (each declared, asserted to still diverge,
-  on the record): the breaker's `long-word-default` line-count divergence, and a
-  fixture that deliberately diverges to prove the screenshot gate fails as
-  designed. Plus `@container` `size`/`block-size` containment (full two-axis
-  container sizing) is deferred — inline-size `@container` is implemented. None
-  are hidden.
+- **Four typed layer gaps remain by design**, each declared and asserted to
+  still diverge on the record (the census in `docs/ledgers/parity.md`):
+  `legacy-removal/legacy-elements` ×3 (computedStyle/rect/screenshot — the
+  engine renders deprecated elements as generic boxes by the modern-compat
+  policy) plus `harness-tolerances/regression-divergence` (the deliberate
+  screenshot-gate self-test). The breaker's `long-word-default` line-count
+  divergence is a separate typed axis, asserted by `verify:breaker`.
+  `@container` `size`/`block-size` containment (full two-axis container sizing)
+  is deferred — inline-size `@container` is implemented. None are hidden.
 
 ## Compatibility policy: the modern surface only
 
