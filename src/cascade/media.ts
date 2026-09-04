@@ -7,7 +7,9 @@
  * prefers-reduced-motion, resolution/dppx). There is no live browser surface.
  *
  * Supported grammar (the surface the media-queries corpus exercises):
- *   - media types `all` / `screen` / `print` (bare, or after `not` / `only`)
+ *   - media types `all` / `screen` (bare, or after `not` / `only`); `print`
+ *     is parsed but never matches — a headless screen renderer has no print
+ *     surface, so the evaluator recognizes only all/screen
  *   - feature queries `(feature)` and `(feature: value)`
  *   - min- and max- prefixed features, plus exact `(width: Npx)` /
  *     `(height: Npx)` matches
