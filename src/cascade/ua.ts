@@ -110,6 +110,17 @@ export const UA_STYLES: UaRule[] = [
   { selectors: ['sub'], declarations: decls({ 'vertical-align': 'sub', 'font-size': 'smaller' }) },
   { selectors: ['sup'], declarations: decls({ 'vertical-align': 'super', 'font-size': 'smaller' }) },
 
+  // Tables (Chrome html.css's table block, css-tables-3): the separated border
+  // model with 2px spacing on the table-root, middle vertical alignment and
+  // 1px padding on cells, bold centered th, centered caption text. A table
+  // nested in a collapsed table keeps these — the UA origin beats the
+  // inherited border-collapse.
+  { selectors: ['table'], declarations: decls({ 'border-collapse': 'separate', 'border-spacing': '2px' }) },
+  { selectors: ['caption'], declarations: decls({ 'text-align': 'center' }) },
+  { selectors: ['thead', 'tbody', 'tfoot', 'tr'], declarations: decls({ 'vertical-align': 'middle' }) },
+  { selectors: ['td', 'th'], declarations: decls({ padding: '1px', 'vertical-align': 'middle' }) },
+  { selectors: ['th'], declarations: decls({ 'font-weight': '700', 'text-align': 'center' }) },
+
   // fieldset/legend (Blink html.css): the 2px groove border resolves to
   // ThreeDFace (rgb(239,239,239) on this headless-Linux chrome), and the
   // legend's placement over the top border is the fieldset layout in

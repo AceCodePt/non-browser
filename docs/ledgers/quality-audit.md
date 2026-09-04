@@ -21,6 +21,16 @@ chain from repeating failed approaches or recursing forever.
 - **Baseline at gen-1 re-verification:** `npm run build` green (tsc, no
   errors); `check-charter` PASS (icu 78.3, node 26.8.1, 4 typed gap
   declarations, all with reason+sunset); working tree clean.
+- **Generation-2 (QA-01 fix task `qa01-break-tables-cycle`) landing:** the
+  side-channel and UA-defaults slices of QA-01 landed (2026-09-04, on this
+  branch): `setTableAvailableInlineSize`/`lastAvailableInlineSize` deleted and
+  the available inline size threaded explicitly through
+  `TableLayoutInput.availableInlineSize`; `tableDefaultsFor` deleted and the
+  table-tag UA rules moved to `cascade/ua.ts`. The block-inline⇄tables import
+  cycle itself is registered as the residual (extraction of `layoutElementBox`
+  + transitive deps is multi-window). Build green; check-charter PASS;
+  verify:tables / verify:tables-collapse / verify:ua-styles /
+  verify:text-level-ua all PASS at landing.
 - **Status vocabulary:** `open` / `fixed` / `disproven` / `retired` (≥10
   attempts, see protocol §5) / `registered` (recorded for a future generation).
 
@@ -28,7 +38,7 @@ chain from repeating failed approaches or recursing forever.
 
 | ID | Sev | Area | Finding | Evidence (gen-1 HEAD 3408a37) | Fix direction | Status | Attempts |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| QA-01 | high | arch | `block-inline.ts` ⇄ `tables.ts` runtime import cycle plus a side-channel global: tables.ts exports `setTableAvailableInlineSize` which block-inline sets as a side effect of width resolution; table UA defaults live in the layout monolith (`tableDefaultsFor`) while all other UA decls come from `cascade/ua.ts` (split-brain) | cycle persists: `block-inline.ts:31` ⇄ `tables.ts:49`; side-channel persists: `block-inline.ts:1596` → `tables.ts:2044`, module global `lastAvailableInlineSize` (`tables.ts:1478`) read at `tables.ts:1556,1630`; `tableDefaultsFor` still `block-inline.ts:110-130`; `cascade/ua.ts` has no table-tag decls | tables receives an injected width context/callback instead of importing the monolith; move table UA defaults into `cascade/ua.ts` | open — drifted-further (fix task `qa01-break-tables-cycle` created gen 1) | 0 |
+| QA-01 | high | arch | `block-inline.ts` ⇄ `tables.ts` runtime import cycle plus a side-channel global: tables.ts exports `setTableAvailableInlineSize` which block-inline sets as a side effect of width resolution; table UA defaults live in the layout monolith (`tableDefaultsFor`) while all other UA decls come from `cascade/ua.ts` (split-brain) | cycle persists: `block-inline.ts:31` ⇄ `tables.ts:49`; side-channel persists: `block-inline.ts:1596` → `tables.ts:2044`, module global `lastAvailableInlineSize` (`tables.ts:1478`) read at `tables.ts:1556,1630`; `tableDefaultsFor` still `block-inline.ts:110-130`; `cascade/ua.ts` has no table-tag decls | tables receives an injected width context/callback instead of importing the monolith; move table UA defaults into `cascade/ua.ts` | **registered** (gen-2 fix task `qa01-break-tables-cycle` landed 2026-09-04: side channel eliminated, UA defaults moved to `cascade/ua.ts:118-122`; residual = the import cycle only — see attempt log) | 1 |
 | QA-02 | high | code | Intrinsic-sizing helpers quadruplicated across flexbox/grid/tables/block-inline **with real drift**: grid skips `display:table` children where flex does not; flex skips `position:absolute/fixed` where grid does not; flex honors `box-sizing:border-box` via `borderBox()` where grid reads `style.width.px` raw; tables measures collapsed spaces with one `spaceW` vs block-inline per-piece run style; tables caps max at `break` pieces vs block-inline skipping breaks. Plus the dead `minimum` return field on `inlineContributions` | all five drift axes + dead field re-confirmed: `flexbox.ts:136,164,180,197-198` vs `grid.ts:63-134` (display:table skip 69,85; no position skip 106-113; raw `width.px` 123; dead `minimum` 121,128,133, zero readers) vs `tables.ts:769-815` (single `spaceW` 741, break-capped max 743-748) vs `block-inline.ts:2904-2943` (per-piece run style) | one shared intrinsic-sizing module in layout, parameterized by display-skip/space-style/break policy; delete `minimum` | open — drifted-further (fix task `qa02-unify-intrinsic-sizing` created gen 1) | 0 |
 | QA-03 | high | machine-check | `check-charter.mjs` parses only the §11 matrix table; the **Deferred / Not in v1** section (charter.md:221-258) — the documented "no silent absence" contract — has zero machine enforcement | `scripts/check-charter.mjs:176-227` still parses only the §11 matrix; `docs/charter.md:221-258` Deferred section unenforced | give the Deferred section a table schema (Absent surface / Status / Evidence) and extend check-charter to assert token presence/absence per status | open (fix task `charter-deferred-enforcement` exists, gen 0, unlanded) | 0 |
 | QA-04 | high | ledger | `docs/ledgers/coverage-matrix.md` contradicts charter §11: its deferred table claims box-shadow, opacity, calc/min/max/clamp, custom-properties/var() EMPTY/absent while §11 marks all of them implemented with corpus coverage and the corpus dirs exist and verify; also says "all 53 rows" while the matrix has 105 | `docs/ledgers/coverage-matrix.md:76-80,112` contradictions persist unchanged at gen-1 HEAD | regenerate the ledger's deferred table from the charter (after QA-03's schema), never hand-write it | open (tied to QA-03's schema) | 0 |
@@ -116,9 +126,20 @@ Hard rules for you **and every task you create**:
   disproven, created fix tasks `qa01-break-tables-cycle` (QA-01) +
   `qa02-unify-intrinsic-sizing` (QA-02), and this successor
   `quality-audit-2`.
+- Generation 2 (this branch, `qa01-break-tables-cycle`): QA-01 fix task
+  landed — `tables.ts` (`TableLayoutInput.availableInlineSize` threaded;
+  `lastAvailableInlineSize` global + `setTableAvailableInlineSize` export
+  deleted), `block-inline.ts` (side-channel setter call removed; `available`
+  passed through `layoutElementBox`/`AtomicPiece`; `tableDefaultsFor` deleted;
+  `StyleDefaults` trimmed), `cascade/ua.ts` (table-tag UA rules added), and
+  `layout/css.ts` (border-collapse declared-value handling; dead table
+  default params removed). The import cycle remains — registered residual.
+  Gates green at landing: verify:tables, verify:tables-collapse,
+  verify:ua-styles, verify:text-level-ua (build + check-charter green).
 
 ## Attempt log (appended per generation; feeds the ≥10 retirement rule)
 
 | Finding | Task | Generation | Attempt # | Approach | Outcome + reason |
 | --- | --- | --- | --- | --- | --- |
 | QA-06 | (none — verification, not a task attempt) | 1 | 0 | verify-first re-check of the sRGB coefficient drift against HEAD | disproven — intentional: `paint.ts:215-222` is a documented WCAG relative luminance (rounded 0.2126/0.7152/0.0722) for the inset/outset border heuristic; `deltaE.ts:38-53` is a full CIE XYZ→Lab matrix (0.2126729/0.7151522/0.072175) for ΔE\*ab. Different formulas, each correct; shared `srgbToLinear` curve is a hygiene nit only. No fix task created. |
+| QA-01 | `qa01-break-tables-cycle` | 2 | 1 | Re-verify at HEAD, then (a) thread the available inline size through `TableLayoutInput.availableInlineSize` and delete the `setTableAvailableInlineSize`/`lastAvailableInlineSize` side channel; (b) move `tableDefaultsFor` into `cascade/ua.ts` table-tag rules and delete the monolith copy; (c) assess breaking the block-inline⇄tables import cycle | (a) and (b) landed and verified: `grep -rn "setTableAvailableInlineSize\|lastAvailableInlineSize" src/` empty; `grep -n "tableDefaultsFor" src/layout/block-inline.ts` empty; table UA rules at `cascade/ua.ts:118-122`; verify:tables + verify:tables-collapse + verify:ua-styles + verify:text-level-ua all PASS. (c) registered residual — breaking the cycle needs extracting `layoutElementBox` plus its transitive deps (`pushPaintOp`, `buildPieces`, `expandContents`, `FloatManager`, the paint/positioned/opacity stack globals, fieldset/inline-content children) into a shared layout module, a multi-thousand-line extraction beyond one context window; left for a future generation. |
