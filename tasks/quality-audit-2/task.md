@@ -1,7 +1,7 @@
 ---
 wait_human_start: false
 wait_human_merge: false
-dependencies: []
+dependencies: [qa01-break-tables-cycle, qa02-unify-intrinsic-sizing]
 ---
 
 # Task: Quality-audit recursion chain, generation 2 of 5 — full re-verification at post-fix HEAD; spawn generation-2 fixes and generation-3 audit
