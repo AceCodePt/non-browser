@@ -8,7 +8,7 @@ Per-string shaped advances resolved against the registered font set: the engine 
 
 ## Latest Run
 
-- Generated: 2026-09-04T07:57:29.464Z
+- Generated: 2026-09-04T08:05:46.386Z
 - Strings measured: 96 (96 pass corpus + 0 documented known gaps)
 - Pass rate (pass corpus): 100.0% (96/96 within tolerance)
 - Mean delta (pass corpus): 0.0025px
