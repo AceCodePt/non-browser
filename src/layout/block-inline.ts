@@ -29,6 +29,7 @@ import type { PseudoDecls } from '../cascade/phases/media-queries.js';
 import { resolveUaDecls } from '../cascade/ua.js';
 import { controlBorderBoxWidth, controlContentHeight, controlKindFor, controlLabel, themePaintSpec, type ControlKind, type ControlPaintSpec } from './controls.js';
 import { layoutTableContent, tableBorderBoxWidth, tablePreferredWidth } from './tables.js';
+import { pieceContentSizes, type PieceSizingPolicy } from './intrinsic.js';
 
 export { FloatManager };
 export type { FormattingContext };
@@ -2647,6 +2648,11 @@ function isInlineBoxStyle(s: ComputedStyle): boolean {
   return (s.display === 'inline-block' || s.display === 'inline-table') && s.float === 'none' && s.position === 'static';
 }
 
+// Inline-level boxes measure collapsed spaces with the space's own run style
+// and treat forced breaks as invisible in max-content (they contribute nothing
+// to an inline-block's intrinsic width).
+const PIECE_POLICY: PieceSizingPolicy = { spaceStyle: 'piece', breaks: 'skip' };
+
 function atomicBoxSize(
   el: P5Element,
   style: ComputedStyle,
@@ -2680,7 +2686,7 @@ function atomicBoxSize(
       borderWidth = tableBorderBoxWidth(el, style, styles, availableInlineSize, viewport);
     } else {
       const pieces = buildPieces(el, style, styles, refWidth, viewport, style.whiteSpace);
-      const sizes = piecesContentSizes(pieces, style, style.whiteSpace, resolveLength(style.wordSpacing, refWidth, viewport) ?? 0);
+      const sizes = pieceContentSizes(pieces, style, style.whiteSpace, resolveLength(style.wordSpacing, refWidth, viewport) ?? 0, PIECE_POLICY);
       const mL = resolveLength(style.margin.left, refWidth, viewport) ?? 0;
       const mR = resolveLength(style.margin.right, refWidth, viewport) ?? 0;
       const available = Math.max(0, refWidth - mL - mR - padBorderH);
@@ -2701,37 +2707,6 @@ function atomicBoxSize(
   if (minW !== null) borderWidth = Math.max(borderWidth, minW);
   if (maxW !== null) borderWidth = Math.min(borderWidth, maxW);
   return { borderWidth, contentWidth: Math.max(0, borderWidth - padBorderH), availableInlineSize };
-}
-
-export function piecesContentSizes(pieces: InlinePiece[], style: ComputedStyle, ws: WhiteSpaceValue, wordSpacing = 0): { min: number; max: number } {
-  const preserve = ws === 'pre' || ws === 'pre-wrap';
-  let min = 0;
-  let max = 0;
-  let prevSpaceStyle: TextRunStyle | null = null;
-  for (const p of pieces) {
-    if (p.kind === 'break' || p.kind === 'wbr') continue;
-    if (p.kind === 'space') {
-      if (preserve) {
-        max += measureTextWidth(p.text, p.style.fontSize, p.style.family, p.style.letterSpacing, p.style.fontWeight, p.style.fontStyle) + wordSpacing * p.text.length;
-      }
-      prevSpaceStyle = p.style;
-      continue;
-    }
-    const w =
-      p.kind === 'word'
-        ? measureTextWidth(p.text, p.style.fontSize, p.style.family, p.style.letterSpacing, p.style.fontWeight, p.style.fontStyle)
-        : p.marginLeft + p.borderWidth + p.marginRight;
-    min = Math.max(min, p.kind === 'word' ? minTextWidth(p.text, p.style.fontSize, p.style.family, p.style.letterSpacing, style.overflowWrap === 'anywhere', p.style.fontWeight, p.style.fontStyle) : w);
-    // A collapsed inter-word space is measured with the space's own style —
-    // the text node it came from — so a space before a font-size-changing
-    // element keeps the preceding run's advance (Chrome).
-    if (prevSpaceStyle !== null && !preserve) {
-      max += measureTextWidth(' ', prevSpaceStyle.fontSize, prevSpaceStyle.family, prevSpaceStyle.letterSpacing, prevSpaceStyle.fontWeight, prevSpaceStyle.fontStyle) + wordSpacing;
-    }
-    max += w;
-    prevSpaceStyle = null;
-  }
-  return { min, max };
 }
 
 /**
