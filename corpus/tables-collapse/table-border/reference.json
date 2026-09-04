@@ -1,0 +1,36 @@
+{
+  "measureText": {},
+  "computedStyle": {},
+  "rect": {
+    "t1": {
+      "x": 0,
+      "y": 0,
+      "width": 260,
+      "height": 62
+    },
+    "a": {
+      "x": 5,
+      "y": 5,
+      "width": 125,
+      "height": 52
+    },
+    "b": {
+      "x": 130,
+      "y": 5,
+      "width": 125,
+      "height": 52
+    },
+    "t2": {
+      "x": 0,
+      "y": 86,
+      "width": 140,
+      "height": 62
+    },
+    "c": {
+      "x": 5,
+      "y": 91,
+      "width": 130,
+      "height": 52
+    }
+  }
+}

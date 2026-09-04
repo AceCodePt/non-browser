@@ -1,8 +1,7 @@
 /**
  * CSS table layout (CSS 2.1 §17, css-tables-3) — the table formatting context
- * for the separate-borders model. The border-collapse model is the follow-on
- * tables-border-collapse slice; a table with `border-collapse: collapse` still
- * lays out here under the separate model.
+ * for both border models: separate borders (the tables-layout slice) and
+ * collapsed borders (css-tables-3 §4, the tables-border-collapse slice).
  *
  * Mirrors Blink's LayoutNG table algorithm
  * (third_party/blink/renderer/core/layout/table/):
@@ -22,6 +21,11 @@
  *     first, then lowest start row) and table specified-height growth
  *   - captions above/below the table box per caption-side, caption margins,
  *     and border-spacing on all grid edges
+ *   - collapsed borders (css-tables-3 §4): `border-collapse:collapse` runs a
+ *     per-edge conflict resolution over cell/row/section/column/colgroup/table
+ *     borders (hidden, then width, then style rank, then source class),
+ *     half-border cell insets, the table's border strut, and one border
+ *     segment per grid edge painted centered on the grid line
  *
  * Cells themselves lay out through the ordinary block/inline machinery
  * (layoutElementBox), with the content box shifted for vertical-align.
@@ -33,13 +37,17 @@ import {
   borderPaddingInline,
   pxLength,
   resolveLength,
+  ZERO_BORDER_RADIUS,
+  type BorderStyleKeyword,
+  type Color,
   type ComputedStyle,
   type DisplayValue,
+  type Side,
   type Viewport,
   type WhiteSpaceValue,
 } from './css.js';
-import { layoutElementBox, expandContents, FloatManager, buildPieces, type InlinePiece, type LayoutNode, type PaintOp } from './block-inline.js';
-import { isCommentNode, isElementNode, isTextNode, type P5Element, type P5Text } from './types.js';
+import { layoutElementBox, expandContents, FloatManager, buildPieces, pushPaintOp, type InlinePiece, type LayoutNode, type PaintOp } from './block-inline.js';
+import { isCommentNode, isElementNode, isTextNode, type Box, type P5Element, type P5Text } from './types.js';
 import { activeFontMetrics } from './fontmetrics.js';
 import { measureTextWidth, minTextWidth } from './measure.js';
 
@@ -126,17 +134,31 @@ interface TableColumnSpec {
   widthPct: number | null;
 }
 
+/** A <col> or <colgroup> box with its column span; collapse needs the group
+ * boxes' own border styles, which the flat width specs drop. */
+interface TableColumnBox {
+  style: ComputedStyle | undefined;
+  startCol: number;
+  span: number;
+  isGroup: boolean;
+}
+
 interface FixedTableChildren {
   sections: TableSectionPart[];
   captions: TableCaptionPart[];
   cols: TableColumnSpec[];
+  colBoxes: TableColumnBox[];
+  /** Running column cursor for colBoxes startCol assignment. */
+  colCursor: number;
   /** HTML-table stray content hoisted above the table box (Blink legacy). */
   hoisted: (P5Element | P5Text)[];
 }
 
 function colspanOf(el: P5Element): number {
   const raw = el.attrs.find((a) => a.name === 'colspan')?.value;
-  const n = raw !== undefined && /^\d+$/.test(raw) ? parseInt(raw, 10) : 1;
+  // <col>/<colgroup> span via the HTML `span` attribute, not colspan.
+  const spanRaw = raw ?? el.attrs.find((a) => a.name === 'span')?.value;
+  const n = spanRaw !== undefined && /^\d+$/.test(spanRaw) ? parseInt(spanRaw, 10) : 1;
   // Blink clamps the attribute to [1, 1000]; a corrupt document must not blow
   // up the column array.
   return Math.max(1, Math.min(n, 1000));
@@ -239,15 +261,32 @@ function fixTableChildren(
     if (cs.display === 'table-column-group' || cs.display === 'table-column') {
       flushRows();
       if (cs.display === 'table-column') {
-        pushColumnSpecs(childEl, cs, colspanOf(childEl), out);
+        const span = colspanOf(childEl);
+        out.colBoxes.push({ style: cs, startCol: out.colCursor, span, isGroup: false });
+        pushColumnSpecs(childEl, cs, span, out);
+        out.colCursor += span;
       } else {
         const kids = expandContents(childEl.childNodes, styles).filter(
           (c): c is P5Element => isElementNode(c) && styles.get(c)?.display === 'table-column',
         );
         if (kids.length > 0) {
-          for (const k of kids) pushColumnSpecs(k, styles.get(k), colspanOf(k), out);
+          // The group's columns are its children's: its start column is the
+          // cursor at entry and the cursor advances with the children only.
+          const groupStart = out.colCursor;
+          let groupSpan = 0;
+          for (const k of kids) {
+            const span = colspanOf(k);
+            out.colBoxes.push({ style: styles.get(k), startCol: out.colCursor, span, isGroup: false });
+            pushColumnSpecs(k, styles.get(k), span, out);
+            out.colCursor += span;
+            groupSpan += span;
+          }
+          out.colBoxes.push({ style: cs, startCol: groupStart, span: groupSpan, isGroup: true });
         } else {
-          pushColumnSpecs(childEl, cs, colspanOf(childEl), out);
+          const span = colspanOf(childEl);
+          out.colBoxes.push({ style: cs, startCol: out.colCursor, span, isGroup: true });
+          pushColumnSpecs(childEl, cs, span, out);
+          out.colCursor += span;
         }
       }
       return;
@@ -424,10 +463,253 @@ function pushHoistedInto(out: FixedTableChildren, node: P5Element | P5Text): voi
 }
 
 function fixTableChildrenTop(el: P5Element, style: ComputedStyle, styles: Map<P5Element, ComputedStyle>): FixedTableChildren {
-  const out: FixedTableChildren = { sections: [], captions: [], cols: [], hoisted: [] };
+  const out: FixedTableChildren = { sections: [], captions: [], cols: [], colBoxes: [], colCursor: 0, hoisted: [] };
   const htmlHoist = HTML_TABLE_TAGS.has(el.nodeName.toLowerCase());
   fixTableChildren(el, style, styles, 'table', htmlHoist, out);
   return out;
+}
+
+// ---------------------------------------------------------------------------
+// Collapsed borders (CSS 2.1 §17.6.2, Blink TableBorders)
+
+/**
+ * EBorderStyle enum order (Blink computed_style_constants.h) — the
+ * style-precedence rank of the conflict algorithm. Comparison runs on the
+ * COLLAPSED style (inset→ridge, outset→groove, ComputedStyle::
+ * CollapsedBorderStyle), which is why a collapsed `inset` outranks a plain
+ * `groove` (probed: inset beats groove, ridge beats outset).
+ */
+const BORDER_STYLE_RANK: Record<BorderStyleKeyword, number> = {
+  none: 0,
+  hidden: 1,
+  inset: 2,
+  groove: 3,
+  outset: 4,
+  ridge: 5,
+  dotted: 6,
+  dashed: 7,
+  solid: 8,
+  double: 9,
+};
+
+function collapseBorderStyle(style: BorderStyleKeyword): BorderStyleKeyword {
+  if (style === 'inset') return 'ridge';
+  if (style === 'outset') return 'groove';
+  return style;
+}
+
+/** One winning border on a grid edge: the source box's style + physical side. */
+interface CollapsedEdge {
+  style: ComputedStyle;
+  side: Side;
+  mapped: BorderStyleKeyword;
+  width: number;
+  color: Color;
+  /** A colspan/rowspan cell's inner edge: no table part may fill it. */
+  doNotFill: boolean;
+}
+
+const NO_EDGE = null;
+
+function collapsedEdge(style: ComputedStyle, side: Side, doNotFill = false): CollapsedEdge {
+  return {
+    style,
+    side,
+    mapped: collapseBorderStyle(style.borderStyle[side]),
+    width: style.borderWidth[side],
+    color: style.borderColor[side],
+    doNotFill,
+  };
+}
+
+/** css-tables-3 §4.2 conflict resolution (Blink IsSourceMoreSpecificThanEdge):
+ * hidden wins over everything, an existing hidden can't be beaten, then wider
+ * wins, then the style rank, then the first-merged source (cells merge before
+ * rows before sections before cols before the table, so "first" is the
+ * spec's cell > row > row group > column > column group > table precedence,
+ * and within a class the top/left box wins). */
+function sourceBeatsEdge(source: CollapsedEdge, edge: CollapsedEdge | null): boolean {
+  if (edge === null) return true;
+  if (source.mapped === 'hidden') return true;
+  if (edge.mapped === 'hidden') return false;
+  if (source.width < edge.width) return false;
+  if (source.width > edge.width) return true;
+  return BORDER_STYLE_RANK[source.mapped] > BORDER_STYLE_RANK[edge.mapped];
+}
+
+/** An edge paints (and feeds cell insets) only when its winner is a visible
+ * non-zero border — a hidden or none winner suppresses the edge entirely,
+ * including its layout width (probed: a lone hidden border adds no width). */
+function edgePaintWidth(edge: CollapsedEdge | null): number {
+  if (edge === null || edge.doNotFill) return 0;
+  if (edge.mapped === 'none' || edge.mapped === 'hidden' || edge.width <= 0) return 0;
+  return edge.width;
+}
+
+export interface CollapseModel {
+  rows: number;
+  cols: number;
+  /** vertical edges v(row, columnBoundary): row < rows, boundary <= cols. */
+  v: (CollapsedEdge | null)[];
+  /** horizontal edges h(rowBoundary, column): boundary <= rows, column < cols. */
+  h: (CollapsedEdge | null)[];
+  /** Per-cell half-border insets (max paintable width over the spanned edges,
+   * halved) — the cell's border box shrinks to content + padding + insets. */
+  insets: Map<TableCellPart, { top: number; right: number; bottom: number; left: number }>;
+  /** The table's border strut (already halved): the whole-grid pseudo-cell's
+   * borders. The table's border box = grid + struts; its own padding is
+   * ignored (css-tables-3 §3.6.2) and its own border merges into the edges. */
+  strut: { top: number; right: number; bottom: number; left: number };
+}
+
+function buildCollapseModel(
+  children: FixedTableChildren,
+  totalRows: number,
+  colCount: number,
+  tableStyle: ComputedStyle,
+): CollapseModel {
+  const v: (CollapsedEdge | null)[] = new Array(totalRows * (colCount + 1)).fill(NO_EDGE);
+  const h: (CollapsedEdge | null)[] = new Array((totalRows + 1) * colCount).fill(NO_EDGE);
+  const vIndex = (row: number, boundary: number): number => row * (colCount + 1) + boundary;
+  const hIndex = (boundary: number, col: number): number => boundary * colCount + col;
+
+  const mergeVertical = (row: number, boundary: number, source: CollapsedEdge): void => {
+    const idx = vIndex(row, boundary);
+    const cur = v[idx];
+    if (cur !== null && (cur.doNotFill || !sourceBeatsEdge(source, cur))) return;
+    v[idx] = source;
+  };
+  const mergeHorizontal = (boundary: number, col: number, source: CollapsedEdge): void => {
+    const idx = hIndex(boundary, col);
+    const cur = h[idx];
+    if (cur !== null && (cur.doNotFill || !sourceBeatsEdge(source, cur))) return;
+    h[idx] = source;
+  };
+  // One source box's four physical sides onto its grid edge range. `none`
+  // sides contribute nothing (Blink skips them per side).
+  const mergeSides = (startRow: number, rowCount: number, startCol: number, colSpan: number, style: ComputedStyle): void => {
+    const clampedSpan = Math.max(0, Math.min(colSpan, colCount - Math.min(startCol, colCount)));
+    const clampedRows = Math.max(0, Math.min(rowCount, totalRows - Math.min(startRow, totalRows)));
+    if (clampedSpan <= 0 || clampedRows <= 0) return;
+    if (style.borderStyle.top !== 'none') {
+      for (let c = startCol; c < startCol + clampedSpan; c++) mergeHorizontal(startRow, c, collapsedEdge(style, 'top'));
+    }
+    if (style.borderStyle.bottom !== 'none') {
+      for (let c = startCol; c < startCol + clampedSpan; c++) mergeHorizontal(startRow + clampedRows, c, collapsedEdge(style, 'bottom'));
+    }
+    if (style.borderStyle.left !== 'none') {
+      for (let r = startRow; r < startRow + clampedRows; r++) mergeVertical(r, startCol, collapsedEdge(style, 'left'));
+    }
+    if (style.borderStyle.right !== 'none') {
+      for (let r = startRow; r < startRow + clampedRows; r++) mergeVertical(r, startCol + clampedSpan, collapsedEdge(style, 'right'));
+    }
+  };
+  // A spanning cell's inner edges are unfillable by other table parts (Blink
+  // MarkInnerBordersAsDoNotFill — a row border must not cut through a cell).
+  const markInnerBorders = (startRow: number, rowCount: number, startCol: number, colSpan: number): void => {
+    for (let r = startRow; r < startRow + rowCount; r++) {
+      for (let c = startCol + 1; c < startCol + colSpan; c++) {
+        const idx = vIndex(r, c);
+        if (v[idx] === null) v[idx] = { style: tableStyle, side: 'left', mapped: 'none', width: 0, color: tableStyle.borderColor.top, doNotFill: true };
+      }
+    }
+    for (let r = startRow + 1; r < startRow + rowCount; r++) {
+      for (let c = startCol; c < startCol + colSpan; c++) {
+        const idx = hIndex(r, c);
+        if (h[idx] === null) h[idx] = { style: tableStyle, side: 'top', mapped: 'none', width: 0, color: tableStyle.borderColor.top, doNotFill: true };
+      }
+    }
+  };
+
+  // Conflict precedence by source class = merge order: cells, rows, row
+  // groups, columns, column groups, table (css-tables-3 §4.2; Blink merges in
+  // exactly this order and keeps the earlier winner on ties).
+  let cellOrder: TableCellPart[] = [];
+  for (const section of children.sections) {
+    for (const row of section.rows) cellOrder = cellOrder.concat(row.cells);
+  }
+  for (const cell of cellOrder) {
+    const rs = Math.max(1, Math.min(cell.rowspan, totalRows - cell.startRow));
+    const cs = Math.max(1, Math.min(cell.colspan, colCount - cell.startCol));
+    if (rs > 1 || cs > 1) markInnerBorders(cell.startRow, rs, cell.startCol, cs);
+    mergeSides(cell.startRow, rs, cell.startCol, cs, cell.style);
+  }
+  let rowIndex = 0;
+  for (const section of children.sections) {
+    for (const row of section.rows) {
+      mergeSides(rowIndex, 1, 0, colCount, row.style);
+      rowIndex++;
+    }
+  }
+  let sectionStart = 0;
+  for (const section of children.sections) {
+    mergeSides(sectionStart, section.rows.length, 0, colCount, section.style);
+    sectionStart += section.rows.length;
+  }
+  for (const box of children.colBoxes) {
+    if (!box.isGroup) mergeSides(0, totalRows, box.startCol, box.span, box.style ?? tableStyle);
+  }
+  for (const box of children.colBoxes) {
+    if (box.isGroup) mergeSides(0, totalRows, box.startCol, box.span, box.style ?? tableStyle);
+  }
+  mergeSides(0, totalRows, 0, colCount, tableStyle);
+
+  // Cell insets: the max paintable width over each side's spanned edges,
+  // halved (the border paints centered on the cell's rect edge).
+  const insets = new Map<TableCellPart, { top: number; right: number; bottom: number; left: number }>();
+  for (const cell of cellOrder) {
+    const rs = Math.max(1, Math.min(cell.rowspan, totalRows - cell.startRow));
+    const cs = Math.max(1, Math.min(cell.colspan, colCount - cell.startCol));
+    let left = 0;
+    let right = 0;
+    for (let r = cell.startRow; r < cell.startRow + rs; r++) {
+      left = Math.max(left, edgePaintWidth(v[vIndex(r, cell.startCol)]));
+      right = Math.max(right, edgePaintWidth(v[vIndex(r, cell.startCol + cs)]));
+    }
+    let top = 0;
+    let bottom = 0;
+    for (let c = cell.startCol; c < cell.startCol + cs; c++) {
+      top = Math.max(top, edgePaintWidth(h[hIndex(cell.startRow, c)]));
+      bottom = Math.max(bottom, edgePaintWidth(h[hIndex(cell.startRow + rs, c)]));
+    }
+    insets.set(cell, { top: top / 2, right: right / 2, bottom: bottom / 2, left: left / 2 });
+  }
+
+  // The table's strut: the whole-grid pseudo-cell's borders (Blink
+  // UpdateTableBorder = GetCellBorders(0, 0, rows, cols), max over the outer
+  // edges, halved). Later rows' wider borders grow the box (probed: no
+  // first-row-only spill rule in Blink).
+  let strutLeft = 0;
+  let strutRight = 0;
+  for (let r = 0; r < totalRows; r++) {
+    strutLeft = Math.max(strutLeft, edgePaintWidth(v[vIndex(r, 0)]));
+    strutRight = Math.max(strutRight, edgePaintWidth(v[vIndex(r, colCount)]));
+  }
+  let strutTop = 0;
+  let strutBottom = 0;
+  for (let c = 0; c < colCount; c++) {
+    strutTop = Math.max(strutTop, edgePaintWidth(h[hIndex(0, c)]));
+    strutBottom = Math.max(strutBottom, edgePaintWidth(h[hIndex(totalRows, c)]));
+  }
+  return {
+    rows: totalRows,
+    cols: colCount,
+    v,
+    h,
+    insets,
+    strut: { top: strutTop / 2, right: strutRight / 2, bottom: strutBottom / 2, left: strutLeft / 2 },
+  };
+}
+
+/** A cell's layout style under collapse: the cell paints no border of its own
+ * (the shared segments do) and border-radius is ignored (css-tables-3 §3.6.2;
+ * probed: Chrome renders collapsed tables square). */
+function collapseCellStyle(style: ComputedStyle): ComputedStyle {
+  return {
+    ...style,
+    borderWidth: { top: 0, right: 0, bottom: 0, left: 0 },
+    borderRadius: ZERO_BORDER_RADIUS,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -543,9 +825,11 @@ function cellInlineConstraint(
   styles: Map<P5Element, ComputedStyle>,
   viewport: Viewport | undefined,
   isFixedLayout: boolean,
+  collapseInsets?: { top: number; right: number; bottom: number; left: number },
 ): ColumnConstraint {
   const style = cell.style;
-  const pb = borderPaddingInline(style, 0, viewport);
+  const insetH = collapseInsets ? collapseInsets.left + collapseInsets.right : style.borderWidth.left + style.borderWidth.right;
+  const pb = borderPaddingInline(style, 0, viewport) - style.borderWidth.left - style.borderWidth.right + insetH;
   const specW = style.width.px;
   const pct = style.width.pct;
   const minW = style.minWidth.px;
@@ -869,6 +1153,17 @@ export function tablePreferredWidth(
   available: number | null,
   viewport: Viewport | undefined,
 ): number {
+  const isFixedLayout = style.tableLayout === 'fixed';
+  if (style.borderCollapse === 'collapse') {
+    const { strut } = tableGridMeasures(el, style, styles, viewport, isFixedLayout);
+    const padStrut = strut.left + strut.right;
+    if (style.width.px !== null) {
+      return style.boxSizing === 'border-box' ? style.width.px : style.width.px + padStrut;
+    }
+    const { min, max } = tableGridMeasures(el, style, styles, viewport, isFixedLayout);
+    const clamped = Math.max(min, Math.min(max, available ?? max));
+    return clamped + padStrut;
+  }
   const padBorder = borderPaddingInline(style, available ?? 0, viewport);
   if (style.width.px !== null) {
     return style.boxSizing === 'border-box' ? style.width.px : style.width.px + padBorder;
@@ -878,11 +1173,7 @@ export function tablePreferredWidth(
   return clamped + padBorder;
 }
 
-/** Sum of column min/max widths plus the border-spacing on every grid edge.
- * Captions participate with their min-content (probed: a wrapped caption grows
- * the table to its min, not its max). In fixed layout only constrained
- * columns force growth — auto columns take the remainder and overflow instead
- * (probed: fixed-nowrap keeps the specified width). */
+/** Sum of column min/max widths plus the border-spacing on every grid edge. */
 function tableGridWidths(
   el: P5Element,
   style: ComputedStyle,
@@ -890,7 +1181,24 @@ function tableGridWidths(
   viewport: Viewport | undefined,
   isFixedLayout: boolean,
 ): { min: number; max: number } {
-  const { columns, spacingH, children } = buildColumnModel(el, style, styles, viewport, isFixedLayout);
+  const { min, max } = tableGridMeasures(el, style, styles, viewport, isFixedLayout);
+  return { min, max };
+}
+
+/** Column min/max sums plus the grid's undistributable edge space, and the
+ * collapse strut (zero in the separate model). Captions participate with their
+ * min-content (probed: a wrapped caption grows the table to its min, not its
+ * max). In fixed layout only constrained columns force growth — auto columns
+ * take the remainder and overflow instead (probed: fixed-nowrap keeps the
+ * specified width). */
+function tableGridMeasures(
+  el: P5Element,
+  style: ComputedStyle,
+  styles: Map<P5Element, ComputedStyle>,
+  viewport: Viewport | undefined,
+  isFixedLayout: boolean,
+): { min: number; max: number; strut: { top: number; right: number; bottom: number; left: number } } {
+  const { columns, spacingH, children, collapse } = buildColumnModel(el, style, styles, viewport, isFixedLayout);
   const edge = spacingH * (columns.length + 1);
   let min = 0;
   let max = 0;
@@ -913,7 +1221,7 @@ function tableGridWidths(
     min = Math.max(min, sizes.min + pb + mL + mR);
     max = Math.max(max, sizes.min + pb + mL + mR);
   }
-  return { min, max };
+  return { min, max, strut: collapse?.strut ?? { top: 0, right: 0, bottom: 0, left: 0 } };
 }
 
 /**
@@ -928,8 +1236,9 @@ function buildColumnModel(
   styles: Map<P5Element, ComputedStyle>,
   viewport: Viewport | undefined,
   isFixedLayout: boolean,
-): { columns: ColumnConstraint[]; spacingH: number; children: FixedTableChildren } {
-  const spacingH = Math.max(0, style.borderSpacingH);
+): { columns: ColumnConstraint[]; spacingH: number; children: FixedTableChildren; collapse: CollapseModel | null } {
+  const isCollapsed = style.borderCollapse === 'collapse';
+  const spacingH = isCollapsed ? 0 : Math.max(0, style.borderSpacingH);
   const children = fixTableChildrenTop(el, style, styles);
   const occupied = new Set<string>();
   let globalRow = 0;
@@ -953,6 +1262,11 @@ function buildColumnModel(
     }
   }
   const colCount = Math.max(1, cells.reduce((a, c) => Math.max(a, c.startCol + c.colspan), 0), children.cols.length);
+  // The collapse edge grid only needs the border styles, so it builds before
+  // any sizing; its per-cell insets feed the column constraints below.
+  const collapse = isCollapsed ? buildCollapseModel(children, globalRow, colCount, style) : null;
+  const cellInsetOf = (cell: TableCellPart): { top: number; right: number; bottom: number; left: number } | undefined =>
+    collapse?.insets.get(cell);
   const columns: ColumnConstraint[] = Array.from({ length: colCount }, () => ({
     min: 0,
     max: 0,
@@ -978,7 +1292,7 @@ function buildColumnModel(
     for (const cell of cells) {
       if (cell.startCol !== c || cell.colspan > 1) continue;
       if (!contributes(cell)) continue;
-      mergeColumnConstraint(columns[c], cellInlineConstraint(cell, styles, viewport, isFixedLayout), isFixedLayout);
+      mergeColumnConstraint(columns[c], cellInlineConstraint(cell, styles, viewport, isFixedLayout, cellInsetOf(cell)), isFixedLayout);
     }
   }
   // Colspan cells: Blink distributes in ascending span, then start column.
@@ -986,12 +1300,12 @@ function buildColumnModel(
     .filter((c) => c.colspan > 1 && contributes(c))
     .sort((a, b) => a.colspan - b.colspan || a.startCol - b.startCol);
   for (const cell of spanCells) {
-    distributeColspanCell(cellInlineConstraint(cell, styles, viewport, isFixedLayout), columns, cell.startCol, cell.colspan, spacingH);
+    distributeColspanCell(cellInlineConstraint(cell, styles, viewport, isFixedLayout, cellInsetOf(cell)), columns, cell.startCol, cell.colspan, spacingH);
   }
   for (const col of columns) {
     if (col.max < col.min) col.max = col.min;
   }
-  return { columns, spacingH, children };
+  return { columns, spacingH, children, collapse };
 }
 
 /**
@@ -1006,13 +1320,25 @@ export function tableBorderBoxWidth(
   available: number,
   viewport: Viewport | undefined,
 ): number {
+  const isFixedLayout = style.tableLayout === 'fixed';
+  const specW = resolveLength(style.width, available, viewport);
+  if (style.borderCollapse === 'collapse') {
+    // The collapse struts replace the table's own border+padding outside the
+    // grid (css-tables-3 §3.6.2: collapse ignores the table-root padding).
+    const { min, strut } = tableGridMeasures(el, style, styles, viewport, isFixedLayout);
+    const padStrut = strut.left + strut.right;
+    if (specW !== null) {
+      const borderBox = style.boxSizing === 'border-box' ? specW : specW + padStrut;
+      return Math.max(borderBox, min + padStrut);
+    }
+    const { max } = tableGridMeasures(el, style, styles, viewport, isFixedLayout);
+    return Math.max(min, Math.min(max, Math.max(0, available))) + padStrut;
+  }
   const padBorderH =
     (resolveLength(style.padding.left, available, viewport) ?? 0) +
     (resolveLength(style.padding.right, available, viewport) ?? 0) +
     style.borderWidth.left +
     style.borderWidth.right;
-  const isFixedLayout = style.tableLayout === 'fixed';
-  const specW = resolveLength(style.width, available, viewport);
   if (specW !== null) {
     const borderBox = style.boxSizing === 'border-box' ? specW : specW + padBorderH;
     const { min } = tableGridWidths(el, style, styles, viewport, isFixedLayout);
@@ -1157,11 +1483,15 @@ export interface TableLayoutInput {
   styles: Map<P5Element, ComputedStyle>;
   /** The element's border-box left (hoisted content and captions align here). */
   borderX: number;
-  /** The table box's content-box origin (inside the table's border+padding). */
+  /** The table box's content-box origin (inside the table's border+padding).
+   * Collapse tables pass their border-box origin: the grid insets itself by
+   * the strut halves. */
   contentX: number;
   contentWidth: number;
   /** The element's border-box top: hoisted content, then captions, then box. */
   borderY: number;
+  /** The table box's own paint key (collapsed border segments paint under it). */
+  key: number[];
   paints: PaintOp[];
   nextOrder: () => number;
   viewport?: Viewport;
@@ -1193,23 +1523,33 @@ interface CellMeasure {
 export function layoutTableContent(input: TableLayoutInput): TableLayoutResult {
   const { el, style, styles, borderX, contentX, contentWidth, borderY, paints, nextOrder, viewport } = input;
   const isFixedLayout = style.tableLayout === 'fixed';
+  const isCollapsed = style.borderCollapse === 'collapse';
   const bT = style.borderWidth.top;
   const bB = style.borderWidth.bottom;
   const bL = style.borderWidth.left;
   const padT = resolveLength(style.padding.top, contentWidth, viewport) ?? 0;
   const padB = resolveLength(style.padding.bottom, contentWidth, viewport) ?? 0;
-  const elemBorderW =
-    contentWidth +
-    bL +
-    style.borderWidth.right +
-    (resolveLength(style.padding.left, contentWidth, viewport) ?? 0) +
-    (resolveLength(style.padding.right, contentWidth, viewport) ?? 0);
+  // The column model (and its collapse edge grid) builds once here: the cell
+  // parts it returns are the ones laid out below, so the per-cell collapse
+  // insets keyed on them stay valid through the measure and final passes.
+  const model = buildColumnModel(el, style, styles, viewport, isFixedLayout);
+  const { columns, collapse, children } = model;
+  const strut = collapse?.strut ?? { top: 0, right: 0, bottom: 0, left: 0 };
+  // Collapse ignores the table's own border+padding (css-tables-3 §3.6.2):
+  // captions and hoisted content span the border box, which already includes
+  // the strut halves.
+  const elemBorderW = isCollapsed
+    ? contentWidth
+    : contentWidth +
+      bL +
+      style.borderWidth.right +
+      (resolveLength(style.padding.left, contentWidth, viewport) ?? 0) +
+      (resolveLength(style.padding.right, contentWidth, viewport) ?? 0);
 
   // Hoisted HTML-table content renders above the box, at the containing
   // block's width.
   let hoistedHeight = 0;
   const outChildren: LayoutNode[] = [];
-  const children = fixTableChildrenTop(el, style, styles);
   if (children.hoisted.length > 0) {
     const hoistedEl = syntheticElement(el, children.hoisted);
     const hoistedStyle = anonymousStyle(style, 'block');
@@ -1273,17 +1613,17 @@ export function layoutTableContent(input: TableLayoutInput): TableLayoutResult {
   };
   let topArea = 0;
   for (const cap of topCaptions) topArea += layoutCaption(cap, boxTop);
-  // The grid starts after the top captions: the element's content box opens
-  // with the caption area, then the table box's border+padding.
-  const gridTop = boxTop + topArea + bT + padT;
 
-  const spacingH = Math.max(0, style.borderSpacingH);
-  const spacingV = Math.max(0, style.borderSpacingV);
-  const model = buildColumnModel(el, style, styles, viewport, isFixedLayout);
-  const { columns } = model;
+  // border-spacing applies only to the separated model; collapse grids run
+  // edge to edge (css-tables-3 §3.5.2).
+  const spacingH = isCollapsed ? 0 : Math.max(0, style.borderSpacingH);
+  const spacingV = isCollapsed ? 0 : Math.max(0, style.borderSpacingV);
   const colCount = columns.length;
   const gridWidth = contentWidth;
-  const assignable = Math.max(0, gridWidth - spacingH * (colCount + 1));
+  // Collapse folds the grid's outer half-borders into the struts: the grid
+  // runs from borderX + strut.left across (borderWidth - struts).
+  const edgeSpaceH = isCollapsed ? strut.left + strut.right : spacingH * (colCount + 1);
+  const assignable = Math.max(0, gridWidth - edgeSpaceH);
 
   let colWidths: number[];
   if (isFixedLayout) {
@@ -1295,8 +1635,13 @@ export function layoutTableContent(input: TableLayoutInput): TableLayoutResult {
   } else {
     colWidths = distributeInlineSize(assignable, columns, true);
   }
-  const colOffsets: number[] = [spacingH];
+  const colOffsets: number[] = [isCollapsed ? strut.left : spacingH];
   for (let i = 0; i < colCount; i++) colOffsets.push(colOffsets[i] + colWidths[i] + spacingH);
+
+  // The grid starts after the top captions: the element's content box opens
+  // with the caption area, then the table box's border+padding (collapse:
+  // the top strut half — the table's padding is ignored, css-tables-3 §3.6.2).
+  const gridTop = boxTop + topArea + (isCollapsed ? strut.top : bT + padT);
 
   // Place cells into the global row/column grid.
   const rows: { part: TableRowPart; cells: { cell: TableCellPart; x: number; w: number }[] }[] = [];
@@ -1326,22 +1671,30 @@ export function layoutTableContent(input: TableLayoutInput): TableLayoutResult {
   }
 
   // Measure pass: lay every cell at its assigned width (paints discarded) for
-  // content heights and first-line baselines.
+  // content heights and first-line baselines. Collapse cells lay out with
+  // zeroed borders — their space is the half-border insets instead.
   const measures = new Map<TableCellPart, CellMeasure>();
   for (const row of rows) {
     for (const { cell, w } of row.cells) {
       const s = cell.style;
+      const insets = collapse?.insets.get(cell) ?? { top: 0, right: 0, bottom: 0, left: 0 };
+      const cellStyle = isCollapsed ? collapseCellStyle(s) : s;
+      // The content box sits inside the cell's own borders (separate) or the
+      // half-border insets (collapse — the cellStyle borders are zeroed).
+      const effB = isCollapsed
+        ? insets
+        : { top: s.borderWidth.top, right: s.borderWidth.right, bottom: s.borderWidth.bottom, left: s.borderWidth.left };
       const snapshot = paints.length;
       const node = layoutElementBox(
         cell.el,
-        s,
+        cellStyle,
         new FloatManager(0, w),
         0,
         0,
         w,
-        s.borderWidth.left + (resolveLength(s.padding.left, w, viewport) ?? 0),
-        s.borderWidth.top + (resolveLength(s.padding.top, w, viewport) ?? 0),
-        Math.max(0, w - borderPaddingInline(s, w, viewport)),
+        effB.left + (resolveLength(s.padding.left, w, viewport) ?? 0),
+        effB.top + (resolveLength(s.padding.top, w, viewport) ?? 0),
+        Math.max(0, w - effB.left - effB.right - (resolveLength(s.padding.left, w, viewport) ?? 0) - (resolveLength(s.padding.right, w, viewport) ?? 0)),
         styles,
         paints,
         nextOrder,
@@ -1353,7 +1706,7 @@ export function layoutTableContent(input: TableLayoutInput): TableLayoutResult {
       // feeds the row raw, probed: td height:80 with 1px padding yields an
       // 80px row) and the specified height itself.
       const specH = resolveLength(s.height, w, viewport);
-      const pbv = borderPaddingBlock(s, w, viewport);
+      const pbv = borderPaddingBlock(cellStyle, w, viewport) + (isCollapsed ? insets.top + insets.bottom : 0);
       measures.set(cell, {
         contentHeight: node.contentHeight + pbv,
         cssHeight: specH,
@@ -1395,15 +1748,18 @@ export function layoutTableContent(input: TableLayoutInput): TableLayoutResult {
   const specTableH = resolveLength(style.height, contentWidth, viewport);
   if (specTableH !== null) {
     const boxSpec =
-      style.boxSizing === 'border-box' ? specTableH : specTableH + borderPaddingBlock(style, contentWidth, viewport);
-    const gridDesired = Math.max(0, boxSpec - bT - bB - padT - padB - spacingV * 2);
+      style.boxSizing === 'border-box'
+        ? specTableH
+        : specTableH + borderPaddingBlock(style, contentWidth, viewport) + (isCollapsed ? strut.top + strut.bottom : 0);
+    const gridDesired = Math.max(0, boxSpec - bT - bB - padT - padB - (isCollapsed ? strut.top + strut.bottom : 0) - spacingV * 2);
     distributeExcessBlockSize(0, rows.length, gridDesired, false, spacingV, rowSizings);
   }
   const rowHeights = rowSizings.map((r) => Math.max(0, r.base));
   const rowsHeight = rowHeights.reduce((a, b) => a + b, 0) + (rows.length > 1 ? spacingV * (rows.length - 1) : 0);
   const gridHeight = rows.length > 0 ? spacingV + rowsHeight + spacingV : 0;
-  // The table box's border-box height: border+padding around the grid.
-  const boxHeight = bT + padT + gridHeight + padB + bB;
+  // The table box's border-box height: border+padding around the grid
+  // (collapse: the strut halves; the table's own padding is ignored).
+  const boxHeight = isCollapsed ? strut.top + gridHeight + strut.bottom : bT + padT + gridHeight + padB + bB;
 
   // Row positions and baselines (the grid's leading border-spacing edge sits
   // above the first row).
@@ -1452,6 +1808,7 @@ export function layoutTableContent(input: TableLayoutInput): TableLayoutResult {
       for (const { cell, x, w } of rows[rowIndex].cells) {
         const s = cell.style;
         const m = measures.get(cell)!;
+        const insets = collapse?.insets.get(cell) ?? { top: 0, right: 0, bottom: 0, left: 0 };
         const effectiveRowspan = Math.max(1, Math.min(cell.rowspan, rows.length - cell.startRow));
         const endRow = Math.min(cell.startRow + effectiveRowspan, rows.length);
         let spanH = 0;
@@ -1462,28 +1819,39 @@ export function layoutTableContent(input: TableLayoutInput): TableLayoutResult {
         const bLc = s.borderWidth.left;
         const bTc = s.borderWidth.top;
         const bBc = s.borderWidth.bottom;
+        // Collapse cells carry no own borders; the half-insets take their
+        // place in the vertical-align algebra (the insets bound the content
+        // box, and the shared border paints centered on the cell edge). The
+        // separate model keeps the cell's own border widths as the inset.
+        const vTopBorder = isCollapsed ? insets.top : bTc;
+        const vBottomBorder = isCollapsed ? insets.bottom : bBc;
+        const effL = isCollapsed ? insets.left : bLc;
+        const effR = isCollapsed ? insets.right : s.borderWidth.right;
+        const effT = vTopBorder;
         const padTc = resolveLength(s.padding.top, w, viewport) ?? 0;
         const padBc = resolveLength(s.padding.bottom, w, viewport) ?? 0;
         let contentShift = 0;
         if (s.verticalAlign === 'middle') {
-          contentShift = Math.max(0, (spanH - bTc - bBc - padTc - padBc - (m.contentHeight - bTc - bBc - padTc - padBc)) / 2);
+          contentShift = Math.max(0, (spanH - vTopBorder - vBottomBorder - padTc - padBc - (m.contentHeight - vTopBorder - vBottomBorder - padTc - padBc)) / 2);
         } else if (s.verticalAlign === 'bottom') {
           contentShift = Math.max(0, spanH - m.contentHeight);
         } else if (s.verticalAlign === 'baseline' && rowBaseline !== null && m.baseline !== null) {
           contentShift = Math.max(0, rowBaseline - m.baseline);
         }
-        const hideEmpty = s.emptyCells === 'hide' && cellIsEmpty(cell.el);
+        // empty-cells:hide only applies to the separated model (css-tables-3
+        // §5.2); collapsed cells always paint their resolved edges.
+        const hideEmpty = !isCollapsed && s.emptyCells === 'hide' && cellIsEmpty(cell.el);
         const snapshot = hideEmpty ? paints.length : -1;
         const node = layoutElementBox(
           cell.el,
-          s,
+          isCollapsed ? collapseCellStyle(s) : s,
           new FloatManager(x, w),
           x,
           rowY,
           w,
-          x + bLc + (resolveLength(s.padding.left, w, viewport) ?? 0),
-          rowY + bTc + padTc + contentShift,
-          Math.max(0, w - borderPaddingInline(s, w, viewport)),
+          x + effL + (resolveLength(s.padding.left, w, viewport) ?? 0),
+          rowY + effT + padTc + contentShift,
+          Math.max(0, w - effL - effR - (resolveLength(s.padding.left, w, viewport) ?? 0) - (resolveLength(s.padding.right, w, viewport) ?? 0)),
           styles,
           paints,
           nextOrder,
@@ -1550,10 +1918,15 @@ export function layoutTableContent(input: TableLayoutInput): TableLayoutResult {
   for (const cap of bottomCaptions) bottomArea += layoutCaption(cap, boxTop + topArea + boxHeight + bottomArea);
   outChildren.push(...captionNodes);
 
+  if (collapse) pushCollapsedBorderSegments(collapse, rows, colOffsets, rowYs, rowCursor, contentX, paints, nextOrder, input.key);
+
   const firstBaseline = rows.length > 0 ? (rowBaselines[0] ?? firstRowCellBaseline) : null;
+  const gridTopInset = isCollapsed ? strut.top : bT + padT + spacingV;
   return {
     children: outChildren,
-    contentHeight: topArea + gridHeight + bottomArea,
+    // The element's content height: captions + box (collapse: the box already
+    // carries the strut halves; the table's own padding contributes nothing).
+    contentHeight: isCollapsed ? topArea + boxHeight + bottomArea : topArea + gridHeight + bottomArea,
     boxHeight,
     hoistedHeight,
     topCaptionArea: topArea,
@@ -1564,11 +1937,107 @@ export function layoutTableContent(input: TableLayoutInput): TableLayoutResult {
     // first row's).
     baselineOffset:
       firstBaseline !== null
-        ? hoistedHeight + topArea + bT + padT + spacingV + firstBaseline
+        ? hoistedHeight + topArea + gridTopInset + firstBaseline
         : rows.length > 0
-          ? hoistedHeight + topArea + bT + padT + spacingV
+          ? hoistedHeight + topArea + gridTopInset
           : null,
   };
+}
+
+/**
+ * Paint the collapsed borders: each edge paints once, centered on the grid
+ * line it sits on (cell rects abut there, so the border straddles both
+ * neighbors and the outer borders stay flush with the table's border box).
+ * Chrome paints per cell edge in document order and the last painter wins, so
+ * a shared vertical edge renders in the RIGHT neighbor's orientation and a
+ * shared horizontal edge in the LOWER neighbor's; ownership below encodes
+ * exactly that, and each cell pushes its edges top/right/bottom/left.
+ */
+function pushCollapsedBorderSegments(
+  collapse: CollapseModel,
+  rows: { part: TableRowPart; cells: { cell: TableCellPart; x: number; w: number }[] }[],
+  colOffsets: number[],
+  rowYs: number[],
+  gridBottom: number,
+  contentX: number,
+  paints: PaintOp[],
+  nextOrder: () => number,
+  key: number[],
+): void {
+  const colX = (c: number): number => contentX + colOffsets[c];
+  const rowY = (r: number): number => (r < rowYs.length ? rowYs[r] : gridBottom);
+  const verticalEdge = (r: number, boundary: number): CollapsedEdge | null => collapse.v[r * (collapse.cols + 1) + boundary];
+  const horizontalEdge = (boundary: number, c: number): CollapsedEdge | null => collapse.h[boundary * collapse.cols + c];
+
+  const pushSegment = (edge: CollapsedEdge, box: Box, side: Side): void => {
+    const widths = { top: 0, right: 0, bottom: 0, left: 0 };
+    widths[side] = side === 'top' || side === 'bottom' ? box.height : box.width;
+    pushPaintOp(paints, {
+      key,
+      order: nextOrder(),
+      kind: 'border',
+      box,
+      borderWidths: widths,
+      borderColors: { top: edge.color, right: edge.color, bottom: edge.color, left: edge.color },
+      borderStyles: { top: edge.mapped, right: edge.mapped, bottom: edge.mapped, left: edge.mapped },
+      borderRadius: ZERO_BORDER_RADIUS,
+    });
+  };
+
+  // Vertical edge (r, boundary): x band centered on the column line, y over
+  // the row segment, ends extended by the adjacent horizontal borders' halves
+  // so corners fill (Blink's BoxCollapsedBorderPainter caps).
+  const pushVertical = (r: number, boundary: number, side: 'left' | 'right'): void => {
+    const edge = verticalEdge(r, boundary);
+    const w = edgePaintWidth(edge);
+    if (edge === null || w <= 0) return;
+    const gx = colX(boundary);
+    const x0 = Math.round(gx - w / 2);
+    const x1 = Math.round(gx + w / 2);
+    const capAt = (boundary2: number): number => {
+      let cap = 0;
+      if (boundary2 - 1 >= 0) cap = Math.max(cap, edgePaintWidth(horizontalEdge(r, boundary2 - 1)));
+      if (boundary2 < collapse.cols) cap = Math.max(cap, edgePaintWidth(horizontalEdge(r, boundary2)));
+      return cap / 2;
+    };
+    const y0 = Math.round(rowY(r) - capAt(boundary));
+    const y1 = Math.round(rowY(r + 1) + capAt(boundary));
+    pushSegment(edge, { x: x0, y: y0, width: Math.max(0, x1 - x0), height: Math.max(0, y1 - y0) }, side);
+  };
+  // Horizontal edge (boundary, c): y band centered on the row line, x over
+  // the column segment with the same corner caps.
+  const pushHorizontal = (boundary: number, c: number, side: 'top' | 'bottom'): void => {
+    const edge = horizontalEdge(boundary, c);
+    const w = edgePaintWidth(edge);
+    if (edge === null || w <= 0) return;
+    const gy = rowY(boundary);
+    const y0 = Math.round(gy - w / 2);
+    const y1 = Math.round(gy + w / 2);
+    const capAt = (r: number, boundary2: number): number => {
+      let cap = 0;
+      if (r - 1 >= 0) cap = Math.max(cap, edgePaintWidth(verticalEdge(r - 1, boundary2)));
+      if (r < collapse.rows) cap = Math.max(cap, edgePaintWidth(verticalEdge(r, boundary2)));
+      return cap / 2;
+    };
+    const x0 = Math.round(colX(c) - capAt(boundary, c));
+    const x1 = Math.round(colX(c + 1) + capAt(boundary, c + 1));
+    pushSegment(edge, { x: x0, y: y0, width: Math.max(0, x1 - x0), height: Math.max(0, y1 - y0) }, side);
+  };
+
+  for (const { cells } of rows) {
+    for (const { cell } of cells) {
+      const rs = Math.max(1, Math.min(cell.rowspan, collapse.rows - cell.startRow));
+      const cs = Math.max(1, Math.min(cell.colspan, collapse.cols - cell.startCol));
+      for (let c = cell.startCol; c < cell.startCol + cs; c++) pushHorizontal(cell.startRow, c, 'top');
+      if (cell.startCol + cs === collapse.cols) {
+        for (let r = cell.startRow; r < cell.startRow + rs; r++) pushVertical(r, collapse.cols, 'right');
+      }
+      if (cell.startRow + rs === collapse.rows) {
+        for (let c = cell.startCol; c < cell.startCol + cs; c++) pushHorizontal(collapse.rows, c, 'bottom');
+      }
+      for (let r = cell.startRow; r < cell.startRow + rs; r++) pushVertical(r, cell.startCol, 'left');
+    }
+  }
 }
 
 /** Set the containing-block width hoisted HTML-table content lays out at. */

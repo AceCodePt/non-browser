@@ -1,0 +1,57 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "c": {
+      "border-collapse": "collapse",
+      "padding": "0px"
+    },
+    "a": {
+      "border-collapse": "collapse"
+    },
+    "s": {
+      "border-collapse": "separate",
+      "border-spacing": "2px"
+    },
+    "h": {
+      "border-collapse": "separate"
+    }
+  },
+  "rect": {
+    "c": {
+      "x": 0,
+      "y": 0,
+      "width": 252,
+      "height": 54
+    },
+    "a": {
+      "x": 2,
+      "y": 2,
+      "width": 124,
+      "height": 50
+    },
+    "b": {
+      "x": 126,
+      "y": 2,
+      "width": 124,
+      "height": 50
+    },
+    "s": {
+      "x": 0,
+      "y": 78,
+      "width": 146.23999977111816,
+      "height": 56
+    },
+    "h": {
+      "x": 3,
+      "y": 81,
+      "width": 16.239999771118164,
+      "height": 50
+    },
+    "d": {
+      "x": 21.239999771118164,
+      "y": 81,
+      "width": 122,
+      "height": 50
+    }
+  }
+}

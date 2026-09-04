@@ -1,0 +1,35 @@
+{
+ "note": "Row, row-group, column-group, and cell border contributions resolve per the spec's precedence: a 5px row border beats the cells' 1px tops on row 2, the thead's 3px border contributes the outer frame of row 1 and loses to the wider tbody border at the section boundary, and the colgroup's 4px border-right paints the table's right edge on rows the row borders don't cover. Struts take half of the widest collapsed outer border on each side.",
+ "harvest": {
+  "viewport": {
+   "width": 380,
+   "height": 240
+  },
+  "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans';font-size:16px}table{border-collapse:collapse}td{width:100px;height:40px;padding:10px;background:#ffffff;border:1px solid #ff0000}thead{border:3px solid #00aa00}tbody tr#r2{border-top:5px solid #f0c040}colgroup{border-right:4px solid #40b0d0}</style></head><body><table id=\"t\"><colgroup><col><col></colgroup><thead><tr><td id=\"a\">A</td><td id=\"b\">B</td></tr></thead><tbody><tr id=\"r2\"><td id=\"c\">C</td><td id=\"d\">D</td></tr><tr id=\"r3\"><td id=\"e\">E</td><td id=\"f\">F</td></tr></tbody></table></body></html>",
+  "measureText": [],
+  "rects": [
+   "t",
+   "a",
+   "b",
+   "c",
+   "d",
+   "e",
+   "f"
+  ],
+  "textElements": [
+   "a",
+   "b",
+   "c",
+   "d",
+   "e",
+   "f"
+  ]
+ },
+ "name": "row-col-borders",
+ "expected": {
+  "measureText": "pass",
+  "computedStyle": "pass",
+  "rect": "pass",
+  "screenshot": "pass"
+ }
+}

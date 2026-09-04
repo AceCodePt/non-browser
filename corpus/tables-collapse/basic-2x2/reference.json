@@ -1,0 +1,49 @@
+{
+  "measureText": {},
+  "computedStyle": {
+    "t": {
+      "border-collapse": "collapse",
+      "border-spacing": "2px",
+      "padding": "0px",
+      "border-radius": "16px"
+    },
+    "a": {
+      "border-collapse": "collapse",
+      "border-top-width": "4px",
+      "border-top-style": "solid",
+      "border-left-width": "4px"
+    }
+  },
+  "rect": {
+    "t": {
+      "x": 0,
+      "y": 0,
+      "width": 252,
+      "height": 104
+    },
+    "a": {
+      "x": 2,
+      "y": 2,
+      "width": 124,
+      "height": 50
+    },
+    "b": {
+      "x": 126,
+      "y": 2,
+      "width": 124,
+      "height": 50
+    },
+    "c": {
+      "x": 2,
+      "y": 52,
+      "width": 124,
+      "height": 50
+    },
+    "d": {
+      "x": 126,
+      "y": 52,
+      "width": 124,
+      "height": 50
+    }
+  }
+}

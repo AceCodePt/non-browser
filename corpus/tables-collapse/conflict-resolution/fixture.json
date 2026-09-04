@@ -1,0 +1,35 @@
+{
+ "note": "Conflict resolution between neighbors with unequal widths, styles, and colors: wider border wins (8px over 4px), style rank wins at equal width (solid over dashed, double over solid), and at equal width+style the top/left source wins (vertical and horizontal ties). inset/outset collapse to ridge/groove rendering per css-tables-3 (probed against Chrome's raster).",
+ "harvest": {
+  "viewport": {
+   "width": 420,
+   "height": 180
+  },
+  "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans';font-size:16px}table{border-collapse:collapse}td{width:100px;height:50px;padding:10px;background:#ffffff}</style></head><body><table id=\"t\"><tr><td id=\"a\" style=\"border:4px solid #ff0000\">A</td><td id=\"b\" style=\"border-left:4px dashed #00ff00;border-right:6px solid #0000ff\">B</td><td id=\"c\" style=\"border-left:6px double #f0c040;border-bottom:8px solid #9040b0\">C</td></tr><tr><td id=\"d\" style=\"border:4px solid #90b04f\">D</td><td id=\"e\" style=\"border:4px solid #d9534f\">E</td><td id=\"f\" style=\"border:4px solid #40b0d0;border-top:6px outset #808080\">F</td></tr></table></body></html>",
+  "measureText": [],
+  "rects": [
+   "t",
+   "a",
+   "b",
+   "c",
+   "d",
+   "e",
+   "f"
+  ],
+  "textElements": [
+   "a",
+   "b",
+   "c",
+   "d",
+   "e",
+   "f"
+  ]
+ },
+ "name": "conflict-resolution",
+ "expected": {
+  "measureText": "pass",
+  "computedStyle": "pass",
+  "rect": "pass",
+  "screenshot": "pass"
+ }
+}

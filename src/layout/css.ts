@@ -1731,6 +1731,9 @@ interface Defaults {
   textIndentEachLineInherited?: boolean;
   wordSpacingInherited?: Length;
   borderCollapseDefault?: 'separate' | 'collapse';
+  /** inherited border-collapse (the property inherits; a table's UA default
+   * wins over it). */
+  borderCollapseInherited?: 'separate' | 'collapse';
   borderSpacingDefault?: number;
   borderSpacingVDefault?: number;
   tableLayoutDefault?: 'auto' | 'fixed';
@@ -2343,8 +2346,12 @@ export function makeStyle(rawDecls: Declaration[], defaults: Defaults): Computed
     : defaults.textAlignDefault ?? defaults.textAlignComputedInherited ?? 'start';
 
   const borderCollapseDecl = findDecl(decls, 'border-collapse');
+  // border-collapse inherits (CSS 2.1 §17.6); the UA table rule's `separate`
+  // default (tagDefaults) beats inheritance, matching Blink's html.css.
   const borderCollapse: 'separate' | 'collapse' =
-    borderCollapseDecl && borderCollapseDecl.value.trim() === 'collapse' ? 'collapse' : (defaults.borderCollapseDefault ?? 'separate');
+    borderCollapseDecl && borderCollapseDecl.value.trim() === 'collapse'
+      ? 'collapse'
+      : (defaults.borderCollapseDefault ?? defaults.borderCollapseInherited ?? 'separate');
   const borderSpacingDecl = findDecl(decls, 'border-spacing');
   const parseSpacing = (): { h: number; v: number } => {
     if (borderSpacingDecl) {
