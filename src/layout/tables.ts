@@ -44,14 +44,31 @@ import {
   type DisplayValue,
   type Side,
   type Viewport,
-  type WhiteSpaceValue,
 } from './css.js';
-import { layoutElementBox, expandContents, FloatManager, buildPieces, pushPaintOp, type InlinePiece, type LayoutNode, type PaintOp } from './block-inline.js';
+import { layoutElementBox, expandContents, FloatManager, pushPaintOp, type LayoutNode, type PaintOp } from './block-inline.js';
+import { contentInlineSizes, type IntrinsicPolicy } from './intrinsic.js';
 import { isCommentNode, isElementNode, isTextNode, type Box, type P5Element, type P5Text } from './types.js';
 import { activeFontMetrics } from './fontmetrics.js';
-import { measureTextWidth, minTextWidth } from './measure.js';
 
 const EPS = 0.001;
+
+// Tables measure inline text through the piece machinery with a single
+// box-level space width and cap max at the widest line, and add each child's
+// margins to its contribution; nested tables contribute their preferred width
+// (css-tables-3 §3.4).
+const INTRINSIC_POLICY: IntrinsicPolicy = {
+  blockDisplays: new Set(['block', 'list-item', 'grid', 'inline-grid', 'flex', 'table']),
+  skipPositioned: true,
+  skipFloat: true,
+  pieceText: true,
+  rowFlex: false,
+  childMargins: true,
+  childDisplays: new Set(['block', 'list-item', 'grid', 'inline-grid', 'flex']),
+  nestedTableWidth: (el, style, styles, viewport) => tablePreferredWidth(el, style, styles, null, viewport),
+  borderBox: false,
+  spaceStyle: 'single',
+  breaks: 'cap',
+};
 
 /** HTML tags whose children are table parts; stray children of these hoist
  * above the table box instead of forming anonymous boxes (Blink's legacy
@@ -725,96 +742,6 @@ interface ColumnConstraint {
 }
 
 /**
- * Min/max inline contribution of a box's content: inline pieces through the
- * shared piece machinery; stacked block-level children take the max; nested
- * tables contribute the table's own preferred width (css-tables-3 §3.4).
- *
- * The piece max-content is break-aware: a forced break (<br>) ends a
- * max-content line, so the max is the widest LINE, not the sum of all words.
- */
-function blockPieceSizes(pieces: InlinePiece[], style: ComputedStyle, ws: WhiteSpaceValue, wordSpacing: number): { min: number; max: number } {
-  const preserve = ws === 'pre' || ws === 'pre-wrap';
-  let min = 0;
-  let max = 0;
-  let lineMax = 0;
-  let prevWasSpace = false;
-  const spaceW = measureTextWidth(' ', style.fontSize, style.fontFamily, style.letterSpacing) + wordSpacing;
-  for (const p of pieces) {
-    if (p.kind === 'break') {
-      max = Math.max(max, lineMax);
-      lineMax = 0;
-      prevWasSpace = false;
-      continue;
-    }
-    if (p.kind === 'wbr') continue;
-    if (p.kind === 'space') {
-      if (preserve) {
-        lineMax += measureTextWidth(p.text, style.fontSize, style.fontFamily, style.letterSpacing) + wordSpacing * p.text.length;
-      }
-      prevWasSpace = true;
-      continue;
-    }
-    const w =
-      p.kind === 'word'
-        ? measureTextWidth(p.text, p.style.fontSize, p.style.family, p.style.letterSpacing, p.style.fontWeight, p.style.fontStyle)
-        : p.marginLeft + p.borderWidth + p.marginRight;
-    min = Math.max(min, p.kind === 'word' ? minTextWidth(p.text, p.style.fontSize, p.style.family, p.style.letterSpacing, style.overflowWrap === 'anywhere', p.style.fontWeight, p.style.fontStyle) : w);
-    if (prevWasSpace && !preserve) lineMax += spaceW;
-    lineMax += w;
-    prevWasSpace = false;
-  }
-  return { min, max: Math.max(max, lineMax) };
-}
-
-function contentInlineSizes(
-  el: P5Element,
-  style: ComputedStyle,
-  styles: Map<P5Element, ComputedStyle>,
-  viewport: Viewport | undefined,
-  refWidth: number,
-): { min: number; max: number } {
-  const pieces = buildPieces(el, style, styles, refWidth, viewport, style.whiteSpace);
-  let min = 0;
-  let max = 0;
-  if (pieces.length > 0) {
-    const sizes = blockPieceSizes(pieces, style, style.whiteSpace, resolveLength(style.wordSpacing, refWidth, viewport) ?? 0);
-    min = sizes.min;
-    max = sizes.max;
-  }
-  for (const child of expandContents(el.childNodes, styles)) {
-    if (!isElementNode(child)) continue;
-    const cs = styles.get(child);
-    if (!cs || cs.display === 'none' || cs.display === 'contents') continue;
-    if (cs.float !== 'none' || cs.position === 'absolute' || cs.position === 'fixed') continue;
-    const mL = resolveLength(cs.margin.left, refWidth, viewport) ?? 0;
-    const mR = resolveLength(cs.margin.right, refWidth, viewport) ?? 0;
-    const pb = borderPaddingInline(cs, refWidth, viewport);
-    if (cs.display === 'table' || cs.display === 'inline-table') {
-      const w = tablePreferredWidth(child, cs, styles, null, viewport);
-      min = Math.max(min, w + mL + mR);
-      max = Math.max(max, w + mL + mR);
-      continue;
-    }
-    if (cs.display === 'block' || cs.display === 'list-item' || cs.display === 'grid' || cs.display === 'inline-grid' || cs.display === 'flex') {
-      const specW = cs.width.px;
-      let cmin: number;
-      let cmax: number;
-      if (specW !== null) {
-        cmin = specW;
-        cmax = specW;
-      } else {
-        const sizes = contentInlineSizes(child, cs, styles, viewport, refWidth);
-        cmin = sizes.min;
-        cmax = sizes.max;
-      }
-      min = Math.max(min, cmin + pb + mL + mR);
-      max = Math.max(max, cmax + pb + mL + mR);
-    }
-  }
-  return { min, max };
-}
-
-/**
  * Blink TableTypes::CreateCellInlineConstraint: resolved_min = max(min-content,
  * css min-width) in auto layout (0 in fixed layout); content_max = the
  * specified width when set, else max-content, clamped by max-width; max =
@@ -834,7 +761,7 @@ function cellInlineConstraint(
   const pct = style.width.pct;
   const minW = style.minWidth.px;
   const maxW = style.maxWidth.px;
-  const content = contentInlineSizes(cell.el, style, styles, viewport, 0);
+  const content = contentInlineSizes(cell.el, style, styles, INTRINSIC_POLICY, viewport, 0);
   let resolvedMin = isFixedLayout ? 0 : Math.max(content.min + pb, (minW ?? 0) + pb);
   let contentMax = specW !== null ? specW + pb : content.max + pb;
   if (maxW !== null) {
@@ -1214,7 +1141,7 @@ function tableGridMeasures(
   max += edge;
   for (const cap of children.captions) {
     const s = cap.style;
-    const sizes = contentInlineSizes(cap.el, s, styles, viewport, 0);
+    const sizes = contentInlineSizes(cap.el, s, styles, INTRINSIC_POLICY, viewport, 0);
     const pb = borderPaddingInline(s, 0, viewport);
     const mL = resolveLength(s.margin.left, 0, viewport) ?? 0;
     const mR = resolveLength(s.margin.right, 0, viewport) ?? 0;

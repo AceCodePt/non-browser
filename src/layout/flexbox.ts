@@ -40,13 +40,27 @@ import {
   type Length,
   type Viewport,
 } from './css.js';
-import { applyTextTransform } from './css.js';
-import { layoutTextLines, measureTextWidth, minTextWidth } from './measure.js';
+import { layoutTextLines } from './measure.js';
 import { expandContents, FloatManager, layoutElementBox, type LayoutNode, type PaintOp } from './block-inline.js';
+import { collectInlineText, contentInlineSizes, hasInlineText, type IntrinsicPolicy } from './intrinsic.js';
 import { activeFontMetrics, lineAscentContribution } from './fontmetrics.js';
 import { isCommentNode, isElementNode, isTextNode, type P5Element, type P5Text } from './types.js';
 
 const EPS = 0.001;
+
+// Flex's intrinsic sizing skips absolutely/fixed children, converts specified
+// widths to border-box, and sums row-flex items + gaps (css-flexbox-1 §9.4).
+const INTRINSIC_POLICY: IntrinsicPolicy = {
+  blockDisplays: new Set(['block', 'grid', 'flex']),
+  skipPositioned: true,
+  skipFloat: false,
+  pieceText: false,
+  rowFlex: true,
+  childMargins: false,
+  borderBox: true,
+  spaceStyle: 'single',
+  breaks: 'cap',
+};
 
 export interface FlexLayoutInput {
   el: P5Element;
@@ -104,112 +118,6 @@ interface FlexLine {
   hasBaseline: boolean;
 }
 
-function hasInlineText(el: P5Element, styles: Map<P5Element, ComputedStyle>): boolean {
-  for (const child of expandContents(el.childNodes, styles)) {
-    if (isTextNode(child)) {
-      if (/\S/.test(child.value)) return true;
-    } else if (isElementNode(child)) {
-      const s = styles.get(child);
-      if (s && (s.display === 'block' || s.display === 'grid' || s.display === 'flex')) continue;
-      return true;
-    }
-  }
-  return false;
-}
-
-function collectInlineText(el: P5Element, styles: Map<P5Element, ComputedStyle>): string {
-  let out = '';
-  const self = styles.get(el);
-  const transform = self?.textTransform ?? 'none';
-  for (const child of expandContents(el.childNodes, styles)) {
-    if (isTextNode(child)) {
-      out += applyTextTransform(child.value, transform);
-    } else if (isElementNode(child)) {
-      const s = styles.get(child);
-      if (s && (s.display === 'block' || s.display === 'grid' || s.display === 'flex')) continue;
-      out += collectInlineText(child, styles);
-    }
-  }
-  return out;
-}
-
-function contentInlineSizes(
-  el: P5Element,
-  style: ComputedStyle,
-  styles: Map<P5Element, ComputedStyle>,
-): { min: number; max: number } {
-  if (hasInlineText(el, styles)) {
-    const text = collectInlineText(el, styles).replace(/[ \t\r\n\f]+/g, ' ').trim();
-    const widest = minTextWidth(text, style.fontSize, style.fontFamily, style.letterSpacing, style.overflowWrap === 'anywhere');
-    const ws = resolveLength(style.wordSpacing, 0) ?? 0;
-    const full = measureTextWidth(text, style.fontSize, style.fontFamily, style.letterSpacing) + ws * (text.match(/ /g)?.length ?? 0);
-    return { min: widest, max: full };
-  }
-  let min = 0;
-  let max = 0;
-  // A row flex container's intrinsic inline size is the SUM of its items' sizes
-  // plus the gaps between them (css-flexbox-1 §9.4 intrinsic sizing), whereas a
-  // column flex / block container's inline size is the widest single child
-  // (items stack in the block axis). Taking the max here made a nested row flex
-  // (e.g. a menu) size to its widest item instead of the whole bar + gap.
-  if (style.display === 'flex' && (style.flexDirection === 'row' || style.flexDirection === 'row-reverse')) {
-    let n = 0;
-    const gap = gapLen(style.columnGap, 0, undefined);
-    let sumMin = 0;
-    let sumMax = 0;
-    for (const child of expandContents(el.childNodes, styles)) {
-      if (!isElementNode(child)) continue;
-      const cs = styles.get(child);
-      if (!cs || cs.display === 'none') continue;
-      if (cs.position === 'absolute' || cs.position === 'fixed') continue;
-      if (n > 0) {
-        sumMin += gap;
-        sumMax += gap;
-      }
-      n++;
-      const c = inlineContribution(child, cs, styles);
-      sumMin += c.min;
-      sumMax += c.max;
-    }
-    return { min: sumMin, max: sumMax };
-  }
-  for (const child of expandContents(el.childNodes, styles)) {
-    if (!isElementNode(child)) continue;
-    const cs = styles.get(child);
-    if (!cs || cs.display === 'none') continue;
-    if (cs.position === 'absolute' || cs.position === 'fixed') continue;
-    const c = inlineContribution(child, cs, styles);
-    min = Math.max(min, c.min);
-    max = Math.max(max, c.max);
-  }
-  return { min, max };
-}
-
-function inlineContribution(
-  el: P5Element,
-  style: ComputedStyle,
-  styles: Map<P5Element, ComputedStyle>,
-): { min: number; max: number } {
-  const pb = borderPaddingInline(style, 0);
-  const specW = style.width;
-  const minW = style.minWidth;
-  const maxW = style.maxWidth;
-  const borderBox = (len: Length): number | null =>
-    len.auto ? null : style.boxSizing === 'border-box' ? len.px ?? null : len.px !== null ? len.px + pb : null;
-  if (specW.px !== null) {
-    const w = borderBox(specW);
-    if (w !== null) {
-      const lo = borderBox(minW) ?? 0;
-      const hi = borderBox(maxW) ?? Infinity;
-      return { min: clamp(w, lo, hi), max: clamp(w, lo, hi) };
-    }
-  }
-  const content = contentInlineSizes(el, style, styles);
-  const lo = minW.auto ? content.min + pb : (borderBox(minW) ?? 0);
-  const hi = maxW.auto ? Infinity : (borderBox(maxW) ?? Infinity);
-  return { min: clamp(content.min + pb, lo, hi), max: clamp(content.max + pb, lo, hi) };
-}
-
 function contentBlockHeight(
   el: P5Element,
   style: ComputedStyle,
@@ -217,9 +125,9 @@ function contentBlockHeight(
   contentW: number,
 ): number {
   const w = Math.max(0, contentW);
-  if (hasInlineText(el, styles)) {
+  if (hasInlineText(el, styles, INTRINSIC_POLICY.blockDisplays)) {
     const res = layoutTextLines({
-      text: collectInlineText(el, styles),
+      text: collectInlineText(el, styles, INTRINSIC_POLICY.blockDisplays),
       x: 0,
       y: 0,
       width: w,
@@ -484,7 +392,7 @@ export function layoutFlexChildren(input: FlexLayoutInput): { children: LayoutNo
       item.hypotheticalCrossSize =
         contentBlockHeight(item.el, s, styles, mainContentW) + item.padBorderCross;
     } else {
-      item.hypotheticalCrossSize = contentInlineSizes(item.el, s, styles).max + item.padBorderCross;
+      item.hypotheticalCrossSize = contentInlineSizes(item.el, s, styles, INTRINSIC_POLICY).max + item.padBorderCross;
     }
     if (!crossMinLen.auto) {
       item.minCrossSize = lengthToBorderBox(crossMinLen, containerCross ?? 0, s, item.padBorderCross) ?? 0;
@@ -814,7 +722,7 @@ function contentBasedMainSize(
 ): number {
   const s = item.style;
   if (isRow) {
-    return contentInlineSizes(item.el, s, styles).max + item.padBorderMain;
+    return contentInlineSizes(item.el, s, styles, INTRINSIC_POLICY).max + item.padBorderMain;
   }
   const crossLen = s.width;
   let measureW: number;
@@ -826,7 +734,7 @@ function contentBasedMainSize(
     if (stretch && containerCross !== null) {
       measureW = containerCross;
     } else {
-      measureW = contentInlineSizes(item.el, s, styles).max + item.padBorderCross;
+      measureW = contentInlineSizes(item.el, s, styles, INTRINSIC_POLICY).max + item.padBorderCross;
     }
   }
   const contentBoxW = Math.max(0, measureW - item.padBorderCross);
@@ -840,7 +748,7 @@ function contentBasedMinMainSize(
 ): number {
   const s = item.style;
   if (isRow) {
-    return contentInlineSizes(item.el, s, styles).min + item.padBorderMain;
+    return contentInlineSizes(item.el, s, styles, INTRINSIC_POLICY).min + item.padBorderMain;
   }
   return item.padBorderMain;
 }
@@ -860,7 +768,7 @@ function baselineFromMarginBoxTop(
 ): number {
   const s = item.style;
   const marginTop = item.crossStart;
-  if (hasInlineText(item.el, styles)) {
+  if (hasInlineText(item.el, styles, INTRINSIC_POLICY.blockDisplays)) {
     const padTop = (resolveLength(s.padding.top, 0) ?? 0) + s.borderWidth.top;
     const lineBaseline = lineAscentContribution(s.fontSize, s.lineHeight, activeFontMetrics());
     return marginTop + padTop + lineBaseline;

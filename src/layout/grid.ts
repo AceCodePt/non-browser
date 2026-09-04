@@ -30,12 +30,26 @@ import {
   type TrackFunction,
   type Viewport,
 } from './css.js';
-import { applyTextTransform } from './css.js';
-import { layoutTextLines, measureTextWidth, minTextWidth } from './measure.js';
+import { layoutTextLines } from './measure.js';
 import { expandContents, FloatManager, layoutElementBox, type LayoutNode, type PaintOp } from './block-inline.js';
+import { collectInlineText, hasInlineText, inlineContribution, type IntrinsicPolicy } from './intrinsic.js';
 import { isCommentNode, isElementNode, isTextNode, type P5Element, type P5Text } from './types.js';
 
 const EPS = 0.001;
+
+// Grid's intrinsic sizing reads specified widths raw (no border-box conversion)
+// and treats display:table children as block-level in the inline-text walkers.
+const INTRINSIC_POLICY: IntrinsicPolicy = {
+  blockDisplays: new Set(['block', 'grid', 'flex', 'table']),
+  skipPositioned: false,
+  skipFloat: false,
+  pieceText: false,
+  rowFlex: false,
+  childMargins: false,
+  borderBox: false,
+  spaceStyle: 'single',
+  breaks: 'cap',
+};
 
 const DEFAULT_AUTO: TrackDef = { min: { type: 'auto' }, max: { type: 'auto' }, names: [] };
 
@@ -60,79 +74,6 @@ function resolveTrackFn(fn: TrackFunction, containerSize: number | null, viewpor
   }
 }
 
-function hasInlineText(el: P5Element, styles: Map<P5Element, ComputedStyle>): boolean {
-  for (const child of expandContents(el.childNodes, styles)) {
-    if (isTextNode(child)) {
-      if (/\S/.test(child.value)) return true;
-    } else if (isElementNode(child)) {
-      const s = styles.get(child);
-      if (s && (s.display === 'block' || s.display === 'grid' || s.display === 'flex' || s.display === 'table')) continue;
-      return true;
-    }
-  }
-  return false;
-}
-
-function collectInlineText(el: P5Element, styles: Map<P5Element, ComputedStyle>): string {
-  let out = '';
-  const self = styles.get(el);
-  const transform = self?.textTransform ?? 'none';
-  for (const child of expandContents(el.childNodes, styles)) {
-    if (isTextNode(child)) {
-      out += applyTextTransform(child.value, transform);
-    } else if (isElementNode(child)) {
-      const s = styles.get(child);
-      if (s && (s.display === 'block' || s.display === 'grid' || s.display === 'flex' || s.display === 'table')) continue;
-      out += collectInlineText(child, styles);
-    }
-  }
-  return out;
-}
-
-function contentInlineSizes(
-  el: P5Element,
-  style: ComputedStyle,
-  styles: Map<P5Element, ComputedStyle>,
-): { min: number; max: number } {
-  if (hasInlineText(el, styles)) {
-    const text = collectInlineText(el, styles).replace(/[ \t\r\n\f]+/g, ' ').trim();
-    const widest = minTextWidth(text, style.fontSize, style.fontFamily, style.letterSpacing, style.overflowWrap === 'anywhere');
-    const ws = resolveLength(style.wordSpacing, 0) ?? 0;
-    const full = measureTextWidth(text, style.fontSize, style.fontFamily, style.letterSpacing) + ws * (text.match(/ /g)?.length ?? 0);
-    return { min: widest, max: full };
-  }
-  let min = 0;
-  let max = 0;
-  for (const child of expandContents(el.childNodes, styles)) {
-    if (!isElementNode(child)) continue;
-    const cs = styles.get(child);
-    if (!cs || cs.display === 'none') continue;
-    const m = inlineContributions(child, cs, styles);
-    min = Math.max(min, m.min);
-    max = Math.max(max, m.max);
-  }
-  return { min, max };
-}
-
-function inlineContributions(
-  el: P5Element,
-  style: ComputedStyle,
-  styles: Map<P5Element, ComputedStyle>,
-): { min: number; max: number; minimum: number } {
-  const pb = borderPaddingInline(style, 0);
-  const specW = style.width.px;
-  const minW = style.minWidth.px ?? 0;
-  const maxW = style.maxWidth.px ?? Infinity;
-  if (specW !== null) {
-    const w = clamp(specW, minW, maxW);
-    return { min: w, max: w, minimum: w };
-  }
-  const content = contentInlineSizes(el, style, styles);
-  const minC = clamp(content.min + pb, minW, maxW);
-  const maxC = clamp(content.max + pb, minW, maxW);
-  return { min: minC, max: maxC, minimum: minC };
-}
-
 function contentHeightAtWidth(
   el: P5Element,
   style: ComputedStyle,
@@ -140,9 +81,9 @@ function contentHeightAtWidth(
   contentW: number,
 ): number {
   const w = Math.max(0, contentW);
-  if (hasInlineText(el, styles)) {
+  if (hasInlineText(el, styles, INTRINSIC_POLICY.blockDisplays)) {
     const res = layoutTextLines({
-      text: collectInlineText(el, styles),
+      text: collectInlineText(el, styles, INTRINSIC_POLICY.blockDisplays),
       x: 0,
       y: 0,
       width: w,
@@ -553,7 +494,7 @@ interface SizingItem {
   span: number;
   minContribution: number;
   maxContribution: number;
-  minimumContribution: number;
+  autoMinimum: number;
   spansFlex: boolean;
 }
 
@@ -625,7 +566,7 @@ function affectsBase(type: ContributionType): boolean {
 function contributionFor(item: SizingItem, type: ContributionType): number {
   switch (type) {
     case 'intrinsicMinimums':
-      return item.minimumContribution;
+      return item.autoMinimum;
     case 'contentBasedMinimums':
     case 'intrinsicMaximums':
       return item.minContribution;
@@ -1108,7 +1049,7 @@ export function layoutGridChildren(input: GridLayoutInput): { children: LayoutNo
 
   const colItems: SizingItem[] = [];
   for (const item of placed) {
-    const ic = inlineContributions(item.el, item.style, styles);
+    const ic = inlineContribution(item.el, item.style, styles, INTRINSIC_POLICY);
     const m = marginsInline(item.style, contentWidth);
     const spansFlex = spansFlexible(item, 'col', colDefs);
     colItems.push({
@@ -1116,7 +1057,7 @@ export function layoutGridChildren(input: GridLayoutInput): { children: LayoutNo
       span: item.colSpan,
       minContribution: ic.min + m.left + m.right,
       maxContribution: ic.max + m.left + m.right,
-      minimumContribution: autoMin(item, ic, colDefs) + m.left + m.right,
+      autoMinimum: autoMin(item, ic, colDefs) + m.left + m.right,
       spansFlex,
     });
   }
@@ -1130,7 +1071,7 @@ export function layoutGridChildren(input: GridLayoutInput): { children: LayoutNo
     const js = effectiveJustify(item.style, styleRef);
     const m = marginsInline(item.style, spanW);
     const innerAreaW = Math.max(0, spanW - m.left - m.right);
-    const ic = inlineContributions(item.el, item.style, styles);
+    const ic = inlineContribution(item.el, item.style, styles, INTRINSIC_POLICY);
     const measureW =
       js === 'stretch'
         ? spanW
@@ -1143,7 +1084,7 @@ export function layoutGridChildren(input: GridLayoutInput): { children: LayoutNo
       span: item.rowSpan,
       minContribution: bc + mb.top + mb.bottom,
       maxContribution: bc + mb.top + mb.bottom,
-      minimumContribution: autoMinBlock(item, bc, rowDefs) + mb.top + mb.bottom,
+      autoMinimum: autoMinBlock(item, bc, rowDefs) + mb.top + mb.bottom,
       spansFlex,
     });
   }
@@ -1179,7 +1120,7 @@ export function layoutGridChildren(input: GridLayoutInput): { children: LayoutNo
     const innerH = Math.max(0, areaH - mT - mB);
 
     const specW = item.style.width.px !== null ? item.style.width.px : null;
-    const ic = inlineContributions(item.el, item.style, styles);
+    const ic = inlineContribution(item.el, item.style, styles, INTRINSIC_POLICY);
     let borderW: number;
     if (specW !== null) {
       borderW = item.style.boxSizing === 'border-box' ? specW : specW + borderPaddingInline(item.style, innerW);
