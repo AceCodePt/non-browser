@@ -298,7 +298,11 @@ function parseMediaLength(value: string): number | null {
   return unit === 'px' ? v : v * 16;
 }
 
-function parseRatio(value: string): [number, number] | null {
+/** css-values-4 §5.4.1 <ratio>: <number> [ / <number> ]? — at most two numbers,
+ * a zero divisor invalidates the ratio. Shared by the @media and @container
+ * evaluators; the strict 3-part rejection is Blink-correct (the container
+ * path's old local parse accepted `a/b/c` by ignoring the tail). */
+export function parseRatio(value: string): [number, number] | null {
   const parts = value.split('/');
   if (parts.length === 1) {
     const v = parseFloat(parts[0]);
@@ -312,6 +316,32 @@ function parseRatio(value: string): [number, number] | null {
   return null;
 }
 
+/** Compare `width/height` against ratio `a/b` via cross multiplication —
+ * exact for integers, no division. Shared by the @media and @container
+ * evaluators (container queries compare against the container's content box). */
+export function compareAspectRatio(width: number, height: number, a: number, b: number, op: MediaOp): boolean {
+  const lhs = width * b;
+  const rhs = height * a;
+  switch (op) {
+    case 'eq':
+      return lhs === rhs;
+    case 'min':
+      return lhs >= rhs;
+    case 'max':
+      return lhs <= rhs;
+    case 'lt':
+      return lhs < rhs;
+    case 'gt':
+      return lhs > rhs;
+    case 'lte':
+      return lhs <= rhs;
+    case 'gte':
+      return lhs >= rhs;
+    default:
+      return false;
+  }
+}
+
 function parseResolution(value: string): number | null {
   const m = value.match(/^([\d.]+)\s*(x|dppx|dpi|dpcm)?$/);
   if (!m) return null;
@@ -323,7 +353,7 @@ function parseResolution(value: string): number | null {
   return null;
 }
 
-function compareNum(current: number, target: number, op: MediaOp): boolean {
+export function compareNum(current: number, target: number, op: MediaOp): boolean {
   switch (op) {
     case 'eq':
       return current === target;
@@ -369,28 +399,7 @@ export function evaluateFeature(cond: { name: string; op: MediaOp; value: string
     case 'aspect-ratio': {
       const r = parseRatio(value);
       if (!r) return false;
-      const [a, b] = r;
-      // compare env.width/env.height vs a/b exactly via cross multiplication
-      const lhs = env.width * b;
-      const rhs = env.height * a;
-      switch (op) {
-        case 'eq':
-          return lhs === rhs;
-        case 'min':
-          return lhs >= rhs;
-        case 'max':
-          return lhs <= rhs;
-        case 'lt':
-          return lhs < rhs;
-        case 'gt':
-          return lhs > rhs;
-        case 'lte':
-          return lhs <= rhs;
-        case 'gte':
-          return lhs >= rhs;
-        default:
-          return false;
-      }
+      return compareAspectRatio(env.width, env.height, r[0], r[1], op);
     }
     case 'orientation': {
       const portrait = env.height >= env.width;
