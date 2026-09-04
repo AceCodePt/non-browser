@@ -113,6 +113,16 @@ export function computedStyleString(style: ComputedStyle, prop: string, refWidth
   // Custom properties serialize as their computed token stream; Chrome reports
   // '' for undefined and guaranteed-invalid names alike.
   if (prop.startsWith('--')) return style.customProps[prop] ?? '';
+  // css-tables-3 §3.6.2: a collapsed table-root's padding is ignored — Blink
+  // zeroes it at computed-value time (probed: getComputedStyle reports 0px),
+  // so the layer-2 oracle must report the used zero too.
+  if (
+    /^padding(-top|-right|-bottom|-left)?$/.test(prop) &&
+    (style.display === 'table' || style.display === 'inline-table') &&
+    style.borderCollapse === 'collapse'
+  ) {
+    return '0px';
+  }
   switch (prop) {
     case 'display': {
       const d = style.display;

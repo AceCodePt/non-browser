@@ -26,7 +26,8 @@ The following are **in scope** for v1:
 - Full CSS layout, landed in a defined order: block/inline → positioning → floats → flexbox → grid **last**.
 - Table formatting context (css-tables-3), separate-borders model: auto and
   fixed table layout, anonymous box generation, spanning, captions,
-  border-spacing, empty-cells. `border-collapse: collapse` is the follow-on
+  border-spacing, empty-cells. The collapsing-borders model
+  (`border-collapse: collapse`, css-tables-3 §4) is landed by the
   `tables-border-collapse` slice.
 - Text: layout over a generic Canvas interface (`measureText` + paint primitives). The engine's shipped breaking path is `@chenglou/pretext` prepare/break over the same interface (`src/layout/measure.ts` routes `layoutTextLines` through `breakNextLine`; see `docs/ledgers/breakers.md`). The greedy space-break wrapper survives only as the flagged `CASCADE_BREAKER=greedy` fallback that the drift gate pins to Pretext. Skia is the first implementation; CoreText/HarfBuzz may follow behind the same interface.
 - Replaced boxes at layout size for `<canvas>` and `<img>`.
@@ -216,6 +217,7 @@ the charter and the corpus cannot silently diverge:
 | ua-stylesheet | UA defaults for modern text-level and sectioning elements — mark (yellow fill), del/s strike, ins underline, small/sub/sup smaller font-size with the Blink sub/super baseline shift, fieldset groove border + legend straddling the top border (no table layout), details block container with the summary disclosure list-item | yes | corpus/text-level-ua | disclosure-closed |
 | form controls | default rendering of input/select/textarea/button: UA display/box-sizing/border/background/padding and the 13.3333px control font, size/cols-derived control sizing, checkbox/radio 13x13 geometry painted per checked state, select chosen-option text + chevron, theme-painted appearance:auto look, static :checked/:disabled/:enabled matching from attributes | yes | corpus/form-controls | :checked |
 | tables | table formatting context, separate-borders model (css-tables-3): anonymous table-row-group/row/cell generation (§2.1), auto width distribution (guess algorithm over cell min/max constraints, colspan distribution) and fixed layout (col-element + first-row widths, no column shrink — over-constrained tables grow), rowspan/colspan spanning with row block-size distribution, captions (caption-side, margins) above/below the box, border-spacing on every grid edge, cell vertical-align (middle/bottom/baseline), empty-cells:hide; HTML-table stray content hoists above the box, css display:table wraps stray content in place | yes | corpus/tables | table-layout |
+| tables | border-collapse:collapse (css-tables-3 §4): per-edge conflict resolution over cell/row/row-group/column/colgroup/table borders (hidden first, then width, then style rank with inset→ridge / outset→groove, then the cell > row > row-group > column > colgroup > table source order), collapsed cell borders as half-insets with rects abutting and borders painted centered on the grid line, the table's border strut with padding ignored and border-radius ignored, cells stretching to their column | yes | corpus/tables-collapse | border-collapse:collapse |
 
 ### Deferred / Not in v1 (no silent absence)
 
@@ -227,11 +229,12 @@ classification):
 
 - **outline** — not implemented; `paint-shapes` is archived PARTIAL and outline
   has no owning task.
-- **tables layout (border-collapse: collapse)** — the separate-borders table
-  model is implemented (charter §11 tables row, `corpus/tables/`,
-  `docs/ledgers/tables.md`); the collapsing-borders box model is the follow-on
-  `tables-border-collapse` slice. `tables-layout` was archived PARTIAL (display
-  parsing + UA defaults only) and is executed by the tables-layout slice.
+- **tables layout, collapsing-borders model** — implemented (charter §11
+  tables row, `corpus/tables-collapse/`, `docs/ledgers/tables.md`): both
+  border models coexist; the separate model owns the tables-layout corpus.
+  Chrome's exact width accounting for `hidden` borders in multi-row conflict
+  tables (Blink merges the hidden winner yet lays the cell against the
+  neighbor's width through column stretching) is reproduced and corpus-gated.
 - **Cascade layers / !important** — intentionally **not supported by design**
   (not a gap): `!important` and `@layer` are excluded from the compatibility
   surface because they override the normal cascade in ways a deterministic

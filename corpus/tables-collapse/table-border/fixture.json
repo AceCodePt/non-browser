@@ -1,0 +1,30 @@
+{
+ "note": "A table with its own border participates in conflict resolution: the table's 10px border wins the outer edges over borderless cells (and its full width lands inside the table's border box, half of it beyond the grid), while a wider 10px cell border beats a 4px table border on the outer edge of the second table. Cell rects start one strut half inside the table box in both cases.",
+ "harvest": {
+  "viewport": {
+   "width": 380,
+   "height": 260
+  },
+  "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans';font-size:16px}table{border-collapse:collapse}td{width:100px;height:50px;padding:10px;background:#ffffff}#t1{border:10px solid #0000ff;margin-bottom:24px}#t2{border:4px solid #0000ff}#t2 td{border:10px solid #ff0000}</style></head><body><table id=\"t1\"><tr><td id=\"a\">A</td><td id=\"b\">B</td></tr></table><table id=\"t2\"><tr><td id=\"c\">C</td></tr></table></body></html>",
+  "measureText": [],
+  "rects": [
+   "t1",
+   "a",
+   "b",
+   "t2",
+   "c"
+  ],
+  "textElements": [
+   "a",
+   "b",
+   "c"
+  ]
+ },
+ "name": "table-border",
+ "expected": {
+  "measureText": "pass",
+  "computedStyle": "pass",
+  "rect": "pass",
+  "screenshot": "pass"
+ }
+}

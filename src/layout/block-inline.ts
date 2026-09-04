@@ -13,7 +13,7 @@
  * swap in a different FormattingContext and the same block/inline layout runs.
  */
 
-import { borderPaddingBlock, borderPaddingInline, applyTextTransform, clipsContent, isScrollContainer, parseStyleAttribute, pxLength, resolveEmLength, resolveLength, makeStyle, type BorderRadius, type BorderStyleKeyword, type ComputedStyle, type Color, type Declaration, type DecorationLine, type Direction, type DisplayValue, type ListStyleType, type PseudoBox, type Shadow, type TextAlign, type VerticalAlign, type Viewport, type WhiteSpaceValue } from './css.js';
+import { borderPaddingBlock, borderPaddingInline, applyTextTransform, clipsContent, isScrollContainer, parseStyleAttribute, pxLength, resolveEmLength, resolveLength, ZERO_BORDER_RADIUS, makeStyle, type BorderRadius, type BorderStyleKeyword, type ComputedStyle, type Color, type Declaration, type DecorationLine, type Direction, type DisplayValue, type ListStyleType, type PseudoBox, type Shadow, type TextAlign, type VerticalAlign, type Viewport, type WhiteSpaceValue } from './css.js';
 import { layoutTextLines, measureTextWidth, minTextWidth, type LineBox } from './measure.js';
 import { FloatManager, type FormattingContext } from './floats.js';
 import { layoutGridChildren } from './grid.js';
@@ -68,6 +68,9 @@ export interface StyleDefaults {
   borderSpacingV?: number;
   /** inherited empty-cells (css-tables-3: the property inherits). */
   emptyCells?: 'show' | 'hide';
+  /** inherited border-collapse (the property inherits; a table's UA default
+   * wins over it). */
+  borderCollapseInherited?: 'separate' | 'collapse';
   /** inherited computed custom properties (css-variables-1 §3). */
   customProps?: Record<string, string>;
 }
@@ -167,6 +170,7 @@ export function resolveStyles(
       whiteSpaceDefault: d.whiteSpace ?? 'normal',
       emptyCellsDefault: d.emptyCells,
       borderCollapseDefault: tagDefaults.borderCollapse,
+      borderCollapseInherited: d.borderCollapseInherited,
       borderSpacingDefault: tagDefaults.borderSpacing,
       borderSpacingVDefault: tagDefaults.borderSpacingV,
       fontWeightDefault: tagDefaults.fontWeight ?? d.fontWeight,
@@ -220,6 +224,7 @@ export function resolveStyles(
       textIndentEachLineInherited: style.textIndentEachLine,
       wordSpacingInherited: style.wordSpacing,
       emptyCells: style.emptyCells,
+      borderCollapseInherited: style.borderCollapse,
       customProps: style.customProps,
     };
     for (const child of el.childNodes) {
@@ -549,7 +554,7 @@ let opacityStack: number[] = [];
 let nextOpacityId = 0;
 const opacityGroups = new Map<number, OpacityGroup>();
 
-function pushPaintOp(paints: PaintOp[], op: PaintOp): void {
+export function pushPaintOp(paints: PaintOp[], op: PaintOp): void {
   const clip = clipStack.length > 0 ? clipStack[clipStack.length - 1] : null;
   if (clip) op.clip = clip;
   const g = opacityStack[opacityStack.length - 1];
@@ -1040,6 +1045,15 @@ export function layoutElementBox(
   let tableBoxY = borderY;
   let tableBoxH = 0;
 
+  // css-tables-3 §3.6.2: a collapsed table's own border paints nothing (it
+  // merges into the grid edges) and its border-radius is ignored — the box
+  // paints square (probed: Chrome renders collapsed tables square and reports
+  // used padding 0). The padding/border widths stay on the style: the collapse
+  // model must merge the table's own border into the edge grid, and the
+  // layout pass zeroes the padding where the spec says it is ignored.
+  const collapseTableBox =
+    (style.display === 'table' || style.display === 'inline-table') && style.borderCollapse === 'collapse';
+
   const bT = style.borderWidth.top;
   const bB = style.borderWidth.bottom;
   const bL = style.borderWidth.left;
@@ -1048,7 +1062,7 @@ export function layoutElementBox(
   const padB = resolveLength(style.padding.bottom, contentWidth, viewport) ?? 0;
   const padL = resolveLength(style.padding.left, contentWidth, viewport) ?? 0;
   const padR = resolveLength(style.padding.right, contentWidth, viewport) ?? 0;
-  const padBorderV = borderPaddingBlock(style, contentWidth, viewport);
+  const padBorderV = collapseTableBox ? 0 : borderPaddingBlock(style, contentWidth, viewport);
 
   // Sticky-inset chain: this box's own scrollport if it is a scroll container,
   // else the inherited one (the viewport's ICB at the root). The clamp rect is
@@ -1162,7 +1176,8 @@ export function layoutElementBox(
     : null;
   if (ownBg) pushPaintOp(paints, ownBg);
   for (let i = shadowOps.length - 1; i >= 0; i--) if (shadowOps[i].inset) pushShadow(shadowOps[i]);
-  const ownBorder = control === null ? pushBorders(paints, nextOrder, ownKey, style, borderX, borderY, borderWidth, 0) : null;
+  const ownBorder = control === null && !collapseTableBox ? pushBorders(paints, nextOrder, ownKey, style, borderX, borderY, borderWidth, 0) : null;
+  if (ownBg && collapseTableBox) ownBg.borderRadius = ZERO_BORDER_RADIUS;
   let controlOp: PaintOp | null = null;
   if (control !== null) {
     controlOp = {
@@ -1249,9 +1264,13 @@ export function layoutElementBox(
       style,
       styles,
       borderX,
-      contentX,
-      contentWidth,
+      // A collapsed table's content box is its border box: layoutTableContent
+      // insets the grid by the strut halves itself (the padding was zeroed
+      // above).
+      contentX: collapseTableBox ? borderX : contentX,
+      contentWidth: collapseTableBox ? borderWidth : contentWidth,
       borderY,
+      key: ownKey,
       paints,
       nextOrder,
       viewport,

@@ -1,0 +1,60 @@
+{
+ "note": "Model coexistence: a border-collapse:collapse table and a border-collapse:separate table stack in one document and both match Chrome — the separate table keeps its 2px UA border-spacing on every grid edge and per-cell borders inside their rects, the collapsed table shares borders across abutting cells. Also checks the collapsed table's computed padding reporting the used 0px (Blink zeroes it at computed-value time).",
+ "harvest": {
+  "viewport": {
+   "width": 400,
+   "height": 260
+  },
+  "html": "<html><head><style>html,body{margin:0;padding:0;font-family:'Noto Sans';font-size:16px}td{width:100px;height:50px;padding:10px;background:#ffffff}#c{border-collapse:collapse}#s{border-collapse:separate;border:1px solid #333;background:#f5f5f5;margin-top:24px}#s td{border:1px solid #999}#s th{border:1px solid #2a60a9;background:#4a90d9;color:#fff}</style></head><body><table id=\"c\"><tr><td id=\"a\" style=\"border:4px solid #ff0000\">A</td><td id=\"b\" style=\"border:4px solid #00ff00\">B</td></tr></table><table id=\"s\"><tr><th id=\"h\">H</th><td id=\"d\">D</td></tr></table></body></html>",
+  "measureText": [],
+  "rects": [
+   "c",
+   "a",
+   "b",
+   "s",
+   "h",
+   "d"
+  ],
+  "textElements": [
+   "a",
+   "b",
+   "h",
+   "d"
+  ],
+  "computedStyle": [
+   {
+    "id": "c",
+    "props": [
+     "border-collapse",
+     "padding"
+    ]
+   },
+   {
+    "id": "a",
+    "props": [
+     "border-collapse"
+    ]
+   },
+   {
+    "id": "s",
+    "props": [
+     "border-collapse",
+     "border-spacing"
+    ]
+   },
+   {
+    "id": "h",
+    "props": [
+     "border-collapse"
+    ]
+   }
+  ]
+ },
+ "name": "coexistence",
+ "expected": {
+  "measureText": "pass",
+  "computedStyle": "pass",
+  "rect": "pass",
+  "screenshot": "pass"
+ }
+}
